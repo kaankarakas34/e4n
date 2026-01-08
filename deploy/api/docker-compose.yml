@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: e4n2-postgres
+    environment:
+      POSTGRES_USER: e4n2
+      POSTGRES_PASSWORD: e4n2pass
+      POSTGRES_DB: e4n2db
+    ports:
+      - "5435:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U e4n2 -d e4n2db" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    container_name: e4n2-api
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: e4n2
+      DB_PASSWORD: e4n2pass
+      DB_NAME: e4n2db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"

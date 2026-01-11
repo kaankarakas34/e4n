@@ -146,10 +146,10 @@ export const api = {
   async getProfessions(query?: string) {
     return await request(`/professions?q=${query || ''}`);
   },
-  async createProfession(payload: { name: string, category: string }) {
+  async createProfession(payload: { name: string, category: string, status?: string }) {
     return await request('/professions', { method: 'POST', body: JSON.stringify(payload) });
   },
-  async updateProfession(id: string, payload: { name: string, category: string }) {
+  async updateProfession(id: string, payload: { name: string, category: string, status?: string }) {
     return await request(`/professions/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
   },
   async deleteProfession(id: string) {

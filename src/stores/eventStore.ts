@@ -20,6 +20,8 @@ export interface EventItem {
   has_equal_opportunity_badge?: boolean;
   city?: string;
   district?: string;
+  is_online?: boolean;
+  pinned?: boolean;
 }
 
 interface EventStore {

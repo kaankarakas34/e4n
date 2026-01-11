@@ -21,7 +21,8 @@ import {
   Eye,
   Send,
   CheckCircle,
-  XCircle
+  XCircle,
+  Pin
 } from 'lucide-react';
 
 interface EventFormData {
@@ -38,7 +39,14 @@ interface EventFormData {
   price?: number;
   currency?: string;
   has_equal_opportunity_badge?: boolean;
+  city?: string;
+  is_online?: boolean;
+  pinned?: boolean;
 }
+
+const CITIES = [
+  'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Şanlıurfa', 'Kocaeli', 'Mersin', 'Diyarbakır', 'Hatay', 'Manisa', 'Kayseri', 'Samsun', 'Balıkesir', 'Kahramanmaraş', 'Van', 'Aydın', 'Tekirdağ', 'Denizli', 'Sakarya', 'Muğla', 'Eskişehir'
+];
 
 export function AdminEvents() {
   const navigate = useNavigate();
@@ -62,7 +70,10 @@ export function AdminEvents() {
     chapter_id: '',
     price: 0,
     currency: 'TRY',
-    has_equal_opportunity_badge: false
+    has_equal_opportunity_badge: false,
+    city: '',
+    is_online: false,
+    pinned: false
   });
 
   useEffect(() => {
@@ -102,6 +113,9 @@ export function AdminEvents() {
         group_id: formData.chapter_id || null,
         member_id: null,
         has_equal_opportunity_badge: formData.has_equal_opportunity_badge,
+        city: formData.city,
+        is_online: formData.is_online,
+        pinned: formData.pinned
       };
 
       if (editingEvent) {
@@ -131,18 +145,31 @@ export function AdminEvents() {
       chapter_id: '',
       price: 0,
       currency: 'TRY',
-      has_equal_opportunity_badge: false
+      has_equal_opportunity_badge: false,
+      city: '',
+      is_online: false,
+      pinned: false
     });
     setShowForm(false);
     setEditingEvent(null);
   };
 
   const handleEdit = (event: any) => {
+    // Helper to format date for datetime-local input (YYYY-MM-DDThh:mm)
+    const formatDateForInput = (dateStr: string) => {
+      if (!dateStr) return '';
+      try {
+        return new Date(dateStr).toISOString().slice(0, 16);
+      } catch (e) {
+        return '';
+      }
+    };
+
     setFormData({
       title: event.title,
       description: event.description,
-      start_at: event.start_at,
-      end_at: event.end_at,
+      start_at: formatDateForInput(event.start_at),
+      end_at: formatDateForInput(event.end_at),
       location: event.location,
       is_public: event.is_public,
       max_attendees: event.max_attendees,
@@ -151,7 +178,10 @@ export function AdminEvents() {
       chapter_id: event.chapter_id || '',
       price: event.price || 0,
       currency: event.currency || 'TRY',
-      has_equal_opportunity_badge: event.has_equal_opportunity_badge || false
+      has_equal_opportunity_badge: event.has_equal_opportunity_badge || false,
+      city: event.city || '',
+      is_online: event.is_online || false,
+      pinned: event.pinned || false
     });
     setEditingEvent(event);
     setShowForm(true);
@@ -308,15 +338,61 @@ export function AdminEvents() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Konum
+                      Şehir
+                    </label>
+                    <select
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                    >
+                      <option value="">Seçiniz</option>
+                      {CITIES.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Konum {formData.is_online && '(Online - Devre Dışı)'}
                     </label>
                     <Input
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      required
+                      disabled={formData.is_online}
+                      placeholder={formData.is_online ? 'Online Etkinlik' : 'Adres veya mekan adı'}
+                      required={!formData.is_online}
                     />
                   </div>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_online"
+                    checked={formData.is_online || false}
+                    onChange={(e) => setFormData({ ...formData, is_online: e.target.checked, location: e.target.checked ? 'Online' : formData.location })}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_online" className="ml-2 block text-sm text-gray-900">
+                    Online Etkinlik
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="pinned"
+                    checked={formData.pinned || false}
+                    onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="pinned" className="ml-2 block text-sm text-gray-900">
+                    Başa Tuttur (Tüm listelerde en üstte görünür)
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Maksimum Katılımcı
@@ -329,6 +405,7 @@ export function AdminEvents() {
                       required
                     />
                   </div>
+                  {/* Empty col for alignment or additional field */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -375,6 +452,8 @@ export function AdminEvents() {
                   </div>
                 </div>
 
+                {/* Herkese Açık Ayarı (Gizlendi: Her zaman true) */}
+                {/* 
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -387,6 +466,7 @@ export function AdminEvents() {
                     Herkese Açık Etkinlik
                   </label>
                 </div>
+                */}
 
                 <div className="flex items-center">
                   <input
@@ -462,15 +542,20 @@ export function AdminEvents() {
             <Card key={event.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{event.title}</CardTitle>
+                  <CardTitle className="text-lg flex items-center">
+                    {event.pinned && <Pin className="h-4 w-4 mr-2 text-red-600 rotate-45" fill="currentColor" />}
+                    {event.title}
+                  </CardTitle>
                   <Badge className={getStatusColor(event.status)}>
                     {getStatusText(event.status)}
                   </Badge>
                 </div>
+                {/* 
                 <div className="flex items-center text-sm text-gray-500 mt-1">
                   {event.is_public ? <Globe className="h-3 w-3 mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
                   {event.is_public ? 'Herkese Açık' : 'Özel'}
-                </div>
+                </div> 
+                */}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -529,7 +614,7 @@ export function AdminEvents() {
                   <div className="flex space-x-2 pt-2">
                     <Button
                       size="sm"
-                      onClick={() => navigate(`/events/${event.id}`)}
+                      onClick={() => navigate(`/event/${event.id}`)}
                       className="flex items-center flex-1"
                     >
                       <Eye className="h-3 w-3 mr-1" />

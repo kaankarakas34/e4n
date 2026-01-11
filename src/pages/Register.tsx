@@ -5,6 +5,7 @@ import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 import { LegalModal, LegalTexts } from '../shared/LegalModals';
+import { ProfessionSelect } from '../components/ProfessionSelect';
 
 export function Register() {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ export function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
     phone: '',
     profession: '',
     company: '',
@@ -92,9 +92,13 @@ export function Register() {
                   <h3 className="font-medium text-gray-900 border-b pb-1">Kişisel Bilgiler</h3>
                   <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
                   <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
-                  <Input required data-name="password" placeholder="Şifre" type="password" value={formData.password} onChange={handleChange} />
+                  {/* Password removed - set after approval */}
                   <Input required data-name="phone" placeholder="Telefon Numarası" type="tel" value={formData.phone} onChange={handleChange} />
-                  <Input required data-name="profession" placeholder="Meslek Kolu" className="border-red-200 focus:border-red-500" value={formData.profession} onChange={handleChange} />
+                  <ProfessionSelect
+                    value={formData.profession}
+                    onChange={(val) => setFormData(prev => ({ ...prev, profession: val }))}
+                    className="border-red-200 focus:border-red-500"
+                  />
                 </div>
 
                 <div className="space-y-2">

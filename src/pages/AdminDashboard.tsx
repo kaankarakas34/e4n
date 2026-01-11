@@ -206,6 +206,14 @@ export function AdminDashboard() {
               onClick={() => navigate('/admin/support')}
               description="Kullanıcı destek taleplerini yönetin."
             />
+            <QuickActionCard
+              title="Meslek Grupları"
+              icon={Briefcase}
+              color="text-fuchsia-600"
+              bg="bg-fuchsia-50 hover:bg-fuchsia-100"
+              onClick={() => navigate('/admin/professions')}
+              description="Meslekleri ve sektörleri düzenleyin."
+            />
           </div>
         </div>
       </div>

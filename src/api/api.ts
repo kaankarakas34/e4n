@@ -1,5 +1,5 @@
 import { emailService } from '../services/emailService';
-const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4001/api';
 import { mockMembers, mockGroups, mockPowerTeams } from './mockData';
 
 async function request(path: string, options?: RequestInit) {
@@ -141,11 +141,24 @@ export const api = {
       return { revenue: [], growth: [] };
     }
   },
+
+  // Professions
+  async getProfessions(query?: string) {
+    return await request(`/professions?q=${query || ''}`);
+  },
+  async createProfession(payload: { name: string, category: string }) {
+    return await request('/professions', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  async updateProfession(id: string, payload: { name: string, category: string }) {
+    return await request(`/professions/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  async deleteProfession(id: string) {
+    return await request(`/professions/${id}`, { method: 'DELETE' });
+  },
   async getAdminGroupStats() {
     try { return await request('/groups'); } catch { return []; }
   },
 
-  // Support Tickets
   async getTickets() {
     return await request('/tickets');
   },
@@ -178,55 +191,11 @@ export const api = {
   async getEvents() {
     try {
       return await request('/events');
-    } catch {
-      return [
-        {
-          id: '1',
-          title: 'Haftalık Toplantı - Liderler',
-          description: 'Genel haftalık toplantı ve iş yönlendirmeleri.',
-          location: 'Zoom Online',
-          city: 'Online',
-          district: '',
-          start_at: new Date(Date.now() + 86400000 * 2).toISOString(),
-          is_public: true,
-          attendees: [
-            { id: '101', name: 'Ahmet Yılmaz', profession: 'Mali Müşavir', avatar: null },
-            { id: '102', name: 'Ayşe Kaya', profession: 'Avukat', avatar: null },
-            { id: '103', name: 'Mehmet Demir', profession: 'Yazılımcı', avatar: null }
-          ],
-          max_attendees: 50
-        },
-        {
-          id: '2',
-          title: 'Sabah Networking Kahvaltısı',
-          description: 'Yüz yüze tanışma ve kahvaltı etkinliği.',
-          location: 'Divan Otel',
-          city: 'İstanbul',
-          district: 'Şişli',
-          start_at: new Date(Date.now() + 86400000 * 5).toISOString(),
-          is_public: true,
-          attendees: [
-            { id: '104', name: 'Zeynep Çelik', profession: 'Diyetisyen', avatar: null },
-            { id: '105', name: 'Caner Erkin', profession: 'Mimar', avatar: null }
-          ],
-          max_attendees: 20
-        },
-        {
-          id: '3',
-          title: 'Dijital Pazarlama Trendleri',
-          description: '2025 Dijital Pazarlama Stratejileri eğitimi.',
-          location: 'Google Meet',
-          city: 'Online',
-          district: '',
-          start_at: new Date(Date.now() + 86400000 * 10).toISOString(),
-          is_public: true,
-          attendees: [],
-          max_attendees: 100
-        },
-        { id: '4', title: 'İnşaat Loncası Öğle Yemeği', description: 'Sektörel gelişmelerin değerlendirilmesi.', location: 'Nusret Steakhouse', city: 'İstanbul', district: 'Beşiktaş', start_at: new Date(Date.now() + 86400000 * 7).toISOString(), is_public: false, max_attendees: 10 },
-        { id: '5', title: 'Yeni Üye Oryantasyonu', description: 'Sisteme yeni katılanlar için bilgilendirme.', location: 'Ofis Toplantı Odası', city: 'İstanbul', district: 'Kadıköy', start_at: new Date(Date.now() + 86400000 * 14).toISOString(), is_public: false, max_attendees: 5 },
-        { id: '6', title: 'Yılın En İyileri Gala Gecesi', description: 'Yıl sonu başarı ödülleri ve kutlama.', location: 'Çırağan Sarayı', city: 'İstanbul', district: 'Beşiktaş', start_at: new Date(Date.now() + 86400000 * 30).toISOString(), is_public: true, max_attendees: 200 }
-      ];
+    } catch (e) {
+      console.error('API getEvents failed:', e);
+      // Return empty instead of mock to prove real data connection or lack thereof
+      return [];
+
     }
   },
   async getEvent(id: string) {
@@ -390,12 +359,11 @@ export const api = {
   },
 
   async updateMember(id: string, payload: any) {
-    const member = this._mockMembers.find(m => m.id === id);
-    if (member) {
-      Object.assign(member, payload);
-      return member;
-    }
-    throw new Error('Member not found');
+    return await request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
+
+  async createPassword(payload: any) {
+    return await request('/auth/create-password', { method: 'POST', body: JSON.stringify(payload) });
   },
 
   async searchMembers(filters: { name?: string; profession?: string; city?: string }) {
@@ -608,6 +576,10 @@ export const api = {
 
   async getGroupVisitors(groupId: string) {
     try { return await request(`/groups/${groupId}/visitors`); } catch { return []; }
+  },
+
+  async getChampions() {
+    try { return await request('/champions'); } catch { return []; }
   },
 
   async getVisitorsByUser(userId: string) {

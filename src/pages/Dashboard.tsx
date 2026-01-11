@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Alert, AlertTitle, AlertDescription } from '../shared/Alert';
 import { ScoreCard } from '../shared/ScoreCard';
+import { ChampionsWidget } from '../shared/ChampionsWidget';
 import { QuickActions } from '../shared/QuickActions';
 import { ActivitySummary } from '../shared/ActivitySummary';
 import { TasksCard } from '../shared/TasksCard';
@@ -78,6 +79,9 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Traffic Light & Quick Actions */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Champions Widget */}
+            <ChampionsWidget />
+
             {/* Performance Score Card */}
             <ScoreCard
               performance={performance}

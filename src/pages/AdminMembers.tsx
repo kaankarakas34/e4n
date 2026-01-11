@@ -34,7 +34,10 @@ interface Member {
   last_login?: string;
   subscription_status?: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   subscription_end_date?: string;
-  group_name?: string; // Enriched from backend
+  group_name?: string;
+  profession_status?: 'APPROVED' | 'PENDING' | 'REJECTED';
+  profession_id?: string;
+  profession_category?: string;
 }
 
 interface Group {
@@ -70,11 +73,10 @@ export function AdminMembers() {
     try {
       setLoading(true);
       const [membersData, groupsData] = await Promise.all([
-        api.getMembers(), // Ensure this endpoint returns group_name joined if modified backend supports it, otherwise plain list
+        api.getMembers(),
         api.getGroups()
       ]);
 
-      // Fallback if getMembers doesn't return array as expected
       if (Array.isArray(membersData)) {
         setMembers(membersData);
       } else {
@@ -120,12 +122,8 @@ export function AdminMembers() {
       if (['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'].includes(newRole)) {
         if (!window.confirm('Bu kullanıcıya Grup Yöneticisi/Lideri rolü atamak üzeresiniz. Onaylıyor musunuz?')) return;
       }
-      // Use the new endpoint for assigning roles if needed, or updateMember if it handles it. 
-      // The plan suggested specific endpoint `assignRole`, let's use it for specific roles or fallback to updateMember.
-      // Actually `updateMember` might restrict fields. The backend assign-role is specifically for this.
       await api.assignRole(memberId, newRole);
 
-      // Optimistic update or refresh
       setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
     } catch (error) {
       console.error('Rol güncellenirken hata:', error);
@@ -134,9 +132,44 @@ export function AdminMembers() {
   };
 
   const handleStatusChange = async (memberId: string, newStatus: string) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+
+    if (newStatus === 'ACTIVE' && member.profession_status === 'PENDING') {
+      const confirm = window.confirm(
+        `DİKKAT: "${member.full_name}" üyesinin meslek grubu (${member.profession}) sistemde henüz ONAYLANMAMIŞ.\n\n` +
+        `Üyeliği aktif etmek için bu meslek grubunu sisteme ekleyip ONAYLAMANIZ gerekmektedir.\n\n` +
+        `Meslek grubunu onaylayıp üyeyi aktif etmek istiyor musunuz?`
+      );
+      if (!confirm) return;
+
+      try {
+        if (member.profession_id) {
+          await api.updateProfession(member.profession_id, {
+            name: member.profession || '',
+            category: member.profession_category || 'Genel',
+            status: 'APPROVED'
+          } as any);
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Meslek grubu onaylanırken bir hata oluştu. İşlem iptal edildi.');
+        return;
+      }
+    }
+
     try {
       await api.updateMember(memberId, { status: newStatus } as any);
-      setMembers(members.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m));
+      setMembers(members.map(m => {
+        if (m.id === memberId) {
+          return {
+            ...m,
+            status: newStatus as any,
+            profession_status: (newStatus === 'ACTIVE' && m.profession_status === 'PENDING') ? 'APPROVED' : m.profession_status
+          };
+        }
+        return m;
+      }));
     } catch (error) {
       console.error('Statü güncellenirken hata:', error);
     }
@@ -166,7 +199,6 @@ export function AdminMembers() {
       alert('Üye başarıyla taşındı.');
       setShowMoveModal(false);
       setSelectedMember(null);
-      // Ideally refresh members to show new group if we display it
       fetchData();
     } catch (e) {
       console.error(e);
@@ -288,9 +320,11 @@ export function AdminMembers() {
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{member.full_name}</div>
                               <div className="text-sm text-gray-500">{member.email}</div>
-                              <div className="text-xs text-gray-400">
-                                {member.company && `${member.company} • `}
-                                {member.profession}
+                              <div className="text-xs text-gray-400 flex items-center gap-2">
+                                <span>{member.company && `${member.company} • `}{member.profession}</span>
+                                {member.profession_status === 'PENDING' && (
+                                  <Badge className="bg-orange-100 text-orange-800 text-[10px] px-1 py-0 h-5">Talep</Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -343,8 +377,13 @@ export function AdminMembers() {
                               <Edit className="h-3 w-3 mr-1" /> Düzenle
                             </Button>
                             {member.status === 'PENDING' && (
-                              <Button size="sm" className="flex items-center bg-green-600 hover:bg-green-700 text-white border-none" onClick={() => handleStatusChange(member.id, 'ACTIVE')}>
-                                <CheckCircle className="h-3 w-3 mr-1" /> Onayla
+                              <Button
+                                size="sm"
+                                className={`flex items-center text-white border-none ${member.profession_status === 'PENDING' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'}`}
+                                onClick={() => handleStatusChange(member.id, 'ACTIVE')}
+                                title={member.profession_status === 'PENDING' ? "Meslek ve Üyelik Onayı" : "Üyelik Onayı"}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" /> {member.profession_status === 'PENDING' ? 'Tümü Onayla' : 'Onayla'}
                               </Button>
                             )}
                             <Button size="sm" variant="destructive" onClick={() => handleDeleteMember(member.id)} className="flex items-center">

@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cron from 'node-cron';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,6 +20,16 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'postgres',
 });
 
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
 // Test DB Connection
 // Test DB Connection
 pool.connect().then(async (client) => {
@@ -30,6 +41,89 @@ pool.connect().then(async (client) => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMP WITH TIME ZONE");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(50)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reminder_trigger INTEGER");
+
+    // Event Updates
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
+
+    // Password Reset / Creation fields
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP WITH TIME ZONE");
+    await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
+
+    // Professions Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS professions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) UNIQUE NOT NULL,
+        category VARCHAR(100),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Champions Table for Dashboard
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS champions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
+        period_date DATE NOT NULL,
+        metric_type VARCHAR(20) NOT NULL, -- REFERRAL_COUNT, VISITOR_COUNT, REVENUE
+        user_id UUID REFERENCES users(id),
+        value NUMERIC NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Champions Table for Dashboard
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS champions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
+        period_date DATE NOT NULL,
+        metric_type VARCHAR(20) NOT NULL, -- REFERRAL_COUNT, VISITOR_COUNT, REVENUE
+        user_id UUID REFERENCES users(id),
+        value NUMERIC NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Seed Professions if empty
+    const profCount = await client.query("SELECT COUNT(*) FROM professions");
+    if (parseInt(profCount.rows[0].count) === 0) {
+      const professions = [
+        ['Avukat', 'Hukuk'], ['Mali Müşavir', 'Finans'], ['Yeminli Mali Müşavir', 'Finans'],
+        ['Bağımsız Denetçi', 'Finans'], ['Sigorta Acentesi', 'Finans'], ['Gayrimenkul Danışmanı', 'Emlak'],
+        ['Mimar', 'İnşaat'], ['İç Mimar', 'İnşaat'], ['İnşaat Mühendisi', 'İnşaat'],
+        ['Elektrik Mühendisi', 'İnşaat'], ['Harita Mühendisi', 'İnşaat'], ['Peyzaj Mimarı', 'İnşaat'],
+        ['Müteahhit', 'İnşaat'], ['Yapı Denetim', 'İnşaat'], ['Grafik Tasarımcı', 'Medya & İletişim'],
+        ['Web Tasarım & Yazılım', 'Bilişim'], ['Sosyal Medya Uzmanı', 'Medya & İletişim'],
+        ['Dijital Pazarlama Uzmanı', 'Medya & İletişim'], ['Fotoğrafçı', 'Medya & İletişim'],
+        ['Video Prodüksiyon', 'Medya & İletişim'], ['Matbaa & Promosyon', 'Medya & İletişim'],
+        ['Reklam Ajansı', 'Medya & İletişim'], ['Diyetisyen', 'Sağlık'], ['Psikolog', 'Sağlık'],
+        ['Diş Hekimi', 'Sağlık'], ['Fizyoterapist', 'Sağlık'], ['Eczacı', 'Sağlık'],
+        ['Doktor - Genel Cerrahi', 'Sağlık'], ['Doktor - Dahiliye', 'Sağlık'], ['Doktor - KBB', 'Sağlık'],
+        ['Doktor - Göz', 'Sağlık'], ['Güzellik Uzmanı', 'Hizmet'], ['Kuaför', 'Hizmet'],
+        ['Organizasyon Şirketi', 'Hizmet'], ['Turizm Acentesi', 'Hizmet'], ['Otel İşletmecisi', 'Hizmet'],
+        ['Restoran İşletmecisi', 'Hizmet'], ['Kafe İşletmecisi', 'Hizmet'], ['Catering Hizmetleri', 'Hizmet'],
+        ['Temizlik Şirketi', 'Hizmet'], ['Güvenlik Şirketi', 'Hizmet'], ['Lojistik & Nakliye', 'Lojistik'],
+        ['Gümrük Müşaviri', 'Lojistik'], ['Otomotiv Satış', 'Otomotiv'], ['Otomotiv Servis', 'Otomotiv'],
+        ['Filo Kiralama', 'Otomotiv'], ['Makine Mühendisi', 'Sanayi'], ['Endüstri Mühendisi', 'Sanayi'],
+        ['Tekstil Üreticisi', 'Sanayi'], ['Mobilya Üreticisi', 'Sanayi'], ['Gıda Üreticisi', 'Sanayi'],
+        ['Ambalaj Üreticisi', 'Sanayi'], ['Eğitim Danışmanı', 'Eğitim'], ['Dil Okulu', 'Eğitim'],
+        ['Sürücü Kursu', 'Eğitim'], ['Anaokulu / Kreş', 'Eğitim'], ['Özel Okul', 'Eğitim'],
+        ['Koçluk Hizmetleri', 'Eğitim'], ['İK Danışmanlığı', 'Danışmanlık'], ['Yönetim Danışmanlığı', 'Danışmanlık'],
+        ['Marka Patent Vekili', 'Danışmanlık'], ['Yazılım Uzmanı', 'Bilişim'], ['Siber Güvenlik Uzmanı', 'Bilişim'],
+        ['Donanım & Network', 'Bilişim'], ['E-Ticaret Danışmanı', 'Bilişim']
+      ];
+
+      for (const [name, category] of professions) {
+        await client.query("INSERT INTO professions (name, category) VALUES ($1, $2) ON CONFLICT DO NOTHING", [name, category]);
+      }
+      console.log('✅ Professions Seeded');
+    }
+
     console.log('✅ Schema Migrations Applied');
   } catch (e) {
     console.error('Migration Warning:', e.message);
@@ -40,6 +134,115 @@ pool.connect().then(async (client) => {
 
 app.use(cors());
 app.use(express.json());
+
+// --- CHAMPION CALCULATION LOGIC ---
+const calculateChampions = async (periodType, startDate, endDate) => {
+  const client = await pool.connect();
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Most Referrals
+    const refRes = await client.query(`
+      SELECT giver_id as user_id, COUNT(*) as value
+      FROM referrals
+      WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
+      GROUP BY giver_id
+      ORDER BY value DESC
+      LIMIT 1
+    `, [startDate, endDate]);
+
+    if (refRes.rows.length > 0) {
+      await client.query(
+        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REFERRAL_COUNT', $3, $4)",
+        [periodType, today, refRes.rows[0].user_id, refRes.rows[0].value]
+      );
+    }
+
+    // 2. Most Visitors
+    const visRes = await client.query(`
+      SELECT inviter_id as user_id, COUNT(*) as value
+      FROM visitors
+      WHERE visited_at BETWEEN $1 AND $2
+      GROUP BY inviter_id
+      ORDER BY value DESC
+      LIMIT 1
+    `, [startDate, endDate]);
+
+    if (visRes.rows.length > 0) {
+      await client.query(
+        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'VISITOR_COUNT', $3, $4)",
+        [periodType, today, visRes.rows[0].user_id, visRes.rows[0].value]
+      );
+    }
+
+    // 3. Highest Revenue
+    const revRes = await client.query(`
+      SELECT giver_id as user_id, SUM(amount) as value
+      FROM referrals
+      WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
+      GROUP BY giver_id
+      ORDER BY value DESC
+      LIMIT 1
+    `, [startDate, endDate]);
+
+    if (revRes.rows.length > 0) {
+      await client.query(
+        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REVENUE', $3, $4)",
+        [periodType, today, revRes.rows[0].user_id, revRes.rows[0].value]
+      );
+    }
+
+    console.log(`✅ Champions calculated for ${periodType}`);
+  } catch (e) {
+    console.error(`Error calculating champions for ${periodType}:`, e);
+  } finally {
+    client.release();
+  }
+};
+
+// --- CRON JOBS ---
+// Weekly: Sunday 23:59
+cron.schedule('59 23 * * 0', async () => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 7);
+  await calculateChampions('WEEK', start.toISOString(), end.toISOString());
+});
+
+// Monthly: Last day of month 23:59
+cron.schedule('59 23 28-31 * *', async () => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Determine if tomorrow is 1st of next month
+  if (tomorrow.getDate() === 1) {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    await calculateChampions('MONTH', start.toISOString(), today.toISOString());
+  }
+});
+
+// Term: End of April, August, December
+cron.schedule('59 23 30 4,8 *', async () => { // Apr 30, Aug 30 (Use 30 for safety)
+  const today = new Date();
+  const start = new Date(today);
+  start.setMonth(start.getMonth() - 3);
+  start.setDate(1);
+  await calculateChampions('TERM', start.toISOString(), today.toISOString());
+});
+cron.schedule('59 23 31 8,12 *', async () => {
+  const today = new Date();
+  const start = new Date(today);
+  start.setMonth(start.getMonth() - 3);
+  start.setDate(1);
+  await calculateChampions('TERM', start.toISOString(), today.toISOString());
+});
+// Yearly: Dec 31
+cron.schedule('59 23 31 12 *', async () => {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), 0, 1);
+  await calculateChampions('YEAR', start.toISOString(), today.toISOString());
+});
+
 
 /* --- HELPER: SCORING ENGINE --- */
 const calculateMemberScore = async (userId) => {
@@ -322,19 +525,209 @@ function authenticateToken(req, res, next) {
 /* --- AUTH ENDPOINTS --- */
 
 app.post('/api/auth/register', async (req, res) => {
-  const { email, password, name, profession, city, phone, kvkkConsent, marketingConsent, explicitConsent } = req.body;
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { name, email, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent } = req.body;
+
+    // Check existing
+    const existing = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    if (existing.rows.length > 0) return res.status(409).json({ error: 'Bu e-posta adresi zaten kayıtlı.' });
+
+    // Handle Profession
+    if (profession) {
+      const profRes = await pool.query('SELECT id FROM professions WHERE LOWER(name) = LOWER($1)', [profession]);
+      if (profRes.rows.length === 0) {
+        await pool.query(
+          "INSERT INTO professions (name, category, status) VALUES ($1, 'Genel', 'PENDING') ON CONFLICT DO NOTHING",
+          [profession]
+        );
+      }
+    }
+
+    // No password initially
     const { rows } = await pool.query(
-      `INSERT INTO users (email, password_hash, name, profession, city, phone, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 'PENDING') RETURNING id, email, name, role`,
-      [email, hashedPassword, name, profession, city, phone, kvkkConsent || false, marketingConsent || false, explicitConsent || false]
+      `INSERT INTO users (email, name, profession, city, phone, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), 'PENDING') RETURNING id, email, name, role`,
+      [email, name, profession, city, phone, kvkkConsent || false, marketingConsent || false, explicitConsent || false]
     );
     res.status(201).json(rows[0]);
   } catch (e) {
     if (e.code === '23505') return res.status(409).json({ error: 'Email already exists' });
     res.status(500).json({ error: e.message });
   }
+});
+
+app.post('/api/auth/create-password', async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()",
+      [token]
+    );
+
+    if (rows.length === 0) return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş token.' });
+
+    const user = rows[0];
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      "UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL, account_status = 'ACTIVE' WHERE id = $2",
+      [hashedPassword, user.id]
+    );
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update User (Admin) - Triggers Welcome Email if activating
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  // Only Admin or Self? Usually Admin checks
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+
+  const { id } = req.params;
+  const { status, role } = req.body; // Add other fields as needed
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Get current user data
+      const currentRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+      if (currentRes.rows.length === 0) throw new Error('User not found');
+      const currentUser = currentRes.rows[0];
+
+      // Build update query
+      // Assuming simplified update for now: status and role
+      if (status) {
+        await client.query('UPDATE users SET account_status = $1 WHERE id = $2', [status, id]);
+      }
+      if (role) {
+        await client.query('UPDATE users SET role = $1 WHERE id = $2', [role, id]);
+      }
+
+      // Check if activating and sending welcome email
+      // Condition: Status becoming ACTIVE, and user might not have password or we just always send welcome on first activation?
+      // Let's assume if they don't have a password set (password_hash is null) OR we explicitly want to send invite.
+      // For now: If status changed to ACTIVE and password_hash is NULL.
+      if (status === 'ACTIVE' && currentUser.account_status !== 'ACTIVE' && !currentUser.password_hash) {
+        // Generate Token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        await client.query('UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3', [token, expires, id]);
+
+        // Send Email
+        const resetLink = `${req.headers.origin || 'http://localhost:5173'}/create-password?token=${token}`;
+
+        await transporter.sendMail({
+          from: '"Event4Network" <noreply@event4network.com>',
+          to: currentUser.email,
+          subject: 'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
+          html: `
+                        <h2>Aramıza Hoş Geldiniz!</h2>
+                        <p>Sayın ${currentUser.name},</p>
+                        <p>Event4Network üyeliğiniz onaylanmıştır.</p>
+                        <p>Aşağıdaki bağlantıya tıklayarak şifrenizi oluşturabilir ve sisteme giriş yapabilirsiniz:</p>
+                        <a href="${resetLink}" style="padding: 10px 20px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
+                        <p>Bu bağlantı 24 saat geçerlidir.</p>
+                    `
+        });
+        console.log(`Welcome email sent to ${currentUser.email}`);
+      }
+
+      await client.query('COMMIT');
+
+      const finalRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+      res.json(finalRes.rows[0]);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ...
+
+// Professions
+app.get('/api/professions', async (req, res) => {
+  try {
+    const { q, status } = req.query;
+    let queryText = 'SELECT * FROM professions';
+    const params = [];
+    const conditions = [];
+
+    if (q) {
+      conditions.push(`name ILIKE $${params.length + 1}`);
+      params.push(`%${q}%`);
+    }
+
+    if (status) { // e.g. 'APPROVED' or 'PENDING'
+      conditions.push(`status = $${params.length + 1}`);
+      params.push(status);
+    } else if (!q) {
+      // Default behavior if no specific search: show only APPROVED unless searching
+      // Wait, for admin page we might want all. Let's make it explicit.
+      // If "status" is strictly not provided, maybe default to APPROVED?
+      // Let's assume frontend will ask for what it wants.
+      // For search (dropdown), currently it just sends ?q=
+      // We should probably default to APPROVED for search to avoid showing dirty data in dropdown?
+      // But the user requested "if not in list, add it".
+      // The dropdown should probably show approved ones.
+      if (req.user && req.user.role === 'ADMIN') {
+        // Admin sees all if not specified? Or maybe clean up logic later.
+      } else {
+        conditions.push(`status = 'APPROVED'`);
+      }
+    }
+
+    if (conditions.length > 0) {
+      queryText += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    queryText += ' ORDER BY name ASC LIMIT 50';
+
+    const { rows } = await pool.query(queryText, params);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/professions', async (req, res) => {
+  // Admin creates APPROVED directly. Or user creates via other means?
+  // This endpoint seems to be admin only based on context, but let's be safe.
+  try {
+    const { name, category } = req.body;
+    const status = req.body.status || 'APPROVED';
+    const { rows } = await pool.query(
+      "INSERT INTO professions (name, category, status) VALUES ($1, $2, $3) RETURNING *",
+      [name, category, status]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/professions/:id', async (req, res) => {
+  try {
+    const { name, category, status } = req.body;
+    const { rows } = await pool.query(
+      "UPDATE professions SET name = $1, category = $2, status = COALESCE($3, status) WHERE id = $4 RETURNING *",
+      [name, category, status, req.params.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/professions/:id', async (req, res) => {
+  try {
+    await pool.query("DELETE FROM professions WHERE id = $1", [req.params.id]);
+    res.sendStatus(204);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -441,10 +834,10 @@ app.get('/api/users/:id', async (req, res) => {
 app.get('/api/one-to-ones', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT o.*, 
-              u.name as partner_name, 
-              u2.name as requester_name,
-              CASE 
+      `SELECT o.*,
+      u.name as partner_name,
+      u2.name as requester_name,
+      CASE 
                 WHEN o.requester_id = $1 THEN 'OUTGOING'
                 ELSE 'INCOMING'
               END as direction
@@ -463,7 +856,7 @@ app.post('/api/one-to-ones', authenticateToken, async (req, res) => {
   const { partnerId, meetingDate, notes } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO one_to_ones (requester_id, partner_id, meeting_date, notes) VALUES ($1, $2, $3, $4) RETURNING *`,
+      `INSERT INTO one_to_ones(requester_id, partner_id, meeting_date, notes) VALUES($1, $2, $3, $4) RETURNING * `,
       [req.user.id, partnerId, meetingDate, notes]
     );
     // Recalculate Score
@@ -480,8 +873,8 @@ app.put('/api/one-to-ones/:id/status', authenticateToken, async (req, res) => {
     const { rows } = await pool.query(
       `UPDATE one_to_ones 
        SET status = $1, updated_at = NOW() 
-       WHERE id = $2 AND (requester_id = $3 OR partner_id = $3)
-       RETURNING *`,
+       WHERE id = $2 AND(requester_id = $3 OR partner_id = $3)
+       RETURNING * `,
       [status, id, req.user.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Meeting not found' });
@@ -505,8 +898,8 @@ app.post('/api/visitors', authenticateToken, async (req, res) => {
   const { name, profession, phone, email, visitedAt, status } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO visitors (inviter_id, name, profession, phone, email, visited_at, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO visitors(inviter_id, name, profession, phone, email, visited_at, status) 
+       VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING * `,
       [req.user.id, name, profession, phone, email, visitedAt, status || 'ATTENDED']
     );
     // Recalculate Score
@@ -528,8 +921,8 @@ app.post('/api/education', authenticateToken, async (req, res) => {
   const { title, hours, completedDate, type, notes } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO education (user_id, title, hours, completed_date, type, notes) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      `INSERT INTO education(user_id, title, hours, completed_date, type, notes) 
+       VALUES($1, $2, $3, $4, $5, $6) RETURNING * `,
       [req.user.id, title, hours, completedDate, type, notes]
     );
     // Recalculate Score
@@ -556,9 +949,9 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
 
     // Get one-to-ones (both requester and partner)
     const oneToOnes = await pool.query(
-      `SELECT o.id, meeting_date as start_at, 'one_to_one' as type, 
-              CONCAT('Birebir: ', CASE WHEN o.requester_id = $1 THEN u.name ELSE u2.name END) as title, 
-              'Confirmed' as location
+      `SELECT o.id, meeting_date as start_at, 'one_to_one' as type,
+      CONCAT('Birebir: ', CASE WHEN o.requester_id = $1 THEN u.name ELSE u2.name END) as title,
+      'Confirmed' as location
        FROM one_to_ones o
        LEFT JOIN users u ON o.partner_id = u.id
        LEFT JOIN users u2 ON o.requester_id = u2.id
@@ -569,7 +962,7 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
     // Get visitors
     const visitors = await pool.query(
       `SELECT id, visited_at as start_at, 'visitor' as type,
-              CONCAT('Ziyaretçi: ', name) as title, profession as location
+      CONCAT('Ziyaretçi: ', name) as title, profession as location
        FROM visitors
        WHERE inviter_id = $1`,
       [userId]
@@ -578,7 +971,7 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
     // Get education
     const education = await pool.query(
       `SELECT id, completed_date as start_at, 'education' as type,
-              title, type as location
+      title, type as location
        FROM education
        WHERE user_id = $1`,
       [userId]
@@ -647,7 +1040,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
                     FROM attendance a
                     JOIN users u ON a.user_id = u.id
                     WHERE a.event_id = $1 AND u.profession = $2
-                `, [eventId, userProfession]);
+      `, [eventId, userProfession]);
 
           if (conflictCheck.rows.length > 0) {
             await client.query('ROLLBACK');
@@ -661,9 +1054,9 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
 
       // 4. Register (Insert Attendance)
       await client.query(`
-            INSERT INTO attendance (event_id, user_id, status)
-            VALUES ($1, $2, 'PRESENT') -- 'PRESENT' as placeholder for registered/will attend
-        `, [eventId, req.user.id]);
+            INSERT INTO attendance(event_id, user_id, status)
+            VALUES($1, $2, 'PRESENT')-- 'PRESENT' as placeholder for registered / will attend
+      `, [eventId, req.user.id]);
 
       await client.query('COMMIT');
 
@@ -701,8 +1094,8 @@ app.post('/api/referrals', authenticateToken, async (req, res) => {
   const { receiverId, type, temperature, description, amount } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO referrals (giver_id, receiver_id, type, temperature, status, description, amount)
-       VALUES ($1, $2, $3, $4, 'PENDING', $5, $6) RETURNING *`,
+      `INSERT INTO referrals(giver_id, receiver_id, type, temperature, status, description, amount)
+    VALUES($1, $2, $3, $4, 'PENDING', $5, $6) RETURNING * `,
       [req.user.id, receiverId, type, temperature, description, amount]
     );
     // Recalculate Score
@@ -730,18 +1123,18 @@ app.get('/api/users', async (req, res) => {
     let paramCount = 1;
 
     if (name) {
-      query += ` AND name ILIKE $${paramCount}`;
-      params.push(`%${name}%`);
+      query += ` AND name ILIKE $${paramCount} `;
+      params.push(`% ${name}% `);
       paramCount++;
     }
     if (profession) {
-      query += ` AND profession ILIKE $${paramCount}`;
-      params.push(`%${profession}%`);
+      query += ` AND profession ILIKE $${paramCount} `;
+      params.push(`% ${profession}% `);
       paramCount++;
     }
     if (city) {
-      query += ` AND city ILIKE $${paramCount}`;
-      params.push(`%${city}%`);
+      query += ` AND city ILIKE $${paramCount} `;
+      params.push(`% ${city}% `);
       paramCount++;
     }
 
@@ -771,13 +1164,13 @@ app.get('/api/user/friends', authenticateToken, async (req, res) => {
       JOIN group_members gm_target ON u.id = gm_target.user_id
       JOIN group_members gm_me ON gm_target.group_id = gm_me.group_id
       WHERE gm_me.user_id = $1 AND u.id != $1 AND gm_target.status = 'ACTIVE' AND gm_me.status = 'ACTIVE'
-      UNION
+    UNION
       SELECT DISTINCT u.id, u.name, u.profession, u.city, u.email, u.phone, u.performance_score, u.performance_color
       FROM users u
       JOIN power_team_members ptm_target ON u.id = ptm_target.user_id
       JOIN power_team_members ptm_me ON ptm_target.power_team_id = ptm_me.power_team_id
       WHERE ptm_me.user_id = $1 AND u.id != $1 AND ptm_target.status = 'ACTIVE' AND ptm_me.status = 'ACTIVE'
-    `, [req.user.id]);
+      `, [req.user.id]);
 
     res.json(rows.map(r => ({ ...r, full_name: r.name })));
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -792,8 +1185,8 @@ app.get('/api/user/groups', async (req, res) => {
     if (!userId || userId.length < 30) return res.json([]);
 
     const { rows } = await pool.query(`
-        SELECT g.* 
-        FROM groups g
+        SELECT g.*
+      FROM groups g
         JOIN group_members gm ON g.id = gm.group_id
         WHERE gm.user_id = $1 AND gm.status = 'ACTIVE'
       `, [userId]);
@@ -811,8 +1204,8 @@ app.get('/api/user/power-teams', async (req, res) => {
     if (!userId || userId.length < 30) return res.json([]);
 
     const { rows } = await pool.query(`
-        SELECT pt.* 
-        FROM power_teams pt
+        SELECT pt.*
+      FROM power_teams pt
         JOIN power_team_members ptm ON pt.id = ptm.power_team_id
         WHERE ptm.user_id = $1 AND ptm.status = 'ACTIVE'
       `, [userId]);
@@ -828,7 +1221,7 @@ app.get('/api/groups', async (req, res) => {
   try {
     // Optimized Group List: JOIN instead of dependent subquery
     const { rows } = await pool.query(`
-        SELECT g.*, count(gm.id)::int as member_count 
+        SELECT g.*, count(gm.id):: int as member_count 
         FROM groups g 
         LEFT JOIN group_members gm ON g.id = gm.group_id
         GROUP BY g.id
@@ -872,9 +1265,9 @@ app.get('/api/groups/:id/referrals', async (req, res) => {
 app.get('/api/groups/:id/events', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-        SELECT e.*, 
-            (SELECT count(*)::int FROM attendance a WHERE a.event_id = e.id AND a.status = 'PRESENT') as attendees_count,
-            (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = e.group_id AND gm.status = 'ACTIVE') as total_members
+        SELECT e.*,
+      (SELECT count(*)::int FROM attendance a WHERE a.event_id = e.id AND a.status = 'PRESENT') as attendees_count,
+  (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = e.group_id AND gm.status = 'ACTIVE') as total_members
         FROM events e 
         WHERE e.group_id = $1 
         ORDER BY e.start_at DESC
@@ -895,20 +1288,78 @@ app.get('/api/events', async (req, res) => {
       query += ' AND start_at > NOW() - INTERVAL \'14 days\'';
     }
 
-    query += ' ORDER BY start_at ASC';
+    // Order by Pinned DESC first, then start_at ASC
+    query += ' ORDER BY pinned DESC NULLS LAST, start_at ASC';
 
     const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Create Event
+app.post('/api/events', authenticateToken, async (req, res) => {
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING * `,
+      [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'DRAFT', pinned || false]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update Event
+app.put('/api/events/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned } = req.body;
+
+  try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (title !== undefined) { fields.push(`title = $${idx++} `); values.push(title); }
+    if (description !== undefined) { fields.push(`description = $${idx++} `); values.push(description); }
+    if (location !== undefined) { fields.push(`location = $${idx++} `); values.push(location); }
+    if (start_at !== undefined) { fields.push(`start_at = $${idx++} `); values.push(start_at); }
+    if (end_at !== undefined) { fields.push(`end_at = $${idx++} `); values.push(end_at); }
+    if (is_public !== undefined) { fields.push(`is_public = $${idx++} `); values.push(is_public); }
+    if (type !== undefined) { fields.push(`type = $${idx++} `); values.push(type); }
+    if (group_id !== undefined) { fields.push(`group_id = $${idx++} `); values.push(group_id || null); }
+    if (has_equal_opportunity_badge !== undefined) { fields.push(`has_equal_opportunity_badge = $${idx++} `); values.push(has_equal_opportunity_badge); }
+    if (city !== undefined) { fields.push(`city = $${idx++} `); values.push(city); }
+    if (is_online !== undefined) { fields.push(`is_online = $${idx++} `); values.push(is_online); }
+    if (status !== undefined) { fields.push(`status = $${idx++} `); values.push(status); }
+    if (pinned !== undefined) { fields.push(`pinned = $${idx++} `); values.push(pinned); }
+
+    if (fields.length === 0) return res.json({ message: 'No changes' });
+
+    values.push(id);
+    const { rows } = await pool.query(
+      `UPDATE events SET ${fields.join(', ')} WHERE id = $${idx} RETURNING * `,
+      values
+    );
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete Event
+app.delete('/api/events/:id', authenticateToken, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/members', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-            SELECT u.*, g.name as group_name
+            SELECT u.*, g.name as group_name, p.status as profession_status, p.id as profession_id, p.category as profession_category
             FROM users u
             LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
             LEFT JOIN groups g ON gm.group_id = g.id
+            LEFT JOIN professions p ON u.profession = p.name
             ORDER BY u.created_at DESC
         `);
     res.json(rows.map(r => ({ ...r, full_name: r.name })));
@@ -1031,9 +1482,9 @@ app.post('/api/groups/:id/join', authenticateToken, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO group_members (group_id, user_id, status) VALUES ($1, $2, 'REQUESTED') 
-       ON CONFLICT (group_id, user_id) DO UPDATE SET status = 'REQUESTED' 
-       RETURNING *`,
+      `INSERT INTO group_members(group_id, user_id, status) VALUES($1, $2, 'REQUESTED') 
+       ON CONFLICT(group_id, user_id) DO UPDATE SET status = 'REQUESTED'
+RETURNING * `,
       [req.params.id, req.user.id]
     );
     res.json(rows[0]);
@@ -1047,7 +1498,7 @@ app.get('/api/user/group-requests', authenticateToken, async (req, res) => {
       SELECT g.id FROM groups g
       JOIN group_members gm ON g.id = gm.group_id
       WHERE gm.user_id = $1 AND gm.status = 'REQUESTED'
-    `, [req.user.id]);
+  `, [req.user.id]);
     res.json(rows.map(r => r.id));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1057,7 +1508,7 @@ app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) =
   const { status } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE group_members SET status = $1 WHERE group_id = $2 AND user_id = $3 RETURNING *`,
+      `UPDATE group_members SET status = $1 WHERE group_id = $2 AND user_id = $3 RETURNING * `,
       [status, req.params.id, req.params.userId]
     );
     res.json(rows[0]);
@@ -1079,9 +1530,9 @@ app.post('/api/power-teams/:id/join', authenticateToken, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO power_team_members (power_team_id, user_id, status) VALUES ($1, $2, 'REQUESTED') 
-       ON CONFLICT (power_team_id, user_id) DO UPDATE SET status = 'REQUESTED' 
-       RETURNING *`,
+      `INSERT INTO power_team_members(power_team_id, user_id, status) VALUES($1, $2, 'REQUESTED') 
+       ON CONFLICT(power_team_id, user_id) DO UPDATE SET status = 'REQUESTED'
+RETURNING * `,
       [req.params.id, req.user.id]
     );
     res.json(rows[0]);
@@ -1095,7 +1546,7 @@ app.get('/api/user/power-team-requests', authenticateToken, async (req, res) => 
       SELECT pt.id FROM power_teams pt
       JOIN power_team_members ptm ON pt.id = ptm.power_team_id
       WHERE ptm.user_id = $1 AND ptm.status = 'REQUESTED'
-    `, [req.user.id]);
+  `, [req.user.id]);
     res.json(rows.map(r => r.id));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1105,7 +1556,7 @@ app.put('/api/power-teams/:id/members/:userId', authenticateToken, async (req, r
   const { status } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE power_team_members SET status = $1 WHERE power_team_id = $2 AND user_id = $3 RETURNING *`,
+      `UPDATE power_team_members SET status = $1 WHERE power_team_id = $2 AND user_id = $3 RETURNING * `,
       [status, req.params.id, req.params.userId]
     );
     res.json(rows[0]);
@@ -1141,144 +1592,184 @@ app.get('/api/user/groups', authenticateToken, async (req, res) => {
       SELECT g.* FROM groups g
       JOIN group_members gm ON g.id = gm.group_id
       WHERE gm.user_id = $1 AND gm.status = 'ACTIVE'
-    `, [req.user.id]);
+  `, [req.user.id]);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
 
-// --- SHUFFLE & ROLE MANAGEMENT ---
 
-// Save Shuffle Distribution
-app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  // --- SHUFFLE & ROLE MANAGEMENT ---
 
-  const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
-  const client = await pool.connect();
+  // Save Shuffle Distribution
+  app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ADMIN') return res.sendStatus(403);
 
-  try {
-    await client.query('BEGIN');
+    const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
+    const client = await pool.connect();
 
-    // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
-    // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
-    // IMPORTANT: Exclude ADMIN from reset
-    await client.query(`
+    try {
+      await client.query('BEGIN');
+
+      // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
+      // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
+      // IMPORTANT: Exclude ADMIN from reset
+      await client.query(`
       UPDATE users 
       SET role = 'MEMBER' 
-      WHERE role IN ('PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'EDUCATION_COORDINATOR', 'VISITOR_HOST')
-    `);
+      WHERE role IN('PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'EDUCATION_COORDINATOR', 'VISITOR_HOST')
+  `);
 
-    // 2. Archive ALL existing active group memberships
-    // We assume shuffle applies to everyone effectively, or we could only target users in the assignment list.
-    // For a full shuffle, archiving all ACTIVE is safer to ensure no duplicates.
-    await client.query(`
+      // 2. Archive ALL existing active group memberships
+      // We assume shuffle applies to everyone effectively, or we could only target users in the assignment list.
+      // For a full shuffle, archiving all ACTIVE is safer to ensure no duplicates.
+      await client.query(`
       UPDATE group_members 
       SET status = 'INACTIVE' 
       WHERE status = 'ACTIVE'
-    `);
+  `);
 
-    // 3. Insert new group assignments
-    const insertQuery = `
-      INSERT INTO group_members (group_id, user_id, status, joined_at) 
-      VALUES ($1, $2, 'ACTIVE', NOW())
-    `;
+      // 3. Insert new group assignments
+      const insertQuery = `
+      INSERT INTO group_members(group_id, user_id, status, joined_at)
+VALUES($1, $2, 'ACTIVE', NOW())
+  `;
 
-    for (const [groupId, memberIds] of Object.entries(assignments)) {
-      if (!Array.isArray(memberIds)) continue;
-      for (const memberId of memberIds) {
-        await client.query(insertQuery, [groupId, memberId]);
+      for (const [groupId, memberIds] of Object.entries(assignments)) {
+        if (!Array.isArray(memberIds)) continue;
+        for (const memberId of memberIds) {
+          await client.query(insertQuery, [groupId, memberId]);
+        }
       }
+
+      await client.query('COMMIT');
+      res.json({ success: true, message: 'Shuffle applied successfully.' });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      console.error('Shuffle save error:', e);
+      res.status(500).json({ error: e.message });
+    } finally {
+      client.release();
     }
+  });
 
-    await client.query('COMMIT');
-    res.json({ success: true, message: 'Shuffle applied successfully.' });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('Shuffle save error:', e);
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
+  // Move Member to Group
+  app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+    const { userId, groupId } = req.body;
 
-// Move Member to Group
-app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { userId, groupId } = req.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Deactivate current active group
-    await client.query(`
+      // Deactivate current active group
+      await client.query(`
       UPDATE group_members 
       SET status = 'INACTIVE' 
       WHERE user_id = $1 AND status = 'ACTIVE'
-    `, [userId]);
+  `, [userId]);
 
-    // Insert new active group
-    await client.query(`
-      INSERT INTO group_members (group_id, user_id, status)
-      VALUES ($1, $2, 'ACTIVE')
-    `, [groupId, userId]);
+      // Insert new active group
+      await client.query(`
+      INSERT INTO group_members(group_id, user_id, status)
+VALUES($1, $2, 'ACTIVE')
+  `, [groupId, userId]);
 
-    await client.query('COMMIT');
-    res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      res.status(500).json({ error: e.message });
+    } finally {
+      client.release();
+    }
+  });
 
-// Helper: Send Notification (Mock + DB)
-const sendNotification = async (userId, title, message) => {
-  console.log(`[EMAIL-MOCK] To: ${userId} | Subject: ${title}`);
-  try {
-    await pool.query(
-      `INSERT INTO notifications (user_id, type, content, is_read) VALUES ($1, 'SYSTEM', $2, false)`,
-      [userId, `${title}: ${message}`]
-    );
-  } catch (err) {
-    console.error('Notification insert failed', err);
-  }
-};
+  // Helper: Send Notification (Mock + DB)
+  const sendNotification = async (userId, title, message) => {
+    console.log(`[EMAIL - MOCK] To: ${userId} | Subject: ${title} `);
+    try {
+      await pool.query(
+        `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
+        [userId, `${title}: ${message} `]
+      );
+    } catch (err) {
+      console.error('Notification insert failed', err);
+    }
+  };
 
-// Daily Cron: Subscription Reminders (Every day at 09:00)
-cron.schedule('0 9 * * *', async () => {
-  console.log('Running daily subscription check...');
-  try {
-    const { rows } = await pool.query(`
+  // Daily Cron: Subscription Reminders (Every day at 09:00)
+  cron.schedule('0 9 * * *', async () => {
+    console.log('Running daily subscription check...');
+    try {
+      const { rows } = await pool.query(`
             SELECT id, name, email, subscription_end_date, last_reminder_trigger 
             FROM users 
             WHERE account_status = 'ACTIVE' AND subscription_end_date IS NOT NULL
         `);
 
-    const now = new Date();
-    const triggers = [30, 15, 10, 5, 3, 1];
+      const now = new Date();
+      const triggers = [30, 15, 10, 5, 3, 1];
 
-    for (const user of rows) {
-      const end = new Date(user.subscription_end_date);
-      const diffTime = end - now;
-      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      for (const user of rows) {
+        const end = new Date(user.subscription_end_date);
+        const diffTime = end - now;
+        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (daysLeft <= 0) continue;
+        if (daysLeft <= 0) continue;
 
-      if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
-        await sendNotification(
-          user.id,
-          'Ödeme Hatırlatması',
-          `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Lütfen ödemenizi yapınız.`
-        );
-        await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
+        if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
+          await sendNotification(
+            user.id,
+            'Ödeme Hatırlatması',
+            `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı.Lütfen ödemenizi yapınız.`
+          );
+          await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
+        }
       }
+    } catch (e) {
+      console.error('Daily check error:', e);
     }
-  } catch (e) {
-    console.error('Daily check error:', e);
-  }
+  });
+
+});
+
+// Get Champions
+app.get('/api/champions', authenticateToken, async (req, res) => {
+  try {
+    // Return the latest entry for each (Period x Metric) tuple
+    const { rows } = await pool.query(`
+      SELECT DISTINCT ON (c.period_type, c.metric_type) 
+        c.*, u.name as user_name, u.profession, COALESCE(u.company, 'Şirket Belirtilmemiş') as company_name 
+      FROM champions c
+      JOIN users u ON c.user_id = u.id
+      ORDER BY c.period_type, c.metric_type, c.period_date DESC
+    `);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/trigger-champions', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  // Manual trigger for testing/demo
+  const today = new Date();
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+  await calculateChampions('WEEK', weekStart.toISOString(), today.toISOString());
+
+  // Last month
+  const start = new Date(); start.setMonth(start.getMonth() - 1); start.setDate(1);
+  const end = new Date(); end.setDate(0); // Last day of prev month
+  await calculateChampions('MONTH', start.toISOString(), end.toISOString());
+
+  // For manual now, just calculate current month as month
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  await calculateChampions('MONTH', currentMonthStart.toISOString(), today.toISOString());
+
+  // Year
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  await calculateChampions('YEAR', yearStart.toISOString(), today.toISOString());
+
+  res.json({ success: true });
 });
 
 // Assign Role
@@ -1294,7 +1785,7 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
     const values = [role, userId];
 
     if (groupTitle !== undefined) {
-      fields.push(`group_title = $${values.length + 1}`);
+      fields.push(`group_title = $${values.length + 1} `);
       values.splice(1, 0, groupTitle); // Insert before userId, so order matches fields
     }
 
@@ -1319,8 +1810,8 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   try {
     const { rows } = await pool.query(`
-      SELECT id, name, email, role, phone, profession, 
-             subscription_end_date, subscription_plan, account_status as status
+      SELECT id, name, email, role, phone, profession,
+  subscription_end_date, subscription_plan, account_status as status
       FROM users 
       ORDER BY subscription_end_date ASC NULLS LAST
     `);
@@ -1364,19 +1855,19 @@ app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
       const effectiveStart = (currentEnd > now) ? currentEnd : now;
       newEnd = new Date(effectiveStart);
       newEnd.setMonth(newEnd.getMonth() + months);
-      if (!newPlan) newPlan = `${months}_MONTHS`;
+      if (!newPlan) newPlan = `${months} _MONTHS`;
     } else {
       return res.status(400).json({ error: 'Invalid duration or missing endDate' });
     }
 
     await pool.query(`
       UPDATE users 
-      SET subscription_end_date = $1, 
-          subscription_plan = $2,
-          account_status = 'ACTIVE',
-          last_reminder_trigger = NULL
+      SET subscription_end_date = $1,
+  subscription_plan = $2,
+  account_status = 'ACTIVE',
+  last_reminder_trigger = NULL
       WHERE id = $3
-    `, [newEnd, newPlan, userId]);
+  `, [newEnd, newPlan, userId]);
 
     res.json({ success: true, new_end_date: newEnd, plan: newPlan });
   } catch (e) {
@@ -1443,10 +1934,10 @@ app.get('/api/admin/stats/charts', authenticateToken, async (req, res) => {
     const revenueTrend = await pool.query(`
             SELECT TO_CHAR(updated_at, 'Mon') as name, SUM(amount) as value 
             FROM referrals 
-            WHERE status='SUCCESSFUL' AND updated_at > NOW() - INTERVAL '6 months'
+            WHERE status = 'SUCCESSFUL' AND updated_at > NOW() - INTERVAL '6 months'
             GROUP BY TO_CHAR(updated_at, 'Mon'), DATE_TRUNC('month', updated_at) 
             ORDER BY DATE_TRUNC('month', updated_at)
-        `);
+  `);
 
     // Member Growth (Approximation based on created_at)
     const memberGrowth = await pool.query(`
@@ -1455,7 +1946,7 @@ app.get('/api/admin/stats/charts', authenticateToken, async (req, res) => {
             WHERE role != 'ADMIN' AND created_at > NOW() - INTERVAL '6 months'
             GROUP BY TO_CHAR(created_at, 'Mon'), DATE_TRUNC('month', created_at)
             ORDER BY DATE_TRUNC('month', created_at)
-        `);
+  `);
 
     // Visitor Trend
     const visitorTrend = await pool.query(`
@@ -1464,7 +1955,7 @@ app.get('/api/admin/stats/charts', authenticateToken, async (req, res) => {
             WHERE visited_at > NOW() - INTERVAL '6 months'
             GROUP BY TO_CHAR(visited_at, 'Mon'), DATE_TRUNC('month', visited_at)
             ORDER BY DATE_TRUNC('month', visited_at)
-        `);
+  `);
 
     res.json({
       revenue: revenueTrend.rows,
@@ -1479,22 +1970,22 @@ app.get('/api/admin/stats/groups', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   try {
     const query = `
-            SELECT 
-                g.id, g.name,
-                COUNT(DISTINCT gm.user_id) as member_count,
-                COALESCE(SUM(r.amount), 0) as revenue,
-                COUNT(DISTINCT v.id) as visitor_count,
-                COUNT(DISTINCT o.id) as one_to_one_count
+SELECT
+g.id, g.name,
+  COUNT(DISTINCT gm.user_id) as member_count,
+  COALESCE(SUM(r.amount), 0) as revenue,
+  COUNT(DISTINCT v.id) as visitor_count,
+  COUNT(DISTINCT o.id) as one_to_one_count
             FROM groups g
-            LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.status='ACTIVE'
-            LEFT JOIN referrals r ON r.giver_id = gm.user_id AND r.status='SUCCESSFUL'
+            LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'ACTIVE'
+            LEFT JOIN referrals r ON r.giver_id = gm.user_id AND r.status = 'SUCCESSFUL'
             LEFT JOIN visitors v ON v.group_id = g.id
             LEFT JOIN users u ON u.id = gm.user_id
-            LEFT JOIN one_to_ones o ON (o.requester_id = u.id OR o.partner_id = u.id)
+            LEFT JOIN one_to_ones o ON(o.requester_id = u.id OR o.partner_id = u.id)
             WHERE g.status = 'ACTIVE'
             GROUP BY g.id, g.name
             ORDER BY revenue DESC
-        `;
+  `;
     const { rows } = await pool.query(query);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1504,18 +1995,18 @@ app.get('/api/admin/stats/groups', authenticateToken, async (req, res) => {
 app.get('/api/groups/:id/substitutes', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-            SELECT 
-                a.id, 
-                a.created_at, 
-                a.substitute_name, 
-                e.start_at as meeting_date,
-                u.name as user_name
+SELECT
+a.id,
+  a.created_at,
+  a.substitute_name,
+  e.start_at as meeting_date,
+  u.name as user_name
             FROM attendance a
             JOIN events e ON a.event_id = e.id
             JOIN users u ON a.user_id = u.id
             WHERE e.group_id = $1 AND a.status = 'SUBSTITUTE'
             ORDER BY e.start_at DESC
-        `, [req.params.id]);
+  `, [req.params.id]);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1531,7 +2022,7 @@ app.get('/api/admin/stats/geo', authenticateToken, async (req, res) => {
             GROUP BY city 
             ORDER BY value DESC 
             LIMIT 10
-        `);
+  `);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1605,14 +2096,14 @@ app.post('/api/payment/get-token', authenticateToken, async (req, res) => {
 
   // Ensure table exists
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS payment_transactions (
-      merchant_oid VARCHAR(255) PRIMARY KEY,
-      user_id UUID REFERENCES users(id),
-      plan_id VARCHAR(50),
-      amount DECIMAL(10,2),
-      status VARCHAR(50) DEFAULT 'PENDING',
-      created_at TIMESTAMP DEFAULT NOW()
-    )
+    CREATE TABLE IF NOT EXISTS payment_transactions(
+    merchant_oid VARCHAR(255) PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    plan_id VARCHAR(50),
+    amount DECIMAL(10, 2),
+    status VARCHAR(50) DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT NOW()
+  )
   `);
 
   if (!merchant_id) {
@@ -1628,7 +2119,7 @@ app.post('/api/payment/get-token', authenticateToken, async (req, res) => {
   // SAVE TRANSACTION INTENT
   try {
     await pool.query(
-      `INSERT INTO payment_transactions (merchant_oid, user_id, plan_id, amount, status) VALUES ($1, $2, $3, $4, 'PENDING')`,
+      `INSERT INTO payment_transactions(merchant_oid, user_id, plan_id, amount, status) VALUES($1, $2, $3, $4, 'PENDING')`,
       [merchant_oid, req.user.id, plan || '12_MONTHS', amount]
     );
   } catch (e) {
@@ -1637,7 +2128,7 @@ app.post('/api/payment/get-token', authenticateToken, async (req, res) => {
   }
 
   // Create basket item name
-  const basketItemName = billing_info ? `Üyelik - ${billing_info.type === 'CORPORATE' ? billing_info.companyName : 'Bireysel'}` : 'Yıllık Üyelik';
+  const basketItemName = billing_info ? `Üyelik - ${billing_info.type === 'CORPORATE' ? billing_info.companyName : 'Bireysel'} ` : 'Yıllık Üyelik';
 
   const user_basket = Buffer.from(JSON.stringify([[basketItemName, amount.toString(), 1]])).toString('base64');
   const user_ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
@@ -1648,7 +2139,7 @@ app.post('/api/payment/get-token', authenticateToken, async (req, res) => {
   const merchant_fail_url = 'http://localhost:5173/payment/fail';
   const timeout_limit = 30;
 
-  const hashSTR = `${merchant_id}${user_ip}${merchant_oid}${req.user.email}${payment_amount}${user_basket}${installment}${installment}${currency}${test_mode}`;
+  const hashSTR = `${merchant_id}${user_ip}${merchant_oid}${req.user.email}${payment_amount}${user_basket}${installment}${installment}${currency}${test_mode} `;
   const paytr_token = hashSTR + merchant_salt;
   const token = crypto.createHmac('sha256', merchant_key).update(paytr_token).digest('base64');
 
@@ -1736,17 +2227,17 @@ app.post('/api/payment/callback', async (req, res) => {
     // 3. Update User
     await pool.query(`
         UPDATE users 
-        SET subscription_end_date = $1, 
-            subscription_plan = $2,
-            account_status = 'ACTIVE',
-            last_reminder_trigger = NULL
+        SET subscription_end_date = $1,
+  subscription_plan = $2,
+  account_status = 'ACTIVE',
+  last_reminder_trigger = NULL
         WHERE id = $3
-    `, [newEndDate, planId, userId]);
+  `, [newEndDate, planId, userId]);
 
     // 4. Update Transaction Status
     await pool.query('UPDATE payment_transactions SET status = $1 WHERE merchant_oid = $2', ['SUCCESS', callback.merchant_oid]);
 
-    console.log(`Updated user ${userId} subscription to ${newEndDate}`);
+    console.log(`Updated user ${userId} subscription to ${newEndDate} `);
 
   } else {
     console.log('Payment Failed for OID:', callback.merchant_oid);
@@ -1760,22 +2251,22 @@ app.post('/api/payment/callback', async (req, res) => {
 
 // Update Schema for Tickets
 pool.query(`
-    CREATE TABLE IF NOT EXISTS tickets (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID REFERENCES users(id),
-        subject VARCHAR(255) NOT NULL,
-        status VARCHAR(50) DEFAULT 'OPEN', -- OPEN, ANSWERED, CLOSED
+    CREATE TABLE IF NOT EXISTS tickets(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    subject VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'OPEN', --OPEN, ANSWERED, CLOSED
         created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-    );
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
 
-    CREATE TABLE IF NOT EXISTS ticket_messages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        ticket_id UUID REFERENCES tickets(id),
-        sender_id UUID REFERENCES users(id),
-        message TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-    );
+    CREATE TABLE IF NOT EXISTS ticket_messages(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id UUID REFERENCES tickets(id),
+    sender_id UUID REFERENCES users(id),
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
 `).catch(err => console.error('Ticket tables creation error:', err));
 
 
@@ -1786,11 +2277,11 @@ app.get('/api/tickets', authenticateToken, async (req, res) => {
   try {
     let query = `
         SELECT t.*, u.name as user_name, u.email as user_email,
-               (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message
+  (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY created_at DESC LIMIT 1) as last_message
         FROM tickets t
         JOIN users u ON t.user_id = u.id
-        WHERE 1=1
-    `;
+        WHERE 1 = 1
+  `;
     const params = [];
 
     if (req.user.role !== 'ADMIN') {
@@ -1814,14 +2305,14 @@ app.post('/api/tickets', authenticateToken, async (req, res) => {
 
     // Create Ticket
     const ticketRes = await client.query(
-      `INSERT INTO tickets (user_id, subject, status) VALUES ($1, $2, 'OPEN') RETURNING *`,
+      `INSERT INTO tickets(user_id, subject, status) VALUES($1, $2, 'OPEN') RETURNING * `,
       [req.user.id, subject]
     );
     const ticketId = ticketRes.rows[0].id;
 
     // Create First Message
     await client.query(
-      `INSERT INTO ticket_messages (ticket_id, sender_id, message) VALUES ($1, $2, $3)`,
+      `INSERT INTO ticket_messages(ticket_id, sender_id, message) VALUES($1, $2, $3)`,
       [ticketId, req.user.id, message]
     );
 
@@ -1888,7 +2379,7 @@ app.post('/api/tickets/:id/messages', authenticateToken, async (req, res) => {
       await client.query('BEGIN');
 
       await client.query(
-        `INSERT INTO ticket_messages (ticket_id, sender_id, message) VALUES ($1, $2, $3)`,
+        `INSERT INTO ticket_messages(ticket_id, sender_id, message) VALUES($1, $2, $3)`,
         [id, req.user.id, message]
       );
 
@@ -1921,4 +2412,10 @@ app.put('/api/tickets/:id/status', authenticateToken, async (req, res) => {
 });
 
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT} `);
+});

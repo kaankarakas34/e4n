@@ -48,6 +48,8 @@ import { MeetingRequests } from './pages/MeetingRequests';
 import { PaymentLanding } from './pages/PaymentLanding';
 import { SupportTickets } from './pages/SupportTickets';
 import { AdminSupportTickets } from './pages/AdminSupportTickets';
+import { AdminProfessions } from './pages/AdminProfessions';
+import { CreatePassword } from './pages/CreatePassword';
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -110,6 +112,7 @@ function App() {
                 path="/auth/forgot-password"
                 element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" replace />}
               />
+              <Route path="/create-password" element={<CreatePassword />} />
               <Route path="/public-events" element={<PublicEventsPage />} />
               <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/payment" element={<PaymentLanding />} />
@@ -156,6 +159,7 @@ function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/support" element={<SupportTickets />} />
               <Route path="/admin/support" element={<AdminSupportTickets />} />
+              <Route path="/admin/professions" element={<AdminProfessions />} />
             </Route>
 
             {/* Catch all */}

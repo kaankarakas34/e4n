@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "migrate": "node migrate_supabase.js"
   },
   "dependencies": {
     "@types/express": "^5.0.6",
@@ -18,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.2.1",
     "node-postgres": "^0.6.2",
+    "nodemailer": "^7.0.12",
     "pg": "^8.12.0"
   },
   "devDependencies": {

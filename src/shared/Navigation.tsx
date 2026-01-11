@@ -46,12 +46,9 @@ export function Navigation() {
 
   const baseMemberNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Destek', href: '/support', icon: MessageSquare },
   ];
 
   const commonNavigation = [
-    { name: 'Yönlendirmeler', href: '/referrals', icon: TrendingUp },
-    { name: 'Etkinlikler', href: '/events', icon: Ticket },
     { name: 'Aktiviteler', href: '/activities', icon: Zap },
     { name: 'LMS', href: '/lms', icon: BookOpen },
   ];
@@ -240,34 +237,32 @@ export function Navigation() {
                   <CreditCard className={`mr-3 h-5 w-5 ${isActive('/membership') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
                   Üyelik & Ödemeler
                 </Link>
-                <Link
-                  to="/support"
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/support') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <MessageSquare className={`mr-3 h-5 w-5 ${isActive('/support') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  Destek
-                </Link>
-                <Link
-                  to="/admin/reports"
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/reports') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <BarChart2 className={`mr-3 h-5 w-5 ${isActive('/admin/reports') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  Raporlar
-                </Link>
-                <Link
-                  to="/admin/support"
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/support') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <MessageSquare className={`mr-3 h-5 w-5 ${isActive('/admin/support') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  Destek Talepleri
-                </Link>
-                <Link
-                  to="/admin/email-settings"
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/email-settings') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <Settings className={`mr-3 h-5 w-5 ${isActive('/admin/email-settings') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  E-posta Ayarları
-                </Link>
+                {/* Support removed from mobile menu */}
+                {user?.role === 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/admin/reports"
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/reports') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                      <BarChart2 className={`mr-3 h-5 w-5 ${isActive('/admin/reports') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                      Raporlar
+                    </Link>
+                    <Link
+                      to="/admin/support"
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/support') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                      <MessageSquare className={`mr-3 h-5 w-5 ${isActive('/admin/support') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                      Destek Talepleri
+                    </Link>
+                    <Link
+                      to="/admin/email-settings"
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/admin/email-settings') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                      <Settings className={`mr-3 h-5 w-5 ${isActive('/admin/email-settings') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                      E-posta Ayarları
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

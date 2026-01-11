@@ -4,7 +4,7 @@ import { useEventStore } from '../stores/eventStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
-import { Calendar, MapPin, Users, Info, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, Users, Info, CheckCircle, Pin } from 'lucide-react';
 import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -94,7 +94,10 @@ export function UserEvents() {
                                             </div>
                                         )}
                                     </div>
-                                    <CardTitle className="text-xl line-clamp-2 min-h-[56px]">{event.title}</CardTitle>
+                                    <CardTitle className="text-xl line-clamp-2 min-h-[56px] flex items-start">
+                                        {event.pinned && <Pin className="h-5 w-5 mr-2 text-red-600 rotate-45 shrink-0 mt-1" fill="currentColor" />}
+                                        {event.title}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">

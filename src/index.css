@@ -12,3 +12,10 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Hide IDE/DevTool Overlays */
+#preact-border-shadow-host,
+#trae-inspector-badge,
+.trae-overlay {
+  display: none !important;
+}

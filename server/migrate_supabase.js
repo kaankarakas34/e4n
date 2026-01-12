@@ -22,9 +22,9 @@ if (!connectionString) {
 
 const pool = new pg.Pool({
     connectionString,
-    ssl: {
-        rejectUnauthorized: false // Supabase bağlantıları için genellikle gereklidir
-    }
+    // ssl: {
+    //     rejectUnauthorized: false // Supabase bağlantıları için genellikle gereklidir
+    // }
 });
 
 async function migrate() {

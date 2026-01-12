@@ -17,7 +17,7 @@ app.use(express.json());
 // Load mail config
 const getConfig = () => {
     try {
-        const configPath = path.join(__dirname, '../email-config.json');
+        const configPath = path.join(__dirname, 'email-config.json');
         const raw = fs.readFileSync(configPath, 'utf-8');
         return JSON.parse(raw);
     } catch (e) {

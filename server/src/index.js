@@ -813,7 +813,7 @@ app.get('/api/users/:id', async (req, res) => {
 
   try {
     const { rows } = await pool.query(`
-      SELECT u.id, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
+      SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
              g.name as company -- using group name as company placeholder or join real company table if exists
       FROM users u
       LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
@@ -1363,6 +1363,35 @@ app.get('/api/admin/members', async (req, res) => {
             ORDER BY u.created_at DESC
         `);
     res.json(rows.map(r => ({ ...r, full_name: r.name })));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Public Visitors API
+app.post('/api/visitors/apply', async (req, res) => {
+  const { name, email, phone, company, profession, source, kvkk_accepted } = req.body;
+  try {
+    const { rows } = await pool.query(
+      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
+  try {
+    const { rows } = await pool.query('SELECT * FROM public_visitors ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
+  const { status } = req.body;
+  try {
+    await pool.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, req.params.id]);
+    res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

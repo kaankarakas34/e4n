@@ -28,11 +28,11 @@ BEGIN
     -- 2. Create member@demo.com (Main User)
     -- Profession: 'Ağ Lideri'
     INSERT INTO users (email, name, profession, city, phone, password_hash, role)
-    VALUES ('member@demo.com', 'Ana Üye', 'Ağ Lideri', 'İstanbul', '5559998877', p_hash, 'PRESIDENT')
+    VALUES ('member@demo.com', 'Ana Üye', 'Grup Başkanı', 'İstanbul', '5559998877', p_hash, 'PRESIDENT')
     ON CONFLICT (email) DO UPDATE SET 
         role = 'PRESIDENT', 
         password_hash = p_hash,
-        profession = 'Ağ Lideri'
+        profession = 'Grup Başkanı'
     RETURNING id INTO main_user_id;
 
     -- Add main user to group

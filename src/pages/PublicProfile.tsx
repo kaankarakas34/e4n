@@ -98,7 +98,8 @@ export function PublicProfile() {
 
     const isFriend = friendshipStatus === 'FRIEND';
     const isSelf = friendshipStatus === 'SELF';
-    const canSeeContactInfo = isFriend || isSelf;
+    const isAdmin = currentUser?.role === 'ADMIN';
+    const canSeeContactInfo = isFriend || isSelf || isAdmin;
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -127,7 +128,7 @@ export function PublicProfile() {
                                 <div className="relative inline-block">
                                     <div className="h-32 w-32 rounded-full border-4 border-white shadow-lg bg-gray-200 mx-auto flex items-center justify-center overflow-hidden">
                                         {profileUser.profile_image ? (
-                                            <img src={profileUser.profile_image} alt={profileUser.full_name} className="h-full w-full object-cover" />
+                                            <img src={profileUser.profile_image} alt={profileUser.name} className="h-full w-full object-cover" />
                                         ) : (
                                             <User className="h-16 w-16 text-gray-400" />
                                         )}
@@ -135,7 +136,7 @@ export function PublicProfile() {
                                     <div className="absolute bottom-1 right-1 h-6 w-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
                                 </div>
 
-                                <h1 className="text-xl font-bold text-gray-900 mt-4">{profileUser.full_name}</h1>
+                                <h1 className="text-xl font-bold text-gray-900 mt-4">{profileUser.name}</h1>
                                 <p className="text-indigo-600 font-medium">{profileUser.profession}</p>
                                 <p className="text-xs text-gray-500 mt-1">{profileUser.company || 'Şirket Belirtilmemiş'}</p>
 
@@ -148,7 +149,7 @@ export function PublicProfile() {
                                         </Button>
                                     )}
                                     {/* 1-on-1 Meeting Button */}
-                                    {!isSelf && (
+                                    {(!isSelf) && (
                                         <Button onClick={() => setShowMeetingModal(true)} variant="outline" className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50">
                                             <Calendar className="h-4 w-4 mr-2" />
                                             1-e-1 Toplantı Planla
@@ -226,7 +227,7 @@ export function PublicProfile() {
                                 <div>
                                     <h4 className="text-sm font-bold text-gray-900">Ortak Geçmiş Tespit Edildi!</h4>
                                     <p className="text-sm text-gray-600">
-                                        Siz ve {profileUser.first_name || 'bu kullanıcı'} <strong>{commonGroups.join(', ')}</strong> grubunda birlikte bulundunuz. Bağlantı kurmak için harika bir neden!
+                                        Siz ve {profileUser.name?.split(' ')[0] || 'bu kullanıcı'} <strong>{commonGroups.join(', ')}</strong> grubunda birlikte bulundunuz. Bağlantı kurmak için harika bir neden!
                                     </p>
                                 </div>
                             </div>
@@ -289,45 +290,39 @@ export function PublicProfile() {
                                                 Şirket Bilgileri
                                             </h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                <div className="space-y-4 col-span-1">
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-500">Şirket Adı</h4>
-                                                        <p className="text-gray-900 font-medium">{profileUser.company || 'Belirtilmemiş'}</p>
+                                                <div className="space-y-4 col-span-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        <div>
+                                                            <h4 className="text-sm font-medium text-gray-500">Şirket Adı</h4>
+                                                            <p className="text-gray-900 font-medium">{profileUser.company || 'Belirtilmemiş'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-sm font-medium text-gray-500">Sektör</h4>
+                                                            <p className="text-gray-900">{profileUser.profession}</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-sm font-medium text-gray-500">Konum</h4>
+                                                            <p className="text-gray-900">İstanbul, Türkiye</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-sm font-medium text-gray-500">Kuruluş Yılı</h4>
+                                                            <p className="text-gray-900">2018</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-500">Sektör</h4>
-                                                        <p className="text-gray-900">{profileUser.profession}</p>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-500">Konum</h4>
-                                                        <p className="text-gray-900">İstanbul, Türkiye</p>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-gray-500">Kuruluş Yılı</h4>
-                                                        <p className="text-gray-900">2018</p>
-                                                    </div>
-                                                    {isSelf && (
+                                                    {(isSelf || isAdmin) && (
                                                         <>
-                                                            <div className="pt-2 border-t border-gray-100 mt-2">
-                                                                <h4 className="text-sm font-medium text-gray-500">Vergi No</h4>
-                                                                <p className="text-gray-900 font-mono text-sm">{profileUser.tax_id || '---'}</p>
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-medium text-gray-500">Fatura Adresi</h4>
-                                                                <p className="text-gray-900 text-sm">{profileUser.billing_address || '---'}</p>
+                                                            <div className="pt-2 border-t border-gray-100 mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <h4 className="text-sm font-medium text-gray-500">Vergi No</h4>
+                                                                    <p className="text-gray-900 font-mono text-sm">{profileUser.tax_id || '---'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-sm font-medium text-gray-500">Fatura Adresi</h4>
+                                                                    <p className="text-gray-900 text-sm">{profileUser.billing_address || '---'}</p>
+                                                                </div>
                                                             </div>
                                                         </>
                                                     )}
-                                                </div>
-                                                <div className="col-span-2 bg-gray-100 rounded-xl h-48 relative overflow-hidden flex items-center justify-center">
-                                                    {/* Mock Map */}
-                                                    <div className="absolute inset-0 bg-gray-200">
-                                                        <div className="w-full h-full opacity-50 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Istanbul,TR&zoom=10&size=600x300&key=YOUR_API_KEY_HERE')] bg-cover bg-center"></div>
-                                                    </div>
-                                                    <div className="relative z-10 bg-white px-4 py-2 rounded-lg shadow-md flex items-center">
-                                                        <MapPin className="h-4 w-4 text-red-500 mr-2" />
-                                                        <span className="text-sm font-medium text-gray-900">{profileUser.company || 'Ofis Konumu'}</span>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -433,7 +428,7 @@ export function PublicProfile() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
-                                        <input type="text" className="w-full border rounded-md p-2" defaultValue={profileUser.full_name} />
+                                        <input type="text" className="w-full border rounded-md p-2" defaultValue={profileUser.name} />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Meslek / Unvan</label>

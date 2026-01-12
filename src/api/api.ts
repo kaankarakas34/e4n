@@ -946,27 +946,20 @@ export const api = {
   ] as any[],
 
   async submitPublicVisitorApplication(payload: any) {
-    // If we had a real backend, we would POST to /visitors/apply
-    // For now we mock it
-    const newVisitor = {
-      id: Math.random().toString(36).substr(2, 9),
-      created_at: new Date().toISOString(),
-      status: 'PENDING',
-      ...payload
-    };
-    this._mockPublicVisitors.unshift(newVisitor);
+    // 1. Save to Real DB
+    const res = await request('/visitors/apply', { method: 'POST', body: JSON.stringify(payload) });
 
-    // Trigger Email Service
+    // 2. Trigger Email Service
     try {
       // 1. Send confirmation to Visitor
+      // Parse name if needed or use payload.name
       await emailService.sendEmail('VISITOR_WELCOME', payload.email, {
-        name: `${payload.firstName} ${payload.lastName}`
+        name: payload.name
       });
 
-      // 2. Send notification to Admin/Group President (Mocking the recipient for now)
-      // In a real scenario, we might look up the president of a specific group if selected, or just general admin
+      // 2. Send notification to Admin
       await emailService.sendEmail('VISITOR_ADMIN_ALERT', 'baskan@demo.com', {
-        name: `${payload.firstName} ${payload.lastName}`,
+        name: payload.name,
         company: payload.company || 'Belirtilmedi',
         profession: payload.profession || 'Belirtilmedi',
         email: payload.email,
@@ -976,26 +969,15 @@ export const api = {
       console.error('Email service trigger failed:', e);
     }
 
-    return { success: true, data: newVisitor };
+    return { success: true, data: res };
   },
 
   async getPublicVisitors() {
-    // Admin only
-    try {
-      // Try to fetch from backend if exists
-      return await request('/admin/public-visitors');
-    } catch {
-      return this._mockPublicVisitors;
-    }
+    return await request('/admin/public-visitors');
   },
 
   async updatePublicVisitorStatus(id: string, status: string) {
-    const visitor = this._mockPublicVisitors.find(v => v.id === id);
-    if (visitor) {
-      visitor.status = status;
-      return { success: true };
-    }
-    return { success: false };
+    return await request(`/admin/public-visitors/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
   },
 
   async getFriendRequests(userId: string) { // Incoming

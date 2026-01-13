@@ -545,9 +545,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     // No password initially
     const { rows } = await pool.query(
-      `INSERT INTO users (email, name, profession, city, phone, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status) 
+      `INSERT INTO users (email, name, profession, phone, company, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), 'PENDING') RETURNING id, email, name, role`,
-      [email, name, profession, city, phone, kvkkConsent || false, marketingConsent || false, explicitConsent || false]
+      [email, name, profession, phone, req.body.company || '', kvkkConsent || false, marketingConsent || false, explicitConsent || false]
     );
     res.status(201).json(rows[0]);
   } catch (e) {
@@ -581,30 +581,95 @@ app.post('/api/auth/create-password', async (req, res) => {
 });
 
 // Update User (Admin) - Triggers Welcome Email if activating
-app.put('/api/users/:id', authenticateToken, async (req, res) => {
-  // Only Admin or Self? Usually Admin checks
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-
-  const { id } = req.params;
-  const { status, role } = req.body; // Add other fields as needed
+// Update Own Profile (User)
+app.put('/api/users/me', authenticateToken, async (req, res) => {
+  const id = req.user.id;
+  const { name, phone, city, profession, company, tax_number, tax_office, billing_address } = req.body;
 
   try {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
-      // Get current user data
+      // Check current data
       const currentRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
       if (currentRes.rows.length === 0) throw new Error('User not found');
       const currentUser = currentRes.rows[0];
 
-      // Build update query
-      // Assuming simplified update for now: status and role
-      if (status) {
-        await client.query('UPDATE users SET account_status = $1 WHERE id = $2', [status, id]);
+      const updates = [];
+      const values = [];
+      let idx = 1;
+
+      // Allow always updating personal info
+      if (name) { updates.push(`name = $${idx++}`); values.push(name); }
+      if (phone) { updates.push(`phone = $${idx++}`); values.push(phone); }
+      if (city) { updates.push(`city = $${idx++}`); values.push(city); }
+      if (profession) { updates.push(`profession = $${idx++}`); values.push(profession); }
+
+      // Company Info Restricted: Can only set if currently empty
+      const isCompanyInfoEmpty = !currentUser.company && !currentUser.tax_number;
+
+      if (isCompanyInfoEmpty) {
+        if (company) { updates.push(`company = $${idx++}`); values.push(company); }
+        if (tax_number) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
+        if (tax_office) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
+        if (billing_address) { updates.push(`billing_address = $${idx++}`); values.push(billing_address); }
+      } else {
+        // If trying to change restricted fields, ignore them or throw error?
+        // User request: "sadece admin değiştirebilir". We will just ignore them if passed.
       }
-      if (role) {
-        await client.query('UPDATE users SET role = $1 WHERE id = $2', [role, id]);
+
+      if (updates.length > 0) {
+        await client.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, [...values, id]);
+      }
+
+      await client.query('COMMIT');
+      const finalRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+      res.json(finalRes.rows[0]);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update User (Admin)
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+
+  const { id } = req.params;
+  const { status, role, name, phone, city, profession, company, tax_number, tax_office, billing_address } = req.body;
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const currentRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+      if (currentRes.rows.length === 0) throw new Error('User not found');
+      const currentUser = currentRes.rows[0];
+
+      const updates = [];
+      const values = [];
+      let idx = 1;
+
+      if (status) { updates.push(`account_status = $${idx++}`); values.push(status); }
+      if (role) { updates.push(`role = $${idx++}`); values.push(role); }
+      if (name) { updates.push(`name = $${idx++}`); values.push(name); }
+      if (phone) { updates.push(`phone = $${idx++}`); values.push(phone); }
+      if (city) { updates.push(`city = $${idx++}`); values.push(city); }
+      if (profession) { updates.push(`profession = $${idx++}`); values.push(profession); }
+      if (company !== undefined) { updates.push(`company = $${idx++}`); values.push(company); }
+      if (tax_number !== undefined) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
+      if (tax_office !== undefined) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
+      if (billing_address !== undefined) { updates.push(`billing_address = $${idx++}`); values.push(billing_address); }
+
+      if (updates.length > 0) {
+        await client.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, [...values, id]);
       }
 
       // Check if activating and sending welcome email
@@ -621,19 +686,25 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
         // Send Email
         const resetLink = `${req.headers.origin || 'http://localhost:5173'}/create-password?token=${token}`;
 
-        await transporter.sendMail({
-          from: '"Event4Network" <noreply@event4network.com>',
-          to: currentUser.email,
-          subject: 'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
-          html: `
+        try {
+          await transporter.sendMail({
+            from: '"Event4Network" <noreply@event4network.com>',
+            to: currentUser.email,
+            subject: 'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
+            html: `
                         <h2>Aramıza Hoş Geldiniz!</h2>
                         <p>Sayın ${currentUser.name},</p>
                         <p>Event4Network üyeliğiniz onaylanmıştır.</p>
-                        <p>Aşağıdaki bağlantıya tıklayarak şifrenizi oluşturabilir ve sisteme giriş yapabilirsiniz:</p>
-                        <a href="${resetLink}" style="padding: 10px 20px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
+                        <p>Hesabınıza erişmek ve şifrenizi oluşturmak için lütfen aşağıdaki bağlantıya tıklayın:</p>
+                        <a href="${resetLink}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
                         <p>Bu bağlantı 24 saat geçerlidir.</p>
+                        <br>
+                        <p>Saygılarımızla,<br>Event4Network Ekibi</p>
                     `
-        });
+          });
+        } catch (emailError) {
+          console.error("Welcome email failed to send, but user activated:", emailError);
+        }
         console.log(`Welcome email sent to ${currentUser.email}`);
       }
 
@@ -1355,7 +1426,7 @@ app.delete('/api/events/:id', authenticateToken, async (req, res) => {
 app.get('/api/admin/members', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-            SELECT u.*, g.name as group_name, p.status as profession_status, p.id as profession_id, p.category as profession_category
+            SELECT u.*, u.account_status as status, g.name as group_name, p.status as profession_status, p.id as profession_id, p.category as profession_category
             FROM users u
             LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
             LEFT JOIN groups g ON gm.group_id = g.id

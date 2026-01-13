@@ -6,14 +6,14 @@ import { useMembershipStore } from '../stores/membershipStore';
 import { api } from '../api/api';
 import type { User, MembershipPlan } from '../types';
 import { Badge } from '../shared/Badge';
-import { Calendar, Award } from 'lucide-react';
+import { Calendar, Award, Pencil, Building } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { mailService, MAIL_TEMPLATES } from '../services/mailService';
 
 export function MemberProfile() {
   const { id } = useParams();
   const { items, fetchAll, renew, expire, create } = useMembershipStore();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,23 +24,29 @@ export function MemberProfile() {
   // Mock manager role for now, in real app check currentUser permissions
   const isManager = true;
 
+  // Edit State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true); setError(null);
-      try {
-        if (id) {
-          const u = await api.getUserById(id);
-          setUser(u);
-        }
-        await fetchAll();
-      } catch (e) {
-        setError('Üye bilgileri yüklenemedi');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    loadUser();
   }, [id, fetchAll]);
+
+  const loadUser = async () => {
+    setLoading(true); setError(null);
+    try {
+      if (id) {
+        const u = await api.getUserById(id);
+        setUser(u);
+        setEditForm(u);
+      }
+      await fetchAll();
+    } catch (e) {
+      setError('Üye bilgileri yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const membership = items.find(m => m.user_id === id);
 
@@ -68,6 +74,19 @@ export function MemberProfile() {
     }
   };
 
+  const handleSave = async () => {
+    if (!id) return;
+    try {
+      const updated = await api.updateUser(id, editForm);
+      setUser(updated);
+      setShowEditModal(false);
+      alert('Profil güncellendi.');
+    } catch (e) {
+      console.error(e);
+      alert('Güncelleme sırasında bir hata oluştu.');
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
   }
@@ -82,19 +101,95 @@ export function MemberProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Profili Düzenle (Admin)</h2>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
+                  <input type="text" className="w-full border rounded-md p-2" value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                  <input type="email" className="w-full border rounded-md p-2" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                  <input type="text" className="w-full border rounded-md p-2" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Meslek</label>
+                  <input type="text" className="w-full border rounded-md p-2" value={editForm.profession || ''} onChange={e => setEditForm({ ...editForm, profession: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 className="text-md font-bold text-gray-900 mb-4 flex items-center">
+                  <Building className="h-4 w-4 mr-2" /> Şirket & Fatura Bilgileri
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Şirket Adı</label>
+                    <input type="text" className="w-full border rounded-md p-2" value={editForm.company || ''} onChange={e => setEditForm({ ...editForm, company: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vergi No</label>
+                    <input type="text" className="w-full border rounded-md p-2" value={editForm.tax_number || ''} onChange={e => setEditForm({ ...editForm, tax_number: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vergi Dairesi</label>
+                    <input type="text" className="w-full border rounded-md p-2" value={editForm.tax_office || ''} onChange={e => setEditForm({ ...editForm, tax_office: e.target.value })} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fatura Adresi</label>
+                    <textarea className="w-full border rounded-md p-2" rows={3} value={editForm.billing_address || ''} onChange={e => setEditForm({ ...editForm, billing_address: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
+              <Button className="bg-indigo-600 text-white" onClick={handleSave}>Değişiklikleri Kaydet</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button variant="ghost" onClick={() => window.history.back()} className="mb-4">
-          <Calendar className="h-4 w-4 mr-2" /> Geri Dön
-        </Button>
+        <div className="flex justify-between items-center mb-4">
+          <Button variant="ghost" onClick={() => window.history.back()}>
+            <Calendar className="h-4 w-4 mr-2" /> Geri Dön
+          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowEditModal(true)} className="bg-indigo-600 text-white">
+              <Pencil className="h-4 w-4 mr-2" /> Profili Düzenle
+            </Button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader><CardTitle>{user.name}</CardTitle></CardHeader>
             <CardContent>
               <div className="mb-6 space-y-2">
                 <p className="text-gray-700"><strong>Meslek:</strong> {user.profession}</p>
-                {/* Fallback group name since user object might not have it populated fully in mock */}
                 <p className="text-gray-700"><strong>Grup:</strong> {'Liderler Global'}</p>
-                <p className="text-gray-700"><strong>Şirket:</strong> {'Belirtilmemiş'}</p>
+                <p className="text-gray-700"><strong>Şirket:</strong> {user.company || 'Belirtilmemiş'}</p>
+
+                <div className="pt-2 border-t mt-2">
+                  <h4 className="font-semibold text-gray-900 mb-2">Fatura Bilgileri</h4>
+                  <p className="text-gray-700 text-sm"><strong>Vergi No:</strong> {user.tax_number || '-'}</p>
+                  <p className="text-gray-700 text-sm"><strong>Vergi Dairesi:</strong> {user.tax_office || '-'}</p>
+                  <p className="text-gray-700 text-sm"><strong>Adres:</strong> {user.billing_address || '-'}</p>
+                </div>
 
                 {(isFriend || isMe || isAdmin) ? (
                   <div className="pt-2 border-t mt-2">
@@ -233,4 +328,3 @@ export function MemberProfile() {
     </div >
   );
 }
-

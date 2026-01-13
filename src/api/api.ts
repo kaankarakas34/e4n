@@ -1,5 +1,5 @@
 import { emailService } from '../services/emailService';
-const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4001/api';
+const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';
 import { mockMembers, mockGroups, mockPowerTeams } from './mockData';
 
 async function request(path: string, options?: RequestInit) {
@@ -105,6 +105,34 @@ export const api = {
     const headers: any = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     return await request('/users/me', { headers });
+  },
+
+  async updateMe(data: any) {
+    const authStorage = localStorage.getItem('auth-storage');
+    let token = null;
+    if (authStorage) {
+      try {
+        const parsed = JSON.parse(authStorage);
+        token = parsed?.state?.token;
+      } catch (e) { }
+    }
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return await request('/users/me', { method: 'PUT', headers, body: JSON.stringify(data) });
+  },
+
+  async updateUser(id: string, data: any) {
+    const authStorage = localStorage.getItem('auth-storage');
+    let token = null;
+    if (authStorage) {
+      try {
+        const parsed = JSON.parse(authStorage);
+        token = parsed?.state?.token;
+      } catch (e) { }
+    }
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return await request(`/users/${id}`, { method: 'PUT', headers, body: JSON.stringify(data) });
   },
 
   // Referrals

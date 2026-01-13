@@ -104,16 +104,6 @@ export function Register() {
                 <div className="space-y-2">
                   <h3 className="font-medium text-gray-900 border-b pb-1">Şirket Bilgileri</h3>
                   <Input required data-name="company" placeholder="Şirket İsmi" value={formData.company} onChange={handleChange} />
-                  <Input data-name="taxOffice" placeholder="Vergi Dairesi" value={formData.taxOffice} onChange={handleChange} />
-                  <Input data-name="taxNumber" placeholder="Vergi Numarası" value={formData.taxNumber} onChange={handleChange} />
-                  <textarea
-                    className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Fatura Adresi"
-                    rows={4}
-                    data-name="billingAddress"
-                    value={formData.billingAddress}
-                    onChange={handleChange}
-                  />
                 </div>
               </div>
 

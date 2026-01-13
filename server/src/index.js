@@ -22,22 +22,18 @@ const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
 // Connection Configuration for Supabase
 // Check all common Vercel/Supabase integration variable names
-// CRITICAL FIX: Robust Connection Strategy for Vercel <-> Supabase
-// 1. Use generic project host (auto-resolves to correct region pooler)
-// 2. Port 6543 (Transaction Mode) is mandatory for Serverless
-// 3. ?pgbouncer=true disables prepared statements (incompatible with transaction poolers)
-// 4. User: postgres.[project-ref] ensures correct tenant routing
-const supabasePoolerURL = 'postgres://postgres.kaoagsuxccwgrdydxros:vy%2F22xUZF3%2Fn8S8@kaoagsuxccwgrdydxros.supabase.co:6543/postgres?pgbouncer=true';
-
+// CRITICAL FIX: FORCE HARDCODED CONFIG
+// We establish connection using specific object to bypass potentially broken Vercel Env Vars
 const poolConfig = {
-  connectionString: process.env.POSTGRES_URL ||
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_PRISMA_URL ||
-    supabasePoolerURL,
-  ssl: { rejectUnauthorized: false },
-  connectionTimeoutMillis: 10000, // Wait 10s for connection
-  idleTimeoutMillis: 3000,        // Close idle connections fast (3s) to free up pooler slots
-  max: 1                          // Strict limit for serverless functions
+  host: 'kaoagsuxccwgrdydxros.supabase.co',
+  port: 6543, // Transaction Pooler
+  user: 'postgres.kaoagsuxccwgrdydxros', // Pooler User Format
+  password: 'vy/22xUZF3/n8S8', // Plain password (pg handles encoding)
+  database: 'postgres',
+  max: 1,
+  idleTimeoutMillis: 3000,
+  connectionTimeoutMillis: 10000,
+  ssl: { rejectUnauthorized: false } // Required for Supabase
 };
 
 const pool = new Pool(poolConfig);

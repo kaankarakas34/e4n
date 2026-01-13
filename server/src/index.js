@@ -1382,7 +1382,12 @@ app.get('/api/events', async (req, res) => {
 
     const { rows } = await pool.query(query, params);
     res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('SERVER ERROR in GET /api/events:', e);
+    // Explicitly convert error to string if message is missing
+    const errorMsg = e.message || String(e);
+    res.status(500).json({ error: errorMsg, details: e.stack });
+  }
 });
 
 // Create Event

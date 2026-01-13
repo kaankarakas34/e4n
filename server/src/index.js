@@ -28,7 +28,7 @@ const poolConfig = connectionString
   }
   : {
     // Fallback: Hardcoded Supabase Credentials
-    host: 'db.kaoagsuxccwgrdydxros.supabase.co',
+    host: 'kaoagsuxccwgrdydxros.supabase.co',
     port: 5432,
     user: 'postgres',
     password: 'vy/22xUZF3/n8S8',

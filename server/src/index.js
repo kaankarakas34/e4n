@@ -15,7 +15,9 @@ import jwt from 'jsonwebtoken';
 import cron from 'node-cron';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-const { Pool } = pkg;
+import dns from 'dns';
+const dnsPromises = dns.promises;
+const { Pool } = pkg; // Fix: Assign Pool correctly after imports
 const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
@@ -38,22 +40,46 @@ const poolConfig = {
 
 const pool = new Pool(poolConfig);
 
-// --- DIAGNOSTIC HEALTH CHECK ENDPOINT ---
+// --- DIAGNOSTIC HEALTH CHECK & REGION PROBE ---
 app.get('/api/health-check', async (req, res) => {
+  const regions = [
+    'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-north-1',
+    'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+    'ap-southeast-1', 'ap-northeast-1', 'sa-east-1'
+  ];
+
+  const probeResults = {};
+  let successfulRegion = null;
+
+  for (const region of regions) {
+    const hostToProbe = `aws-0-${region}.pooler.supabase.com`;
+    try {
+      const addresses = await dnsPromises.lookup(hostToProbe);
+      probeResults[region] = { status: 'ok', address: addresses.address };
+      if (!successfulRegion) {
+        successfulRegion = region;
+      }
+    } catch (e) {
+      probeResults[region] = { status: 'failed', error: e.message };
+    }
+  }
+
   const result = {
     status: 'checking',
     env: {
       NODE_ENV: process.env.NODE_ENV,
       VERCEL: process.env.VERCEL ? 'true' : 'false',
     },
-    dbAttempt: null,
     poolConfig: {
-      host: poolConfig.host || 'env-string',
-      port: poolConfig.port || '5432',
-      database: poolConfig.database,
-      ssl: poolConfig.ssl ? 'enabled' : 'disabled',
-      user: poolConfig.user ? '***' : 'missing'
-    }
+      host: poolConfig.host,
+      port: poolConfig.port,
+      user: poolConfig.user ? 'HIDDEN' : 'missing', // Hide sensitive data
+      ssl: poolConfig.ssl ? 'enabled' : 'disabled'
+    },
+    regionProbe: probeResults,
+    successfulRegion: successfulRegion,
+    // Suggested Generic Pooler (Try this if current fails)
+    suggestedPooler: successfulRegion ? `aws-0-${successfulRegion}.pooler.supabase.com` : 'aws-0-eu-central-1.pooler.supabase.com'
   };
 
   try {
@@ -70,10 +96,14 @@ app.get('/api/health-check', async (req, res) => {
     result.status = 'error';
     result.dbAttempt = 'failed';
     result.error = e.message;
-    result.stack = e.stack;
+
+    // Suggest fix based on error
+    if (e.message.includes('timeout') || e.message.includes('ENOTFOUND')) {
+      result.hint = 'Likely IPv6 issue or DNS resolution problem. Try changing host to a working region pooler, e.g., aws-0-eu-central-1.pooler.supabase.com';
+    }
   }
 
-  res.status(result.status === 'ok' ? 200 : 500).json(result);
+  res.status(200).json(result);
 });
 
 const transporter = nodemailer.createTransport({

@@ -24,7 +24,8 @@ const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 // Check all common Vercel/Supabase integration variable names
 // CRITICAL FIX: Use Supabase Transaction Pooler (port 6543) for Vercel Serverless
 // Password URL-encoded: / becomes %2F
-const supabasePoolerURL = 'postgres://postgres:vy%2F22xUZF3%2Fn8S8@db.kaoagsuxccwgrdydxros.supabase.co:6543/postgres';
+// Removed 'db.' prefix - Vercel DNS cannot resolve it
+const supabasePoolerURL = 'postgres://postgres.kaoagsuxccwgrdydxros:vy%2F22xUZF3%2Fn8S8@aws-0-eu-central-1.pooler.supabase.com:6543/postgres';
 
 const poolConfig = {
   connectionString: process.env.POSTGRES_URL ||

@@ -13,11 +13,12 @@ const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'postgres',
+  host: process.env.DB_HOST || '72.61.83.180', // Hardcoded VPS IP
+  port: parseInt(process.env.DB_PORT || '5433'), // Hardcoded Port
+  user: process.env.DB_USER || 'e4n2',
+  password: process.env.DB_PASSWORD || 'e4n2pass',
+  database: process.env.DB_NAME || 'e4n2db',
+  ssl: false // Disable SSL for direct IP connection if not configured
 });
 
 const transporter = nodemailer.createTransport({

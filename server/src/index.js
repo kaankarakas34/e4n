@@ -12,14 +12,24 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
-const pool = new Pool({
-  host: process.env.DB_HOST || '72.61.83.180', // Hardcoded VPS IP
-  port: parseInt(process.env.DB_PORT || '5433'), // Hardcoded Port
-  user: process.env.DB_USER || 'e4n2',
-  password: process.env.DB_PASSWORD || 'e4n2pass',
-  database: process.env.DB_NAME || 'e4n2db',
-  ssl: false // Disable SSL for direct IP connection if not configured
-});
+// Connection Configuration for Supabase or VPS
+const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+
+const poolConfig = connectionString
+  ? {
+    connectionString,
+    ssl: { rejectUnauthorized: false } // Required for Supabase
+  }
+  : {
+    host: process.env.DB_HOST || '72.61.83.180',
+    port: parseInt(process.env.DB_PORT || '5433'),
+    user: process.env.DB_USER || 'e4n2',
+    password: process.env.DB_PASSWORD || 'e4n2pass',
+    database: process.env.DB_NAME || 'e4n2db',
+    ssl: false
+  };
+
+const pool = new Pool(poolConfig);
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',

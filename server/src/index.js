@@ -21,25 +21,19 @@ const connectionString =
   process.env.POSTGRES_URL_NON_POOLING ||
   process.env.SUPABASE_URL;
 
-if (!connectionString) {
-  console.error("❌ CRITICAL ERROR: No database connection string found in Environment Variables.");
-  console.error("Checked: POSTGRES_URL, DATABASE_URL, POSTGRES_PRISMA_URL, POSTGRES_URL_NON_POOLING, SUPABASE_URL");
-} else {
-  console.log("✅ Database connection string found.");
-}
-
 const poolConfig = connectionString
   ? {
     connectionString,
-    ssl: { rejectUnauthorized: false } // Required for Supabase
+    ssl: { rejectUnauthorized: false }
   }
   : {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+    // Fallback: Hardcoded Supabase Credentials
+    host: 'db.kaoagsuxccwgrdydxros.supabase.co',
+    port: 5432,
+    user: 'postgres',
+    password: 'vy/22xUZF3/n8S8',
+    database: 'postgres',
+    ssl: { rejectUnauthorized: false }
   };
 
 const pool = new Pool(poolConfig);

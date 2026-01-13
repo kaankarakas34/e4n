@@ -33,18 +33,18 @@ const poolConfig = connectionString
   ? {
     connectionString,
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 5000
+    connectionTimeoutMillis: 15000
   }
-      // Fallback: Hardcoded Supabase Credentials
-      // Use standard connection on 5432 directly to avoid pooler algo issues
-      user: 'postgres',
-  host: 'kaoagsuxccwgrdydxros.supabase.co',
+  : {
+    // Fallback: Hardcoded Supabase Credentials
+    user: 'postgres',
+    host: 'kaoagsuxccwgrdydxros.supabase.co',
     database: 'postgres',
-      password: 'vy/22xUZF3/n8S8',
-        port: 5432,
-          ssl: { rejectUnauthorized: false }, // Explicitly allow self-signed
-connectionTimeoutMillis: 5000
-    };
+    password: 'vy/22xUZF3/n8S8',
+    port: 5432,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 15000
+  };
 
 const pool = new Pool(poolConfig);
 
@@ -96,12 +96,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Test DB Connection
-// Test DB Connection
+// Lazy DB Connection Check (Don't block startup)
+// We removed the immediate pool.connect() call to prevent Vercel init timeout crashes.
+// The connection will be established on the first API request.
+// Auto-Migration for Subscription fields
 pool.connect().then(async (client) => {
   console.log('✅ DB Connected Successfully to port', process.env.DB_PORT || 5435);
 
-  // Auto-Migration for Subscription fields
   try {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) DEFAULT 'ACTIVE'");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMP WITH TIME ZONE");

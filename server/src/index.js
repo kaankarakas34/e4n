@@ -12,8 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
-// Connection Configuration for Supabase or VPS
+// Connection Configuration for Supabase
 const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.warn('⚠️ No POSTGRES_URL or DATABASE_URL found. Using default DB_HOST env vars if available.');
+}
 
 const poolConfig = connectionString
   ? {
@@ -21,12 +25,12 @@ const poolConfig = connectionString
     ssl: { rejectUnauthorized: false } // Required for Supabase
   }
   : {
-    host: process.env.DB_HOST || '72.61.83.180',
-    port: parseInt(process.env.DB_PORT || '5433'),
-    user: process.env.DB_USER || 'e4n2',
-    password: process.env.DB_PASSWORD || 'e4n2pass',
-    database: process.env.DB_NAME || 'e4n2db',
-    ssl: false
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '5432'),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
   };
 
 const pool = new Pool(poolConfig);

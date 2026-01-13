@@ -13,10 +13,19 @@ const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
 // Connection Configuration for Supabase
-const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+// Check all common Vercel/Supabase integration variable names
+const connectionString =
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.SUPABASE_URL;
 
 if (!connectionString) {
-  console.warn('⚠️ No POSTGRES_URL or DATABASE_URL found. Using default DB_HOST env vars if available.');
+  console.error("❌ CRITICAL ERROR: No database connection string found in Environment Variables.");
+  console.error("Checked: POSTGRES_URL, DATABASE_URL, POSTGRES_PRISMA_URL, POSTGRES_URL_NON_POOLING, SUPABASE_URL");
+} else {
+  console.log("✅ Database connection string found.");
 }
 
 const poolConfig = connectionString

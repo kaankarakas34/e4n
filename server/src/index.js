@@ -22,29 +22,19 @@ const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
 // Connection Configuration for Supabase
 // Check all common Vercel/Supabase integration variable names
-const connectionString =
-  process.env.POSTGRES_URL ||
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.SUPABASE_URL;
+// CRITICAL FIX: Use Supabase Transaction Pooler (port 6543) for Vercel Serverless
+// Password URL-encoded: / becomes %2F
+const supabasePoolerURL = 'postgres://postgres:vy%2F22xUZF3%2Fn8S8@db.kaoagsuxccwgrdydxros.supabase.co:6543/postgres';
 
-const poolConfig = connectionString
-  ? {
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 15000
-  }
-  : {
-    // Fallback: Hardcoded Supabase Credentials
-    user: 'postgres',
-    host: 'kaoagsuxccwgrdydxros.supabase.co',
-    database: 'postgres',
-    password: 'vy/22xUZF3/n8S8',
-    port: 5432,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 15000
-  };
+const poolConfig = {
+  connectionString: process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    supabasePoolerURL,
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 20000,
+  max: 1 // Minimal connections for serverless
+};
 
 const pool = new Pool(poolConfig);
 

@@ -27,52 +27,61 @@ const poolConfig = connectionString
     ssl: { rejectUnauthorized: false }
   }
   : {
-    // Fallback: Hardcoded Supabase Credentials
-    host: 'kaoagsuxccwgrdydxros.supabase.co',
-    port: 5432,
-    user: 'postgres',
-    password: 'vy/22xUZF3/n8S8',
-    database: 'postgres',
-    ssl: { rejectUnauthorized: false }
-  };
+    const poolConfig = connectionString
+      ? {
+        connectionString,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10000 // 10 seconds timeout
+      }
+      : {
+        // Fallback: Hardcoded Supabase Credentials
+        // Using Port 6543 (Transaction Pooler) is CRITICAL for Vercel/Serverless to avoid timeouts
+        host: 'kaoagsuxccwgrdydxros.supabase.co',
+        port: 6543,
+        user: 'postgres',
+        password: 'vy/22xUZF3/n8S8',
+        database: 'postgres',
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10000 // 10 seconds timeout
+      };
 
-const pool = new Pool(poolConfig);
+    const pool = new Pool(poolConfig);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
 
-// Test DB Connection
-// Test DB Connection
-pool.connect().then(async (client) => {
-  console.log('✅ DB Connected Successfully to port', process.env.DB_PORT || 5435);
+    // Test DB Connection
+    // Test DB Connection
+    pool.connect().then(async (client) => {
+      console.log('✅ DB Connected Successfully to port', process.env.DB_PORT || 5435);
 
-  // Auto-Migration for Subscription fields
-  try {
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) DEFAULT 'ACTIVE'");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMP WITH TIME ZONE");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(50)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reminder_trigger INTEGER");
+      // Auto-Migration for Subscription fields
+      try {
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) DEFAULT 'ACTIVE'");
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMP WITH TIME ZONE");
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(50)");
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reminder_trigger INTEGER");
 
-    // Event Updates
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
+        // Event Updates
+        await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+        await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
+        await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
+        await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
 
-    // Password Reset / Creation fields
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP WITH TIME ZONE");
-    await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
+        // Password Reset / Creation fields
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255)");
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP WITH TIME ZONE");
+        await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
 
-    // Professions Table
-    await client.query(`
+        // Professions Table
+        await client.query(`
       CREATE TABLE IF NOT EXISTS professions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) UNIQUE NOT NULL,
@@ -81,8 +90,8 @@ pool.connect().then(async (client) => {
       )
     `);
 
-    // Champions Table for Dashboard
-    await client.query(`
+        // Champions Table for Dashboard
+        await client.query(`
       CREATE TABLE IF NOT EXISTS champions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
@@ -94,8 +103,8 @@ pool.connect().then(async (client) => {
       )
     `);
 
-    // Champions Table for Dashboard
-    await client.query(`
+        // Champions Table for Dashboard
+        await client.query(`
       CREATE TABLE IF NOT EXISTS champions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
@@ -107,60 +116,60 @@ pool.connect().then(async (client) => {
       )
     `);
 
-    // Seed Professions if empty
-    const profCount = await client.query("SELECT COUNT(*) FROM professions");
-    if (parseInt(profCount.rows[0].count) === 0) {
-      const professions = [
-        ['Avukat', 'Hukuk'], ['Mali Müşavir', 'Finans'], ['Yeminli Mali Müşavir', 'Finans'],
-        ['Bağımsız Denetçi', 'Finans'], ['Sigorta Acentesi', 'Finans'], ['Gayrimenkul Danışmanı', 'Emlak'],
-        ['Mimar', 'İnşaat'], ['İç Mimar', 'İnşaat'], ['İnşaat Mühendisi', 'İnşaat'],
-        ['Elektrik Mühendisi', 'İnşaat'], ['Harita Mühendisi', 'İnşaat'], ['Peyzaj Mimarı', 'İnşaat'],
-        ['Müteahhit', 'İnşaat'], ['Yapı Denetim', 'İnşaat'], ['Grafik Tasarımcı', 'Medya & İletişim'],
-        ['Web Tasarım & Yazılım', 'Bilişim'], ['Sosyal Medya Uzmanı', 'Medya & İletişim'],
-        ['Dijital Pazarlama Uzmanı', 'Medya & İletişim'], ['Fotoğrafçı', 'Medya & İletişim'],
-        ['Video Prodüksiyon', 'Medya & İletişim'], ['Matbaa & Promosyon', 'Medya & İletişim'],
-        ['Reklam Ajansı', 'Medya & İletişim'], ['Diyetisyen', 'Sağlık'], ['Psikolog', 'Sağlık'],
-        ['Diş Hekimi', 'Sağlık'], ['Fizyoterapist', 'Sağlık'], ['Eczacı', 'Sağlık'],
-        ['Doktor - Genel Cerrahi', 'Sağlık'], ['Doktor - Dahiliye', 'Sağlık'], ['Doktor - KBB', 'Sağlık'],
-        ['Doktor - Göz', 'Sağlık'], ['Güzellik Uzmanı', 'Hizmet'], ['Kuaför', 'Hizmet'],
-        ['Organizasyon Şirketi', 'Hizmet'], ['Turizm Acentesi', 'Hizmet'], ['Otel İşletmecisi', 'Hizmet'],
-        ['Restoran İşletmecisi', 'Hizmet'], ['Kafe İşletmecisi', 'Hizmet'], ['Catering Hizmetleri', 'Hizmet'],
-        ['Temizlik Şirketi', 'Hizmet'], ['Güvenlik Şirketi', 'Hizmet'], ['Lojistik & Nakliye', 'Lojistik'],
-        ['Gümrük Müşaviri', 'Lojistik'], ['Otomotiv Satış', 'Otomotiv'], ['Otomotiv Servis', 'Otomotiv'],
-        ['Filo Kiralama', 'Otomotiv'], ['Makine Mühendisi', 'Sanayi'], ['Endüstri Mühendisi', 'Sanayi'],
-        ['Tekstil Üreticisi', 'Sanayi'], ['Mobilya Üreticisi', 'Sanayi'], ['Gıda Üreticisi', 'Sanayi'],
-        ['Ambalaj Üreticisi', 'Sanayi'], ['Eğitim Danışmanı', 'Eğitim'], ['Dil Okulu', 'Eğitim'],
-        ['Sürücü Kursu', 'Eğitim'], ['Anaokulu / Kreş', 'Eğitim'], ['Özel Okul', 'Eğitim'],
-        ['Koçluk Hizmetleri', 'Eğitim'], ['İK Danışmanlığı', 'Danışmanlık'], ['Yönetim Danışmanlığı', 'Danışmanlık'],
-        ['Marka Patent Vekili', 'Danışmanlık'], ['Yazılım Uzmanı', 'Bilişim'], ['Siber Güvenlik Uzmanı', 'Bilişim'],
-        ['Donanım & Network', 'Bilişim'], ['E-Ticaret Danışmanı', 'Bilişim']
-      ];
+        // Seed Professions if empty
+        const profCount = await client.query("SELECT COUNT(*) FROM professions");
+        if (parseInt(profCount.rows[0].count) === 0) {
+          const professions = [
+            ['Avukat', 'Hukuk'], ['Mali Müşavir', 'Finans'], ['Yeminli Mali Müşavir', 'Finans'],
+            ['Bağımsız Denetçi', 'Finans'], ['Sigorta Acentesi', 'Finans'], ['Gayrimenkul Danışmanı', 'Emlak'],
+            ['Mimar', 'İnşaat'], ['İç Mimar', 'İnşaat'], ['İnşaat Mühendisi', 'İnşaat'],
+            ['Elektrik Mühendisi', 'İnşaat'], ['Harita Mühendisi', 'İnşaat'], ['Peyzaj Mimarı', 'İnşaat'],
+            ['Müteahhit', 'İnşaat'], ['Yapı Denetim', 'İnşaat'], ['Grafik Tasarımcı', 'Medya & İletişim'],
+            ['Web Tasarım & Yazılım', 'Bilişim'], ['Sosyal Medya Uzmanı', 'Medya & İletişim'],
+            ['Dijital Pazarlama Uzmanı', 'Medya & İletişim'], ['Fotoğrafçı', 'Medya & İletişim'],
+            ['Video Prodüksiyon', 'Medya & İletişim'], ['Matbaa & Promosyon', 'Medya & İletişim'],
+            ['Reklam Ajansı', 'Medya & İletişim'], ['Diyetisyen', 'Sağlık'], ['Psikolog', 'Sağlık'],
+            ['Diş Hekimi', 'Sağlık'], ['Fizyoterapist', 'Sağlık'], ['Eczacı', 'Sağlık'],
+            ['Doktor - Genel Cerrahi', 'Sağlık'], ['Doktor - Dahiliye', 'Sağlık'], ['Doktor - KBB', 'Sağlık'],
+            ['Doktor - Göz', 'Sağlık'], ['Güzellik Uzmanı', 'Hizmet'], ['Kuaför', 'Hizmet'],
+            ['Organizasyon Şirketi', 'Hizmet'], ['Turizm Acentesi', 'Hizmet'], ['Otel İşletmecisi', 'Hizmet'],
+            ['Restoran İşletmecisi', 'Hizmet'], ['Kafe İşletmecisi', 'Hizmet'], ['Catering Hizmetleri', 'Hizmet'],
+            ['Temizlik Şirketi', 'Hizmet'], ['Güvenlik Şirketi', 'Hizmet'], ['Lojistik & Nakliye', 'Lojistik'],
+            ['Gümrük Müşaviri', 'Lojistik'], ['Otomotiv Satış', 'Otomotiv'], ['Otomotiv Servis', 'Otomotiv'],
+            ['Filo Kiralama', 'Otomotiv'], ['Makine Mühendisi', 'Sanayi'], ['Endüstri Mühendisi', 'Sanayi'],
+            ['Tekstil Üreticisi', 'Sanayi'], ['Mobilya Üreticisi', 'Sanayi'], ['Gıda Üreticisi', 'Sanayi'],
+            ['Ambalaj Üreticisi', 'Sanayi'], ['Eğitim Danışmanı', 'Eğitim'], ['Dil Okulu', 'Eğitim'],
+            ['Sürücü Kursu', 'Eğitim'], ['Anaokulu / Kreş', 'Eğitim'], ['Özel Okul', 'Eğitim'],
+            ['Koçluk Hizmetleri', 'Eğitim'], ['İK Danışmanlığı', 'Danışmanlık'], ['Yönetim Danışmanlığı', 'Danışmanlık'],
+            ['Marka Patent Vekili', 'Danışmanlık'], ['Yazılım Uzmanı', 'Bilişim'], ['Siber Güvenlik Uzmanı', 'Bilişim'],
+            ['Donanım & Network', 'Bilişim'], ['E-Ticaret Danışmanı', 'Bilişim']
+          ];
 
-      for (const [name, category] of professions) {
-        await client.query("INSERT INTO professions (name, category) VALUES ($1, $2) ON CONFLICT DO NOTHING", [name, category]);
+          for (const [name, category] of professions) {
+            await client.query("INSERT INTO professions (name, category) VALUES ($1, $2) ON CONFLICT DO NOTHING", [name, category]);
+          }
+          console.log('✅ Professions Seeded');
+        }
+
+        console.log('✅ Schema Migrations Applied');
+      } catch (e) {
+        console.error('Migration Warning:', e.message);
+      } finally {
+        client.release();
       }
-      console.log('✅ Professions Seeded');
-    }
+    }).catch(e => console.error('❌ DB Connection Error:', e));
 
-    console.log('✅ Schema Migrations Applied');
-  } catch (e) {
-    console.error('Migration Warning:', e.message);
-  } finally {
-    client.release();
-  }
-}).catch(e => console.error('❌ DB Connection Error:', e));
+    app.use(cors());
+    app.use(express.json());
 
-app.use(cors());
-app.use(express.json());
+    // --- CHAMPION CALCULATION LOGIC ---
+    const calculateChampions = async (periodType, startDate, endDate) => {
+      const client = await pool.connect();
+      try {
+        const today = new Date().toISOString().split('T')[0];
 
-// --- CHAMPION CALCULATION LOGIC ---
-const calculateChampions = async (periodType, startDate, endDate) => {
-  const client = await pool.connect();
-  try {
-    const today = new Date().toISOString().split('T')[0];
-
-    // 1. Most Referrals
-    const refRes = await client.query(`
+        // 1. Most Referrals
+        const refRes = await client.query(`
       SELECT giver_id as user_id, COUNT(*) as value
       FROM referrals
       WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
@@ -169,15 +178,15 @@ const calculateChampions = async (periodType, startDate, endDate) => {
       LIMIT 1
     `, [startDate, endDate]);
 
-    if (refRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REFERRAL_COUNT', $3, $4)",
-        [periodType, today, refRes.rows[0].user_id, refRes.rows[0].value]
-      );
-    }
+        if (refRes.rows.length > 0) {
+          await client.query(
+            "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REFERRAL_COUNT', $3, $4)",
+            [periodType, today, refRes.rows[0].user_id, refRes.rows[0].value]
+          );
+        }
 
-    // 2. Most Visitors
-    const visRes = await client.query(`
+        // 2. Most Visitors
+        const visRes = await client.query(`
       SELECT inviter_id as user_id, COUNT(*) as value
       FROM visitors
       WHERE visited_at BETWEEN $1 AND $2
@@ -186,15 +195,15 @@ const calculateChampions = async (periodType, startDate, endDate) => {
       LIMIT 1
     `, [startDate, endDate]);
 
-    if (visRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'VISITOR_COUNT', $3, $4)",
-        [periodType, today, visRes.rows[0].user_id, visRes.rows[0].value]
-      );
-    }
+        if (visRes.rows.length > 0) {
+          await client.query(
+            "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'VISITOR_COUNT', $3, $4)",
+            [periodType, today, visRes.rows[0].user_id, visRes.rows[0].value]
+          );
+        }
 
-    // 3. Highest Revenue
-    const revRes = await client.query(`
+        // 3. Highest Revenue
+        const revRes = await client.query(`
       SELECT giver_id as user_id, SUM(amount) as value
       FROM referrals
       WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
@@ -203,212 +212,212 @@ const calculateChampions = async (periodType, startDate, endDate) => {
       LIMIT 1
     `, [startDate, endDate]);
 
-    if (revRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REVENUE', $3, $4)",
-        [periodType, today, revRes.rows[0].user_id, revRes.rows[0].value]
-      );
-    }
+        if (revRes.rows.length > 0) {
+          await client.query(
+            "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REVENUE', $3, $4)",
+            [periodType, today, revRes.rows[0].user_id, revRes.rows[0].value]
+          );
+        }
 
-    console.log(`✅ Champions calculated for ${periodType}`);
-  } catch (e) {
-    console.error(`Error calculating champions for ${periodType}:`, e);
-  } finally {
-    client.release();
-  }
-};
+        console.log(`✅ Champions calculated for ${periodType}`);
+      } catch (e) {
+        console.error(`Error calculating champions for ${periodType}:`, e);
+      } finally {
+        client.release();
+      }
+    };
 
-// --- CRON JOBS ---
-// Weekly: Sunday 23:59
-cron.schedule('59 23 * * 0', async () => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 7);
-  await calculateChampions('WEEK', start.toISOString(), end.toISOString());
-});
+    // --- CRON JOBS ---
+    // Weekly: Sunday 23:59
+    cron.schedule('59 23 * * 0', async () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      await calculateChampions('WEEK', start.toISOString(), end.toISOString());
+    });
 
-// Monthly: Last day of month 23:59
-cron.schedule('59 23 28-31 * *', async () => {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  // Determine if tomorrow is 1st of next month
-  if (tomorrow.getDate() === 1) {
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    await calculateChampions('MONTH', start.toISOString(), today.toISOString());
-  }
-});
+    // Monthly: Last day of month 23:59
+    cron.schedule('59 23 28-31 * *', async () => {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Determine if tomorrow is 1st of next month
+      if (tomorrow.getDate() === 1) {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        await calculateChampions('MONTH', start.toISOString(), today.toISOString());
+      }
+    });
 
-// Term: End of April, August, December
-cron.schedule('59 23 30 4,8 *', async () => { // Apr 30, Aug 30 (Use 30 for safety)
-  const today = new Date();
-  const start = new Date(today);
-  start.setMonth(start.getMonth() - 3);
-  start.setDate(1);
-  await calculateChampions('TERM', start.toISOString(), today.toISOString());
-});
-cron.schedule('59 23 31 8,12 *', async () => {
-  const today = new Date();
-  const start = new Date(today);
-  start.setMonth(start.getMonth() - 3);
-  start.setDate(1);
-  await calculateChampions('TERM', start.toISOString(), today.toISOString());
-});
-// Yearly: Dec 31
-cron.schedule('59 23 31 12 *', async () => {
-  const today = new Date();
-  const start = new Date(today.getFullYear(), 0, 1);
-  await calculateChampions('YEAR', start.toISOString(), today.toISOString());
-});
+    // Term: End of April, August, December
+    cron.schedule('59 23 30 4,8 *', async () => { // Apr 30, Aug 30 (Use 30 for safety)
+      const today = new Date();
+      const start = new Date(today);
+      start.setMonth(start.getMonth() - 3);
+      start.setDate(1);
+      await calculateChampions('TERM', start.toISOString(), today.toISOString());
+    });
+    cron.schedule('59 23 31 8,12 *', async () => {
+      const today = new Date();
+      const start = new Date(today);
+      start.setMonth(start.getMonth() - 3);
+      start.setDate(1);
+      await calculateChampions('TERM', start.toISOString(), today.toISOString());
+    });
+    // Yearly: Dec 31
+    cron.schedule('59 23 31 12 *', async () => {
+      const today = new Date();
+      const start = new Date(today.getFullYear(), 0, 1);
+      await calculateChampions('YEAR', start.toISOString(), today.toISOString());
+    });
 
 
-/* --- HELPER: SCORING ENGINE --- */
-const calculateMemberScore = async (userId) => {
-  // Scoring Weights
-  const SCORES = {
-    ATTENDANCE: 10,
-    ABSENT: -10,
-    LATE: 5,
-    SUBSTITUTE: 10, // sending substitute counts as present generally or specific points
-    REFERRAL_INTERNAL: 1,
-    REFERRAL_EXTERNAL: 2,
-    VISITOR: 5,
-    ONE_TO_ONE: 1,
-    EDUCATION_UNIT: 1 // per hour
-  };
+    /* --- HELPER: SCORING ENGINE --- */
+    const calculateMemberScore = async (userId) => {
+      // Scoring Weights
+      const SCORES = {
+        ATTENDANCE: 10,
+        ABSENT: -10,
+        LATE: 5,
+        SUBSTITUTE: 10, // sending substitute counts as present generally or specific points
+        REFERRAL_INTERNAL: 1,
+        REFERRAL_EXTERNAL: 2,
+        VISITOR: 5,
+        ONE_TO_ONE: 1,
+        EDUCATION_UNIT: 1 // per hour
+      };
 
-  const client = await pool.connect();
-  try {
-    // 1. Attendance Score - Last 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const client = await pool.connect();
+      try {
+        // 1. Attendance Score - Last 6 months
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const [attRes, refRes, visRes, otoRes, eduRes] = await Promise.all([
-      client.query(`
+        const [attRes, refRes, visRes, otoRes, eduRes] = await Promise.all([
+          client.query(`
             SELECT status, count(*) as count 
             FROM attendance 
             WHERE user_id = $1 AND created_at > $2
             GROUP BY status
         `, [userId, sixMonthsAgo]),
-      client.query(`
+          client.query(`
             SELECT type, count(*) as count 
             FROM referrals 
             WHERE giver_id = $1 AND created_at > $2
             GROUP BY type
         `, [userId, sixMonthsAgo]),
-      client.query(`
+          client.query(`
             SELECT count(*) as count 
             FROM visitors 
             WHERE inviter_id = $1 AND visited_at > $2 AND status IN ('ATTENDED', 'JOINED')
         `, [userId, sixMonthsAgo]),
-      client.query(`
+          client.query(`
             SELECT count(*) as count 
             FROM one_to_ones 
             WHERE requester_id = $1 AND meeting_date > $2
         `, [userId, sixMonthsAgo]),
-      client.query(`
+          client.query(`
             SELECT sum(hours) as total_hours 
             FROM education 
             WHERE user_id = $1 AND completed_date > $2
         `, [userId, sixMonthsAgo])
-    ]);
+        ]);
 
-    let score = 0;
+        let score = 0;
 
-    // 1. Attendance Processing
-    attRes.rows.forEach(r => {
-      if (r.status === 'PRESENT') score += (r.count * SCORES.ATTENDANCE);
-      else if (r.status === 'ABSENT') score += (r.count * SCORES.ABSENT);
-      else if (r.status === 'LATE') score += (r.count * SCORES.LATE);
-      else if (r.status === 'SUBSTITUTE') score += (r.count * SCORES.SUBSTITUTE);
-    });
+        // 1. Attendance Processing
+        attRes.rows.forEach(r => {
+          if (r.status === 'PRESENT') score += (r.count * SCORES.ATTENDANCE);
+          else if (r.status === 'ABSENT') score += (r.count * SCORES.ABSENT);
+          else if (r.status === 'LATE') score += (r.count * SCORES.LATE);
+          else if (r.status === 'SUBSTITUTE') score += (r.count * SCORES.SUBSTITUTE);
+        });
 
-    // 2. Referrals Processing
-    refRes.rows.forEach(r => {
-      if (r.type === 'INTERNAL') score += (r.count * SCORES.REFERRAL_INTERNAL);
-      else if (r.type === 'EXTERNAL') score += (r.count * SCORES.REFERRAL_EXTERNAL);
-    });
+        // 2. Referrals Processing
+        refRes.rows.forEach(r => {
+          if (r.type === 'INTERNAL') score += (r.count * SCORES.REFERRAL_INTERNAL);
+          else if (r.type === 'EXTERNAL') score += (r.count * SCORES.REFERRAL_EXTERNAL);
+        });
 
-    // 3. Visitors Processing
-    score += (parseInt(visRes.rows[0].count) * SCORES.VISITOR);
+        // 3. Visitors Processing
+        score += (parseInt(visRes.rows[0].count) * SCORES.VISITOR);
 
-    // 4. One-to-Ones Processing
-    score += (parseInt(otoRes.rows[0].count) * SCORES.ONE_TO_ONE);
+        // 4. One-to-Ones Processing
+        score += (parseInt(otoRes.rows[0].count) * SCORES.ONE_TO_ONE);
 
-    // 5. Education Processing
-    score += (Math.floor(parseFloat(eduRes.rows[0].total_hours || 0)) * SCORES.EDUCATION_UNIT);
+        // 5. Education Processing
+        score += (Math.floor(parseFloat(eduRes.rows[0].total_hours || 0)) * SCORES.EDUCATION_UNIT);
 
-    // Normalize Score (0-100)
-    const finalScore = Math.min(Math.max(score, 0), 100);
+        // Normalize Score (0-100)
+        const finalScore = Math.min(Math.max(score, 0), 100);
 
-    // Determine Color
-    let color = 'GREY';
-    if (finalScore >= 70) color = 'GREEN';
-    else if (finalScore >= 50) color = 'YELLOW';
-    else if (finalScore >= 30) color = 'RED';
-    else color = 'GREY';
+        // Determine Color
+        let color = 'GREY';
+        if (finalScore >= 70) color = 'GREEN';
+        else if (finalScore >= 50) color = 'YELLOW';
+        else if (finalScore >= 30) color = 'RED';
+        else color = 'GREY';
 
-    // Update User
-    await client.query(`
+        // Update User
+        await client.query(`
             UPDATE users 
             SET performance_score = $1, performance_color = $2, updated_at = NOW() 
             WHERE id = $3
         `, [finalScore, color, userId]);
 
-    // Record History
-    await client.query(`
+        // Record History
+        await client.query(`
             INSERT INTO user_score_history (user_id, score, color) VALUES ($1, $2, $3)
         `, [userId, finalScore, color]);
 
-    return { score: finalScore, color };
+        return { score: finalScore, color };
 
-  } catch (e) {
-    console.error('Scoring error:', e);
-  } finally {
-    client.release();
-  }
-};
+      } catch (e) {
+        console.error('Scoring error:', e);
+      } finally {
+        client.release();
+      }
+    };
 
-/* --- NEW ENDPOINTS: NOTIFICATIONS --- */
-app.get('/api/notifications', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
-      [req.user.id]
-    );
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+    /* --- NEW ENDPOINTS: NOTIFICATIONS --- */
+    app.get('/api/notifications', authenticateToken, async (req, res) => {
+      try {
+        const { rows } = await pool.query(
+          'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+          [req.user.id]
+        );
+        res.json(rows);
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
 
-app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
-  try {
-    await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+    app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+      try {
+        await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+        res.json({ success: true });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
 
-/* --- NEW ENDPOINTS: REPORTS --- */
-app.get('/api/reports/traffic-lights', authenticateToken, async (req, res) => {
-  // Return performance metrics for all members in user's chapter (or all if Admin)
-  try {
-    let query = `SELECT id, name, profession, performance_score as score, performance_color as color FROM users WHERE 1=1`;
-    let params = [];
+    /* --- NEW ENDPOINTS: REPORTS --- */
+    app.get('/api/reports/traffic-lights', authenticateToken, async (req, res) => {
+      // Return performance metrics for all members in user's chapter (or all if Admin)
+      try {
+        let query = `SELECT id, name, profession, performance_score as score, performance_color as color FROM users WHERE 1=1`;
+        let params = [];
 
-    // If not admin, restrict to own group members? 
-    // Usually reports are visible to leadership or chapter members.
-    // Let's restrict to 'active' users for now.
-    // TODO: Filter by group if needed.
-    query += ` ORDER BY performance_score DESC`;
+        // If not admin, restrict to own group members? 
+        // Usually reports are visible to leadership or chapter members.
+        // Let's restrict to 'active' users for now.
+        // TODO: Filter by group if needed.
+        query += ` ORDER BY performance_score DESC`;
 
-    const { rows } = await pool.query(query, params);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+        const { rows } = await pool.query(query, params);
+        res.json(rows);
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
 
-app.get('/api/reports/palms', authenticateToken, async (req, res) => {
-  try {
-    // Aggregate P A L M S counts per user
-    const { rows } = await pool.query(`
+    app.get('/api/reports/palms', authenticateToken, async (req, res) => {
+      try {
+        // Aggregate P A L M S counts per user
+        const { rows } = await pool.query(`
             SELECT 
                 u.id, u.name,
                 COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END) as present,
@@ -421,123 +430,123 @@ app.get('/api/reports/palms', authenticateToken, async (req, res) => {
             GROUP BY u.id, u.name
             ORDER BY u.name
         `);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/reports/stats', authenticateToken, async (req, res) => {
-  try {
-    // Mocking some aggregations for now using real table counts
-    const memberCount = (await pool.query('SELECT count(*) FROM users')).rows[0].count;
-    const groupCount = (await pool.query('SELECT count(*) FROM groups')).rows[0].count;
-    const ptCount = (await pool.query('SELECT count(*) FROM power_teams')).rows[0].count;
-    const eventCount = (await pool.query('SELECT count(*) FROM events')).rows[0].count;
-    const visitorCount = (await pool.query('SELECT count(*) FROM visitors')).rows[0].count;
-    const oneToOneCount = (await pool.query('SELECT count(*) FROM one_to_ones')).rows[0].count;
-
-    // Revenue (TYFCB + Membership Fees mock)
-    // Check if tyfcb_entries table exists and sum 'amount'
-    let tyfcbTotal = 0;
-    try {
-      // We can check if table exists or just try catch
-      const revRes = await pool.query('SELECT SUM(amount) as total FROM tyfcb_entries');
-      tyfcbTotal = parseFloat(revRes.rows[0].total || 0);
-    } catch { }
-
-    res.json({
-      totalRevenue: tyfcbTotal, // e.g. 5425000
-      internalRevenue: tyfcbTotal * 0.7, // Mock breakdown
-      externalRevenue: tyfcbTotal * 0.3,
-      totalMembers: parseInt(memberCount),
-      lostMembers: 0, // Need to track inactive
-      totalGroups: parseInt(groupCount),
-      totalPowerTeams: parseInt(ptCount),
-      totalEvents: parseInt(eventCount),
-      totalVisitors: parseInt(visitorCount),
-      totalOneToOnes: parseInt(oneToOneCount),
-      visitorConversionRate: 20 // Mock
+        res.json(rows);
+      } catch (e) { res.status(500).json({ error: e.message }); }
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
-app.get('/api/reports/charts', authenticateToken, async (req, res) => {
-  // Mock chart data for now, ideally group by month from DB
-  res.json({
-    revenue: [
-      { name: 'Oca', value: 4000 },
-      { name: 'Şub', value: 3000 },
-      { name: 'Mar', value: 2000 },
-      { name: 'Nis', value: 2780 },
-      { name: 'May', value: 1890 },
-      { name: 'Haz', value: 2390 },
-    ],
-    growth: [
-      { name: 'Oca', value: 10 },
-      { name: 'Şub', value: 25 },
-      { name: 'Mar', value: 35 },
-      { name: 'Nis', value: 42 },
-      { name: 'May', value: 48 },
-      { name: 'Haz', value: 55 },
-    ]
-  });
-});
+    app.get('/api/reports/stats', authenticateToken, async (req, res) => {
+      try {
+        // Mocking some aggregations for now using real table counts
+        const memberCount = (await pool.query('SELECT count(*) FROM users')).rows[0].count;
+        const groupCount = (await pool.query('SELECT count(*) FROM groups')).rows[0].count;
+        const ptCount = (await pool.query('SELECT count(*) FROM power_teams')).rows[0].count;
+        const eventCount = (await pool.query('SELECT count(*) FROM events')).rows[0].count;
+        const visitorCount = (await pool.query('SELECT count(*) FROM visitors')).rows[0].count;
+        const oneToOneCount = (await pool.query('SELECT count(*) FROM one_to_ones')).rows[0].count;
 
-// Middleware for Auth
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+        // Revenue (TYFCB + Membership Fees mock)
+        // Check if tyfcb_entries table exists and sum 'amount'
+        let tyfcbTotal = 0;
+        try {
+          // We can check if table exists or just try catch
+          const revRes = await pool.query('SELECT SUM(amount) as total FROM tyfcb_entries');
+          tyfcbTotal = parseFloat(revRes.rows[0].total || 0);
+        } catch { }
 
-  if (token == null) return res.sendStatus(401);
+        res.json({
+          totalRevenue: tyfcbTotal, // e.g. 5425000
+          internalRevenue: tyfcbTotal * 0.7, // Mock breakdown
+          externalRevenue: tyfcbTotal * 0.3,
+          totalMembers: parseInt(memberCount),
+          lostMembers: 0, // Need to track inactive
+          totalGroups: parseInt(groupCount),
+          totalPowerTeams: parseInt(ptCount),
+          totalEvents: parseInt(eventCount),
+          totalVisitors: parseInt(visitorCount),
+          totalOneToOnes: parseInt(oneToOneCount),
+          visitorConversionRate: 20 // Mock
+        });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
 
-  console.log('Auth Token:', token); // DEBUG LOG
+    app.get('/api/reports/charts', authenticateToken, async (req, res) => {
+      // Mock chart data for now, ideally group by month from DB
+      res.json({
+        revenue: [
+          { name: 'Oca', value: 4000 },
+          { name: 'Şub', value: 3000 },
+          { name: 'Mar', value: 2000 },
+          { name: 'Nis', value: 2780 },
+          { name: 'May', value: 1890 },
+          { name: 'Haz', value: 2390 },
+        ],
+        growth: [
+          { name: 'Oca', value: 10 },
+          { name: 'Şub', value: 25 },
+          { name: 'Mar', value: 35 },
+          { name: 'Nis', value: 42 },
+          { name: 'May', value: 48 },
+          { name: 'Haz', value: 55 },
+        ]
+      });
+    });
 
-  // DEV: Allow mock tokens for demo purposes
-  // DEV: Allow mock tokens for demo purposes
-  // DEV: Allow mock tokens for demo purposes
-  if (token === 'mock-user-token') {
-    // Try to find member@demo.com FIRST (as requested by user), then user@demo.com
-    pool.query("SELECT * FROM users WHERE email = 'member@demo.com'").then(res => {
-      if (res.rows.length > 0) {
-        req.user = res.rows[0];
+    // Middleware for Auth
+    function authenticateToken(req, res, next) {
+      const authHeader = req.headers['authorization'];
+const token = authHeader && authHeader.split(' ')[1];
+
+if (token == null) return res.sendStatus(401);
+
+console.log('Auth Token:', token); // DEBUG LOG
+
+// DEV: Allow mock tokens for demo purposes
+// DEV: Allow mock tokens for demo purposes
+// DEV: Allow mock tokens for demo purposes
+if (token === 'mock-user-token') {
+  // Try to find member@demo.com FIRST (as requested by user), then user@demo.com
+  pool.query("SELECT * FROM users WHERE email = 'member@demo.com'").then(res => {
+    if (res.rows.length > 0) {
+      req.user = res.rows[0];
+      next();
+    } else {
+      // Fallback to user@demo.com
+      pool.query("SELECT * FROM users WHERE email = 'user@demo.com'").then(res2 => {
+        if (res2.rows.length > 0) {
+          req.user = res2.rows[0];
+        } else {
+          req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
+        }
         next();
-      } else {
-        // Fallback to user@demo.com
-        pool.query("SELECT * FROM users WHERE email = 'user@demo.com'").then(res2 => {
-          if (res2.rows.length > 0) {
-            req.user = res2.rows[0];
-          } else {
-            req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
-          }
-          next();
-        }).catch(() => next());
-      }
-    }).catch(() => {
-      req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
-      next();
-    });
-    return;
-  }
-
-  // Handling for President Demo Token
-  if (token === 'mock-president-token') {
-    pool.query("SELECT * FROM users WHERE email = 'grupbaskani@demo.com'").then(res => {
-      if (res.rows.length > 0) req.user = res.rows[0];
-      else req.user = { id: '00-president', email: 'grupbaskani@demo.com', role: 'PRESIDENT' };
-      next();
-    }).catch(() => next());
-    return;
-  }
-
-  if (token === 'mock-admin-token') {
-    req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'admin@demo.com', role: 'ADMIN' };
-    return next();
-  }
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
+      }).catch(() => next());
+    }
+  }).catch(() => {
+    req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
     next();
   });
+  return;
+}
+
+// Handling for President Demo Token
+if (token === 'mock-president-token') {
+  pool.query("SELECT * FROM users WHERE email = 'grupbaskani@demo.com'").then(res => {
+    if (res.rows.length > 0) req.user = res.rows[0];
+    else req.user = { id: '00-president', email: 'grupbaskani@demo.com', role: 'PRESIDENT' };
+    next();
+  }).catch(() => next());
+  return;
+}
+
+if (token === 'mock-admin-token') {
+  req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'admin@demo.com', role: 'ADMIN' };
+  return next();
+}
+
+jwt.verify(token, SECRET_KEY, (err, user) => {
+  if (err) return res.sendStatus(403);
+  req.user = user;
+  next();
+});
 }
 
 /* --- AUTH ENDPOINTS --- */

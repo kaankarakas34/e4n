@@ -48,6 +48,44 @@ connectionTimeoutMillis: 5000
 
 const pool = new Pool(poolConfig);
 
+// --- DIAGNOSTIC HEALTH CHECK ENDPOINT ---
+app.get('/api/health-check', async (req, res) => {
+  const result = {
+    status: 'checking',
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL ? 'true' : 'false',
+    },
+    dbAttempt: null,
+    poolConfig: {
+      host: poolConfig.host || 'env-string',
+      port: poolConfig.port || '5432',
+      database: poolConfig.database,
+      ssl: poolConfig.ssl ? 'enabled' : 'disabled',
+      user: poolConfig.user ? '***' : 'missing'
+    }
+  };
+
+  try {
+    const client = await pool.connect();
+    try {
+      const resQuery = await client.query('SELECT NOW() as time');
+      result.status = 'ok';
+      result.dbAttempt = 'success';
+      result.time = resQuery.rows[0].time;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    result.status = 'error';
+    result.dbAttempt = 'failed';
+    result.error = e.message;
+    result.stack = e.stack;
+  }
+
+  res.status(result.status === 'ok' ? 200 : 500).json(result);
+});
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),

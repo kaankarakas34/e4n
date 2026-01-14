@@ -23,12 +23,12 @@ export function AdminGroupDetail() {
     const isPowerTeam = location.pathname.includes('power-teams');
     const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
 
-    // Mock stats
+    // Dynamic Stats
     const stats = {
-        totalTurnover: isPowerTeam ? 1200000 : 4500000,
-        totalReferrals: isPowerTeam ? 45 : 124,
-        activeMembers: isPowerTeam ? 8 : 24,
-        upcomingEvents: isPowerTeam ? 1 : 3
+        totalTurnover: referrals.reduce((acc, curr) => acc + (curr.amount || 0), 0),
+        totalReferrals: referrals.length,
+        activeMembers: members.filter(m => m.status === 'ACTIVE').length,
+        upcomingEvents: isPowerTeam ? 0 : 0 // Backend currently doesn't fetch future events count here, default to 0
     };
 
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'REFERRALS' | 'MEETINGS' | 'SYNERGY'>('OVERVIEW');

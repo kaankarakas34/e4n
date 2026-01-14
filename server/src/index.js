@@ -9,6 +9,12 @@ process.on('unhandledRejection', (reason, promise) => {
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import pkg from 'pg';
+import nodemailer from 'nodemailer';
+import cron from 'node-cron';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;

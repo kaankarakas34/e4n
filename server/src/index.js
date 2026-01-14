@@ -883,19 +883,38 @@ app.get('/api/users/:id', async (req, res) => {
 
 
   try {
-    const { rows } = await pool.query(`
-      SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
-             u.company, u.tax_number, u.tax_office, u.billing_address, u.account_status,
-             g.name as group_name
-      FROM users u
-      LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
-      LEFT JOIN groups g ON gm.group_id = g.id
-      WHERE u.id = $1
-    `, [id]);
+    try {
+      // Try fetching with all new fields
+      const { rows } = await pool.query(`
+        SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
+               u.company, u.tax_number, u.tax_office, u.billing_address, u.account_status,
+               g.name as group_name
+        FROM users u
+        LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
+        LEFT JOIN groups g ON gm.group_id = g.id
+        WHERE u.id = $1
+      `, [id]);
 
-    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json(rows[0]);
+      if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+      return res.json(rows[0]);
+    } catch (fieldError) {
+      console.error('⚠️ New fields query failed (migrations might be pending), falling back to basic query:', fieldError.message);
+
+      // Fallback: Basic query (Old schema)
+      const { rows } = await pool.query(`
+        SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
+               g.name as group_name
+        FROM users u
+        LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
+        LEFT JOIN groups g ON gm.group_id = g.id
+        WHERE u.id = $1
+      `, [id]);
+
+      if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+      return res.json(rows[0]);
+    }
   } catch (e) {
+    console.error('❌ GET /api/users/:id Critical Error:', e);
     res.status(500).json({ error: e.message });
   }
 });

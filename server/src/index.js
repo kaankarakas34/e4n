@@ -107,6 +107,12 @@ pool.connect().then(async (client) => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP WITH TIME ZONE");
     await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
 
+    // Company & Billing Info
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_office VARCHAR(100)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_address TEXT");
+
     // Professions Table
     await client.query(`
       CREATE TABLE IF NOT EXISTS professions (

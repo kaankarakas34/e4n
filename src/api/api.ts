@@ -182,6 +182,9 @@ export const api = {
   async createGroup(payload: any) {
     return await request('/groups', { method: 'POST', body: JSON.stringify(payload) });
   },
+  async deleteGroup(id: string) {
+    return await request(`/groups/${id}`, { method: 'DELETE' });
+  },
   async getGroupMembers(groupId: string) {
     return await request(`/groups/${groupId}/members`);
   },

@@ -156,6 +156,30 @@ export function AdminGroupDetail() {
                                 Toplantı Raporu Gir
                             </Button>
                         )}
+                        <Button variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                            onClick={async () => {
+                                if (members.length > 0) {
+                                    alert('HATA: İçinde aktif üye bulunan bir grubu silemezsiniz. Lütfen önce üyeleri çıkarın veya taşıyın.');
+                                    return;
+                                }
+                                if (confirm(`"${data.name}" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!`)) {
+                                    try {
+                                        if (isPowerTeam) {
+                                            // api delete for PowerTeam
+                                        } else {
+                                            await api.deleteGroup(data.id);
+                                        }
+                                        alert('Grup başarıyla silindi.');
+                                        navigate('/admin/groups');
+                                    } catch (e: any) {
+                                        alert('Silme işlemi başarısız: ' + e.message);
+                                    }
+                                }
+                            }}
+                        >
+                            {typeLabel} Sil
+                        </Button>
                         <Button variant="primary">{typeLabel} Düzenle</Button>
                     </div>
                 </div>

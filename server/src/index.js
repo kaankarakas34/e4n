@@ -1464,6 +1464,47 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 });
 
 
+// --- GROUP MANAGEMENT ENDPOINTS (ADDED) ---
+
+// Create Group
+app.post('/api/groups', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE']
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update Group
+app.put('/api/groups/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5 
+       WHERE id = $6 RETURNING *`,
+      [name, meeting_day, meeting_time, meeting_link, status, req.params.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete Group
+app.delete('/api/groups/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    await pool.query('DELETE FROM groups WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+
 // Group Activities (One-to-Ones for Group Manager)
 app.get('/api/groups/:id/activities', async (req, res) => {
   try {

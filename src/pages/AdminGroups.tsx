@@ -109,7 +109,7 @@ export function AdminGroups() {
             <CardContent>
               <div className="flex space-x-2 mb-6">
                 <Input placeholder="Yeni grup adı" value={groupName} onChange={e => setGroupName(e.target.value)} />
-                <Button onClick={createGroup}>Oluştur</Button>
+                <Button onClick={createGroup}>Grup Oluştur</Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {groups.map((g: any) => (
@@ -140,7 +140,7 @@ export function AdminGroups() {
             <CardContent>
               <div className="flex space-x-2 mb-6">
                 <Input placeholder="Yeni lonca adı" value={teamName} onChange={e => setTeamName(e.target.value)} />
-                <Button onClick={createTeam}>Oluştur</Button>
+                <Button onClick={createTeam}>Lonca Oluştur</Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {teams.map((t: any) => (

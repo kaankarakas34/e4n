@@ -23,5 +23,8 @@
                 }
             ]
         }
-    ]
+    ],
+    "env": {
+        "DATABASE_URL": "postgres://postgres:vy%2F22xUZF3%2Fn8S8@db.kaoagsuxccwgrdydxros.supabase.co:5432/postgres"
+    }
 }

@@ -23,6 +23,21 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false } // Required for Supabase
 });
 
+// Debug Logging for Connection (Safe)
+try {
+  if (connectionString) {
+    // Basic parse to log HOST and PORT only
+    const match = connectionString.match(/@([^:]+):(\d+)\//);
+    if (match) {
+      console.log(`🔌 Attempting DB Connection to HOST: ${match[1]}, PORT: ${match[2]}`);
+    } else {
+      console.log('🔌 DATABASE_URL format not recognized (standard logging).');
+    }
+  } else {
+    console.error('❌ DATABASE_URL environment variable is MISSING!');
+  }
+} catch (e) { console.error('Error logging config:', e); }
+
 // --- SIMPLE HEALTH CHECK ---
 app.get('/api/health-check', async (req, res) => {
   const result = {

@@ -2023,6 +2023,7 @@ app.post('/api/memberships', authenticateToken, async (req, res) => {
 
   if (plan === '12_MONTHS') end.setMonth(end.getMonth() + 12);
   else if (plan === '8_MONTHS') end.setMonth(end.getMonth() + 8);
+  else if (plan === '1_MONTH') end.setMonth(end.getMonth() + 1);
   else end.setMonth(end.getMonth() + 4); // Default 4
 
   try {

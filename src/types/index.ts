@@ -198,7 +198,7 @@ export interface AuthResponse {
 }
 
 // Membership / Subscription
-export type MembershipPlan = '4_MONTHS' | '8_MONTHS' | '12_MONTHS';
+export type MembershipPlan = '1_MONTH' | '4_MONTHS' | '8_MONTHS' | '12_MONTHS';
 export type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'PENDING';
 
 export interface Membership {

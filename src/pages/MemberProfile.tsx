@@ -28,6 +28,10 @@ export function MemberProfile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
 
+  // Subscription Modal State
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<MembershipPlan>('4_MONTHS');
+
   useEffect(() => {
     loadUser();
   }, [id, fetchAll]);
@@ -52,13 +56,26 @@ export function MemberProfile() {
 
   const ensureMembership = async (plan: string) => {
     let validPlan: MembershipPlan = '4_MONTHS';
-    if (plan === 'YEARLY') validPlan = '12_MONTHS';
-    if (plan === 'QUARTERLY') validPlan = '4_MONTHS';
+    if (plan === 'YEARLY' || plan === '12_MONTHS') validPlan = '12_MONTHS';
+    if (plan === 'QUARTERLY' || plan === '4_MONTHS') validPlan = '4_MONTHS';
+    if (plan === '8_MONTHS') validPlan = '8_MONTHS';
+    if (plan === '1_MONTH') validPlan = '1_MONTH';
+
     if (!id || !user) return;
-    if (!membership) {
-      await create({ user_id: id, plan: validPlan, start_date: new Date().toISOString(), status: 'PENDING' });
+    try {
+      if (!membership) {
+        await create({ user_id: id, plan: validPlan, start_date: new Date().toISOString(), status: 'PENDING' });
+      } else {
+        await renew(membership.id, validPlan);
+      }
+      alert('Abonelik işlemi başarıyla tamamlandı.');
+    } catch (e) {
+      alert('Hata oluştu.');
+    } finally {
+      setShowSubscriptionModal(false);
+      // Refresh user data to show new subscription details
+      loadUser();
     }
-    await renew(membership ? membership.id : items.find(m => m.user_id === id)?.id || '', validPlan);
   };
 
   const handleConnect = async (targetId: string) => {
@@ -310,21 +327,72 @@ export function MemberProfile() {
                     <span className="text-sm text-gray-500">Plan</span>
                     <span className="font-medium">{membership.plan}</span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Bitiş</span>
+                    <span className="font-medium">{membership.end_date ? new Date(membership.end_date).toLocaleDateString() : '-'}</span>
+                  </div>
                   <div className="pt-4 border-t space-y-2">
-                    <Button className="w-full" size="sm" onClick={() => ensureMembership('MONTHLY')}>Yenile</Button>
+                    <Button className="w-full" size="sm" onClick={() => setShowSubscriptionModal(true)}>Yenile / Uzat</Button>
                     <Button variant="outline" className="w-full" size="sm" onClick={() => expire(membership.id)}>İptal Et</Button>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-500 mb-4">Aktif abonelik yok</p>
-                  <Button className="w-full" onClick={() => ensureMembership('MONTHLY')}>Abonelik Başlat</Button>
+                  <Button className="w-full" onClick={() => setShowSubscriptionModal(true)}>Abonelik Başlat</Button>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Subscription Selection Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Abonelik Süresi Seçin</h3>
+            <p className="text-gray-500 mb-6">Lütfen üyelik için tanımlamak istediğiniz süreyi seçiniz.</p>
+
+            <div className="space-y-3">
+              {[
+                { id: '1_MONTH', label: '1 Ay', desc: 'Aylık Üyelik' },
+                { id: '4_MONTHS', label: '4 Ay', desc: 'Standart Dönem' },
+                { id: '8_MONTHS', label: '8 Ay', desc: 'İki Dönem' },
+                { id: '12_MONTHS', label: '12 Ay', desc: 'Yıllık Üyelik' },
+              ].map((plan) => (
+                <div
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan.id as MembershipPlan)}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all flex justify-between items-center ${selectedPlan === plan.id
+                      ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  <div>
+                    <p className={`font-semibold ${selectedPlan === plan.id ? 'text-indigo-900' : 'text-gray-900'}`}>{plan.label}</p>
+                    <p className="text-sm text-gray-500">{plan.desc}</p>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedPlan === plan.id ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'
+                    }`}>
+                    {selectedPlan === plan.id && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setShowSubscriptionModal(false)}>İptal</Button>
+              <Button
+                className="bg-indigo-600 text-white"
+                onClick={() => ensureMembership(selectedPlan)}
+              >
+                Onayla ve Başlat
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }

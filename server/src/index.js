@@ -474,7 +474,7 @@ app.get('/api/reports/traffic-lights', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/reports/palms', authenticateToken, async (req, res) => {
+app.get('/api/reports/attendance-stats', authenticateToken, async (req, res) => {
   try {
     // Aggregate P A L M S counts per user
     const { rows } = await pool.query(`
@@ -504,19 +504,19 @@ app.get('/api/reports/stats', authenticateToken, async (req, res) => {
     const visitorCount = (await pool.query('SELECT count(*) FROM visitors')).rows[0].count;
     const oneToOneCount = (await pool.query('SELECT count(*) FROM one_to_ones')).rows[0].count;
 
-    // Revenue (TYFCB + Membership Fees mock)
-    // Check if tyfcb_entries table exists and sum 'amount'
-    let tyfcbTotal = 0;
+    // Revenue (Realized Revenue + Membership Fees mock)
+    // Check if revenue_entries table exists and sum 'amount'
+    let totalRevenue = 0;
     try {
       // We can check if table exists or just try catch
-      const revRes = await pool.query('SELECT SUM(amount) as total FROM tyfcb_entries');
-      tyfcbTotal = parseFloat(revRes.rows[0].total || 0);
+      const revRes = await pool.query('SELECT SUM(amount) as total FROM revenue_entries'); // Updated table name assumption or keep consistent if table exists
+      totalRevenue = parseFloat(revRes.rows[0].total || 0);
     } catch { }
 
     res.json({
-      totalRevenue: tyfcbTotal, // e.g. 5425000
-      internalRevenue: tyfcbTotal * 0.7, // Mock breakdown
-      externalRevenue: tyfcbTotal * 0.3,
+      totalRevenue: totalRevenue, // e.g. 5425000
+      internalRevenue: totalRevenue * 0.7, // Mock breakdown
+      externalRevenue: totalRevenue * 0.3,
       totalMembers: parseInt(memberCount),
       lostMembers: 0, // Need to track inactive
       totalGroups: parseInt(groupCount),
@@ -560,47 +560,7 @@ function authenticateToken(req, res, next) {
 
   console.log('Auth Token:', token); // DEBUG LOG
 
-  // DEV: Allow mock tokens for demo purposes
-  // DEV: Allow mock tokens for demo purposes
-  // DEV: Allow mock tokens for demo purposes
-  if (token === 'mock-user-token') {
-    // Try to find member@demo.com FIRST (as requested by user), then user@demo.com
-    pool.query("SELECT * FROM users WHERE email = 'member@demo.com'").then(res => {
-      if (res.rows.length > 0) {
-        req.user = res.rows[0];
-        next();
-      } else {
-        // Fallback to user@demo.com
-        pool.query("SELECT * FROM users WHERE email = 'user@demo.com'").then(res2 => {
-          if (res2.rows.length > 0) {
-            req.user = res2.rows[0];
-          } else {
-            req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
-          }
-          next();
-        }).catch(() => next());
-      }
-    }).catch(() => {
-      req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'member@demo.com', role: 'MEMBER' };
-      next();
-    });
-    return;
-  }
 
-  // Handling for President Demo Token
-  if (token === 'mock-president-token') {
-    pool.query("SELECT * FROM users WHERE email = 'grupbaskani@demo.com'").then(res => {
-      if (res.rows.length > 0) req.user = res.rows[0];
-      else req.user = { id: '00-president', email: 'grupbaskani@demo.com', role: 'PRESIDENT' };
-      next();
-    }).catch(() => next());
-    return;
-  }
-
-  if (token === 'mock-admin-token') {
-    req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'admin@demo.com', role: 'ADMIN' };
-    return next();
-  }
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
     if (err) return res.sendStatus(403);
@@ -930,18 +890,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    // Handle mock user
-    if (req.user.id === '00000000-0000-0000-0000-000000000000') {
-      return res.json({
-        id: req.user.id,
-        name: 'Demo User',
-        email: req.user.email,
-        role: req.user.role,
-        profession: 'Demo Meslek',
-        performance_score: 85,
-        performance_color: 'GREEN'
-      });
-    }
+
 
     const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
@@ -954,20 +903,7 @@ app.get('/api/users/:id', async (req, res) => {
   const { id } = req.params;
   // Validate UUID format
   const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-  if (!uuidRegex.test(id)) {
-    // Return dummy data for mock-user-id to satisfy frontend demo mode
-    if (id === 'mock-user-id') {
-      return res.json({
-        id: '00000000-0000-0000-0000-000000000000',
-        full_name: 'Demo User',
-        profession: 'Demo',
-        email: 'user@demo.com',
-        performance_score: 85,
-        performance_color: 'GREEN'
-      });
-    }
-    return res.status(400).json({ error: 'Invalid User ID format' });
-  }
+
 
   try {
     const { rows } = await pool.query(`

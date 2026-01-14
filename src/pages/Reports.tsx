@@ -58,7 +58,7 @@ interface MemberReportData {
   referralsReceived: number;
   visitorsHosted: number;
   oneToOnesCompleted: number;
-  revenueGiven: number; // TYFCB given
+  revenueGiven: number; // Revenue given
   revenueReceived: number; // Business closed
   ceuCredits: number;
   performanceScore: number;

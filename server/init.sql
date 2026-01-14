@@ -297,7 +297,7 @@ WHERE u1.email='ali.can@example.com' AND u2.email='ayse.kaya@example.com';
 
 -- Sample Education
 INSERT INTO education (user_id, title, hours, completed_date, type)
-SELECT id, 'BNI Podcast Bölüm 25', 1.0, NOW() - INTERVAL '1 day', 'PODCAST'
+SELECT id, 'Network Podcast Bölüm 25', 1.0, NOW() - INTERVAL '1 day', 'PODCAST'
 FROM users WHERE email='ali.can@example.com';
 
 -- NEW SEED DATA ADDED ON REQUEST

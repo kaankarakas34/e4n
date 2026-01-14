@@ -22,10 +22,10 @@ export function RevenueEntry() {
     }, [user, fetchReferrals]);
 
     // Filter referrals where user is the RECEIVER (who gets the job) or GIVER?
-    // Ciro Girişi: "Teşekkür ederim, bana iş yönlendirdin" (TYFCB).
-    // Usually, the RECEIVER of the referral (User A) creates a TYFCB record thanking the GIVER (User B).
+    // Ciro Girişi: "Teşekkür ederim, bana iş yönlendirdin" (Revenue Notification).
+    // Usually, the RECEIVER of the referral (User A) creates a Revenue record thanking the GIVER (User B).
     // Or User A (Giver of money) thanks User B (Provider of service).
-    // In E4N: Record "Thank You For Closed Business" given TO the member who gave the referral.
+    // In E4N: Record "Revenue Notification" given TO the member who gave the referral.
     // So "I (User) paid Amount to X". Wait.
     // "Teşekkür Ederim" is filled by the person who RECEIVED the money/business, thanking the Referrer.
     // So Filter: Referrals where I am the RECEIVER_ID ? (Someone referred me).
@@ -54,7 +54,7 @@ export function RevenueEntry() {
                 updated_at: new Date().toISOString()
             });
 
-            // 2. We should ideally create a Revenue/TYFCB record. 
+            // 2. We should ideally create a Revenue record. 
             // For now, updating the Referral is the primary action requested.
             // "Ciro girişi yapsın" -> Entering revenue amount.
 

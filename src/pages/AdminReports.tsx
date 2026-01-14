@@ -18,7 +18,7 @@ export default function AdminReports() {
     const [groups, setGroups] = useState<any[]>([]);
     const [geo, setGeo] = useState<any[]>([]);
     const [trafficLights, setTrafficLights] = useState<any[]>([]);
-    const [palms, setPalms] = useState<any[]>([]);
+    const [attendanceStats, setAttendanceStats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -35,7 +35,7 @@ export default function AdminReports() {
                 api.getAdminGroupStats?.() || Promise.resolve([]),
                 api.getAdminGeoStats?.() || Promise.resolve([]),
                 api.getTrafficLightReport(),
-                api.getPALMSReport()
+                api.getAttendanceReport()
             ]);
 
             // Helper to get fulfilled value or default
@@ -46,7 +46,7 @@ export default function AdminReports() {
             setGroups(getVal(2, []));
             setGeo(getVal(3, []));
             setTrafficLights(getVal(4, []));
-            setPalms(getVal(5, []));
+            setAttendanceStats(getVal(5, []));
 
         } catch (error) {
             console.error('Failed to load reports:', error);
@@ -221,11 +221,11 @@ export default function AdminReports() {
         </Card>
     );
 
-    const renderPALMS = () => (
+    const renderAttendanceStats = () => (
         <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <CardHeader>
-                <CardTitle>PALMS Raporu</CardTitle>
-                <p className="text-sm text-gray-500">Katılım ve yoklama özeti (Present, Absent, Late, Medical, Substitute).</p>
+                <CardTitle>Katılım Raporu</CardTitle>
+                <p className="text-sm text-gray-500">Katılım ve yoklama özeti (Var, Yok, Geç, Sağlık, Yedek).</p>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto">
@@ -241,7 +241,7 @@ export default function AdminReports() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {palms.map((Stats: any) => (
+                            {attendanceStats.map((Stats: any) => (
                                 <tr key={Stats.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{Stats.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-green-600 font-bold">{Stats.present}</td>
@@ -279,17 +279,17 @@ export default function AdminReports() {
                         Trafik Işıkları
                     </button>
                     <button
-                        onClick={() => setActiveTab('palms')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'palms' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        onClick={() => setActiveTab('attendance')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'attendance' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                        PALMS
+                        Katılım Raporu
                     </button>
                 </div>
             </div>
 
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'traffic' && renderTrafficLights()}
-            {activeTab === 'palms' && renderPALMS()}
+            {activeTab === 'attendance' && renderAttendanceStats()}
         </div>
     );
 }

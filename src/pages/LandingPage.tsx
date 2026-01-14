@@ -258,7 +258,7 @@ export function LandingPage() {
                                 </div>
                             </div>
 
-                            {/* Power Teams */}
+                            {/* Loncalar */}
                             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <BarChart className="h-32 w-32 text-blue-600 transform rotate-12" />

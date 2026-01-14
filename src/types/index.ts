@@ -445,5 +445,5 @@ export interface EducationFormData {
 // Backward compatibility aliases
 export type TrafficLightResponse = PerformanceReport;
 export type CEU = Education;
-export type TYFCB = Revenue;
-export type PALMSReport = AttendanceReport;
+export type RevenueRecord = Revenue;
+export type AttendanceStatsReport = AttendanceReport;

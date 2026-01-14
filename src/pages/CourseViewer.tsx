@@ -44,7 +44,7 @@ export function CourseViewer() {
         questions: [
             { id: '1', quiz_id: 'q1', points: 25, question_text: 'E4N açılımı nedir?', correct_answer: 'Event 4 Network', options: ['Event 4 Network', 'Event For Network', 'Elite 4 Network'], type: 'MULTIPLE_CHOICE', order_index: 0 },
             { id: '2', quiz_id: 'q1', points: 25, question_text: 'Toplantılar hangi gün yapılır?', correct_answer: 'Salı', options: ['Pazartesi', 'Salı', 'Cuma'], type: 'MULTIPLE_CHOICE', order_index: 1 },
-            { id: '3', quiz_id: 'q1', points: 25, question_text: 'Givers Gain ne demektir?', correct_answer: 'Kazandır ki Kazan', options: ['Al ve Kaç', 'Kazandır ki Kazan', 'Sadece Kazan'], type: 'MULTIPLE_CHOICE', order_index: 2 },
+            { id: '3', quiz_id: 'q1', points: 25, question_text: 'Dayanışma Prensibi ne demektir?', correct_answer: 'Birlikte Kazanma İlkesi', options: ['Al ve Kaç', 'Birlikte Kazanma İlkesi', 'Sadece Kazan'], type: 'MULTIPLE_CHOICE', order_index: 2 },
             { id: '4', quiz_id: 'q1', points: 25, question_text: 'Bir üye kaç toplantıya katılmazsa üyeliği tehlikeye girer?', correct_answer: '3', options: ['1', '3', '5'], type: 'MULTIPLE_CHOICE', order_index: 3 },
         ]
     };

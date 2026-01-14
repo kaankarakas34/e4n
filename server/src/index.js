@@ -656,7 +656,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
 
   const { id } = req.params;
-  const { status, role, name, phone, city, profession, company, tax_number, tax_office, billing_address } = req.body;
+  const { status, role, email, name, phone, city, profession, company, tax_number, tax_office, billing_address } = req.body;
 
   try {
     const client = await pool.connect();
@@ -671,12 +671,16 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
       const values = [];
       let idx = 1;
 
-      if (status) { updates.push(`account_status = $${idx++}`); values.push(status); }
+      // Map request body fields to flexible variables
+      const bodyStatus = status || req.body.account_status;
+
+      if (bodyStatus) { updates.push(`account_status = $${idx++}`); values.push(bodyStatus); }
       if (role) { updates.push(`role = $${idx++}`); values.push(role); }
-      if (name) { updates.push(`name = $${idx++}`); values.push(name); }
-      if (phone) { updates.push(`phone = $${idx++}`); values.push(phone); }
-      if (city) { updates.push(`city = $${idx++}`); values.push(city); }
-      if (profession) { updates.push(`profession = $${idx++}`); values.push(profession); }
+      if (email !== undefined) { updates.push(`email = $${idx++}`); values.push(email); }
+      if (name !== undefined) { updates.push(`name = $${idx++}`); values.push(name); }
+      if (phone !== undefined) { updates.push(`phone = $${idx++}`); values.push(phone); }
+      if (city !== undefined) { updates.push(`city = $${idx++}`); values.push(city); }
+      if (profession !== undefined) { updates.push(`profession = $${idx++}`); values.push(profession); }
       if (company !== undefined) { updates.push(`company = $${idx++}`); values.push(company); }
       if (tax_number !== undefined) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
       if (tax_office !== undefined) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
@@ -875,7 +879,8 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
-             g.name as company -- using group name as company placeholder or join real company table if exists
+             u.company, u.tax_number, u.tax_office, u.billing_address, u.account_status,
+             g.name as group_name
       FROM users u
       LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
       LEFT JOIN groups g ON gm.group_id = g.id

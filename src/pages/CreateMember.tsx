@@ -13,7 +13,6 @@ import { Upload as FileUpload } from '../shared/Upload';
 const memberSchema = z.object({
     full_name: z.string().min(2, 'Ad Soyad en az 2 karakter olmalıdır'),
     email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-    tc_no: z.string().length(11, 'TC No 11 haneli olmalıdır'),
     phone: z.string().min(10, 'Geçerli bir telefon numarası giriniz'),
     company: z.string().min(2, 'Şirket adı zorunludur'),
     profession: z.string().min(2, 'Meslek kolu zorunludur'),
@@ -88,11 +87,6 @@ export function CreateMember() {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Ad Soyad *</label>
                                     <Input {...register('full_name')} error={errors.full_name?.message} placeholder="Ad Soyad" />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">TC Kimlik No *</label>
-                                    <Input {...register('tc_no')} error={errors.tc_no?.message} placeholder="11 haneli TC No" />
                                 </div>
 
                                 <div className="space-y-2">

@@ -259,19 +259,19 @@ export function MemberProfile() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-xs text-blue-600 font-medium uppercase">Yönlendirme</p>
-                      <p className="text-2xl font-bold text-gray-900">12</p>
+                      <p className="text-2xl font-bold text-gray-900">{user.metric_referrals || 0}</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <p className="text-xs text-green-600 font-medium uppercase">Ciro Katkısı</p>
-                      <p className="text-2xl font-bold text-gray-900">₺450K</p>
+                      <p className="text-2xl font-bold text-gray-900">₺{(user.metric_revenue || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <p className="text-xs text-purple-600 font-medium uppercase">Ziyaretçi</p>
-                      <p className="text-2xl font-bold text-gray-900">3</p>
+                      <p className="text-2xl font-bold text-gray-900">{user.metric_visitors || 0}</p>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg">
                       <p className="text-xs text-orange-600 font-medium uppercase">1'e 1</p>
-                      <p className="text-2xl font-bold text-gray-900">8</p>
+                      <p className="text-2xl font-bold text-gray-900">{user.metric_one_to_ones || 0}</p>
                     </div>
                   </div>
 

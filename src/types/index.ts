@@ -15,6 +15,11 @@ export interface User {
   updated_at?: string;
   friends?: string[];
   achievements?: Achievement[];
+  // Performance Metrics (stats)
+  metric_referrals?: number;
+  metric_revenue?: number;
+  metric_visitors?: number;
+  metric_one_to_ones?: number;
 }
 
 export interface Achievement {

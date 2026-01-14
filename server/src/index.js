@@ -885,10 +885,21 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     try {
       // Try fetching with all new fields
+      /*
+        QUERY IMPROVEMENT: Added subqueries for real-time stats (Performance Scorecard)
+        - metric_referrals: Count of referrals given
+        - metric_revenue: Sum of amount from referrals given
+        - metric_visitors: Count of visitors invited
+        - metric_one_to_ones: Count of 1-to-1s (requester or partner)
+      */
       const { rows } = await pool.query(`
         SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
                u.company, u.tax_number, u.tax_office, u.billing_address, u.account_status,
-               g.name as group_name
+               g.name as group_name,
+               (SELECT COUNT(*)::int FROM referrals WHERE giver_id = u.id) as metric_referrals,
+               (SELECT COALESCE(SUM(amount), 0)::float FROM referrals WHERE giver_id = u.id AND status = 'SUCCESSFUL') as metric_revenue,
+               (SELECT COUNT(*)::int FROM visitors WHERE inviter_id = u.id) as metric_visitors,
+               (SELECT COUNT(*)::int FROM one_to_ones WHERE requester_id = u.id OR partner_id = u.id) as metric_one_to_ones
         FROM users u
         LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
         LEFT JOIN groups g ON gm.group_id = g.id

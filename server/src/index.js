@@ -1421,11 +1421,13 @@ app.delete('/api/events/:id', authenticateToken, async (req, res) => {
 app.get('/api/admin/members', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-            SELECT u.*, u.account_status as status, g.name as group_name, p.status as profession_status, p.id as profession_id, p.category as profession_category
+            SELECT u.*, u.account_status as status, g.name as group_name, 
+            'ACTIVE' as profession_status, -- Default placeholder to prevent crash
+            NULL as profession_id, 
+            NULL as profession_category
             FROM users u
             LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
             LEFT JOIN groups g ON gm.group_id = g.id
-            LEFT JOIN professions p ON u.profession = p.name
             ORDER BY u.created_at DESC
         `);
     res.json(rows.map(r => ({ ...r, full_name: r.name })));

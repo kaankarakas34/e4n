@@ -2004,7 +2004,13 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
       if (r.subscription_end_date && new Date(r.subscription_end_date) < now) {
         status = 'AD_EXPIRED'; // virtual status, or we can say 'PASSIVE'
       }
-      return { ...r, status: status || 'ACTIVE', end_date: r.subscription_end_date, plan: r.subscription_plan };
+      return {
+        ...r,
+        user_id: r.id, // CRITICAL FIX: Frontend store relies on user_id to find the membership
+        status: status || 'ACTIVE',
+        end_date: r.subscription_end_date,
+        plan: r.subscription_plan
+      };
     });
 
     res.json(validatedRows);

@@ -145,6 +145,10 @@ export function MemberProfile() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Meslek</label>
                   <input type="text" className="w-full border rounded-md p-2" value={editForm.profession || ''} onChange={e => setEditForm({ ...editForm, profession: e.target.value })} />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">İl</label>
+                  <input type="text" className="w-full border rounded-md p-2" value={editForm.city || ''} onChange={e => setEditForm({ ...editForm, city: e.target.value })} />
+                </div>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -200,6 +204,7 @@ export function MemberProfile() {
                 <p className="text-gray-700"><strong>Meslek:</strong> {user.profession}</p>
                 <p className="text-gray-700"><strong>Grup:</strong> {'Liderler Global'}</p>
                 <p className="text-gray-700"><strong>Şirket:</strong> {user.company || 'Belirtilmemiş'}</p>
+                <p className="text-gray-700"><strong>İl:</strong> {user.city || 'Belirtilmemiş'}</p>
 
                 <div className="pt-2 border-t mt-2">
                   <h4 className="font-semibold text-gray-900 mb-2">Fatura Bilgileri</h4>
@@ -365,8 +370,8 @@ export function MemberProfile() {
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan.id as MembershipPlan)}
                   className={`p-4 border rounded-xl cursor-pointer transition-all flex justify-between items-center ${selectedPlan === plan.id
-                      ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   <div>

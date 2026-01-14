@@ -23,8 +23,5 @@
                 }
             ]
         }
-    ],
-    "env": {
-        "DATABASE_URL": "postgres://postgres.znkforqlpkmakxgvxmco:vy/22xUZF3/n8S8@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-    }
+    ]
 }

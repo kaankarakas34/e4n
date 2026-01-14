@@ -22,7 +22,7 @@ const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
 
 // Connection Configuration for Supabase
 // Using explicit env var
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
 const pool = new Pool({
   connectionString,

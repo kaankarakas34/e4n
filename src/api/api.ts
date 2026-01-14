@@ -185,6 +185,9 @@ export const api = {
   async deleteGroup(id: string) {
     return await request(`/groups/${id}`, { method: 'DELETE' });
   },
+  async updateGroup(id: string, payload: any) {
+    return await request(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
   async getGroupMembers(groupId: string) {
     return await request(`/groups/${groupId}/members`);
   },

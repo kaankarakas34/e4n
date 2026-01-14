@@ -18,6 +18,9 @@ export function AdminGroupDetail() {
     const [referrals, setReferrals] = useState<any[]>([]);
     const [synergy, setSynergy] = useState<any[]>([]);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '' });
+
     const [loading, setLoading] = useState(true);
 
     const isPowerTeam = location.pathname.includes('power-teams');
@@ -180,9 +183,101 @@ export function AdminGroupDetail() {
                         >
                             {typeLabel} Sil
                         </Button>
-                        <Button variant="primary">{typeLabel} Düzenle</Button>
+                        <Button variant="primary" onClick={() => {
+                            setEditForm({
+                                name: data.name || '',
+                                meeting_day: data.meeting_day || '',
+                                meeting_time: data.meeting_time || '',
+                                meeting_link: data.meeting_link || '',
+                                description: data.description || ''
+                            });
+                            setShowEditModal(true);
+                        }}>{typeLabel} Düzenle</Button>
                     </div>
                 </div>
+
+                {/* Edit Modal */}
+                {showEditModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <h2 className="text-xl font-bold mb-4">{typeLabel} Düzenle</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">İsim</label>
+                                    <input
+                                        type="text"
+                                        className="mt-1 block w-full border rounded-md p-2"
+                                        value={editForm.name}
+                                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                    />
+                                </div>
+                                {!isPowerTeam && (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Toplantı Günü</label>
+                                            <select
+                                                className="mt-1 block w-full border rounded-md p-2"
+                                                value={editForm.meeting_day}
+                                                onChange={e => setEditForm({ ...editForm, meeting_day: e.target.value })}
+                                            >
+                                                <option value="">Seçiniz</option>
+                                                <option value="Monday">Pazartesi</option>
+                                                <option value="Tuesday">Salı</option>
+                                                <option value="Wednesday">Çarşamba</option>
+                                                <option value="Thursday">Perşembe</option>
+                                                <option value="Friday">Cuma</option>
+                                                <option value="Saturday">Cumartesi</option>
+                                                <option value="Sunday">Pazar</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Toplantı Saati</label>
+                                            <input
+                                                type="time"
+                                                className="mt-1 block w-full border rounded-md p-2"
+                                                value={editForm.meeting_time}
+                                                onChange={e => setEditForm({ ...editForm, meeting_time: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Toplantı Linki</label>
+                                            <input
+                                                type="text"
+                                                className="mt-1 block w-full border rounded-md p-2"
+                                                placeholder="https://zoom.us/..."
+                                                value={editForm.meeting_link}
+                                                onChange={e => setEditForm({ ...editForm, meeting_link: e.target.value })}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Açıklama</label>
+                                    <textarea
+                                        className="mt-1 block w-full border rounded-md p-2"
+                                        rows={3}
+                                        value={editForm.description}
+                                        onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end space-x-3">
+                                <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
+                                <Button variant="primary" onClick={async () => {
+                                    try {
+                                        await api.updateGroup(data.id, editForm);
+                                        // Update local data
+                                        setData({ ...data, ...editForm });
+                                        setShowEditModal(false);
+                                        alert('Güncelleme başarılı!');
+                                    } catch (e: any) {
+                                        alert('Güncelleme başarısız: ' + e.message);
+                                    }
+                                }}>Kaydet</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Report Modal */}
                 {showReportModal && (

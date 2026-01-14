@@ -1848,11 +1848,13 @@ VALUES($1, $2, 'ACTIVE', NOW())
       WHERE user_id = $1 AND status = 'ACTIVE'
   `, [userId]);
 
-      // Insert new active group
+      // Insert new active group (or update if exists)
       await client.query(`
-      INSERT INTO group_members(group_id, user_id, status)
-VALUES($1, $2, 'ACTIVE')
-  `, [groupId, userId]);
+        INSERT INTO group_members(group_id, user_id, status, joined_at)
+        VALUES($1, $2, 'ACTIVE', NOW())
+        ON CONFLICT (group_id, user_id) 
+        DO UPDATE SET status = 'ACTIVE', joined_at = NOW()
+      `, [groupId, userId]);
 
       await client.query('COMMIT');
       res.json({ success: true });

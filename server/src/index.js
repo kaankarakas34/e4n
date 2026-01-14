@@ -2013,7 +2013,94 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
   }
 });
 
-// Extend/Update Membership
+// Create Membership (Start Subscription)
+app.post('/api/memberships', authenticateToken, async (req, res) => {
+  const { user_id, plan, start_date } = req.body;
+
+  // Calculate end date based on plan
+  const start = start_date ? new Date(start_date) : new Date();
+  const end = new Date(start);
+
+  if (plan === '12_MONTHS') end.setMonth(end.getMonth() + 12);
+  else if (plan === '8_MONTHS') end.setMonth(end.getMonth() + 8);
+  else end.setMonth(end.getMonth() + 4); // Default 4
+
+  try {
+    const { rows } = await pool.query(`
+      UPDATE users 
+      SET subscription_plan = $1, 
+          subscription_end_date = $2, 
+          account_status = 'ACTIVE',
+          last_reminder_trigger = NULL
+      WHERE id = $3
+      RETURNING id, name, email, subscription_plan, subscription_end_date, account_status
+    `, [plan, end.toISOString(), user_id]);
+
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    const user = rows[0];
+
+    // Return a "Membership" object format expected by frontend
+    const membership = {
+      id: user.id, // Using user_id as membership_id for 1-to-1 mapping simplicity
+      user_id: user.id,
+      plan: user.subscription_plan,
+      status: user.account_status,
+      start_date: start.toISOString(), // We don't store start_date explicitly in users table, but frontend needs it
+      end_date: user.subscription_end_date,
+      last_renewal_date: new Date().toISOString()
+    };
+
+    res.status(201).json(membership);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update Membership (Renew/Edit)
+app.put('/api/memberships/:id', authenticateToken, async (req, res) => {
+  // :id is the membership_id, which we mapped to user_id
+  const userId = req.params.id;
+  const { plan, end_date, status } = req.body;
+
+  try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (plan) { fields.push(`subscription_plan = $${idx++}`); values.push(plan); }
+    if (end_date) { fields.push(`subscription_end_date = $${idx++}`); values.push(end_date); }
+    if (status) { fields.push(`account_status = $${idx++}`); values.push(status); }
+
+    if (fields.length > 0) {
+      values.push(userId);
+      await pool.query(
+        `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`,
+        values
+      );
+    }
+
+    // Return the updated "virtual" membership
+    const { rows } = await pool.query('SELECT subscription_plan, subscription_end_date, account_status FROM users WHERE id = $1', [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const user = rows[0];
+
+    const membership = {
+      id: userId,
+      user_id: userId,
+      plan: user.subscription_plan,
+      status: user.account_status,
+      start_date: new Date().toISOString(), // Mock
+      end_date: user.subscription_end_date
+    };
+
+    res.json(membership);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Extend/Update Membership (Admin Specific Tool)
 app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   const { userId, months, endDate, planName } = req.body;
@@ -2042,11 +2129,11 @@ app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
     await pool.query(`
       UPDATE users 
       SET subscription_end_date = $1,
-  subscription_plan = $2,
-  account_status = 'ACTIVE',
-  last_reminder_trigger = NULL
+      subscription_plan = $2,
+      account_status = 'ACTIVE',
+      last_reminder_trigger = NULL
       WHERE id = $3
-  `, [newEnd, newPlan, userId]);
+    `, [newEnd, newPlan, userId]);
 
     res.json({ success: true, new_end_date: newEnd, plan: newPlan });
   } catch (e) {

@@ -1776,144 +1776,145 @@ app.get('/api/user/groups', authenticateToken, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
 
 
-  // --- SHUFFLE & ROLE MANAGEMENT ---
+// --- SHUFFLE & ROLE MANAGEMENT ---
 
-  // Save Shuffle Distribution
-  app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
-    if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+// Save Shuffle Distribution
+app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
 
-    const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
-    const client = await pool.connect();
+  const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
+  const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+  try {
+    await client.query('BEGIN');
 
-      // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
-      // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
-      // IMPORTANT: Exclude ADMIN from reset
-      await client.query(`
+    // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
+    // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
+    // IMPORTANT: Exclude ADMIN from reset
+    await client.query(`
       UPDATE users 
       SET role = 'MEMBER' 
       WHERE role IN('PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'EDUCATION_COORDINATOR', 'VISITOR_HOST')
   `);
 
-      // 2. Archive ALL existing active group memberships
-      // We assume shuffle applies to everyone effectively, or we could only target users in the assignment list.
-      // For a full shuffle, archiving all ACTIVE is safer to ensure no duplicates.
-      await client.query(`
+    // 2. Archive ALL existing active group memberships
+    // We assume shuffle applies to everyone effectively, or we could only target users in the assignment list.
+    // For a full shuffle, archiving all ACTIVE is safer to ensure no duplicates.
+    await client.query(`
       UPDATE group_members 
       SET status = 'INACTIVE' 
       WHERE status = 'ACTIVE'
   `);
 
-      // 3. Insert new group assignments
-      const insertQuery = `
+    // 3. Insert new group assignments
+    const insertQuery = `
       INSERT INTO group_members(group_id, user_id, status, joined_at)
 VALUES($1, $2, 'ACTIVE', NOW())
   `;
 
-      for (const [groupId, memberIds] of Object.entries(assignments)) {
-        if (!Array.isArray(memberIds)) continue;
-        for (const memberId of memberIds) {
-          await client.query(insertQuery, [groupId, memberId]);
-        }
+    for (const [groupId, memberIds] of Object.entries(assignments)) {
+      if (!Array.isArray(memberIds)) continue;
+      for (const memberId of memberIds) {
+        await client.query(insertQuery, [groupId, memberId]);
       }
-
-      await client.query('COMMIT');
-      res.json({ success: true, message: 'Shuffle applied successfully.' });
-    } catch (e) {
-      await client.query('ROLLBACK');
-      console.error('Shuffle save error:', e);
-      res.status(500).json({ error: e.message });
-    } finally {
-      client.release();
     }
-  });
 
-  // Move Member to Group
-  app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
-    if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-    const { userId, groupId } = req.body;
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Shuffle applied successfully.' });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Shuffle save error:', e);
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
 
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
+// Move Member to Group
+app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { userId, groupId } = req.body;
 
-      // Deactivate current active group
-      await client.query(`
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Deactivate current active group
+    await client.query(`
       UPDATE group_members 
       SET status = 'INACTIVE' 
       WHERE user_id = $1 AND status = 'ACTIVE'
   `, [userId]);
 
-      // Insert new active group (or update if exists)
-      await client.query(`
+    // Insert new active group (or update if exists)
+    await client.query(`
         INSERT INTO group_members(group_id, user_id, status, joined_at)
         VALUES($1, $2, 'ACTIVE', NOW())
         ON CONFLICT (group_id, user_id) 
         DO UPDATE SET status = 'ACTIVE', joined_at = NOW()
       `, [groupId, userId]);
 
-      await client.query('COMMIT');
-      res.json({ success: true });
-    } catch (e) {
-      await client.query('ROLLBACK');
-      res.status(500).json({ error: e.message });
-    } finally {
-      client.release();
-    }
-  });
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
 
-  // Helper: Send Notification (Mock + DB)
-  const sendNotification = async (userId, title, message) => {
-    console.log(`[EMAIL - MOCK] To: ${userId} | Subject: ${title} `);
-    try {
-      await pool.query(
-        `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
-        [userId, `${title}: ${message} `]
-      );
-    } catch (err) {
-      console.error('Notification insert failed', err);
-    }
-  };
+// Helper: Send Notification (Mock + DB)
+const sendNotification = async (userId, title, message) => {
+  console.log(`[EMAIL - MOCK] To: ${userId} | Subject: ${title} `);
+  try {
+    await pool.query(
+      `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
+      [userId, `${title}: ${message} `]
+    );
+  } catch (err) {
+    console.error('Notification insert failed', err);
+  }
+};
 
-  // Daily Cron: Subscription Reminders (Every day at 09:00)
-  cron.schedule('0 9 * * *', async () => {
-    console.log('Running daily subscription check...');
-    try {
-      const { rows } = await pool.query(`
+// Daily Cron: Subscription Reminders (Every day at 09:00)
+cron.schedule('0 9 * * *', async () => {
+  console.log('Running daily subscription check...');
+  try {
+    const { rows } = await pool.query(`
             SELECT id, name, email, subscription_end_date, last_reminder_trigger 
             FROM users 
             WHERE account_status = 'ACTIVE' AND subscription_end_date IS NOT NULL
         `);
 
-      const now = new Date();
-      const triggers = [30, 15, 10, 5, 3, 1];
+    const now = new Date();
+    const triggers = [30, 15, 10, 5, 3, 1];
 
-      for (const user of rows) {
-        const end = new Date(user.subscription_end_date);
-        const diffTime = end - now;
-        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    for (const user of rows) {
+      const end = new Date(user.subscription_end_date);
+      const diffTime = end - now;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (daysLeft <= 0) continue;
+      if (daysLeft <= 0) continue;
 
-        if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
-          await sendNotification(
-            user.id,
-            'Ödeme Hatırlatması',
-            `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı.Lütfen ödemenizi yapınız.`
-          );
-          await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
-        }
+      if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
+        await sendNotification(
+          user.id,
+          'Ödeme Hatırlatması',
+          `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı.Lütfen ödemenizi yapınız.`
+        );
+        await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
       }
-    } catch (e) {
-      console.error('Daily check error:', e);
     }
-  });
-
+  } catch (e) {
+    console.error('Daily check error:', e);
+  }
 });
+
+
 
 // Get Champions
 app.get('/api/champions', authenticateToken, async (req, res) => {

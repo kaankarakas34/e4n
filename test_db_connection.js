@@ -3,7 +3,7 @@ const { Pool } = pg;
 
 // Bu URL'i kod içine gömüyoruz ki environment variable okuma hatası ihtimalini eleyelim.
 // Kullanıcının verdiği şifreyi ve configi kullanıyoruz.
-const connectionString = "postgres://postgres.znkforqlpkmakxgvxmco:vy%2F22xUZF3%2Fn8S8@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+const connectionString = "postgres://postgres:vy%2F22xUZF3%2Fn8S8@db.kaoagsuxccwgrdydxros.supabase.co:5432/postgres";
 
 const pool = new Pool({
     connectionString,

@@ -1574,7 +1574,13 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     // 6. Champions (Stats)
     await client.query('DELETE FROM champions WHERE user_id = $1', [userId]);
 
-    // 7. Finally Delete User
+    // 7. Scoring & Attendance Related (Found in Scoring Engine)
+    await client.query('DELETE FROM attendance WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM visitors WHERE inviter_id = $1', [userId]);
+    await client.query('DELETE FROM education WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM user_score_history WHERE user_id = $1', [userId]);
+
+    // 8. Finally Delete User
     await client.query('DELETE FROM users WHERE id = $1', [userId]);
 
     await client.query('COMMIT');

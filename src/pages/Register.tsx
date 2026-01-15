@@ -94,24 +94,37 @@ export function Register() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h3 className="font-medium text-gray-900 border-b pb-1">Kişisel Bilgiler</h3>
-                  <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
-                  <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
-                  <Input required data-name="password" placeholder="Şifre Oluştur" type="password" value={formData.password} onChange={handleChange} />
-                  <Input required data-name="confirmPassword" placeholder="Şifre Tekrar" type="password" value={formData.confirmPassword} onChange={handleChange} />
-                  <Input required data-name="phone" placeholder="Telefon Numarası" type="tel" value={formData.phone} onChange={handleChange} />
-                  <ProfessionSelect
-                    value={formData.profession}
-                    onChange={(val) => setFormData(prev => ({ ...prev, profession: val }))}
-                    className="border-red-200 focus:border-red-500"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column: Personal Info */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900 border-b pb-2">Kişisel Bilgiler</h3>
+                  <div className="space-y-3">
+                    <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
+                    <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
+                    <Input required data-name="phone" placeholder="Telefon Numarası" type="tel" value={formData.phone} onChange={handleChange} />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-medium text-gray-900 border-b pb-1">Şirket Bilgileri</h3>
-                  <Input required data-name="company" placeholder="Şirket İsmi" value={formData.company} onChange={handleChange} />
+                {/* Right Column: Professional Info */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900 border-b pb-2">Şirket & Meslek Bilgileri</h3>
+                  <div className="space-y-3">
+                    <Input required data-name="company" placeholder="Şirket İsmi" value={formData.company} onChange={handleChange} />
+                    <ProfessionSelect
+                      value={formData.profession}
+                      onChange={(val) => setFormData(prev => ({ ...prev, profession: val }))}
+                      className="border-red-200 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Password Section - Full Width / 2 Col */}
+              <div className="pt-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2 mb-4">Güvenlik</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input required data-name="password" placeholder="Şifre Oluştur" type="password" value={formData.password} onChange={handleChange} />
+                  <Input required data-name="confirmPassword" placeholder="Şifre Tekrar" type="password" value={formData.confirmPassword} onChange={handleChange} />
                 </div>
               </div>
 

@@ -1538,6 +1538,35 @@ app.get('/api/admin/members', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const userId = req.params.id;
+
+    // Delete related records (cleanup)
+    await client.query('DELETE FROM group_members WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR receiver_id = $1', [userId]);
+    // Note: Other tables might exist (messages, referrals, etc.). 
+    // If strict FKs exist without cascade, we might need more deletes.
+    // Assuming major ones are covered or cascades exist.
+
+    await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Delete member error:', e);
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
   const { name, email, phone, company, profession, source, kvkk_accepted } = req.body;

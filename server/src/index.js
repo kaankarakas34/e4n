@@ -1580,15 +1580,21 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     await client.query('DELETE FROM education WHERE user_id = $1', [userId]);
     await client.query('DELETE FROM user_score_history WHERE user_id = $1', [userId]);
 
-    // 8. Finally Delete User
+    // 8. Revenue Entries (mentioned in reports)
+    try {
+      await client.query('DELETE FROM revenue_entries WHERE user_id = $1', [userId]);
+    } catch (ign) { }
+
+    // 9. Finally Delete User
     await client.query('DELETE FROM users WHERE id = $1', [userId]);
 
     await client.query('COMMIT');
+    console.log(`User ${userId} deleted successfully.`);
     res.json({ success: true });
   } catch (e) {
     await client.query('ROLLBACK');
-    console.error('Delete member error:', e);
-    res.status(500).json({ error: e.message });
+    console.error(`FAILED TO DELETE USER ${req.params.id}:`, e);
+    res.status(500).json({ error: e.message, details: e.detail });
   } finally {
     client.release();
   }

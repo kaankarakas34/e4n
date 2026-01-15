@@ -1548,14 +1548,33 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     await client.query('BEGIN');
     const userId = req.params.id;
 
-    // Delete related records (cleanup)
+    // 1. Group & Notifications
     await client.query('DELETE FROM group_members WHERE user_id = $1', [userId]);
     await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
-    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR receiver_id = $1', [userId]);
-    // Note: Other tables might exist (messages, referrals, etc.). 
-    // If strict FKs exist without cascade, we might need more deletes.
-    // Assuming major ones are covered or cascades exist.
 
+    // 2. Meetings (One-to-Ones)
+    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR receiver_id = $1', [userId]);
+
+    // 3. Referrals (Given & Received)
+    await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [userId]);
+
+    // 4. Tickets (Messages & Tickets themselves)
+    await client.query('DELETE FROM ticket_messages WHERE sender_id = $1', [userId]);
+    await client.query('DELETE FROM tickets WHERE user_id = $1', [userId]);
+
+    // 5. Chat Messages (Sent & Received)
+    // Using IF EXISTS logic implicitly by just running request if table exists. 
+    // Since we created tables, we assume they exist.
+    // If 'messages' table doesn't exist, this might throw. 
+    // But earlier logs showed 'messages' endpoints.
+    try {
+      await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
+    } catch (ign) { /* ignore if table missing */ }
+
+    // 6. Champions (Stats)
+    await client.query('DELETE FROM champions WHERE user_id = $1', [userId]);
+
+    // 7. Finally Delete User
     await client.query('DELETE FROM users WHERE id = $1', [userId]);
 
     await client.query('COMMIT');

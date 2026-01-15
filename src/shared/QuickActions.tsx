@@ -84,14 +84,7 @@ export function QuickActions() {
       color: 'orange',
       variant: 'outline' as const,
     },
-    {
-      title: 'Eğitim Saati',
-      description: 'Eğitim saati ekleyin',
-      icon: FileText,
-      href: '/activities',
-      color: 'indigo',
-      variant: 'outline' as const,
-    },
+
     { // This is the new button, triggered by state instead of link
       title: 'Yoklama Bildir',
       description: 'Toplantı katılım durumunuzu bildirin',

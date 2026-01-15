@@ -20,7 +20,7 @@ export function AdminEmailSettings() {
     const [configs, setConfigs] = useState<any[]>([]);
     const [smtpForm, setSmtpForm] = useState({
         smtp_host: 'mail.kurumsaleposta.com',
-        smtp_port: 465,
+        smtp_port: 587,
         smtp_user: 'info@event4network.com',
         smtp_pass: '4hr:b-eSM8_1:R5B',
         sender_email: 'info@event4network.com',

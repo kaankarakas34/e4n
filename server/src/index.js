@@ -2876,7 +2876,9 @@ const __dirname = path.dirname(__filename);
 export default app;
 
 // Serve Frontend in Production or specific dev setup
-if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
+// Serve Frontend in Production (BUT NOT ON VERCEL)
+// Vercel handles static serving and rewrites via vercel.json
+if ((process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') && !process.env.VERCEL) {
   const distPath = path.join(__dirname, '../../dist');
   app.use(express.static(distPath));
 

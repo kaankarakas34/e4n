@@ -967,8 +967,22 @@ app.get('/api/users/:id', async (req, res) => {
                g.name as group_name,
                (SELECT COUNT(*)::int FROM referrals WHERE giver_id = u.id) as metric_referrals,
                (SELECT COALESCE(SUM(amount), 0)::float FROM referrals WHERE giver_id = u.id AND status = 'SUCCESSFUL') as metric_revenue,
-               (SELECT COUNT(*)::int FROM visitors WHERE inviter_id = u.id) as metric_visitors,
-               (SELECT COUNT(*)::int FROM one_to_ones WHERE requester_id = u.id OR partner_id = u.id) as metric_one_to_ones
+                (SELECT COUNT(*)::int FROM visitors WHERE inviter_id = u.id) as metric_visitors,
+                (SELECT COUNT(*)::int FROM one_to_ones WHERE requester_id = u.id OR receiver_id = u.id) as metric_one_to_ones,
+                (
+                  SELECT COALESCE(json_agg(t), '[]'::json) FROM (
+                    SELECT ot.meeting_date, 
+                           CASE 
+                             WHEN ot.requester_id = u.id THEN (SELECT name FROM users WHERE id = ot.receiver_id)
+                             ELSE (SELECT name FROM users WHERE id = ot.requester_id)
+                           END as partner_name,
+                           ot.status
+                    FROM one_to_ones ot
+                    WHERE ot.requester_id = u.id OR ot.receiver_id = u.id
+                    ORDER BY ot.meeting_date DESC
+                    LIMIT 3
+                  ) t
+                ) as last_meetings
         FROM users u
         LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
         LEFT JOIN groups g ON gm.group_id = g.id

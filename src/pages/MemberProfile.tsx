@@ -300,16 +300,18 @@ export function MemberProfile() {
                   <div className="space-y-6">
                     <div>
                       <h4 className="font-medium text-gray-900 mb-2">Son 1'e 1 Görüşmeler</h4>
-                      <ul className="bg-white border rounded-md divide-y">
-                        <li className="p-3 text-sm flex justify-between">
-                          <span>Ayşe Kaya ile İş Birliği</span>
-                          <span className="text-gray-500">25 Kas</span>
-                        </li>
-                        <li className="p-3 text-sm flex justify-between">
-                          <span>Fatma Demir ile Proje</span>
-                          <span className="text-gray-500">20 Kas</span>
-                        </li>
-                      </ul>
+                      {user.last_meetings && user.last_meetings.length > 0 ? (
+                        <ul className="bg-white border rounded-md divide-y">
+                          {user.last_meetings.map((m: any, idx: number) => (
+                            <li key={idx} className="p-3 text-sm flex justify-between">
+                              <span>{m.partner_name || 'Bilinmeyen Üye'} ile Görüşme</span>
+                              <span className="text-gray-500">{new Date(m.meeting_date).toLocaleDateString('tr-TR')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Henüz 1'e 1 görüşme kaydı yok.</p>
+                      )}
                     </div>
                   </div>
                 </div>

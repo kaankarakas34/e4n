@@ -37,7 +37,7 @@ const DEFAULT_TEMPLATES: EmailTemplate[] = [
         senderName: 'Event 4 Network Üyelik',
         senderEmail: 'uyelik@event4network.com',
         subject: 'Aramıza Hoşgeldiniz!',
-        body: `Sayın {{name}},\n\nEvent 4 Network ailesine katılımınız onaylanmıştır. Hesabınıza giriş yaparak profilinizi düzenleyebilir ve etkinliklere katılmaya başlayabilirsiniz.\n\nGiriş Linki: dashboard.event4network.com\n\nBaşarılar dileriz.`,
+        body: `Sayın {{name}},\n\nEvent 4 Network ailesine katılımınız onaylanmıştır. Hesabınıza giriş yaparak profilinizi düzenleyebilir ve etkinliklere katılmaya başlayabilirsiniz.\n\nŞifrenizi oluşturmak için lütfen tıklayın: {{link}}\n\nBaşarılar dileriz.`,
         description: 'Üyeliği onaylanan kişiye giden mail.'
     },
     {

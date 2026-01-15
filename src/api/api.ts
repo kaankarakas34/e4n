@@ -454,6 +454,24 @@ export const api = {
     return { success: true };
   },
 
+
+  // Email Configuration
+  async getEmailConfigs() {
+    return await request('/admin/email-config');
+  },
+  async createEmailConfig(payload: any) {
+    return await request('/admin/email-config', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  async activateEmailConfig(id: string) {
+    return await request(`/admin/email-config/${id}/activate`, { method: 'PUT' });
+  },
+  async deleteEmailConfig(id: string) {
+    return await request(`/admin/email-config/${id}`, { method: 'DELETE' });
+  },
+  async testEmailConfig(email: string) {
+    return await request('/admin/email-config/test', { method: 'POST', body: JSON.stringify({ email }) });
+  },
+
   async getTrafficLightReport() {
     return await request('/reports/traffic-lights');
   },

@@ -73,15 +73,53 @@ app.get('/api/health-check', async (req, res) => {
   res.status(200).json(result);
 });
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Helper to get active transporter dynamically
+const sendEmail = async (to, subject, html) => {
+  let transporter;
+  let sender;
+
+  try {
+    const { rows } = await pool.query("SELECT * FROM email_configurations WHERE is_active = TRUE LIMIT 1");
+
+    if (rows.length > 0) {
+      const config = rows[0];
+      transporter = nodemailer.createTransport({
+        host: config.smtp_host,
+        port: config.smtp_port,
+        secure: config.smtp_port === 465,
+        auth: {
+          user: config.smtp_user,
+          pass: config.smtp_pass
+        }
+      });
+      sender = `"${config.sender_name || 'Event4Network'}" <${config.sender_email}>`;
+    } else {
+      // Fallback to Env Vars
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      sender = `"Event4Network System" <${process.env.SMTP_USER || 'no-reply@event4network.com'}>`;
+    }
+
+    await transporter.sendMail({
+      from: sender,
+      to,
+      subject,
+      html
+    });
+    console.log(`📧 Email sent to ${to}`);
+    return true;
+  } catch (e) {
+    console.error('Email Send Error:', e);
+    return false;
+  }
+};
 
 // Lazy DB Connection Check (Don't block startup)
 // We removed the immediate pool.connect() call to prevent Vercel init timeout crashes.
@@ -145,6 +183,21 @@ pool.connect().then(async (client) => {
         metric_type VARCHAR(20) NOT NULL, -- REFERRAL_COUNT, VISITOR_COUNT, REVENUE
         user_id UUID REFERENCES users(id),
         value NUMERIC NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Email Configuration Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS email_configurations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        smtp_host VARCHAR(255) NOT NULL,
+        smtp_port INTEGER NOT NULL,
+        smtp_user VARCHAR(255) NOT NULL,
+        smtp_pass VARCHAR(255) NOT NULL,
+        sender_email VARCHAR(255) NOT NULL,
+        sender_name VARCHAR(255),
+        is_active BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
@@ -1505,6 +1558,80 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 });
 
 
+
+// --- EMAIL CONFIGURATION ENDPOINTS ---
+
+app.get('/api/admin/email-config', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    const { rows } = await pool.query('SELECT * FROM email_configurations ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/email-config', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active } = req.body;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    if (is_active) {
+      await client.query('UPDATE email_configurations SET is_active = FALSE');
+    }
+
+    const { rows } = await client.query(
+      `INSERT INTO email_configurations (smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active || false]
+    );
+    await client.query('COMMIT');
+    res.status(201).json(rows[0]);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/api/admin/email-config/test', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { email } = req.body; // active config is used
+  try {
+    const success = await sendEmail(email, 'Test Email from Event4Network', '<p>This is a test email to verify SMTP settings.</p>');
+    if (success) res.json({ success: true });
+    else res.status(500).json({ error: 'Failed to send test email. Check server logs.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/admin/email-config/:id/activate', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE email_configurations SET is_active = FALSE');
+    await client.query('UPDATE email_configurations SET is_active = TRUE WHERE id = $1', [req.params.id]);
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete('/api/admin/email-config/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    await pool.query('DELETE FROM email_configurations WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // --- GROUP MANAGEMENT ENDPOINTS (ADDED) ---
 
 // Create Group
@@ -1868,15 +1995,24 @@ app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
 });
 
 // Helper: Send Notification (Mock + DB)
+// Helper: Send Notification (DB + Email)
 const sendNotification = async (userId, title, message) => {
-  console.log(`[EMAIL - MOCK] To: ${userId} | Subject: ${title} `);
+  console.log(`[NOTIFICATION] To: ${userId} | Subject: ${title} `);
   try {
+    // 1. Insert In-App Notification
     await pool.query(
       `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
       [userId, `${title}: ${message} `]
     );
+
+    // 2. Fetch User Email & Send
+    const res = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+    if (res.rows.length > 0 && res.rows[0].email) {
+      await sendEmail(res.rows[0].email, title, `<p>${message}</p>`);
+    }
+
   } catch (err) {
-    console.error('Notification insert failed', err);
+    console.error('Notification/Email failed', err);
   }
 };
 

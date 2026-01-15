@@ -764,21 +764,20 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
         const resetLink = `${req.headers.origin || 'http://localhost:5173'}/create-password?token=${token}`;
 
         try {
-          await transporter.sendMail({
-            from: '"Event4Network" <noreply@event4network.com>',
-            to: currentUser.email,
-            subject: 'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
-            html: `
-                        <h2>Aramıza Hoş Geldiniz!</h2>
-                        <p>Sayın ${currentUser.name},</p>
-                        <p>Event4Network üyeliğiniz onaylanmıştır.</p>
-                        <p>Hesabınıza erişmek ve şifrenizi oluşturmak için lütfen aşağıdaki bağlantıya tıklayın:</p>
-                        <a href="${resetLink}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
-                        <p>Bu bağlantı 24 saat geçerlidir.</p>
-                        <br>
-                        <p>Saygılarımızla,<br>Event4Network Ekibi</p>
-                    `
-          });
+          await sendEmail(
+            currentUser.email,
+            'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
+            `
+              <h2>Aramıza Hoş Geldiniz!</h2>
+              <p>Sayın ${currentUser.name},</p>
+              <p>Event4Network üyeliğiniz onaylanmıştır.</p>
+              <p>Hesabınıza erişmek ve şifrenizi oluşturmak için lütfen aşağıdaki bağlantıya tıklayın:</p>
+              <a href="${resetLink}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
+              <p>Bu bağlantı 24 saat geçerlidir.</p>
+              <br>
+              <p>Saygılarımızla,<br>Event4Network Ekibi</p>
+            `
+          );
         } catch (emailError) {
           console.error("Welcome email failed to send, but user activated:", emailError);
         }

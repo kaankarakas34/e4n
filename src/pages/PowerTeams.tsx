@@ -62,14 +62,9 @@ export function PowerTeams() {
 
     const fetchTeams = async () => {
         try {
-            const response = await fetch('http://localhost:4000/api/power-teams');
-            if (response.ok) {
-                const data = await response.json();
-                setTeams(data);
-                setFilteredTeams(data);
-            } else {
-                console.error('Failed to fetch power teams');
-            }
+            const data = await api.getPowerTeams();
+            setTeams(data);
+            setFilteredTeams(data);
         } catch (error) {
             console.error('Error fetching power teams:', error);
         } finally {

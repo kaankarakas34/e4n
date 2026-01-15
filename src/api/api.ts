@@ -179,6 +179,9 @@ export const api = {
   async getGroups() {
     return await request('/groups');
   },
+  async getPowerTeams() {
+    return await request('/power-teams');
+  },
   async createGroup(payload: any) {
     return await request('/groups', { method: 'POST', body: JSON.stringify(payload) });
   },
@@ -201,9 +204,7 @@ export const api = {
   async getUserPowerTeams(userId: string) {
     return await request(`/user/power-teams?userId=${encodeURIComponent(userId)}`);
   },
-  async getPowerTeams() {
-    return await request('/power-teams');
-  },
+
   async createPowerTeam(payload: any) {
     return await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) });
   },

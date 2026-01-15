@@ -1225,6 +1225,18 @@ app.get('/api/attendance', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/users/:id/attendance', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT a.*, e.title as event_title, e.start_at 
+       FROM attendance a JOIN events e ON a.event_id = e.id 
+       WHERE a.user_id = $1 ORDER BY e.start_at DESC`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Event Registration with Equal Opportunity Check (FE Badge)
 app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
   const eventId = req.params.id;

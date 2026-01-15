@@ -51,6 +51,7 @@ import { AdminSupportTickets } from './pages/AdminSupportTickets';
 import { AdminProfessions } from './pages/AdminProfessions';
 import { CreatePassword } from './pages/CreatePassword';
 import { PendingApproval } from './pages/PendingApproval';
+import { ComingSoon } from './pages/ComingSoon';
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -140,8 +141,11 @@ function App() {
               <Route path="/reports" element={<Reports />} />
               <Route path="/education" element={<Education />} />
               <Route path="/profile/:id" element={<PublicProfile />} />
-              <Route path="/lms" element={<LMS />} />
-              <Route path="/lms/course/:id" element={<CourseViewer />} />
+
+              {/* LMS Routes - Temporarily Disabled */}
+              <Route path="/lms" element={<ComingSoon />} />
+              <Route path="/lms/course/:id" element={<ComingSoon />} />
+
               <Route path="/profile" element={<Profile />} />
               <Route path="/membership" element={<MembershipPage />} />
               <Route path="/events" element={<UserEvents />} />

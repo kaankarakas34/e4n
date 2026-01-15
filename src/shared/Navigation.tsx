@@ -50,7 +50,6 @@ export function Navigation() {
 
   const commonNavigation = [
     { name: 'Aktiviteler', href: '/activities', icon: Zap },
-    { name: 'LMS', href: '/lms', icon: BookOpen },
   ];
 
   let navigation = [];

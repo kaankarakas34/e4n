@@ -760,35 +760,39 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
       // Condition: Status becoming ACTIVE, and user might not have password or we just always send welcome on first activation?
       // Let's assume if they don't have a password set (password_hash is null) OR we explicitly want to send invite.
       // For now: If status changed to ACTIVE and password_hash is NULL.
+      console.log(`[USER UPDATE] ID: ${id} | NewStatus: ${status} | CurrentStatus: ${currentUser.account_status} | HasHash: ${!!currentUser.password_hash}`);
+
       if (status === 'ACTIVE' && currentUser.account_status !== 'ACTIVE' && !currentUser.password_hash) {
-        // Generate Token
         const token = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        console.log('Generating Welcome Token for:', currentUser.email);
 
         await client.query('UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3', [token, expires, id]);
 
         // Send Email
         const resetLink = `${req.headers.origin || 'http://localhost:5173'}/create-password?token=${token}`;
 
-        try {
-          await sendEmail(
-            currentUser.email,
-            'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
-            `
+        const emailResult = await sendEmail(
+          currentUser.email,
+          'Üyeliğiniz Onaylandı - Şifrenizi Oluşturun',
+          `
               <h2>Aramıza Hoş Geldiniz!</h2>
               <p>Sayın ${currentUser.name},</p>
-              <p>Event4Network üyeliğiniz onaylanmıştır.</p>
+              <p>Event 4 Network ailesine katılımınız onaylanmıştır.</p>
               <p>Hesabınıza erişmek ve şifrenizi oluşturmak için lütfen aşağıdaki bağlantıya tıklayın:</p>
               <a href="${resetLink}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px;">Şifremi Oluştur</a>
               <p>Bu bağlantı 24 saat geçerlidir.</p>
               <br>
-              <p>Saygılarımızla,<br>Event4Network Ekibi</p>
+              <p>Saygılarımızla,<br>Event 4 Network Ekibi</p>
             `
-          );
-        } catch (emailError) {
-          console.error("Welcome email failed to send, but user activated:", emailError);
+        );
+
+        if (emailResult && emailResult.success) {
+          console.log(`Welcome email successfully sent to ${currentUser.email}`);
+        } else {
+          console.error(`Failed to send welcome email to ${currentUser.email}:`, emailResult?.error);
         }
-        console.log(`Welcome email sent to ${currentUser.email}`);
       }
 
       await client.query('COMMIT');

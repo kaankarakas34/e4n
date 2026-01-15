@@ -1348,6 +1348,90 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// ----------------------------------------------------------------------
+// NEW ENDPOINTS TO FIX 404 ERRORS
+// ----------------------------------------------------------------------
+
+// 1. Education by User ID
+app.get('/api/users/:id/education', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM education WHERE user_id = $1 ORDER BY completed_date DESC', [req.params.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 2. Visitors by User ID (Query Param or Route)
+app.get('/api/user/visitors', authenticateToken, async (req, res) => {
+  try {
+    const targetUserId = req.query.userId || req.user.id;
+    const { rows } = await pool.query('SELECT * FROM visitors WHERE inviter_id = $1 ORDER BY visited_at DESC', [targetUserId]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 3. Friend Requests
+app.get('/api/user/friends/requests', authenticateToken, async (req, res) => {
+  try {
+    const { type } = req.query; // 'incoming' or 'outgoing'
+    let query = '';
+    let params = [];
+
+    if (type === 'incoming') {
+      query = `
+                SELECT fr.*, u.name as sender_name, u.profession as sender_profession 
+                FROM friend_requests fr
+                JOIN users u ON fr.sender_id = u.id
+                WHERE fr.receiver_id = $1 AND fr.status = 'PENDING'
+            `;
+      params = [req.user.id];
+    } else {
+      query = `
+                SELECT fr.*, u.name as receiver_name, u.profession as receiver_profession 
+                FROM friend_requests fr
+                JOIN users u ON fr.receiver_id = u.id
+                WHERE fr.sender_id = $1
+            `;
+      params = [req.user.id];
+    }
+
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/friends/request', authenticateToken, async (req, res) => {
+  const { targetId } = req.body;
+  try {
+    // Check if already exists
+    const existing = await pool.query('SELECT * FROM friend_requests WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)', [req.user.id, targetId]);
+    if (existing.rows.length > 0) return res.status(400).json({ error: 'Request already exists' });
+
+    await pool.query('INSERT INTO friend_requests (sender_id, receiver_id) VALUES ($1, $2)', [req.user.id, targetId]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/friends/request/:id/accept', authenticateToken, async (req, res) => { // Sender ID passed usually or Request ID? API.ts passes SenderID?
+  // api.ts: request(`/user/friends/request/${senderId}/accept`)
+  // So :id here is the SENDER_ID (The person who sent the request to ME)
+  const senderId = req.params.id;
+  const myId = req.user.id;
+  try {
+    await pool.query("UPDATE friend_requests SET status = 'ACCEPTED' WHERE sender_id = $1 AND receiver_id = $2 AND status = 'PENDING'", [senderId, myId]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/friends/request/:id/reject', authenticateToken, async (req, res) => {
+  const senderId = req.params.id;
+  const myId = req.user.id;
+  try {
+    await pool.query("UPDATE friend_requests SET status = 'REJECTED' WHERE sender_id = $1 AND receiver_id = $2", [senderId, myId]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
 app.get('/api/users', async (req, res) => {
   const { name, profession, city } = req.query;
   try {

@@ -764,7 +764,10 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
       // For now: If status changed to ACTIVE and password_hash is NULL.
       console.log(`[USER UPDATE] ID: ${id} | NewStatus: ${status} | CurrentStatus: ${currentUser.account_status} | HasHash: ${!!currentUser.password_hash}`);
 
-      if (status === 'ACTIVE' && currentUser.account_status !== 'ACTIVE' && !currentUser.password_hash) {
+      // Relaxed condition: If status is being set to ACTIVE (explicitly) and user has no password.
+      // This allows re-triggering the email if the first attempt failed (and DB was updated) 
+      // by sending the status update again.
+      if (status === 'ACTIVE' && !currentUser.password_hash) {
         const token = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 

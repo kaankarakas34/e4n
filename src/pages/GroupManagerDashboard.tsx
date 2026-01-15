@@ -34,6 +34,7 @@ export function GroupManagerDashboard() {
     const [myPowerTeam, setMyPowerTeam] = useState<any>(null);
     const [ptMembers, setPtMembers] = useState<any[]>([]);
     const [ptSynergy, setPtSynergy] = useState<any[]>([]);
+    const [referrals, setReferrals] = useState<any[]>([]);
     const [substitutes, setSubstitutes] = useState<any[]>([]);
 
     useEffect(() => {
@@ -54,7 +55,6 @@ export function GroupManagerDashboard() {
                     const allMembers = await api.getGroupMembers(groupId);
                     setMembers(allMembers);
 
-
                     // 3. Fetch Meetings
                     const groupMeetings = await api.getGroupMeetings(groupId);
                     setMeetings(groupMeetings);
@@ -70,18 +70,26 @@ export function GroupManagerDashboard() {
                     // NEW: Fetch Substitute Reports
                     const subs = await api.getAttendanceSubstitutes(groupId);
                     setSubstitutes(subs);
+
+                    // NEW: Fetch Referrals
+                    try {
+                        const refs = await api.getGroupReferrals(groupId);
+                        setReferrals(refs || []);
+                    } catch (e) {
+                        console.error("Referrals fetch failed", e);
+                        setReferrals([]);
+                    }
                 }
 
-                // 5. Check Power Team Leadership
-                // Mock logic: if user is 'manager@demo.com', they lead 'İnşaat ve Gayrimenkul'
-                if (user.email === 'manager@demo.com') { // Demo check
-                    const pts = await api.getPowerTeams();
-                    const myPt = pts.find(p => p.id === '1'); // Mock ID 1
-                    if (myPt) {
-                        setMyPowerTeam(myPt);
-                        const ptMems = await api.getPowerTeamMembers(myPt.id);
+                // 5. Check Power Team Leadership - Real Logic
+                if (user.role === 'PRESIDENT' || user.role === 'VICE_PRESIDENT' || user.role === 'ADMIN') {
+                    const myPts = await api.getUserPowerTeams(user.id);
+                    if (myPts.length > 0) {
+                        const pt = myPts[0]; // Assume primary PT
+                        setMyPowerTeam(pt);
+                        const ptMems = await api.getPowerTeamMembers(pt.id);
                         setPtMembers(ptMems);
-                        const synergy = await api.getPowerTeamSynergy(myPt.id);
+                        const synergy = await api.getPowerTeamSynergy(pt.id);
                         setPtSynergy(synergy);
                     }
                 }
@@ -126,11 +134,39 @@ export function GroupManagerDashboard() {
     if (loading) return <div className="p-8 text-center text-gray-500">Veriler yükleniyor...</div>;
     if (!selectedGroup) return <div className="p-8 text-center">Yönetici olduğunuz bir grup bulunamadı.</div>;
 
+    // Calculate Dynamic Stats
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const isThisMonth = (dateStr: string) => {
+        const d = new Date(dateStr);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    };
+
+    const totalTurnover = referrals.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const referralsThisMonth = activities.filter(a => isThisMonth(a.meeting_date)).length; // Assuming activities are 1-2-1s here? NO, Wait. 
+    // The previous code had "Birebir Görüşmeler" (One-to-Ones) tied to "referralsThisMonth" variable name which was confusing or I misread.
+    // The UI says "Birebir Görüşmeler ... Bu ay". Let's use activities for that.
+    // The UI says "Toplam Ciro".
+    // Let's match labels correctly.
+
+    const onetoonesThisMonth = activities ? activities.filter(a => isThisMonth(a.meeting_date)).length : 0;
+    const visitorsThisMonthCount = visitors ? visitors.filter(v => isThisMonth(v.visited_at)).length : 0;
+
+    // Attendance Rate
+    let attendanceRate = 0;
+    if (meetings && meetings.length > 0) {
+        const totalPossible = meetings.reduce((acc, m) => acc + (m.total_members || 0), 0);
+        const totalPresent = meetings.reduce((acc, m) => acc + (m.attendees_count || 0), 0);
+        if (totalPossible > 0) attendanceRate = Math.round((totalPresent / totalPossible) * 100);
+    }
+
     const stats = {
-        totalTurnover: 4500000, // Mock
-        referralsThisMonth: 124, // Mock
-        attendanceRate: 92, // Mock
-        visitorsThisMonth: 8 // Mock
+        totalTurnover: totalTurnover,
+        referralsThisMonth: onetoonesThisMonth, // Using 121s for the "Birebir Görüşmeler" card logic
+        attendanceRate: attendanceRate,
+        visitorsThisMonth: visitorsThisMonthCount
     };
 
     return (
@@ -235,7 +271,7 @@ export function GroupManagerDashboard() {
                                         <div>
                                             <p className="text-sm font-medium text-gray-500">Toplam Ciro</p>
                                             <h3 className="text-2xl font-bold text-gray-900 mt-1">₺{stats.totalTurnover.toLocaleString()}</h3>
-                                            <p className="text-xs text-green-600 mt-1">Bu ay</p>
+                                            <p className="text-xs text-gray-500 mt-1">Genel Toplam</p>
                                         </div>
                                         <div className="p-2 bg-purple-50 rounded-lg">
                                             <DollarSign className="h-6 w-6 text-purple-600" />
@@ -327,10 +363,26 @@ export function GroupManagerDashboard() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-3">
-                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center text-blue-700">
-                                            <FileText className="h-5 w-5 mr-2" />
-                                            <span>Bu haftaki toplantı raporu henüz girilmedi.</span>
-                                        </div>
+                                        {(() => {
+                                            // Check if meeting report exists for this week (assuming ISO week starts Monday)
+                                            const today = new Date();
+                                            const day = today.getDay(); // 0 is Sunday
+                                            const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Audit: Monday
+                                            const monday = new Date(today.setDate(diff));
+                                            monday.setHours(0, 0, 0, 0);
+
+                                            const hasMeetingThisWeek = meetings.some((m: any) => new Date(m.date) >= monday);
+
+                                            if (!hasMeetingThisWeek) {
+                                                return (
+                                                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center text-blue-700">
+                                                        <FileText className="h-5 w-5 mr-2" />
+                                                        <span>Bu haftaki toplantı raporu henüz girilmedi.</span>
+                                                    </div>
+                                                );
+                                            }
+                                            return <p className="text-gray-500 text-sm">Şu an dikkat gerektiren bir durum yok.</p>;
+                                        })()}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -648,13 +700,7 @@ export function GroupManagerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[
                                     { id: 'edu_coord', title: 'Eğitim Koordinatörü', desc: 'Haftalık eğitim sunumlarını planlar.' },
-                                    { id: 'visitor_host', title: 'Misafir Mihmandarı', desc: 'Gelen misafirleri karşılar ve ilgilenir.' },
                                     { id: 'event_planner', title: 'Etkinlik Sorumlusu', desc: 'Grup dışı sosyal etkinlikleri organize eder.' },
-                                    { id: 'mentor_coord', title: 'Mentörlük Koordinatörü', desc: 'Yeni üyelere mentör ataması yapar.' },
-                                    { id: 'social_media', title: 'Sosyal Medya Sorumlusu', desc: 'Grubun sosyal medya hesaplarını yönetir.' },
-                                    { id: 'growth_coord', title: 'Büyüme Koordinatörü', desc: 'Gruba yeni üye kazandırma stratejilerini belirler.' },
-                                    { id: 'quality_assurance', title: 'Kalite Kontrol Sorumlusu', desc: 'Üye başvurularını ve şikayetleri inceler.' },
-                                    { id: 'treasurer', title: 'Sayman', desc: 'Grup içi finansal konuları takip eder.' },
                                 ].map((role) => (
                                     <div key={role.id} className="border rounded-lg p-4 bg-gray-50 flex flex-col justify-between">
                                         <div>

@@ -86,6 +86,7 @@ const sendEmail = async (to, subject, html) => {
 
     if (rows.length > 0) {
       const config = rows[0];
+      console.log(`[Email] Using DB Config: Host=${config.smtp_host} Port=${config.smtp_port} User=${config.smtp_user}`);
       transporter = nodemailer.createTransport({
         host: config.smtp_host,
         port: config.smtp_port,

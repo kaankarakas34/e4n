@@ -22,7 +22,7 @@ export function AdminEmailSettings() {
         smtp_host: 'mail.kurumsaleposta.com',
         smtp_port: 465,
         smtp_user: 'info@event4network.com',
-        smtp_pass: '',
+        smtp_pass: '4hr:b-eSM8_1:R5B',
         sender_email: 'info@event4network.com',
         sender_name: 'Event 4 Network',
         is_active: true

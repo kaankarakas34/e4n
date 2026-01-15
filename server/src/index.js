@@ -74,6 +74,7 @@ app.get('/api/health-check', async (req, res) => {
 });
 
 // Helper to get active transporter dynamically
+// Helper to get active transporter dynamically
 const sendEmail = async (to, subject, html) => {
   let transporter;
   let sender;
@@ -90,6 +91,9 @@ const sendEmail = async (to, subject, html) => {
         auth: {
           user: config.smtp_user,
           pass: config.smtp_pass
+        },
+        tls: {
+          rejectUnauthorized: false
         }
       });
       sender = `"${config.sender_name || 'Event4Network'}" <${config.sender_email}>`;
@@ -103,6 +107,9 @@ const sendEmail = async (to, subject, html) => {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        tls: {
+          rejectUnauthorized: false
+        }
       });
       sender = `"Event4Network System" <${process.env.SMTP_USER || 'no-reply@event4network.com'}>`;
     }
@@ -114,10 +121,10 @@ const sendEmail = async (to, subject, html) => {
       html
     });
     console.log(`📧 Email sent to ${to}`);
-    return true;
+    return { success: true };
   } catch (e) {
     console.error('Email Send Error:', e);
-    return false;
+    return { success: false, error: e.message || e };
   }
 };
 
@@ -1598,9 +1605,9 @@ app.post('/api/admin/email-config/test', authenticateToken, async (req, res) => 
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   const { email } = req.body; // active config is used
   try {
-    const success = await sendEmail(email, 'Test Email from Event4Network', '<p>This is a test email to verify SMTP settings.</p>');
-    if (success) res.json({ success: true });
-    else res.status(500).json({ error: 'Failed to send test email. Check server logs.' });
+    const result = await sendEmail(email, 'Test Email from Event4Network', '<p>This is a test email to verify SMTP settings.</p>');
+    if (result.success) res.json({ success: true });
+    else res.status(500).json({ error: result.error || 'Failed to send test email. Check server logs.' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

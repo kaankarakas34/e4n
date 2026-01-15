@@ -15,6 +15,8 @@ import cron from 'node-cron';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -2867,8 +2869,26 @@ app.put('/api/tickets/:id/status', authenticateToken, async (req, res) => {
 
 
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Export for Vercel
 export default app;
+
+// Serve Frontend in Production or specific dev setup
+if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
+  const distPath = path.join(__dirname, '../../dist');
+  app.use(express.static(distPath));
+
+  app.get('*', (req, res) => {
+    // Exclude API routes just in case, though they are defined above
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    } else {
+      res.status(404).json({ error: 'API endpoint not found' });
+    }
+  });
+}
 
 // Conditional Listen
 if (process.env.NODE_ENV !== 'production') {

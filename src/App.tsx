@@ -50,6 +50,7 @@ import { SupportTickets } from './pages/SupportTickets';
 import { AdminSupportTickets } from './pages/AdminSupportTickets';
 import { AdminProfessions } from './pages/AdminProfessions';
 import { CreatePassword } from './pages/CreatePassword';
+import { PendingApproval } from './pages/PendingApproval';
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -62,8 +63,12 @@ const ProtectedLayout = () => {
   if (!user) return <Navigate to="/auth/login" replace />;
 
   // Check for payment status
-  if (user.status === 'PASSIVE' || user.status === 'PENDING') {
-    return <Navigate to="/payment" state={{ reason: user.status === 'PASSIVE' ? 'expired' : 'initial' }} replace />;
+  if (user.status === 'PASSIVE') {
+    return <Navigate to="/payment" state={{ reason: 'expired' }} replace />;
+  }
+
+  if (user.status === 'PENDING') {
+    return <Navigate to="/auth/pending" replace />;
   }
 
   return (
@@ -113,6 +118,7 @@ function App() {
                 element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" replace />}
               />
               <Route path="/create-password" element={<CreatePassword />} />
+              <Route path="/auth/pending" element={<PendingApproval />} />
               <Route path="/public-events" element={<PublicEventsPage />} />
               <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/payment" element={<PaymentLanding />} />

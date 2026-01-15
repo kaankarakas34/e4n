@@ -16,6 +16,8 @@ export function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     profession: '',
     company: '',
@@ -33,12 +35,17 @@ export function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert('Şifreler eşleşmiyor!');
+      return;
+    }
     setLoading(true);
     try {
       await api.requestRegistration(formData);
       setSubmitted(true);
     } catch (error) {
       console.error('Registration error:', error);
+      alert('Kayıt işlemi başarısız. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +99,8 @@ export function Register() {
                   <h3 className="font-medium text-gray-900 border-b pb-1">Kişisel Bilgiler</h3>
                   <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
                   <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
-                  {/* Password removed - set after approval */}
+                  <Input required data-name="password" placeholder="Şifre Oluştur" type="password" value={formData.password} onChange={handleChange} />
+                  <Input required data-name="confirmPassword" placeholder="Şifre Tekrar" type="password" value={formData.confirmPassword} onChange={handleChange} />
                   <Input required data-name="phone" placeholder="Telefon Numarası" type="tel" value={formData.phone} onChange={handleChange} />
                   <ProfessionSelect
                     value={formData.profession}

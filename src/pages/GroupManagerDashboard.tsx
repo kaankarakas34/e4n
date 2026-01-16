@@ -512,7 +512,7 @@ export function GroupManagerDashboard() {
                                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Var</th>
                                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Yok</th>
                                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Geç</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Yedek</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Vekil</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">

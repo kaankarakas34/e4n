@@ -262,15 +262,13 @@ export const api = {
   ] as any[],
 
   async getGroupMeetings(groupId: string) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    // Enrich mock meetings with report data just for demo
-    return this._mockMeetings.filter(m => m.group_id === groupId).map(m => ({
-      ...m,
-      report: {
-        notes: 'Verimli bir toplantıydı. Gelecek hafta misafir günü yapılacak.',
-        best_networker: 'Fatma Demir',
-        rating: 9
-      }
+    const events = await request(`/groups/${groupId}/events`);
+    return events.map((e: any) => ({
+      ...e,
+      topic: e.title,
+      date: e.start_at,
+      attendees_count: parseInt(e.attendees_count || '0'),
+      total_members: parseInt(e.total_members || '0')
     }));
   },
 

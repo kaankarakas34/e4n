@@ -446,6 +446,10 @@ export const api = {
     return await request(`/power-teams/${id}`, { method: 'DELETE' });
   },
 
+  async submitMeetingReport(payload: any) {
+    return await request('/events/report', { method: 'POST', body: JSON.stringify(payload) });
+  },
+
   async getNotifications(userId: string) {
     return await request('/notifications');
   },

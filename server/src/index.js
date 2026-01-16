@@ -2339,6 +2339,71 @@ app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete Member (Cascading)
+app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { id } = req.params;
+
+  // Protect key users
+  // We can fetch user first to check email
+  const checkRes = await pool.query('SELECT email FROM users WHERE id = $1', [id]);
+  if (checkRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+  const email = checkRes.rows[0].email;
+  /* Protected Users Logic Removed as per Request */
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Delete Dependencies
+    await client.query('DELETE FROM group_members WHERE user_id = $1', [id]);
+    await client.query('DELETE FROM generated_leads WHERE user_id = $1', [id]);
+
+    // Potentially handle Power Teams if table exists
+    try { await client.query('DELETE FROM power_team_members WHERE user_id = $1', [id]); } catch (e) { }
+
+    // Attendance
+    await client.query('DELETE FROM attendance WHERE user_id = $1', [id]);
+
+    // Visitors (invited by user)
+    await client.query('DELETE FROM visitors WHERE inviter_id = $1', [id]);
+
+    // Education
+    await client.query('DELETE FROM education WHERE user_id = $1', [id]);
+
+    // Champions
+    try { await client.query('DELETE FROM champions WHERE user_id = $1', [id]); } catch (e) { }
+
+    // Notifications
+    try { await client.query('DELETE FROM notifications WHERE user_id = $1', [id]); } catch (e) { }
+
+    // Referrals (Giver or Receiver)
+    await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
+
+    // One-to-Ones
+    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
+
+    // Friend Requests
+    try { await client.query('DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]); } catch (e) { }
+
+    // Update Events created by user to NULL
+    await client.query('UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);
+
+    // 2. Finally Delete User
+    await client.query('DELETE FROM users WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Üye başarıyla silindi.' });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Delete Member Error:', e);
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Helper: Send Notification (Mock + DB)
 // Helper: Send Notification (DB + Email)
 const sendNotification = async (userId, title, message) => {

@@ -2381,7 +2381,8 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     // Referrals (Giver or Receiver)
     try {
       await client.query('SAVEPOINT sp_referrals');
-      await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
+      console.log('Fix: Deleting Referrals (giver only)');
+      await client.query('DELETE FROM referrals WHERE giver_id = $1', [id]);
       await client.query('RELEASE SAVEPOINT sp_referrals');
     } catch (e) {
       await client.query('ROLLBACK TO SAVEPOINT sp_referrals');
@@ -2394,7 +2395,8 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     // Friend Requests
     try {
       await client.query('SAVEPOINT sp_friend_requests');
-      await client.query('DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]);
+      console.log('Fix: Deleting FriendReqs (sender only)');
+      await client.query('DELETE FROM friend_requests WHERE sender_id = $1', [id]);
       await client.query('RELEASE SAVEPOINT sp_friend_requests');
     } catch (e) {
       await client.query('ROLLBACK TO SAVEPOINT sp_friend_requests');

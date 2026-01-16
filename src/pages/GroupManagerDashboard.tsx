@@ -699,6 +699,9 @@ export function GroupManagerDashboard() {
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[
+                                    { id: 'membership_president', title: 'Üyelik İşleri Başkanı', desc: 'Üyelik süreçlerini ve üye ilişkilerini yönetir.' },
+                                    { id: 'visitor_president', title: 'Ziyaretçi Komitesi Başkanı', desc: 'Ziyaretçi davet ve karşılama süreçlerini yönetir.' },
+                                    { id: 'one_to_one_coord', title: 'Birebir Koordinatörü', desc: 'Üyeler arası birebir görüşmeleri koordine eder.' },
                                     { id: 'edu_coord', title: 'Eğitim Koordinatörü', desc: 'Haftalık eğitim sunumlarını planlar.' },
                                     { id: 'event_planner', title: 'Etkinlik Sorumlusu', desc: 'Grup dışı sosyal etkinlikleri organize eder.' },
                                 ].map((role) => (

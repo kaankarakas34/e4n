@@ -115,6 +115,7 @@ export function AdminGroupDetail() {
         { title: 'Ziyaretçi Komitesi Bşk.', role: 'VICE_PRESIDENT', group_title: 'VISITOR_PRESIDENT', icon: Users, desc: 'Ziyaretçi takibi.', color: 'purple' },
         { title: 'Birebir Koord.', role: 'MEMBER', group_title: 'ONE_TO_ONE_COORD', icon: Users, desc: '1-1 Takibi.', color: 'blue' },
         { title: 'Eğitim Koord.', role: 'MEMBER', group_title: 'EDUCATION_COORD', icon: Users, desc: 'Eğitim takibi.', color: 'blue' },
+        { title: 'Etkinlik Sorm.', role: 'MEMBER', group_title: 'EVENT_COORDINATOR', icon: Users, desc: 'Etkinlikleri düzenler.', color: 'blue' },
     ];
     const displayRoles = isPowerTeam ? [allRoles[0]] : allRoles;
 

@@ -1388,6 +1388,66 @@ app.post('/api/referrals', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.put('/api/referrals/:id', authenticateToken, async (req, res) => {
+  const { status, amount, notes } = req.body;
+  const { id } = req.params;
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Check current referral
+      const checkRes = await client.query('SELECT * FROM referrals WHERE id = $1', [id]);
+      if (checkRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Referral not found' });
+      }
+      const referral = checkRes.rows[0];
+
+      // 2. Validate Ciro Rule
+      // "Elden ciro girilmediği sürece iş yönlendirmesi onaylanmamış olur"
+      // If status is becoming 'SUCCESSFUL' (or checks related to approval), amount must be present.
+      let newAmount = amount !== undefined ? amount : referral.amount;
+
+      if (status === 'SUCCESSFUL') {
+        if (!newAmount || parseFloat(newAmount) <= 0) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'İş yönlendirmesini onaylamak için ciro (tutar) girişi zorunludur.' });
+        }
+      }
+
+      // 3. Update
+      const { rows } = await client.query(`
+        UPDATE referrals 
+        SET status = COALESCE($1, status), 
+            amount = COALESCE($2, amount),
+            notes = COALESCE($3, notes),
+            updated_at = NOW()
+        WHERE id = $4
+        RETURNING *
+      `, [status, amount, notes, id]);
+
+      await client.query('COMMIT');
+
+      // 4. Recalculate Scores
+      // Score affects the GIVER (who gave the referral)
+      if (rows[0].giver_id) {
+        await calculateMemberScore(rows[0].giver_id);
+      }
+
+      res.json(rows[0]);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Health & General
 app.get('/api/health', async (req, res) => {
   try {

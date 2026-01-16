@@ -2059,10 +2059,9 @@ app.get('/api/power-teams/:id/members', async (req, res) => {
 app.get('/api/power-teams/:id/referrals', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT r.*, g.name as from_member_name, r2.name as to_member_name
+      `SELECT r.*, g.name as from_member_name
        FROM referrals r
        JOIN users g ON r.giver_id = g.id
-       JOIN users r2 ON r.receiver_id = r2.id
        JOIN power_team_members ptm ON g.id = ptm.user_id
        WHERE ptm.power_team_id = $1 AND ptm.status = 'ACTIVE'
        ORDER BY r.created_at DESC`,
@@ -2074,19 +2073,13 @@ app.get('/api/power-teams/:id/referrals', async (req, res) => {
 
 app.get('/api/power-teams/:id/synergy', async (req, res) => {
   try {
-    const { rows } = await pool.query(`
-        SELECT u1.name as from, u2.name as to, count(*) as count
-        FROM referrals r
-        JOIN users u1 ON r.giver_id = u1.id
-        JOIN users u2 ON r.receiver_id = u2.id
-        JOIN power_team_members ptm1 ON u1.id = ptm1.user_id
-        JOIN power_team_members ptm2 ON u2.id = ptm2.user_id
-        WHERE ptm1.power_team_id = $1 AND ptm2.power_team_id = $1
-          AND r.created_at > (NOW() - INTERVAL '6 months')
-        GROUP BY u1.name, u2.name
-        ORDER BY count DESC
-     `, [req.params.id]);
+    // Synergy requires receiver_id which is missing in current DB schema.
+    // Returning empty array or dummy data until schema is fixed.
+    /*
+    const { rows } = await pool.query(`...`);
     res.json(rows);
+    */
+    res.json([]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

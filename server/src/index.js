@@ -1246,7 +1246,7 @@ app.post('/api/events/attendance', authenticateToken, async (req, res) => {
     // 1. Create Event
     const eventRes = await client.query(`
       INSERT INTO events (group_id, title, start_at, type, status, description, created_by)
-      VALUES ($1, $2, $3, 'WEEKLY_MEETING', 'PUBLISHED', 'Haftalık Toplantı', $4)
+      VALUES ($1, $2, $3, 'meeting', 'PUBLISHED', 'Haftalık Toplantı', $4)
       RETURNING id
     `, [group_id, topic || 'Haftalık Toplantı', meeting_date, req.user.id]);
     const eventId = eventRes.rows[0].id;

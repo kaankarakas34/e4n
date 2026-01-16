@@ -72,9 +72,9 @@ export function AdminShuffle() {
         const [g, m] = await Promise.all([api.getGroups(), api.getMembers()]);
         setGroups(g);
 
-        // Filter active members only
+        // Filter active members only AND exclude ADMINs
         // Mocking subscription_status if missing for demo purposes, assume explicit ACTIVE check
-        const activeMembers = m.filter((mem: any) => mem.account_status === 'ACTIVE');
+        const activeMembers = m.filter((mem: any) => mem.account_status === 'ACTIVE' && mem.role !== 'ADMIN');
         const excluded = m.length - activeMembers.length;
         setExcludedCount(excluded);
 

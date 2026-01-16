@@ -16,7 +16,9 @@ import {
     UserPlus,
     FileText,
     Briefcase,
-    FileCheck
+    FileCheck,
+    Eye,
+    XCircle
 } from 'lucide-react';
 
 export function GroupManagerDashboard() {
@@ -29,6 +31,8 @@ export function GroupManagerDashboard() {
     const [loading, setLoading] = useState(true);
     const [meetings, setMeetings] = useState<any[]>([]);
     const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
+    const [viewingMeeting, setViewingMeeting] = useState<any>(null);
+    const [meetingAttendance, setMeetingAttendance] = useState<any[]>([]);
 
 
 
@@ -429,15 +433,63 @@ export function GroupManagerDashboard() {
                                                     <span className="block text-2xl font-bold text-gray-900">%{Math.round((m.attendees_count / m.total_members) * 100)}</span>
                                                     <span className="text-xs text-gray-500">Katılım</span>
                                                 </div>
-                                                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                                                    <CheckCircle className="h-6 w-6 text-green-600" />
-                                                </div>
+                                                <Button size="sm" variant="outline" onClick={async () => {
+                                                    setViewingMeeting(m);
+                                                    const att = await api.getMeetingAttendance(m.id);
+                                                    setMeetingAttendance(att);
+                                                }}>
+                                                    <Eye className="h-4 w-4 mr-1" /> İncele
+                                                </Button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Attendance Detail Modal */}
+                        {viewingMeeting && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-white z-10 border-b">
+                                        <div>
+                                            <CardTitle>{viewingMeeting.topic}</CardTitle>
+                                            <p className="text-sm text-gray-500">{new Date(viewingMeeting.date).toLocaleDateString()}</p>
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={() => setViewingMeeting(null)}><XCircle className="h-5 w-5" /></Button>
+                                    </CardHeader>
+                                    <CardContent className="pt-4">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Üye</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {meetingAttendance.map((att: any) => (
+                                                    <tr key={att.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-medium text-gray-900">{att.user_name}</div>
+                                                            <div className="text-sm text-gray-500">{att.profession}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${att.status === 'PRESENT' ? 'bg-green-100 text-green-800' :
+                                                                att.status === 'ABSENT' ? 'bg-red-100 text-red-800' :
+                                                                    att.status === 'LATE' ? 'bg-yellow-100 text-yellow-800' :
+                                                                        'bg-blue-100 text-blue-800'
+                                                                }`}>
+                                                                {att.status === 'PRESENT' ? 'Var' : att.status === 'ABSENT' ? 'Yok' : att.status === 'LATE' ? 'Geç' : 'Vekil'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
 
                         {/* Substitute Notifications */}
                         <Card>

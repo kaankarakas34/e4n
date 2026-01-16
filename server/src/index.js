@@ -1412,6 +1412,19 @@ app.get('/api/user/visitors', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT a.*, u.name as user_name, u.profession
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.event_id = $1
+      ORDER BY u.name ASC
+    `, [req.params.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 3. Friend Requests
 app.get('/api/user/friends/requests', authenticateToken, async (req, res) => {
   try {

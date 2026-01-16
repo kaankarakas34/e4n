@@ -1702,6 +1702,21 @@ app.get('/api/groups/:id/referrals', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/professions', async (req, res) => {
+  const { q } = req.query;
+  try {
+    let query = 'SELECT id, name, category FROM professions';
+    let params = [];
+    if (q) {
+      query += ' WHERE name ILIKE $1';
+      params.push(`%${q}%`);
+    }
+    query += ' ORDER BY name ASC LIMIT 20';
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/groups/:id/events', async (req, res) => {
   try {
     const { rows } = await pool.query(`

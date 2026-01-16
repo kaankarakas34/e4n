@@ -374,12 +374,13 @@ const calculateMemberScore = async (userId) => {
     ATTENDANCE: 10,
     ABSENT: -10,
     LATE: 5,
-    SUBSTITUTE: 10, // sending substitute counts as present generally or specific points
-    REFERRAL_INTERNAL: 1,
-    REFERRAL_EXTERNAL: 2,
-    VISITOR: 5,
-    ONE_TO_ONE: 1,
-    EDUCATION_UNIT: 1 // per hour
+    SUBSTITUTE: 10,
+    REFERRAL_INTERNAL: 10,
+    REFERRAL_EXTERNAL: 5,
+    VISITOR: 10,
+    ONE_TO_ONE: 10,
+    EDUCATION_UNIT: 0,
+    SUCCESSFUL_BUSINESS: 5 // Ciro girişi
   };
 
   const client = await pool.connect();
@@ -396,10 +397,10 @@ const calculateMemberScore = async (userId) => {
             GROUP BY status
         `, [userId, sixMonthsAgo]),
       client.query(`
-            SELECT type, count(*) as count 
+            SELECT type, status, count(*) as count 
             FROM referrals 
             WHERE giver_id = $1 AND created_at > $2
-            GROUP BY type
+            GROUP BY type, status
         `, [userId, sixMonthsAgo]),
       client.query(`
             SELECT count(*) as count 
@@ -430,8 +431,14 @@ const calculateMemberScore = async (userId) => {
 
     // 2. Referrals Processing
     refRes.rows.forEach(r => {
+      // Base points for referral type
       if (r.type === 'INTERNAL') score += (r.count * SCORES.REFERRAL_INTERNAL);
       else if (r.type === 'EXTERNAL') score += (r.count * SCORES.REFERRAL_EXTERNAL);
+
+      // Extra points for Successful Business (Ciro)
+      if (r.status === 'SUCCESSFUL') {
+        score += (r.count * SCORES.SUCCESSFUL_BUSINESS);
+      }
     });
 
     // 3. Visitors Processing

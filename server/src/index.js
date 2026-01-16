@@ -1813,7 +1813,7 @@ app.get('/api/admin/members', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/members-deprecated/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
 
   const client = await pool.connect();
@@ -2377,6 +2377,15 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 
     // Notifications
     try { await client.query('DELETE FROM notifications WHERE user_id = $1', [id]); } catch (e) { }
+
+    // Support & Messages
+    await safeDelete('ticket_messages', 'DELETE FROM ticket_messages WHERE sender_id = $1', [id]);
+    await safeDelete('tickets', 'DELETE FROM tickets WHERE user_id = $1', [id]);
+    await safeDelete('messages', 'DELETE FROM messages WHERE sender_id = $1', [id]);
+
+    // Scoring & Revenue
+    await safeDelete('user_score_history', 'DELETE FROM user_score_history WHERE user_id = $1', [id]);
+    await safeDelete('revenue_entries', 'DELETE FROM revenue_entries WHERE user_id = $1', [id]);
 
     // Referrals (Giver or Receiver)
     try {

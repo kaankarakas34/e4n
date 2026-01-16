@@ -1237,6 +1237,49 @@ app.get('/api/users/:id/attendance', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/events/attendance', authenticateToken, async (req, res) => {
+  const { group_id, meeting_date, topic, items } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Create Event
+    const eventRes = await client.query(`
+      INSERT INTO events (group_id, title, start_at, type, status, description)
+      VALUES ($1, $2, $3, 'WEEKLY_MEETING', 'PUBLISHED', 'Haftalık Toplantı')
+      RETURNING id
+    `, [group_id, topic || 'Haftalık Toplantı', meeting_date]);
+    const eventId = eventRes.rows[0].id;
+
+    // 2. Insert Attendance
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        // item: { user_id, status }
+        await client.query(`
+          INSERT INTO attendance (event_id, user_id, status)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (event_id, user_id) DO UPDATE SET status = $3
+        `, [eventId, item.user_id, item.status]);
+      }
+    }
+
+    await client.query('COMMIT');
+
+    // 3. Recalculate Scores (Async)
+    if (items && Array.isArray(items)) {
+      Promise.all(items.map(i => calculateMemberScore(i.user_id))).catch(console.error);
+    }
+
+    res.json({ success: true, eventId });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Submit Attendance Error:', e);
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Event Registration with Equal Opportunity Check (FE Badge)
 app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
   const eventId = req.params.id;

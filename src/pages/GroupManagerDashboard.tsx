@@ -25,9 +25,23 @@ export function GroupManagerDashboard() {
     const [myGroups, setMyGroups] = useState<any[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>('OVERVIEW');
     const [loading, setLoading] = useState(true);
     const [meetings, setMeetings] = useState<any[]>([]);
+    const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
+
+
+
+    // Initialize attendance data when members change
+    useEffect(() => {
+        if (members.length > 0) {
+            const initial: Record<string, string> = {};
+            members.forEach((m: any) => {
+                initial[m.id] = 'PRESENT';
+            });
+            setAttendanceData(initial);
+        }
+    }, [members]);
     const [activities, setActivities] = useState<any[]>([]);
     const [visitors, setVisitors] = useState<any[]>([]);
     const [powerTeams, setPowerTeams] = useState<any[]>([]);
@@ -396,7 +410,7 @@ export function GroupManagerDashboard() {
                         <Card>
                             <CardHeader className="flex justify-between items-center">
                                 <CardTitle>Yoklama Yönetimi</CardTitle>
-                                <Button variant="primary" onClick={() => alert('Yoklama sistemi açılıyor...')}>
+                                <Button variant="primary" onClick={() => setActiveTab('TAKE_ATTENDANCE')}>
                                     <Calendar className="h-4 w-4 mr-2" />
                                     Bu Haftanın Yoklamasını Gir
                                 </Button>
@@ -474,6 +488,86 @@ export function GroupManagerDashboard() {
                 )}
 
 
+
+                {/* CONTENT: TAKE ATTENDANCE */}
+                {(activeTab as any) === 'TAKE_ATTENDANCE' && (
+                    <Card>
+                        <CardHeader className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Yeni Yoklama Al</CardTitle>
+                                <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString()} Tarihli Toplantı</p>
+                            </div>
+                            <Button variant="ghost" onClick={() => setActiveTab('ATTENDANCE')}>İptal</Button>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Toplantı Konusu</label>
+                                <input type="text" className="w-full border rounded-md p-2" defaultValue="Haftalık Toplantı" id="meeting-topic" />
+                            </div>
+                            <div className="overflow-x-auto border rounded-md">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Üye</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Var</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Yok</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Geç</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Yedek</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {members.filter((m: any) => m.status === 'ACTIVE').map((member: any) => (
+                                            <tr key={member.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{member.full_name}</td>
+                                                {['PRESENT', 'ABSENT', 'LATE', 'SUBSTITUTE'].map((status) => (
+                                                    <td key={status} className="px-6 py-4 text-center">
+                                                        <input
+                                                            type="radio"
+                                                            name={`status-${member.id}`}
+                                                            checked={attendanceData[member.id] === status}
+                                                            onChange={() => setAttendanceData({ ...attendanceData, [member.id]: status })}
+                                                            className={`focus:ring-indigo-500 h-4 w-4 border-gray-300 ${status === 'PRESENT' ? 'text-green-600' : status === 'ABSENT' ? 'text-red-600' : status === 'LATE' ? 'text-yellow-600' : 'text-blue-600'}`}
+                                                        />
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="mt-6 flex justify-end">
+                                <Button variant="primary" onClick={async () => {
+                                    if (confirm('Yoklamayı kaydetmek istiyor musunuz?')) {
+                                        try {
+                                            const topic = (document.getElementById('meeting-topic') as HTMLInputElement).value;
+
+                                            // Send to API
+                                            await api.submitAttendance({
+                                                group_id: selectedGroup.id,
+                                                meeting_date: new Date().toISOString(),
+                                                topic: topic,
+                                                items: Object.entries(attendanceData).map(([uid, status]) => ({ user_id: uid, status }))
+                                            });
+
+                                            alert('Yoklama başarıyla kaydedildi.');
+                                            setActiveTab('ATTENDANCE');
+
+                                            // Refresh meetings list if possible
+                                            const updatedMeetings = await api.getGroupMeetings(selectedGroup.id);
+                                            setMeetings(updatedMeetings);
+
+                                        } catch (e: any) {
+                                            alert('Kaydedilirken hata oluştu: ' + (e.message || e));
+                                            console.error(e);
+                                        }
+                                    }
+                                }}>
+                                    Yoklamayı Kaydet
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* CONTENT: MEMBERS */}
                 {activeTab === 'MEMBERS' && (

@@ -205,9 +205,7 @@ export const api = {
     return await request(`/user/power-teams?userId=${encodeURIComponent(userId)}`);
   },
 
-  async createPowerTeam(payload: any) {
-    return await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) });
-  },
+
   async getPowerTeamMembers(powerTeamId: string) {
     return await request(`/power-teams/${powerTeamId}/members`);
   },
@@ -441,8 +439,11 @@ export const api = {
   async rejectFriendship(userId: string, senderId: string) {
     return await request(`/user/friends/request/${senderId}/reject`, { method: 'POST' });
   },
-  async submitMeetingReport(payload: any) {
-    return await request('/events/report', { method: 'POST', body: JSON.stringify(payload) });
+  async createPowerTeam(payload: { name: string, description?: string }) {
+    return await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  async deletePowerTeam(id: string) {
+    return await request(`/power-teams/${id}`, { method: 'DELETE' });
   },
 
   async getNotifications(userId: string) {

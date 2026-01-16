@@ -170,7 +170,7 @@ export function AdminGroupDetail() {
                                 if (confirm(`"${data.name}" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!`)) {
                                     try {
                                         if (isPowerTeam) {
-                                            // api delete for PowerTeam
+                                            await api.deletePowerTeam(data.id);
                                         } else {
                                             await api.deleteGroup(data.id);
                                         }

@@ -2043,6 +2043,26 @@ app.get('/api/power-teams', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/power-teams', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, description } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO power_teams (name, description, status) VALUES ($1, $2, 'ACTIVE') RETURNING *`,
+      [name, description]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/power-teams/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    await pool.query('DELETE FROM power_teams WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/power-teams/:id/members', async (req, res) => {
   try {
     const { rows } = await pool.query(

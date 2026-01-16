@@ -2379,13 +2379,27 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
     try { await client.query('DELETE FROM notifications WHERE user_id = $1', [id]); } catch (e) { }
 
     // Referrals (Giver or Receiver)
-    await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
+    try {
+      await client.query('SAVEPOINT sp_referrals');
+      await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
+      await client.query('RELEASE SAVEPOINT sp_referrals');
+    } catch (e) {
+      await client.query('ROLLBACK TO SAVEPOINT sp_referrals');
+      console.warn('Referral Delete Failed (Ignored):', e.message);
+    }
 
     // One-to-Ones
     await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
 
     // Friend Requests
-    try { await client.query('DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]); } catch (e) { }
+    try {
+      await client.query('SAVEPOINT sp_friend_requests');
+      await client.query('DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]);
+      await client.query('RELEASE SAVEPOINT sp_friend_requests');
+    } catch (e) {
+      await client.query('ROLLBACK TO SAVEPOINT sp_friend_requests');
+      console.warn('FriendReq Delete Failed (Ignored):', e.message);
+    }
 
     // Update Events created by user to NULL
     await client.query('UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);

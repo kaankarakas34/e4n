@@ -1522,7 +1522,7 @@ app.post('/api/user/friends/request/:id/reject', authenticateToken, async (req, 
 });
 
 
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', authenticateToken, async (req, res) => {
   const { name, profession, city } = req.query;
   try {
     let query = 'SELECT id, name, profession, city, email, phone FROM users WHERE 1=1';
@@ -1584,7 +1584,7 @@ app.get('/api/user/friends', authenticateToken, async (req, res) => {
 });
 
 // User's Groups & Power Teams
-app.get('/api/user/groups', async (req, res) => {
+app.get('/api/user/groups', authenticateToken, async (req, res) => {
   const { userId } = req.query;
   try {
     // Handle mock IDs gracefully or valid UUIDs
@@ -1605,7 +1605,7 @@ app.get('/api/user/groups', async (req, res) => {
   }
 });
 
-app.get('/api/user/power-teams', async (req, res) => {
+app.get('/api/user/power-teams', authenticateToken, async (req, res) => {
   const { userId } = req.query;
   try {
     if (!userId || userId.length < 30) return res.json([]);
@@ -1624,7 +1624,7 @@ app.get('/api/user/power-teams', async (req, res) => {
 });
 
 // Groups & Members
-app.get('/api/groups', async (req, res) => {
+app.get('/api/groups', authenticateToken, async (req, res) => {
   try {
     // Optimized Group List: JOIN instead of dependent subquery
     const { rows } = await pool.query(`
@@ -1639,7 +1639,7 @@ app.get('/api/groups', async (req, res) => {
 });
 
 
-app.get('/api/groups/:id/members', async (req, res) => {
+app.get('/api/groups/:id/members', authenticateToken, async (req, res) => {
   try {
     // Return all users that are members of this group
     const { rows } = await pool.query(
@@ -1657,7 +1657,7 @@ app.get('/api/groups/:id/members', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/groups/:id/referrals', async (req, res) => {
+app.get('/api/groups/:id/referrals', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT r.*, g.name as from_member_name, r2.name as to_member_name
@@ -1675,7 +1675,7 @@ app.get('/api/groups/:id/referrals', async (req, res) => {
 
 
 
-app.get('/api/groups/:id/events', async (req, res) => {
+app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
         SELECT e.*,
@@ -1770,7 +1770,7 @@ app.delete('/api/events/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/members', async (req, res) => {
+app.get('/api/admin/members', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
             SELECT u.*, u.account_status as status, g.name as group_name, 
@@ -1992,7 +1992,7 @@ app.delete('/api/groups/:id', authenticateToken, async (req, res) => {
 
 
 // Group Activities (One-to-Ones for Group Manager)
-app.get('/api/groups/:id/activities', async (req, res) => {
+app.get('/api/groups/:id/activities', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT o.*, u1.name as requester_name, u2.name as partner_name, u1.profession as requester_profession
@@ -2009,7 +2009,7 @@ app.get('/api/groups/:id/activities', async (req, res) => {
 });
 
 // Power Teams
-app.get('/api/power-teams', async (req, res) => {
+app.get('/api/power-teams', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM power_teams ORDER BY name ASC');
     res.json(rows);
@@ -2036,7 +2036,7 @@ app.delete('/api/power-teams/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/power-teams/:id/members', async (req, res) => {
+app.get('/api/power-teams/:id/members', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, ptm.status, ptm.joined_at as created_at
@@ -2049,7 +2049,7 @@ app.get('/api/power-teams/:id/members', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/power-teams/:id/referrals', async (req, res) => {
+app.get('/api/power-teams/:id/referrals', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT r.*, g.name as from_member_name
@@ -2064,7 +2064,7 @@ app.get('/api/power-teams/:id/referrals', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/power-teams/:id/synergy', async (req, res) => {
+app.get('/api/power-teams/:id/synergy', authenticateToken, async (req, res) => {
   try {
     // Synergy requires receiver_id which is missing in current DB schema.
     // Returning empty array or dummy data until schema is fixed.
@@ -2076,7 +2076,7 @@ app.get('/api/power-teams/:id/synergy', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/groups/:id/visitors', async (req, res) => {
+app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT v.*, u.name as inviter_name 
@@ -2091,7 +2091,7 @@ app.get('/api/groups/:id/visitors', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/events/:id/attendance', async (req, res) => {
+app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT a.*, u.name as member_name 
@@ -2709,7 +2709,7 @@ app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
 });
 
 /* --- LMS Endpoints (Keep existing logic mostly) --- */
-app.get('/api/lms/courses', async (req, res) => {
+app.get('/api/lms/courses', authenticateToken, async (req, res) => {
   try { const { rows } = await pool.query('SELECT * FROM courses WHERE status=$1', ['ACTIVE']); res.json(rows); } catch (e) { res.status(500).json({ error: e.message }) }
 });
 

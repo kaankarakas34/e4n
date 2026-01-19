@@ -1676,7 +1676,11 @@ app.get('/api/groups/:id/members', async (req, res) => {
   try {
     // Return all users that are members of this group
     const { rows } = await pool.query(
-      `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, gm.status, gm.joined_at as created_at
+      `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, gm.status, gm.joined_at as created_at,
+       (SELECT count(*)::int 
+        FROM attendance a 
+        JOIN events e ON a.event_id = e.id 
+        WHERE a.user_id = u.id AND e.group_id = $1 AND a.status = 'ABSENT') as absence_count
        FROM group_members gm 
        JOIN users u ON gm.user_id = u.id 
        WHERE gm.group_id = $1`,

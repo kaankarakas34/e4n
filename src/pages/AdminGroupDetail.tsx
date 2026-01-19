@@ -513,7 +513,14 @@ export function AdminGroupDetail() {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {members.map((member: any) => (
                                                 <tr key={member.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{member.full_name}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="font-medium text-gray-900">{member.full_name}</div>
+                                                        {(member.absence_count || 0) >= 2 && (
+                                                            <div className="text-red-600 text-[10px] font-semibold mt-1 flex items-center bg-red-50 border border-red-100 rounded px-1 max-w-fit">
+                                                                ⚠️ Devamsızlık Hakkı Dolmak Üzere!
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">{member.profession}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center space-x-2">

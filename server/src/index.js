@@ -32,7 +32,21 @@ app.use(cors());
 app.use(express.json());
 
 // Run Migrations (Non-blocking but important)
-runMigrations();
+// Run Migrations (Blocking)
+(async () => {
+    try {
+        await runMigrations();
+        console.log('✅ Migrations completed. Starting Server...');
+        if (process.env.NODE_ENV !== 'production') {
+            app.listen(PORT, '0.0.0.0', () => {
+                console.log(`Server running on port ${PORT}`);
+            });
+        }
+    } catch (e) {
+        console.error('❌ Migration Failed. Server not started.', e);
+        process.exit(1);
+    }
+})();
 
 // Routes
 // app.use('/api', commonRoutes); // Professions, etc. which might be /api/professions
@@ -85,10 +99,6 @@ initCronJobs();
 process.on('uncaughtException', (err) => { console.error('CRITICAL PROCESS CRASH:', err); });
 process.on('unhandledRejection', (reason, promise) => { console.error('Unhandled Rejection at:', promise, 'reason:', reason); });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+// Server listening is handled in the migration startup block above
 
 export default app;

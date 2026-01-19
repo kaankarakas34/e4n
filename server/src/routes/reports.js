@@ -43,16 +43,16 @@ router.get('/stats', authenticateToken, async (req, res) => {
         const visitorCount = (await pool.query('SELECT count(*) FROM visitors')).rows[0].count;
         const oneToOneCount = (await pool.query('SELECT count(*) FROM one_to_ones')).rows[0].count;
 
-        let totalRevenue = 0;
-        try {
-            const revRes = await pool.query('SELECT SUM(amount) as total FROM revenue_entries');
-            totalRevenue = parseFloat(revRes.rows[0].total || 0);
-        } catch { }
+        // Correct Revenue Logic (from Referrals)
+        const revenueRes = await pool.query("SELECT SUM(amount) as total, SUM(CASE WHEN type='INTERNAL' THEN amount ELSE 0 END) as internal, SUM(CASE WHEN type='EXTERNAL' THEN amount ELSE 0 END) as external FROM referrals WHERE status='SUCCESSFUL'");
+        const totalRevenue = revenueRes.rows[0].total || 0;
+        const internalRevenue = revenueRes.rows[0].internal || 0;
+        const externalRevenue = revenueRes.rows[0].external || 0;
 
         res.json({
-            totalRevenue: totalRevenue,
-            internalRevenue: totalRevenue * 0.7,
-            externalRevenue: totalRevenue * 0.3,
+            totalRevenue: parseFloat(totalRevenue),
+            internalRevenue: parseFloat(internalRevenue),
+            externalRevenue: parseFloat(externalRevenue),
             totalMembers: parseInt(memberCount),
             lostMembers: 0,
             totalGroups: parseInt(groupCount),
@@ -60,7 +60,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
             totalEvents: parseInt(eventCount),
             totalVisitors: parseInt(visitorCount),
             totalOneToOnes: parseInt(oneToOneCount),
-            visitorConversionRate: 20
+            visitorConversionRate: 0
         });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

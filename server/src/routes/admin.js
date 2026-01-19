@@ -16,17 +16,24 @@ router.use((req, res, next) => {
 router.get('/members', async (req, res) => {
     try {
         const { rows } = await pool.query(`
-            SELECT u.*, u.account_status as status, g.name as group_name, 
-            'ACTIVE' as profession_status, 
-            NULL as profession_id, 
-            NULL as profession_category
+            SELECT 
+              u.id, u.name, u.email, u.phone, u.city, u.profession, u.role, u.created_at,
+              u.performance_score, u.performance_color,
+              COALESCE(u.account_status, 'PENDING') as status, 
+              g.name as group_name, 
+              'ACTIVE' as profession_status, 
+              NULL as profession_id, 
+              NULL as profession_category
             FROM users u
             LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
             LEFT JOIN groups g ON gm.group_id = g.id
             ORDER BY u.created_at DESC
         `);
         res.json(rows.map(r => ({ ...r, full_name: r.name })));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        console.error('Admin Members Error:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 router.post('/move-member', async (req, res) => {

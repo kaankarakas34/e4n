@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import pool from './config/db.js';
 import { initCronJobs } from './cron/jobs.js';
+import { runMigrations } from './config/migrate.js';
 
 // Route Imports
 import authRoutes from './routes/auth.js';
@@ -21,6 +22,7 @@ import ticketRoutes from './routes/tickets.js';
 import paymentRoutes from './routes/payment.js';
 import commonRoutes from './routes/common.js'; // Professions, LMS, Public Visitors
 import visitorRoutes from './routes/visitors.js';
+import notificationRoutes from './routes/notifications.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -28,6 +30,9 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Run Migrations (Non-blocking but important)
+runMigrations();
 
 // Routes
 // app.use('/api', commonRoutes); // Professions, etc. which might be /api/professions
@@ -51,6 +56,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api', commonRoutes); // /api/professions, /api/lms/courses
 app.use('/api/visitors', visitorRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health Check
 app.get('/api/health-check', async (req, res) => {

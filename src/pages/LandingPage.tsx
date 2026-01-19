@@ -195,7 +195,7 @@ export function LandingPage() {
                                     Temel İlkemiz: Fırsat Eşitliği
                                 </h4>
                                 <p className="text-gray-600 mb-6">
-                                    EFN'in en belirleyici özelliklerinden biri <span className="font-bold text-gray-900">Fırsat Eşitliği</span> ilkesidir. Bu ilke, üyelerimize pozitif bir rekabet avantajı sağlamak üzere tasarlanmıştır.
+                                    EFN'in en belirleyici özelliklerinden biri <span className="font-bold text-gray-900">Fırsat Eşitliği</span> ilkesidir. Bu ilke, üyelerimize güçlü bir rekabet avantajı sağlamak üzere tasarlanmıştır.
                                 </p>
                             </div>
 
@@ -212,7 +212,7 @@ export function LandingPage() {
                             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                                 <h5 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                                     <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                                    Pozitif Rekabet Avantajı
+                                    Rekabet Avantajı
                                 </h5>
                                 <p className="text-gray-600">
                                     Aynı meslekten birden fazla kişinin olmaması, grup içi rekabeti ortadan kaldırır. Bu sayede, o meslek grubuna yönlendirilecek tüm iş potansiyeli ve referanslar doğrudan o üyeye akar.

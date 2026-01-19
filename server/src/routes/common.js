@@ -36,4 +36,11 @@ router.get('/lms/courses', authenticateToken, async (req, res) => {
     try { const { rows } = await pool.query('SELECT * FROM courses WHERE status=$1', ['ACTIVE']); res.json(rows); } catch (e) { res.status(500).json({ error: e.message }) }
 });
 
+router.get('/lms/exams', authenticateToken, async (req, res) => {
+    try {
+        // Logic for exams. Returning empty list as placeholder
+        res.json([]);
+    } catch (e) { res.json([]); }
+});
+
 export default router;

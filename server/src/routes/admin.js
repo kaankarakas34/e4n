@@ -7,6 +7,8 @@ import { calculateChampions } from '../utils/scoring.js';
 const router = express.Router();
 
 // Middleware: Verify Admin
+// Middleware: Authenticate & Verify Admin
+router.use(authenticateToken);
 router.use((req, res, next) => {
     if (req.user.role !== 'ADMIN') return res.sendStatus(403);
     next();
@@ -261,7 +263,10 @@ router.get('/public-visitors', async (req, res) => {
     try {
         const { rows } = await pool.query('SELECT * FROM public_visitors ORDER BY created_at DESC');
         res.json(rows);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        console.error('Public Visitors Error:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 router.put('/public-visitors/:id/status', async (req, res) => {

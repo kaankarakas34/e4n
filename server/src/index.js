@@ -20,7 +20,7 @@ import { fileURLToPath } from 'url';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
-const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
+const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
 
 // Connection Configuration for Supabase
 // Using explicit env var

@@ -16,6 +16,85 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS performance_score INTEGER DEFAULT 0");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS performance_color VARCHAR(10) DEFAULT 'GREY'");
 
+    // Core Tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS groups (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        meeting_day VARCHAR(20),
+        meeting_time TIME,
+        meeting_link VARCHAR(255),
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS group_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'MEMBER',
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(group_id, user_id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS referrals (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        giver_id UUID REFERENCES users(id),
+        receiver_id UUID REFERENCES users(id),
+        type VARCHAR(20),
+        status VARCHAR(20) DEFAULT 'PENDING',
+        description TEXT,
+        amount DECIMAL(10, 2),
+        temperature VARCHAR(20),
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS attendance (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id),
+        event_id UUID REFERENCES events(id),
+        status VARCHAR(20),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS visitors (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        inviter_id UUID REFERENCES users(id),
+        group_id UUID REFERENCES groups(id),
+        name VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(50),
+        company VARCHAR(255),
+        profession VARCHAR(255),
+        visited_at DATE,
+        status VARCHAR(20) DEFAULT 'INVITED',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS one_to_ones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        requester_id UUID REFERENCES users(id),
+        partner_id UUID REFERENCES users(id),
+        meeting_date DATE,
+        notes TEXT,
+        status VARCHAR(20) DEFAULT 'COMPLETED',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
     // Company & Billing
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50)");

@@ -15,24 +15,18 @@ router.use((req, res, next) => {
 // Member Management
 router.get('/members', async (req, res) => {
     try {
+        // Simplified query to debug 500 error
         const { rows } = await pool.query(`
             SELECT 
-              u.id, u.name, u.email, u.phone, u.city, u.profession, u.role, u.created_at,
-              u.performance_score, u.performance_color,
-              COALESCE(u.account_status, 'PENDING') as status, 
-              g.name as group_name, 
-              'ACTIVE' as profession_status, 
-              NULL as profession_id, 
-              NULL as profession_category
+              u.id, u.name, u.email, u.role,
+              'PENDING' as status -- fallback status for now to be safe
             FROM users u
-            LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
-            LEFT JOIN groups g ON gm.group_id = g.id
             ORDER BY u.created_at DESC
         `);
         res.json(rows.map(r => ({ ...r, full_name: r.name })));
     } catch (e) {
-        console.error('Admin Members Error:', e);
-        res.status(500).json({ error: e.message });
+        console.error('Admin Members Critical Error:', e);
+        res.status(500).json({ error: 'Database Error: ' + e.message });
     }
 });
 

@@ -209,6 +209,13 @@ export const runMigrations = async () => {
        )
     `);
 
+    // Ensure Columns exist for Core Tables (in case tables existed but were empty/partial)
+    await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+    await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'MEMBER'");
+    await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+    await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS type VARCHAR(20)");
+    await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'");
+
     console.log('✅ Database Schema Synced');
   } catch (e) {
     console.error('❌ Migration Error:', e);

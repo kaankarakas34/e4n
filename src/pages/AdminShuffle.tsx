@@ -87,11 +87,18 @@ export function AdminShuffle() {
 
         // Initial Dist: Just place them as they are in DB or Random
         const initialItems: Record<string, string[]> = {};
-        g.forEach((group: any) => initialItems[group.id] = []);
-        membersWithHistory.forEach((member: any, index: number) => {
-            const groupIndex = index % g.length;
-            initialItems[g[groupIndex].id].push(member.id);
-        });
+        if (g.length > 0) {
+            g.forEach((group: any) => initialItems[group.id] = []);
+            membersWithHistory.forEach((member: any, index: number) => {
+                const groupIndex = index % g.length;
+                if (g[groupIndex]) {
+                    initialItems[g[groupIndex].id].push(member.id);
+                }
+            });
+        } else {
+            // No groups exist, place everyone in unassigned if we had such a bucket, or just leave empty
+            initialItems['unassigned'] = membersWithHistory.map((m: any) => m.id);
+        }
         setItems(initialItems);
         calculateStats(initialItems, membersWithHistory, g);
     };

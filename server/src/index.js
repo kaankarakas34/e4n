@@ -863,57 +863,28 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
 // ...
 
 // Professions
+// Professions
 app.get('/api/professions', async (req, res) => {
+  const { q } = req.query;
   try {
-    const { q, status } = req.query;
-    let queryText = 'SELECT * FROM professions';
-    const params = [];
-    const conditions = [];
-
+    let query = 'SELECT id, name, category FROM professions';
+    let params = [];
     if (q) {
-      conditions.push(`name ILIKE $${params.length + 1}`);
+      query += ' WHERE name ILIKE $1';
       params.push(`%${q}%`);
     }
-
-    if (status) { // e.g. 'APPROVED' or 'PENDING'
-      conditions.push(`status = $${params.length + 1}`);
-      params.push(status);
-    } else if (!q) {
-      // Default behavior if no specific search: show only APPROVED unless searching
-      // Wait, for admin page we might want all. Let's make it explicit.
-      // If "status" is strictly not provided, maybe default to APPROVED?
-      // Let's assume frontend will ask for what it wants.
-      // For search (dropdown), currently it just sends ?q=
-      // We should probably default to APPROVED for search to avoid showing dirty data in dropdown?
-      // But the user requested "if not in list, add it".
-      // The dropdown should probably show approved ones.
-      if (req.user && req.user.role === 'ADMIN') {
-        // Admin sees all if not specified? Or maybe clean up logic later.
-      } else {
-        conditions.push(`status = 'APPROVED'`);
-      }
-    }
-
-    if (conditions.length > 0) {
-      queryText += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    queryText += ' ORDER BY name ASC LIMIT 50';
-
-    const { rows } = await pool.query(queryText, params);
+    query += ' ORDER BY name ASC LIMIT 50';
+    const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/professions', async (req, res) => {
-  // Admin creates APPROVED directly. Or user creates via other means?
-  // This endpoint seems to be admin only based on context, but let's be safe.
   try {
     const { name, category } = req.body;
-    const status = req.body.status || 'APPROVED';
     const { rows } = await pool.query(
-      "INSERT INTO professions (name, category, status) VALUES ($1, $2, $3) RETURNING *",
-      [name, category, status]
+      "INSERT INTO professions (name, category) VALUES ($1, $2) RETURNING *",
+      [name, category]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -921,10 +892,10 @@ app.post('/api/professions', async (req, res) => {
 
 app.put('/api/professions/:id', async (req, res) => {
   try {
-    const { name, category, status } = req.body;
+    const { name, category } = req.body;
     const { rows } = await pool.query(
-      "UPDATE professions SET name = $1, category = $2, status = COALESCE($3, status) WHERE id = $4 RETURNING *",
-      [name, category, status, req.params.id]
+      "UPDATE professions SET name = $1, category = $2 WHERE id = $3 RETURNING *",
+      [name, category, req.params.id]
     );
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1706,20 +1677,7 @@ app.get('/api/groups/:id/referrals', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/professions', async (req, res) => {
-  const { q } = req.query;
-  try {
-    let query = 'SELECT id, name, category FROM professions';
-    let params = [];
-    if (q) {
-      query += ' WHERE name ILIKE $1';
-      params.push(`%${q}%`);
-    }
-    query += ' ORDER BY name ASC LIMIT 20';
-    const { rows } = await pool.query(query, params);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+
 
 app.get('/api/groups/:id/events', async (req, res) => {
   try {

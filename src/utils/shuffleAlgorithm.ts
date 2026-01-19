@@ -84,7 +84,7 @@ export function distributeMembers(
 
         for (const group of shuffledGroups) {
             const groupMemberIds = newDistribution[group.id];
-            const groupMembers = groupMemberIds.map(id => allMembers.find(m => m.id === id)!);
+            const groupMembers = groupMemberIds.map(id => allMembers.find(m => m.id === id)).filter((m): m is Member => !!m);
 
             // HARD CONSTRAINT: Profession Conflict
             // Strict check: if anyone in this group has the same profession, REJECT.

@@ -115,6 +115,10 @@ docker compose up -d
 echo "Setting up Backend..."
 cd /var/www/e4n2/api
 npm install --omit=dev
+# Run Migrations
+echo "Running Migrations..."
+SUPABASE_DB_URL="postgresql://e4n2:e4n2pass@localhost:5433/e4n2db" npm run migrate
+
 pm2 delete e4n2-api || true
 # Explicitly use port 4000
 pm2 start src/index.js --name "e4n2-api" --env "PORT=4000" --env "DB_HOST=localhost" --env "DB_PORT=5433" --env "DB_USER=e4n2" --env "DB_PASSWORD=e4n2pass" --env "DB_NAME=e4n2db"

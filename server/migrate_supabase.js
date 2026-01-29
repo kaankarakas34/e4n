@@ -50,11 +50,23 @@ async function migrate() {
         if (fs.existsSync(seedSqlPath)) {
             console.log("📄 seed_members.sql okunuyor...");
             const seedSql = fs.readFileSync(seedSqlPath, 'utf8');
-            console.log("🌱 Örnek veriler (seed) ekleniyor...");
+            console.log("🌱 Örnek veriler (seed_members) ekleniyor...");
             await client.query(seedSql);
             console.log("\x1b[32m%s\x1b[0m", "✅ seed_members.sql başarıyla çalıştırıldı.");
         } else {
             console.warn("⚠️  seed_members.sql bulunamadı, atlanıyor.");
+        }
+
+        // 3. seed_professions.sql dosyasını oku ve çalıştır
+        const professionsSqlPath = path.join(__dirname, 'seed_professions.sql');
+        if (fs.existsSync(professionsSqlPath)) {
+            console.log("📄 seed_professions.sql okunuyor...");
+            const professionsSql = fs.readFileSync(professionsSqlPath, 'utf8');
+            console.log("🌱 Meslek verileri (seed_professions) ekleniyor...");
+            await client.query(professionsSql);
+            console.log("\x1b[32m%s\x1b[0m", "✅ seed_professions.sql başarıyla çalıştırıldı.");
+        } else {
+            console.warn("⚠️  seed_professions.sql bulunamadı, atlanıyor.");
         }
 
         console.log("\x1b[32m%s\x1b[0m", "\n🚀 Migration ve Seed işlemi başarıyla tamamlandı!");

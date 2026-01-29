@@ -425,9 +425,12 @@ export function AdminGroupDetail() {
                                     {/* Helper to render a role card */}
                                     {displayRoles.map((roleDef, idx) => {
                                         // Find current holder
-                                        const current = members.find(m =>
-                                            roleDef.role === 'PRESIDENT' ? m.role === 'PRESIDENT' : m.group_title === roleDef.group_title
-                                        );
+                                        const current = members.find(m => {
+                                            if (isPowerTeam) {
+                                                return m.group_title === roleDef.group_title;
+                                            }
+                                            return roleDef.role === 'PRESIDENT' ? m.role === 'PRESIDENT' : m.group_title === roleDef.group_title;
+                                        });
                                         const Icon = roleDef.icon;
                                         const borderColor = roleDef.color === 'indigo' ? 'border-indigo-100' : roleDef.color === 'purple' ? 'border-purple-100' : 'border-blue-100';
                                         const textColor = roleDef.color === 'indigo' ? 'text-indigo-900' : roleDef.color === 'purple' ? 'text-purple-900' : 'text-blue-900';

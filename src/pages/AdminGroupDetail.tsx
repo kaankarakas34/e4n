@@ -22,6 +22,11 @@ export function AdminGroupDetail() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '' });
 
+    // Assignment Modal State
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [targetRoleDef, setTargetRoleDef] = useState<any>(null);
+    const [currentAssignee, setCurrentAssignee] = useState<any>(null);
+
     const [loading, setLoading] = useState(true);
 
     const isPowerTeam = location.pathname.includes('power-teams');
@@ -453,34 +458,19 @@ export function AdminGroupDetail() {
                                                 </div>
 
                                                 {user?.role === 'ADMIN' && (
-                                                    <div className="mt-1">
-                                                        <UserSelect
-                                                            placeholder="Üye ata..."
-                                                            onSelect={async (selectedUser) => {
-                                                                if (confirm(`${current ? current.full_name + ' yerine ' : ''}${selectedUser.name} kişisini ${roleDef.title} olarak atamak istiyor musunuz?`)) {
-                                                                    try {
-                                                                        await api.assignRole(
-                                                                            selectedUser.id,
-                                                                            roleDef.role,
-                                                                            roleDef.group_title,
-                                                                            id,
-                                                                            isPowerTeam ? 'POWER_TEAM' : 'GROUP'
-                                                                        );
-
-                                                                        // Refresh
-                                                                        if (isPowerTeam) {
-                                                                            const teamMembers = (await api.getPowerTeamMembers(id!)) || [];
-                                                                            setMembers(teamMembers);
-                                                                        } else {
-                                                                            const groupMembers = (await api.getGroupMembers(id!)) || [];
-                                                                            setMembers(groupMembers);
-                                                                        }
-                                                                    } catch (err: any) {
-                                                                        alert('Hata: ' + err.message);
-                                                                    }
-                                                                }
+                                                    <div className="mt-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="w-full text-xs"
+                                                            onClick={() => {
+                                                                setTargetRoleDef(roleDef);
+                                                                setCurrentAssignee(current);
+                                                                setAssignModalOpen(true);
                                                             }}
-                                                        />
+                                                        >
+                                                            {current ? 'Değiştir' : 'Ata'}
+                                                        </Button>
                                                     </div>
                                                 )}
                                             </div>
@@ -1019,6 +1009,59 @@ export function AdminGroupDetail() {
                             )}
                         </CardContent>
                     </Card>
+                )}
+                {/* Assign Role Modal */}
+                {assignModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                {targetRoleDef?.title} Atama
+                            </h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                {currentAssignee
+                                    ? `Mevcut: ${currentAssignee.full_name}. Yeni atama yaparsanız eski görevli değiştirilecektir.`
+                                    : 'Bu görev için henüz bir atama yapılmamış. Aşağıdan bir üye seçerek atama yapabilirsiniz.'}
+                            </p>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Üye Ara</label>
+                                <UserSelect
+                                    placeholder="İsim ile üye ara..."
+                                    className="w-full"
+                                    onSelect={async (selectedUser) => {
+                                        if (confirm(`${selectedUser.name} kişisini ${targetRoleDef?.title} olarak atamak istiyor musunuz?`)) {
+                                            try {
+                                                await api.assignRole(
+                                                    selectedUser.id,
+                                                    targetRoleDef.role,
+                                                    targetRoleDef.group_title,
+                                                    id,
+                                                    isPowerTeam ? 'POWER_TEAM' : 'GROUP'
+                                                );
+
+                                                // Refresh
+                                                if (isPowerTeam) {
+                                                    const teamMembers = (await api.getPowerTeamMembers(id!)) || [];
+                                                    setMembers(teamMembers);
+                                                } else {
+                                                    const groupMembers = (await api.getGroupMembers(id!)) || [];
+                                                    setMembers(groupMembers);
+                                                }
+                                                setAssignModalOpen(false);
+                                                alert('Atama başarıyla yapıldı.');
+                                            } catch (err: any) {
+                                                alert('Hata: ' + err.message);
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button variant="ghost" onClick={() => setAssignModalOpen(false)}>İptal</Button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

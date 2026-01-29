@@ -1031,6 +1031,18 @@ export function AdminGroupDetail() {
                                     onSelect={async (selectedUser) => {
                                         if (confirm(`${selectedUser.name} kişisini ${targetRoleDef?.title} olarak atamak istiyor musunuz?`)) {
                                             try {
+                                                // Demote current if exists (Swap)
+                                                if (currentAssignee) {
+                                                    await api.assignRole(
+                                                        currentAssignee.id,
+                                                        'MEMBER', // Demote to plain Member
+                                                        '',       // Clear group_title (empty string or null)
+                                                        id,
+                                                        isPowerTeam ? 'POWER_TEAM' : 'GROUP'
+                                                    );
+                                                }
+
+                                                // Promote new
                                                 await api.assignRole(
                                                     selectedUser.id,
                                                     targetRoleDef.role,

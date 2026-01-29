@@ -51,10 +51,67 @@ export function Register() {
     }
   };
 
+  const formatName = (value: string) => {
+    return value
+      .replace(/\s+/g, ' ') // Remove multiple spaces
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return '';
+        // Turkeys locale specific upper/lower casing could be tricky but for generic standard:
+        return word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1).toLocaleLowerCase('tr-TR');
+      })
+      .join(' ');
+  };
+
+  const formatPhone = (value: string) => {
+    // 1. Clean non-digits
+    let cleaned = value.replace(/\D/g, '');
+
+    // 2. Ensure it starts with 0
+    if (cleaned.length > 0 && cleaned[0] !== '0') {
+      cleaned = '0' + cleaned;
+    }
+
+    // 3. Limit to 11 digits (05xx xxx xx xx is 11 digits)
+    if (cleaned.length > 11) {
+      cleaned = cleaned.substring(0, 11);
+    }
+
+    // 4. Format
+    // 05xx -> 05xx
+    // 05xx xxx -> 05xx xxx
+    // 05xx xxx xx -> 05xx xxx xx
+    // 05xx xxx xx xx -> 05xx xxx xx xx
+
+    let formatted = cleaned;
+    if (cleaned.length > 4) {
+      formatted = `${cleaned.slice(0, 4)} ${cleaned.slice(4)}`;
+    }
+    if (cleaned.length > 7) {
+      formatted = `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
+    }
+    if (cleaned.length > 9) {
+      formatted = `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7, 9)} ${cleaned.slice(9)}`;
+    }
+
+    return formatted;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const name = e.target.getAttribute('data-name');
+    let value = e.target.value;
+
     if (name) {
-      setFormData(prev => ({ ...prev, [name]: e.target.value }));
+      if (name === 'name') {
+        value = formatName(value);
+      }
+      if (name === 'phone') {
+        // Allow deletion (backspace) without forcing format immediately if empty
+        // But requested to PREVENT wrong format.
+        // We will enable strict formatting on change to guide user.
+        value = formatPhone(value);
+      }
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -101,7 +158,7 @@ export function Register() {
                   <div className="space-y-3">
                     <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
                     <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
-                    <Input required data-name="phone" placeholder="Telefon Numarası" type="tel" value={formData.phone} onChange={handleChange} />
+                    <Input required data-name="phone" placeholder="05xx xxx xx xx" type="tel" value={formData.phone} onChange={handleChange} />
                   </div>
                 </div>
 

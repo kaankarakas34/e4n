@@ -430,7 +430,7 @@ export function AdminGroupDetail() {
                                         const bgIconColor = roleDef.color === 'indigo' ? 'bg-indigo-100' : roleDef.color === 'purple' ? 'bg-purple-100' : 'bg-blue-100';
 
                                         return (
-                                            <div key={idx} className={`bg-white p-3 rounded-lg border ${borderColor} shadow-sm relative overflow-hidden group flex flex-col justify-between`}>
+                                            <div key={idx} className={`bg-white p-3 rounded-lg border ${borderColor} shadow-sm relative group flex flex-col justify-between`}>
                                                 <div>
                                                     <h3 className={`text-xs font-bold ${textColor} uppercase tracking-wide mb-1 leading-tight`}>{roleDef.title}</h3>
                                                     <p className="text-[10px] text-gray-500 mb-2">{roleDef.desc}</p>

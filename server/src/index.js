@@ -1540,17 +1540,17 @@ app.get('/api/users', authenticateToken, async (req, res) => {
 
     if (name) {
       query += ` AND name ILIKE $${paramCount} `;
-      params.push(`% ${name}% `);
+      params.push(`%${name}%`);
       paramCount++;
     }
     if (profession) {
       query += ` AND profession ILIKE $${paramCount} `;
-      params.push(`% ${profession}% `);
+      params.push(`%${profession}%`);
       paramCount++;
     }
     if (city) {
       query += ` AND city ILIKE $${paramCount} `;
-      params.push(`% ${city}% `);
+      params.push(`%${city}%`);
       paramCount++;
     }
 

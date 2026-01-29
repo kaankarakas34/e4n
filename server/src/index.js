@@ -163,11 +163,14 @@ pool.connect().then(async (client) => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_address TEXT");
 
     // Professions Table
+    await client.query("ALTER TABLE professions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'APPROVED'");
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS professions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) UNIQUE NOT NULL,
         category VARCHAR(100),
+        status VARCHAR(20) DEFAULT 'APPROVED',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);

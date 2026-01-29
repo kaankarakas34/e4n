@@ -87,7 +87,7 @@ export function ProfessionSelect({ value, onChange, className }: ProfessionSelec
                                 // onChange is already called on input change, so we just close to "confirm" custom entry
                             }}
                         >
-                            "{query}" olarak kullan
+                            "{query}" olarak kullan (Talep Oluştur)
                         </div>
                     )}
                     {!loading && professions.map((prof) => (

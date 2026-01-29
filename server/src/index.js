@@ -2604,6 +2604,24 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
       }
     } else {
       // Legacy behavior for Groups
+      // If we are in a specific Group context (contextId is provided and type is GROUP), 
+      // ensure the user is a member of that group.
+      if (type === 'GROUP' && contextId) {
+        // Check membership
+        const checkMember = await pool.query('SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2', [contextId, userId]);
+        if (checkMember.rows.length === 0) {
+          await pool.query(
+            "INSERT INTO group_members (group_id, user_id, status, joined_at) VALUES ($1, $2, 'ACTIVE', NOW())",
+            [contextId, userId]
+          );
+        } else {
+          // If member exists but inactive, reactivate?
+          if (checkMember.rows[0].status !== 'ACTIVE') {
+            await pool.query("UPDATE group_members SET status = 'ACTIVE' WHERE group_id = $1 AND user_id = $2", [contextId, userId]);
+          }
+        }
+      }
+
       if (groupTitle !== undefined) {
         await pool.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
       } else {

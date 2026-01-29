@@ -2604,12 +2604,15 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
       }
     } else {
       // Legacy behavior for Groups
+      console.log(`[ASSIGN-ROLE] Group Context. User: ${userId}, Role: ${role}, Title: ${groupTitle}, Ctx: ${contextId}`);
+
       // If we are in a specific Group context (contextId is provided and type is GROUP), 
       // ensure the user is a member of that group.
       if (type === 'GROUP' && contextId) {
         // Check membership
         const checkMember = await pool.query('SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2', [contextId, userId]);
         if (checkMember.rows.length === 0) {
+          console.log(`[ASSIGN-ROLE] Adding user ${userId} to group ${contextId}`);
           await pool.query(
             "INSERT INTO group_members (group_id, user_id, status, joined_at) VALUES ($1, $2, 'ACTIVE', NOW())",
             [contextId, userId]
@@ -2617,20 +2620,24 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
         } else {
           // If member exists but inactive, reactivate?
           if (checkMember.rows[0].status !== 'ACTIVE') {
+            console.log(`[ASSIGN-ROLE] Reactivating user ${userId} in group ${contextId}`);
             await pool.query("UPDATE group_members SET status = 'ACTIVE' WHERE group_id = $1 AND user_id = $2", [contextId, userId]);
           }
         }
       }
 
       if (groupTitle !== undefined) {
+        console.log(`[ASSIGN-ROLE] Updating User Table: Role=${role}, Title=${groupTitle}`);
         await pool.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
       } else {
+        console.log(`[ASSIGN-ROLE] Updating User Table: Role=${role}`);
         await pool.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
       }
     }
 
     res.json({ success: true });
   } catch (e) {
+    console.error('[ASSIGN-ROLE] Error:', e);
     res.status(500).json({ error: e.message });
   }
 });

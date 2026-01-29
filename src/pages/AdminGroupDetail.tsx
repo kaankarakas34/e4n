@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { UserSelect } from '../components/UserSelect';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -109,15 +110,21 @@ export function AdminGroupDetail() {
         return <div className="p-8">{typeLabel} bulunamadı.</div>;
     }
 
+
+
     const allRoles = [
         { title: 'Grup Başkanı', role: 'PRESIDENT', group_title: 'PRESIDENT', icon: Users, desc: 'Grubu yönetir.', color: 'indigo' },
         { title: 'Üyelik İşleri Bşk.', role: 'VICE_PRESIDENT', group_title: 'MEMBERSHIP_PRESIDENT', icon: Users, desc: 'Üye performansı.', color: 'purple' },
         { title: 'Ziyaretçi Komitesi Bşk.', role: 'VICE_PRESIDENT', group_title: 'VISITOR_PRESIDENT', icon: Users, desc: 'Ziyaretçi takibi.', color: 'purple' },
         { title: 'Birebir Koord.', role: 'MEMBER', group_title: 'ONE_TO_ONE_COORD', icon: Users, desc: '1-1 Takibi.', color: 'blue' },
         { title: 'Eğitim Koord.', role: 'MEMBER', group_title: 'EDUCATION_COORD', icon: Users, desc: 'Eğitim takibi.', color: 'blue' },
-        { title: 'Etkinlik Sorm.', role: 'MEMBER', group_title: 'EVENT_COORDINATOR', icon: Users, desc: 'Etkinlikleri düzenler.', color: 'blue' },
+        { title: 'Etkinlik Koordinatörü', role: 'MEMBER', group_title: 'EVENT_COORDINATOR', icon: Users, desc: 'Etkinlikleri düzenler.', color: 'blue' },
     ];
-    const displayRoles = isPowerTeam ? [allRoles[0]] : allRoles;
+    const displayRoles = isPowerTeam ? [allRoles[0], allRoles[5]] : allRoles;
+
+    // ...
+
+
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -447,17 +454,18 @@ export function AdminGroupDetail() {
 
                                                 {user?.role === 'ADMIN' && (
                                                     <div className="mt-1">
-                                                        <select
-                                                            className="block w-full text-[10px] border-gray-300 rounded shadow-sm focus:ring-0 py-1 px-1"
-                                                            value={current?.id || ''}
-                                                            onChange={async (e) => {
-                                                                const newId = e.target.value;
-                                                                if (confirm(`${current ? current.full_name + ' yerine ' : ''}yeni ${roleDef.title} atamak istiyor musunuz?`)) {
+                                                        <UserSelect
+                                                            placeholder="Üye ata..."
+                                                            onSelect={async (selectedUser) => {
+                                                                if (confirm(`${current ? current.full_name + ' yerine ' : ''}${selectedUser.name} kişisini ${roleDef.title} olarak atamak istiyor musunuz?`)) {
                                                                     try {
-                                                                        // Demote current
-                                                                        if (current) await api.assignRole(current.id, 'MEMBER', null); // Clear title
-                                                                        // Promote new
-                                                                        if (newId) await api.assignRole(newId, roleDef.role, roleDef.group_title);
+                                                                        await api.assignRole(
+                                                                            selectedUser.id,
+                                                                            roleDef.role,
+                                                                            roleDef.group_title,
+                                                                            id,
+                                                                            isPowerTeam ? 'POWER_TEAM' : 'GROUP'
+                                                                        );
 
                                                                         // Refresh
                                                                         if (isPowerTeam) {
@@ -467,20 +475,12 @@ export function AdminGroupDetail() {
                                                                             const groupMembers = (await api.getGroupMembers(id!)) || [];
                                                                             setMembers(groupMembers);
                                                                         }
-                                                                    } catch (err) {
-                                                                        alert('Hata oluştu.');
-                                                                        console.error(err);
+                                                                    } catch (err: any) {
+                                                                        alert('Hata: ' + err.message);
                                                                     }
                                                                 }
                                                             }}
-                                                        >
-                                                            <option value="">Seç...</option>
-                                                            {members.sort((a, b) => a.full_name.localeCompare(b.full_name)).map(m => (
-                                                                <option key={m.id} value={m.id}>
-                                                                    {m.full_name} ({m.role === 'MEMBER' ? 'Üye' : m.group_title || m.role})
-                                                                </option>
-                                                            ))}
-                                                        </select>
+                                                        />
                                                     </div>
                                                 )}
                                             </div>

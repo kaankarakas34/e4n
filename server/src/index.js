@@ -160,7 +160,8 @@ pool.connect().then(async (client) => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_office VARCHAR(100)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_address TEXT");
+    // Power Team Members Role
+    await client.query("ALTER TABLE power_team_members ADD COLUMN IF NOT EXISTS role VARCHAR(100)");
 
     // Professions Table
     await client.query("ALTER TABLE professions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'APPROVED'");
@@ -174,6 +175,10 @@ pool.connect().then(async (client) => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
+
+
+
+
 
     // Champions Table for Dashboard
     await client.query(`
@@ -2101,10 +2106,11 @@ app.delete('/api/power-teams/:id', authenticateToken, async (req, res) => {
 app.get('/api/power-teams/:id/members', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, ptm.status, ptm.joined_at as created_at
-         FROM power_team_members ptm 
-         JOIN users u ON ptm.user_id = u.id 
-         WHERE ptm.power_team_id = $1`,
+      `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, 
+       ptm.status, ptm.joined_at as created_at, ptm.role as group_title
+       FROM power_team_members ptm 
+       JOIN users u ON ptm.user_id = u.id 
+       WHERE ptm.power_team_id = $1`,
       [req.params.id]
     );
     res.json(rows);
@@ -2576,26 +2582,33 @@ app.post('/api/admin/trigger-champions', authenticateToken, async (req, res) => 
 // Assign Role
 app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { userId, role, groupTitle } = req.body;
+  const { userId, role, groupTitle, contextId, type } = req.body;
 
   try {
-    // If groupTitle is provided, update it too. If null explicitly passed, clear it? 
-    // Usually undefined means don't touch, null means clear.
-    // Let's assume passed groupTitle overwrites.
-    const fields = ['role = $1'];
-    const values = [role, userId];
+    if (type === 'POWER_TEAM' && contextId) {
+      // 1. Check if member
+      const check = await pool.query('SELECT * FROM power_team_members WHERE user_id = $1 AND power_team_id = $2', [userId, contextId]);
 
-    if (groupTitle !== undefined) {
-      fields.push(`group_title = $${values.length + 1} `);
-      values.splice(1, 0, groupTitle); // Insert before userId, so order matches fields
-    }
-
-    // Logic for dynamic query is tricky with splice.
-    // Simpler: Just update both if groupTitle present
-    if (groupTitle !== undefined) {
-      await pool.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
+      if (check.rows.length === 0) {
+        // Add member with role
+        await pool.query(
+          'INSERT INTO power_team_members (user_id, power_team_id, status, role) VALUES ($1, $2, \'ACTIVE\', $3)',
+          [userId, contextId, groupTitle]
+        );
+      } else {
+        // Update existing
+        await pool.query(
+          'UPDATE power_team_members SET role = $1 WHERE user_id = $2 AND power_team_id = $3',
+          [groupTitle, userId, contextId]
+        );
+      }
     } else {
-      await pool.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
+      // Legacy behavior for Groups
+      if (groupTitle !== undefined) {
+        await pool.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
+      } else {
+        await pool.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
+      }
     }
 
     res.json({ success: true });

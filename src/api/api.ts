@@ -97,8 +97,8 @@ export const api = {
   async moveMember(userId: string, groupId: string) {
     return await request('/admin/move-member', { method: 'POST', body: JSON.stringify({ userId, groupId }) });
   },
-  async assignRole(userId: string, role: string, groupTitle?: string) {
-    return await request('/admin/assign-role', { method: 'POST', body: JSON.stringify({ userId, role, groupTitle }) });
+  async assignRole(userId: string, role: string, groupTitle?: string, contextId?: string, type?: 'GROUP' | 'POWER_TEAM') {
+    return await request('/admin/assign-role', { method: 'POST', body: JSON.stringify({ userId, role, groupTitle, contextId, type }) });
   },
 
   // Admin Reports

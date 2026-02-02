@@ -75,7 +75,8 @@ export function LandingPage() {
                         </div>
 
                         <nav className="hidden md:flex space-x-8">
-                            <a href="#nasil-calisir" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Nasıl Çalışır?</a>
+                            <a href="#felsefemiz" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Farkımız</a>
+                            <a href="#grup-yapisi" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Yapımız</a>
                             <a href="#basarilar" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Başarılar</a>
                             <a href="#etkinlikler" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Etkinlikler</a>
                             <a href="#iletisim" className="text-gray-600 hover:text-red-600 font-medium transition-colors">İletişim</a>
@@ -110,10 +111,10 @@ export function LandingPage() {
                                 🚀 Profesyonel İş Ağı Platformu
                             </div>
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
-                                İşinizi <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Referanslarla</span> Büyütün
+                                Kalıcı İş İlişkileri İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Seçici Networking</span>
                             </h1>
-                            <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-lg">
-                                Event 4 Network, iş sahiplerinin bir araya gelerek birbirlerine iş fırsatları yarattığı, global standartlarda bir networking platformudur.
+                            <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
+                                Event4Network, iş insanlarının bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici bir networking platformudur. Kalabalık etkinliklerin gürültüsünden uzak, düzenli ve odaklı gruplarla büyüyün.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Button
@@ -159,127 +160,113 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* How It Works / About Section */}
-            <section id="nasil-calisir" className="py-24 bg-white">
+            {/* Core Philosophy Section */}
+            <section id="felsefemiz" className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Nasıl Çalışır?</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Event For Network Nedir?</h3>
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Farkımız Nedir?</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Nicelik Değil, Nitelik.</h3>
                         <p className="mt-6 text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                            <span className="font-bold text-gray-900">Event For Network (EFN)</span>, iş dünyasındaki profesyonelleri ve iş sahiplerini bir araya getiren, hem sosyal etkileşimi hem de ticari iş birliklerini aynı potada eriten yenilikçi bir kuruluştur.
+                            Klasik networking etkinliklerinden en büyük farkımız, kalabalık ve verimsiz toplantılar yerine, <span className="font-bold text-gray-900">35 kişilik seçkin gruplarla</span> düzenli ve derinlemesine ilişkiler kurmamızdır.
                         </p>
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-16 items-start">
-                        {/* Mission Column */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 h-full">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="p-3 bg-red-100 rounded-xl">
-                                    <Users className="h-8 w-8 text-red-600" />
-                                </div>
-                                <h4 className="text-2xl font-bold text-gray-900">Misyonumuz</h4>
+                    <div className="grid md:grid-cols-3 gap-10">
+                        {/* Feature 1: Regular & Focused */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                            <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Users className="h-7 w-7 text-red-600" />
                             </div>
-                            <p className="text-gray-600 leading-relaxed mb-6">
-                                EFN, "aynı dili konuşan" insanların bir araya geldiği, samimi ve güvene dayalı bir sosyal iş ortamı yaratmayı amaçlar.
-                            </p>
+                            <h4 className="text-xl font-bold text-gray-900 mb-4">Düzenli ve Odaklı Gruplar</h4>
                             <p className="text-gray-600 leading-relaxed">
-                                Temel hedefimiz, üyelerimizin bu yapı içerisinden ticari ve sosyal anlamda <span className="font-bold text-red-700">maksimum faydayı</span> sağlamalarıdır. Sadece bir iş ağı değil, aynı zamanda güçlü bir sosyal paylaşım platformudur.
+                                Gruplarımız iki haftada bir düzenli olarak bir araya gelir. Amaç yüzeysel tanışmalar değil; zaman içinde güçlenen, sürdürülebilir dostluklar ve iş ortaklıkları kurmaktır.
                             </p>
                         </div>
 
-                        {/* Principles Column */}
-                        <div className="space-y-8">
-                            <div>
-                                <h4 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                                    <Trophy className="h-6 w-6 text-red-600" />
-                                    Temel İlkemiz: Fırsat Eşitliği
-                                </h4>
-                                <p className="text-gray-600 mb-6">
-                                    EFN'in en belirleyici özelliklerinden biri <span className="font-bold text-gray-900">Fırsat Eşitliği</span> ilkesidir. Bu ilke, üyelerimize güçlü bir rekabet avantajı sağlamak üzere tasarlanmıştır.
-                                </p>
+                        {/* Feature 2: Shuffle System */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                            <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
+                                <Calendar className="h-7 w-7 text-orange-600" />
                             </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-4">4 Ayda Bir "Shuffle"</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                                Her 4 ayda bir ana gruplar yeniden karma hale (shuffle) getirilir. Bu sayede, edindiğiniz dostlukları cebinize koyarken, sürekli yeni iş insanlarıyla tanışma fırsatı bulursunuz.
+                            </p>
+                        </div>
 
-                            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                                <h5 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                                    Tekillik Prensibi
-                                </h5>
-                                <p className="text-gray-600">
-                                    Gruplarımız içerisinde, her bir meslek kolu sadece <span className="font-bold text-gray-900">tek bir kişi</span> tarafından temsil edilir.
-                                </p>
+                        {/* Feature 3: Exclusivity */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                            <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Trophy className="h-7 w-7 text-red-600" />
                             </div>
-
-                            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                                <h5 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                                    Rekabet Avantajı
-                                </h5>
-                                <p className="text-gray-600">
-                                    Aynı meslekten birden fazla kişinin olmaması, grup içi rekabeti ortadan kaldırır. Bu sayede, o meslek grubuna yönlendirilecek tüm iş potansiyeli ve referanslar doğrudan o üyeye akar.
-                                </p>
-                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-4">Fırsat Eşitliği</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                                Her grupta <span className="font-bold text-gray-900">aynı meslekten sadece bir kişi</span> yer alır. Bu sayede kendi alanınızda rakipsiz olur, grup içindeki tüm potansiyeli değerlendirirsiniz.
+                            </p>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    {/* Group Types Section */}
-                    <div className="mt-20">
-                        <div className="text-center mb-12">
-                            <h3 className="text-2xl font-bold text-gray-900">Grup Yapımız</h3>
-                            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-                                Dinamik ve etkileşimi yüksek bir yapı için iki farklı grup türü sunuyoruz.
-                            </p>
-                        </div>
+            {/* Group Types Section */}
+            <section id="grup-yapisi" className="py-24 bg-gray-50 border-t border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h3 className="text-2xl font-bold text-gray-900">Grup Yapımız</h3>
+                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+                            Dinamik ve sürdürülebilir ilişkiler için iki ana yapı sunuyoruz.
+                        </p>
+                    </div>
 
-                        <div className="grid md:grid-cols-2 gap-8">
-                            {/* Main Groups */}
-                            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <Users className="h-32 w-32 text-red-600 transform rotate-12" />
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Main Groups */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Users className="h-32 w-32 text-red-600 transform rotate-12" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                    <Users className="h-6 w-6 text-red-600" />
                                 </div>
-                                <div className="relative z-10">
-                                    <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                        <Users className="h-6 w-6 text-red-600" />
-                                    </div>
-                                    <h4 className="text-xl font-bold text-gray-900 mb-4">Ana Gruplar</h4>
-                                    <p className="text-gray-600 mb-4">
-                                        Genel networking faaliyetlerinin yürütüldüğü, farklı sektörlerden profesyonellerin bulunduğu dinamik gruplardır.
-                                    </p>
-                                    <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                                        <div className="flex items-start gap-3">
-                                            <Calendar className="h-5 w-5 text-red-600 mt-0.5" />
-                                            <div>
-                                                <span className="block font-bold text-gray-900 text-sm mb-1">4 Ayda Bir Üye Karması</span>
-                                                <p className="text-xs text-gray-600 leading-relaxed">
-                                                    Ana gruplarımızda her 4 ayda bir üye değişimi (karması) yapılır. Bu dinamik yapı sayesinde yıl boyunca sabit bir kitleyle değil, sürekli yeni kişilerle tanışma ve iş ağınızı katlayarak büyütme fırsatı yakalarsınız.
-                                                </p>
-                                            </div>
+                                <h4 className="text-xl font-bold text-gray-900 mb-4">Ana Gruplar</h4>
+                                <p className="text-gray-600 mb-4">
+                                    Yaklaşık 35 iş insanından oluşan, genel networking faaliyetlerinin yürütüldüğü dinamik gruplardır.
+                                </p>
+                                <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+                                    <div className="flex items-start gap-3">
+                                        <Calendar className="h-5 w-5 text-red-600 mt-0.5" />
+                                        <div>
+                                            <span className="block font-bold text-gray-900 text-sm mb-1">Dinamik Döngü</span>
+                                            <p className="text-xs text-gray-600 leading-relaxed">
+                                                Dört aylık süreç sonunda kimlerle yol alabileceğiniz netleşir. "Shuffle" sistemi ile bu doğal süreci yeni bağlantılarla genişletiriz.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Loncalar */}
-                            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <BarChart className="h-32 w-32 text-blue-600 transform rotate-12" />
+                        {/* Loncalar */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <BarChart className="h-32 w-32 text-blue-600 transform rotate-12" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+                                    <Users className="h-6 w-6 text-blue-600" />
                                 </div>
-                                <div className="relative z-10">
-                                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
-                                        <Users className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <h4 className="text-xl font-bold text-gray-900 mb-4">Loncalar (Lonca Grupları)</h4>
-                                    <p className="text-gray-600 mb-4">
-                                        Birbirini tamamlayan sektörlerin (örneğin; İnşaat, Mimarlık, Gayrimenkul) bir araya gelerek oluşturduğu özel iş birliği takımlarıdır.
-                                    </p>
-                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                                        <div className="flex items-start gap-3">
-                                            <Trophy className="h-5 w-5 text-blue-600 mt-0.5" />
-                                            <div>
-                                                <span className="block font-bold text-gray-900 text-sm mb-1">Odaklı İş Birliği</span>
-                                                <p className="text-xs text-gray-600 leading-relaxed">
-                                                    Sizinle aynı hedef kitleye hitap eden ancak rakibiniz olmayan sektörlerle yakın temas halinde çalışarak, daha nitelikli ve sonuç odaklı referanslar üretirsiniz.
-                                                </p>
-                                            </div>
+                                <h4 className="text-xl font-bold text-gray-900 mb-4">Loncalar (Sektörel Takımlar)</h4>
+                                <p className="text-gray-600 mb-4">
+                                    Aynı sektöre hizmet eden ancak birbirinin rakibi olmayan, farklı uzmanlık alanlarından iş insanlarını bir araya getirir.
+                                </p>
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                    <div className="flex items-start gap-3">
+                                        <Trophy className="h-5 w-5 text-blue-600 mt-0.5" />
+                                        <div>
+                                            <span className="block font-bold text-gray-900 text-sm mb-1">Tamamlayıcı Güç</span>
+                                            <p className="text-xs text-gray-600 leading-relaxed">
+                                                Bir sektördeki işletmelerin ihtiyaç duyduğu hizmetler, tamamlayıcı bir yapı içinde buluşur. Rekabet değil, iş birliği esastır.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -289,8 +276,76 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Meeting Format Section */}
+            <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/95 to-gray-900/90"></div>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="lg:grid lg:grid-cols-2 gap-16 items-center">
+                        <div>
+                            <h2 className="text-red-500 font-semibold tracking-wide uppercase text-sm mb-3">Toplantı Deneyimi</h2>
+                            <h3 className="text-3xl font-bold text-white mb-6">Sıkıcı Toplantılara Son</h3>
+                            <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+                                Ana grup toplantılarımızda sıkıcı, monoton sunumlar yerine interaktif ve eğlenceli bir akış sunuyoruz.
+                            </p>
+
+                            <ul className="space-y-6">
+                                <li className="flex items-start">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                                        <span className="text-red-500 font-bold">15</span>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h4 className="text-xl font-bold text-white">Dakika İnteraktif Sunum</h4>
+                                        <p className="mt-1 text-gray-400">Üyelerimizin işini anlattığı kısa, öz ve etkileşimli sunumlar.</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                                        <Users className="h-5 w-5 text-blue-400" />
+                                    </div>
+                                    <div className="ml-4">
+                                        <h4 className="text-xl font-bold text-white">Networking Oyunları</h4>
+                                        <p className="mt-1 text-gray-400">Buzları eriten, tanışmayı hızlandıran ve eğlendiren aktiviteler.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="mt-12 lg:mt-0 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+                            <h4 className="text-2xl font-bold text-white mb-6">Hibrit Yaklaşım: Online + Yüz Yüze</h4>
+                            <p className="text-gray-300 mb-6 leading-relaxed">
+                                Hem online'ın pratikliğinden hem de yüz yüze iletişimin gücünden faydalanıyoruz.
+                            </p>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                                        <span className="font-bold text-white">Online Yüzeyselliğine Son</span>
+                                    </div>
+                                    <p className="text-sm text-gray-400">
+                                        Genel gruplar ve loncalar için tasarlanan yüz yüze etkinlikler sayesinde sıkı iş bağlantıları kuruyoruz.
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+                                        <span className="font-bold text-white">Maksimum Verim</span>
+                                    </div>
+                                    <p className="text-sm text-gray-400">
+                                        Zamanı verimli kullanan online toplantılar ve ilişkiyi derinleştiren fiziksel buluşmaların mükemmel dengesi.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Group Success Stats Section */}
-            <section id="basarilar" className="py-20 bg-gray-900 text-white">
+            <section id="basarilar" className="py-20 bg-gray-900 text-white border-t border-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-red-500 font-semibold tracking-wide uppercase text-sm">Başarılarımız</h2>

@@ -274,8 +274,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     // Safe delete helper logic inline
     const safeDelete = async (client, table, query, params) => {
         try {
+            await client.query('SAVEPOINT sp_' + table);
             await client.query(query, params);
+            await client.query('RELEASE SAVEPOINT sp_' + table);
         } catch (e) {
+            await client.query('ROLLBACK TO SAVEPOINT sp_' + table);
             // ignore table missing or other non-critical errors if intended
             console.warn(`SafeDelete Warning for ${table}:`, e.message);
         }
@@ -285,21 +288,21 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Delete Dependencies
-        await client.query('DELETE FROM group_members WHERE user_id = $1', [id]);
-        await client.query('DELETE FROM generated_leads WHERE user_id = $1', [id]);
+        // 1. Delete Dependencies (Most critical ones first)
+        await safeDelete(client, 'group_members', 'DELETE FROM group_members WHERE user_id = $1', [id]);
+        await safeDelete(client, 'generated_leads', 'DELETE FROM generated_leads WHERE user_id = $1', [id]);
 
         // Power Teams
         await safeDelete(client, 'power_team_members', 'DELETE FROM power_team_members WHERE user_id = $1', [id]);
 
         // Attendance
-        await client.query('DELETE FROM attendance WHERE user_id = $1', [id]);
+        await safeDelete(client, 'attendance', 'DELETE FROM attendance WHERE user_id = $1', [id]);
 
         // Visitors (invited by user)
-        await client.query('DELETE FROM visitors WHERE inviter_id = $1', [id]);
+        await safeDelete(client, 'visitors', 'DELETE FROM visitors WHERE inviter_id = $1', [id]);
 
         // Education
-        await client.query('DELETE FROM education WHERE user_id = $1', [id]);
+        await safeDelete(client, 'education', 'DELETE FROM education WHERE user_id = $1', [id]);
 
         // Champions
         await safeDelete(client, 'champions', 'DELETE FROM champions WHERE user_id = $1', [id]);
@@ -310,37 +313,23 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         // Support & Messages
         await safeDelete(client, 'ticket_messages', 'DELETE FROM ticket_messages WHERE sender_id = $1', [id]);
         await safeDelete(client, 'tickets', 'DELETE FROM tickets WHERE user_id = $1', [id]);
-        await safeDelete(client, 'messages', 'DELETE FROM messages WHERE sender_id = $1', [id]);
+        await safeDelete(client, 'messages', 'DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [id]);
 
         // Scoring & Revenue
         await safeDelete(client, 'user_score_history', 'DELETE FROM user_score_history WHERE user_id = $1', [id]);
         await safeDelete(client, 'revenue_entries', 'DELETE FROM revenue_entries WHERE user_id = $1', [id]);
 
         // Referrals (Giver or Receiver)
-        try {
-            await client.query('SAVEPOINT sp_referrals');
-            await client.query('DELETE FROM referrals WHERE giver_id = $1', [id]);
-            await client.query('RELEASE SAVEPOINT sp_referrals');
-        } catch (e) {
-            await client.query('ROLLBACK TO SAVEPOINT sp_referrals');
-            console.warn('Referral Delete Failed (Ignored):', e.message);
-        }
+        await safeDelete(client, 'referrals', 'DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
 
         // One-to-Ones
-        await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
+        await safeDelete(client, 'one_to_ones', 'DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
 
         // Friend Requests
-        try {
-            await client.query('SAVEPOINT sp_friend_requests');
-            await client.query('DELETE FROM friend_requests WHERE sender_id = $1', [id]);
-            await client.query('RELEASE SAVEPOINT sp_friend_requests');
-        } catch (e) {
-            await client.query('ROLLBACK TO SAVEPOINT sp_friend_requests');
-            console.warn('FriendReq Delete Failed (Ignored):', e.message);
-        }
+        await safeDelete(client, 'friend_requests', 'DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]);
 
         // Update Events created by user to NULL
-        await client.query('UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);
+        await safeDelete(client, 'events', 'UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);
 
         // 2. Finally Delete User
         await client.query('DELETE FROM users WHERE id = $1', [id]);

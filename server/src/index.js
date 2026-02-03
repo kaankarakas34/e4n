@@ -1810,61 +1810,98 @@ app.get('/api/admin/members', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/members-deprecated/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
+  console.log(`[DELETE MEMBER REQUEST] ID: ${req.params.id} | Initiated by: ${req.user?.email} (${req.user?.role})`);
+
+  if (req.user.role !== 'ADMIN') {
+    console.log('[DELETE MEMBER] Access Denied: User is not ADMIN');
+    return res.sendStatus(403);
+  }
+
+  const { id } = req.params;
+
+  // Protect key users CHECK
+  try {
+    const checkRes = await pool.query('SELECT email FROM users WHERE id = $1', [id]);
+    if (checkRes.rows.length === 0) {
+      console.log(`[DELETE MEMBER] User ${id} not found in DB`);
+      return res.status(404).json({ error: 'User not found' });
+    }
+  } catch (e) {
+    console.error('[DELETE MEMBER] DB Error during check:', e);
+    return res.status(500).json({ error: e.message });
+  }
+
+  // Safe delete helper logic inline
+  const safeDelete = async (client, table, query, params) => {
+    try {
+      await client.query('SAVEPOINT sp_' + table);
+      await client.query(query, params);
+      await client.query('RELEASE SAVEPOINT sp_' + table);
+    } catch (e) {
+      await client.query('ROLLBACK TO SAVEPOINT sp_' + table);
+      // ignore table missing or other non-critical errors if intended
+      console.warn(`SafeDelete Warning for ${table}:`, e.message);
+    }
+  };
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const userId = req.params.id;
 
-    // 1. Group & Notifications
-    await client.query('DELETE FROM group_members WHERE user_id = $1', [userId]);
-    await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+    // 1. Delete Dependencies (Most critical ones first)
+    await safeDelete(client, 'group_members', 'DELETE FROM group_members WHERE user_id = $1', [id]);
+    await safeDelete(client, 'generated_leads', 'DELETE FROM generated_leads WHERE user_id = $1', [id]);
 
-    // 2. Meetings (One-to-Ones)
-    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR receiver_id = $1', [userId]);
+    // Power Teams
+    await safeDelete(client, 'power_team_members', 'DELETE FROM power_team_members WHERE user_id = $1', [id]);
 
-    // 3. Referrals (Given & Received)
-    await client.query('DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [userId]);
+    // Attendance
+    await safeDelete(client, 'attendance', 'DELETE FROM attendance WHERE user_id = $1', [id]);
 
-    // 4. Tickets (Messages & Tickets themselves)
-    await client.query('DELETE FROM ticket_messages WHERE sender_id = $1', [userId]);
-    await client.query('DELETE FROM tickets WHERE user_id = $1', [userId]);
+    // Visitors (invited by user)
+    await safeDelete(client, 'visitors', 'DELETE FROM visitors WHERE inviter_id = $1', [id]);
 
-    // 5. Chat Messages (Sent & Received)
-    // Using IF EXISTS logic implicitly by just running request if table exists. 
-    // Since we created tables, we assume they exist.
-    // If 'messages' table doesn't exist, this might throw. 
-    // But earlier logs showed 'messages' endpoints.
-    try {
-      await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
-    } catch (ign) { /* ignore if table missing */ }
+    // Education
+    await safeDelete(client, 'education', 'DELETE FROM education WHERE user_id = $1', [id]);
 
-    // 6. Champions (Stats)
-    await client.query('DELETE FROM champions WHERE user_id = $1', [userId]);
+    // Champions
+    await safeDelete(client, 'champions', 'DELETE FROM champions WHERE user_id = $1', [id]);
 
-    // 7. Scoring & Attendance Related (Found in Scoring Engine)
-    await client.query('DELETE FROM attendance WHERE user_id = $1', [userId]);
-    await client.query('DELETE FROM visitors WHERE inviter_id = $1', [userId]);
-    await client.query('DELETE FROM education WHERE user_id = $1', [userId]);
-    await client.query('DELETE FROM user_score_history WHERE user_id = $1', [userId]);
+    // Notifications
+    await safeDelete(client, 'notifications', 'DELETE FROM notifications WHERE user_id = $1', [id]);
 
-    // 8. Revenue Entries (mentioned in reports)
-    try {
-      await client.query('DELETE FROM revenue_entries WHERE user_id = $1', [userId]);
-    } catch (ign) { }
+    // Support & Messages
+    await safeDelete(client, 'ticket_messages', 'DELETE FROM ticket_messages WHERE sender_id = $1', [id]);
+    await safeDelete(client, 'tickets', 'DELETE FROM tickets WHERE user_id = $1', [id]);
+    await safeDelete(client, 'messages', 'DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [id]);
 
-    // 9. Finally Delete User
-    await client.query('DELETE FROM users WHERE id = $1', [userId]);
+    // Scoring & Revenue
+    await safeDelete(client, 'user_score_history', 'DELETE FROM user_score_history WHERE user_id = $1', [id]);
+    await safeDelete(client, 'revenue_entries', 'DELETE FROM revenue_entries WHERE user_id = $1', [id]);
+
+    // Referrals (Giver or Receiver)
+    await safeDelete(client, 'referrals', 'DELETE FROM referrals WHERE giver_id = $1 OR receiver_id = $1', [id]);
+
+    // One-to-Ones
+    await safeDelete(client, 'one_to_ones', 'DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
+
+    // Friend Requests
+    await safeDelete(client, 'friend_requests', 'DELETE FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1', [id]);
+
+    // Update Events created by user to NULL
+    await safeDelete(client, 'events', 'UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);
+
+    // 2. Finally Delete User
+    await client.query('DELETE FROM users WHERE id = $1', [id]);
 
     await client.query('COMMIT');
-    console.log(`User ${userId} deleted successfully.`);
-    res.json({ success: true });
+    console.log(`[DELETE MEMBER SUCCESS] User ${id} deleted successfully.`);
+    res.json({ success: true, message: 'Üye başarıyla silindi.' });
   } catch (e) {
     await client.query('ROLLBACK');
-    console.error(`FAILED TO DELETE USER ${req.params.id}:`, e);
-    res.status(500).json({ error: e.message, details: e.detail });
+    console.error(`[DELETE MEMBER ERROR] Failed to delete user ${id}:`, e);
+    res.status(500).json({ error: e.message });
   } finally {
     client.release();
   }

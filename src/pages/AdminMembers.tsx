@@ -178,7 +178,8 @@ export function AdminMembers() {
   const handleDeleteMember = async (memberId: string) => {
     if (window.confirm('Bu üyeyi silmek istediğinize emin misiniz?')) {
       try {
-        await api.deleteMember(memberId);
+        const response = await api.deleteMember(memberId);
+        console.log("Backend DELETE Response:", response);
         setMembers(members.filter(m => m.id !== memberId));
       } catch (error) {
         console.error('Üye silinirken hata:', error);

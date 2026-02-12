@@ -63,10 +63,12 @@ const ProtectedLayout = () => {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/auth/login" replace />;
 
-  // Check for payment status
+  // Check for payment status - DISABLED FOR NOW
+  /*
   if (user.status === 'PASSIVE') {
     return <Navigate to="/payment" state={{ reason: 'expired' }} replace />;
   }
+  */
 
   if (user.status === 'PENDING') {
     return <Navigate to="/auth/pending" replace />;
@@ -122,7 +124,7 @@ function App() {
               <Route path="/auth/pending" element={<PendingApproval />} />
               <Route path="/public-events" element={<PublicEventsPage />} />
               <Route path="/event/:id" element={<EventDetail />} />
-              <Route path="/payment" element={<PaymentLanding />} />
+              {/* <Route path="/payment" element={<PaymentLanding />} /> */}
             </Route>
 
             {/* Protected Routes */}

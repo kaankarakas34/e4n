@@ -268,7 +268,7 @@ pool.connect().then(async (client) => {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/payment', paymentRoutes);
+// app.use('/api/payment', paymentRoutes);
 
 // --- CHAMPION CALCULATION LOGIC ---
 const calculateChampions = async (periodType, startDate, endDate) => {

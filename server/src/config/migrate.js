@@ -215,6 +215,8 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS type VARCHAR(20)");
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'");
+    await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS plan_id VARCHAR(50)");
+    await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
 
     console.log('✅ Database Schema Synced');
   } catch (e) {

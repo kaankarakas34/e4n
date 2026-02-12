@@ -1,197 +1,246 @@
 import express from 'express';
+import crypto from 'crypto';
+import microtime from 'microtime';
+import nodeBase64 from 'nodejs-base64-converter';
+import fetch from 'node-fetch';
 import pool from '../config/db.js';
 import authenticateToken from '../middleware/auth.js';
-import crypto from 'crypto';
 
 const router = express.Router();
 
-// Helper to calculate end date based on fixed 4-month periods
-const calculateFixedTermEndDate = (startDate, monthsToAdd) => {
-    const currentYear = startDate.getFullYear();
+// PayTR Credentials - These should be in your .env file
+const MERCHANT_ID = process.env.PAYTR_MERCHANT_ID || '547057';
+const MERCHANT_KEY = process.env.PAYTR_MERCHANT_KEY || 'x3wnj45GMRGWMPCF';
+const MERCHANT_SALT = process.env.PAYTR_MERCHANT_SALT || 'tiuh7TNBHXref2sH';
 
-    // Find current period end
-    let currentMonth = startDate.getMonth();
-    let termEndYear = currentYear;
-    let termEndMonth;
+// Endpoint to get PayTR iframe token
+router.post('/get-token', authenticateToken, async (req, res) => {
+    try {
+        if (!MERCHANT_KEY || !MERCHANT_SALT) {
+            return res.status(500).json({ error: 'PayTR Merchant Key or Salt is missing in server configuration.' });
+        }
 
-    if (currentMonth <= 3) { termEndMonth = 3; } // Ends April
-    else if (currentMonth <= 7) { termEndMonth = 7; } // Ends August
-    else { termEndMonth = 11; } // Ends December
+        let { user_basket, payment_amount, amount, user_ip, user_name, user_address, user_phone, user_email, debug_on, test_mode, plan } = req.body;
 
-    let targetDate = new Date(termEndYear, termEndMonth + 1, 0); // Last day of term month
-    const extraTerms = Math.max(0, (monthsToAdd / 4) - 1);
-
-    if (extraTerms > 0) {
-        for (let i = 0; i < extraTerms; i++) {
-            if (termEndMonth === 3) { termEndMonth = 7; }
-            else if (termEndMonth === 7) { termEndMonth = 11; }
-            else {
-                termEndMonth = 3;
-                termEndYear++;
+        // 1. IP Address handling
+        if (!user_ip) {
+            user_ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+            // Handle ::1 or similar local IPs if needed, but PayTR requires IPv4 usually.
+            if (user_ip === '::1') user_ip = '127.0.0.1';
+            // If x-forwarded-for has multiple, take the first one
+            if (user_ip && user_ip.indexOf(',') > -1) {
+                user_ip = user_ip.split(',')[0].trim();
             }
         }
-        targetDate = new Date(termEndYear, termEndMonth + 1, 0);
-    }
 
-    // Set time to end of day
-    targetDate.setHours(23, 59, 59, 999);
-    return targetDate;
-};
+        // 2. Email handling
+        if (!user_email && req.user) {
+            user_email = req.user.email;
+        }
 
+        // 3. Amount handling
+        // Frontend sends 'amount' in TL (e.g., 12000). PayTR expects cents (1200000).
+        let finalAmount = payment_amount || amount;
+        if (!finalAmount) return res.status(400).json({ error: 'Amount is required' });
+        // Ensure it's integer
+        finalAmount = Math.round(parseFloat(finalAmount) * 100);
 
-router.post('/get-token', authenticateToken, async (req, res) => {
-    const merchant_id = process.env.PAYTR_MERCHANT_ID;
-    const merchant_key = process.env.PAYTR_MERCHANT_KEY;
-    const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
+        // 4. Basket handling
+        if (!user_basket && plan) {
+            // Construct basket based on plan
+            // We can look up standard plans or just use the plan ID as name
+            // user_basket format: [['Product Name', 'Price', Quantity], ...]
+            // Price here should be unitary price? Guide example: "18.00".
+            // It seems PayTR basket price is string '18.00'.
+            // Let's use the amount directly.
+            // Note: The basket total must match payment_amount? 
+            // Guide says: "Sepet içeriği...". Usually sum of basket should match total.
+            // Let's use the finalAmount / 100 as price.
+            const priceStr = (finalAmount / 100).toFixed(2);
+            user_basket = [[`Uyelik Paketi - ${plan}`, priceStr, 1]];
+        }
 
-    // Ensure table exists
-    await pool.query(`
-    CREATE TABLE IF NOT EXISTS payment_transactions(
-    merchant_oid VARCHAR(255) PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    plan_id VARCHAR(50),
-    amount DECIMAL(10, 2),
-    status VARCHAR(50) DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT NOW()
-  )
-  `);
+        if (!user_basket) {
+            // Fallback
+            const priceStr = (finalAmount / 100).toFixed(2);
+            user_basket = [['Genel Odenen Tutar', priceStr, 1]];
+        }
 
-    if (!merchant_id) {
-        console.warn('PAYTR credentials missing, using mock token for frontend demo');
-        return res.json({ token: 'mock_token_' + Date.now() });
-    }
+        // 5. User Info Fallback
+        if (!user_name && req.user) user_name = req.user.name;
+        if (!user_phone && req.user) user_phone = req.user.phone;
+        if (!user_address) user_address = 'Adres bilgisi girilmemis';
 
-    const { amount = 1000, currency = 'TL', installment = '0', user_address, user_phone, user_name, billing_info, plan } = req.body;
+        const merchant_oid = "IN" + microtime.now(); // Unique Order ID
+        const max_installment = '0'; // Installment limit (0 = max allowed)
+        const no_installment = '0'; // 0 = Installment allowed, 1 = No installment
+        const currency = 'TL';
+        const lang = 'tr';
 
-    // Create unique Order ID
-    const merchant_oid = "PO" + Date.now() + Math.random().toString(36).substring(7);
+        // URLs - Adjust these based on your frontend deployment
+        // In development: http://localhost:5173/payment/success
+        // In production: https://yourdomain.com/payment/success
+        const merchant_ok_url = process.env.PAYTR_SUCCESS_URL || 'http://localhost:5173/payment/success';
+        const merchant_fail_url = process.env.PAYTR_FAIL_URL || 'http://localhost:5173/payment/fail';
 
-    // SAVE TRANSACTION INTENT
-    try {
-        await pool.query(
-            `INSERT INTO payment_transactions(merchant_oid, user_id, plan_id, amount, status) VALUES($1, $2, $3, $4, 'PENDING')`,
-            [merchant_oid, req.user.id, plan || '12_MONTHS', amount]
-        );
-    } catch (e) {
-        console.error('Failed to save transaction', e);
-        return res.status(500).json({ error: 'Database error initiating payment' });
-    }
+        // Timeout (min)
+        const timeout_limit = 30;
 
-    // Create basket item name
-    const basketItemName = billing_info ? `Üyelik - ${billing_info.type === 'CORPORATE' ? billing_info.companyName : 'Bireysel'} ` : 'Yıllık Üyelik';
+        // Encode basket
+        // expected format for user_basket: [['Product Name', 'Price', Quantity], ...]
+        // The API expects JSON stringified then Base64 encoded
+        const basketStr = JSON.stringify(user_basket);
+        const user_basket_encoded = nodeBase64.encode(basketStr);
 
-    const user_basket = Buffer.from(JSON.stringify([[basketItemName, amount.toString(), 1]])).toString('base64');
-    const user_ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-    const payment_amount = amount * 100;
-    const debug_on = 1;
-    const test_mode = 1;
-    const merchant_ok_url = 'http://localhost:5173/payment/success';
-    const merchant_fail_url = 'http://localhost:5173/payment/fail';
-    const timeout_limit = 30;
+        // Generate Hash
+        // Formula: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
+        const hashSTR = `${MERCHANT_ID}${user_ip}${merchant_oid}${user_email}${finalAmount}${user_basket_encoded}${no_installment}${max_installment}${currency}${test_mode || 0}`;
+        const paytr_token = hashSTR + MERCHANT_SALT;
+        const token = crypto.createHmac('sha256', MERCHANT_KEY).update(paytr_token).digest('base64');
 
-    const hashSTR = `${merchant_id}${user_ip}${merchant_oid}${req.user.email}${payment_amount}${user_basket}${installment}${installment}${currency}${test_mode} `;
-    const paytr_token = hashSTR + merchant_salt;
-    const token = crypto.createHmac('sha256', merchant_key).update(paytr_token).digest('base64');
+        // Request options
+        const formData = new URLSearchParams();
+        formData.append('merchant_id', MERCHANT_ID);
+        formData.append('user_ip', user_ip);
+        formData.append('merchant_oid', merchant_oid);
+        formData.append('email', user_email);
+        formData.append('payment_amount', finalAmount); // Int
+        formData.append('paytr_token', token);
+        formData.append('user_basket', user_basket_encoded);
+        formData.append('debug_on', debug_on || 1);
+        formData.append('no_installment', no_installment);
+        formData.append('max_installment', max_installment);
+        formData.append('user_name', user_name);
+        formData.append('user_address', user_address);
+        formData.append('user_phone', user_phone);
+        formData.append('merchant_ok_url', merchant_ok_url);
+        formData.append('merchant_fail_url', merchant_fail_url);
+        formData.append('timeout_limit', timeout_limit);
+        formData.append('currency', currency);
+        formData.append('test_mode', test_mode || 0);
+        formData.append('lang', lang);
 
-    const formData = new URLSearchParams();
-    formData.append('merchant_id', merchant_id);
-    formData.append('merchant_key', merchant_key);
-    formData.append('merchant_salt', merchant_salt);
-    formData.append('email', req.user.email);
-    formData.append('payment_amount', payment_amount);
-    formData.append('merchant_oid', merchant_oid);
-    formData.append('user_name', user_name || req.user.name || 'Member');
-    formData.append('user_address', user_address || 'Istanbul, Turkey');
-    formData.append('user_phone', user_phone || '05555555555');
-    formData.append('merchant_ok_url', merchant_ok_url);
-    formData.append('merchant_fail_url', merchant_fail_url);
-    formData.append('user_basket', user_basket);
-    formData.append('user_ip', user_ip);
-    formData.append('timeout_limit', timeout_limit);
-    formData.append('debug_on', debug_on);
-    formData.append('test_mode', test_mode);
-    formData.append('lang', 'tr');
-    formData.append('no_installment', installment);
-    formData.append('max_installment', '0');
-    formData.append('currency', currency);
-    formData.append('paytr_token', token);
-
-    try {
         const response = await fetch('https://www.paytr.com/odeme/api/get-token', {
             method: 'POST',
             body: formData
         });
+
         const data = await response.json();
 
         if (data.status === 'success') {
-            res.json({ token: data.token });
+            // Save initial transaction to DB
+            try {
+                // Ensure plan is stored
+                const planId = plan || 'UNKNOWN';
+                await pool.query(
+                    `INSERT INTO payment_transactions (merchant_oid, user_id, amount, status, plan_id) VALUES ($1, $2, $3, 'PENDING', $4)`,
+                    [merchant_oid, req.user.id, finalAmount / 100, planId]
+                );
+            } catch (dbError) {
+                console.error('Failed to save transaction:', dbError);
+                // We don't block the payment flow if DB fails, but it's risky. 
+                // Alternatively, we can return error.
+            }
+
+            res.json({ status: 'success', token: data.token, merchant_oid });
         } else {
-            console.error('PayTR Error:', data);
-            res.status(400).json({ error: data.reason });
+            console.error('PayTR Error:', data.reason);
+            res.status(400).json({ status: 'failed', reason: data.reason });
         }
-    } catch (e) {
-        console.error('PayTR Request Error:', e);
-        res.status(500).json({ error: e.message });
+
+    } catch (error) {
+        console.error('Payment Token Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+// PayTR Callback (Notification URL)
 router.post('/callback', async (req, res) => {
-    const callback = req.body;
-    const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
-    const merchant_key = process.env.PAYTR_MERCHANT_KEY;
+    // This endpoint is called by PayTR
+    try {
+        const { merchant_oid, status, total_amount, hash } = req.body;
 
-    if (!merchant_salt || !merchant_key) return res.status(500).send('Config Error');
-
-    const paytr_token = callback.merchant_oid + merchant_salt + callback.status + callback.total_amount;
-    const token = crypto.createHmac('sha256', merchant_key).update(paytr_token).digest('base64');
-
-    if (token != callback.hash) {
-        return res.status(400).send('PAYTR notification failed: bad hash');
-    }
-
-    if (callback.status == 'success') {
-        console.log('Payment Successful for OID:', callback.merchant_oid);
-
-        // 1. Get Transaction Details
-        const transRes = await pool.query('SELECT * FROM payment_transactions WHERE merchant_oid = $1', [callback.merchant_oid]);
-
-        if (transRes.rows.length === 0) {
-            console.error('Transaction not found for OID:', callback.merchant_oid);
-            return res.send('OK');
+        if (!hash) {
+            return res.status(400).send('No hash provided');
         }
 
-        const transaction = transRes.rows[0];
-        const userId = transaction.user_id;
-        const planId = transaction.plan_id;
+        // Validate Hash
+        // Formula: merchant_oid + merchant_salt + status + total_amount
+        const generatedTokenStr = `${merchant_oid}${MERCHANT_SALT}${status}${total_amount}`;
+        const generatedToken = crypto.createHmac('sha256', MERCHANT_KEY).update(generatedTokenStr).digest('base64');
 
-        // 2. Calculate New End Date
-        let months = 12;
-        if (planId === '4_MONTHS') months = 4;
-        if (planId === '8_MONTHS') months = 8;
+        if (generatedToken !== hash) {
+            console.error('PayTR Callback Hash Mismatch');
+            return res.status(400).send('PAYTR notification failed: bad hash');
+        }
 
-        const newEndDate = calculateFixedTermEndDate(new Date(), months);
+        if (status === 'success') {
+            // Check if already processed
+            const existing = await pool.query('SELECT status, user_id, plan_id FROM payment_transactions WHERE merchant_oid = $1', [merchant_oid]);
 
-        // 3. Update User
-        await pool.query(`
-        UPDATE users 
-        SET subscription_end_date = $1,
-  subscription_plan = $2,
-  account_status = 'ACTIVE',
-  last_reminder_trigger = NULL
-        WHERE id = $3
-  `, [newEndDate, planId, userId]);
+            if (existing.rows.length === 0) {
+                console.error('Transaction not found for OID:', merchant_oid);
+                return res.send('OK'); // Still return OK to stop PayTR form retrying
+            }
 
-        // 4. Update Transaction Status
-        await pool.query('UPDATE payment_transactions SET status = $1 WHERE merchant_oid = $2', ['SUCCESS', callback.merchant_oid]);
+            const transaction = existing.rows[0];
 
-        console.log(`Updated user ${userId} subscription to ${newEndDate} `);
+            if (transaction.status === 'COMPLETED') {
+                console.log('Transaction already completed:', merchant_oid);
+                return res.send('OK');
+            }
 
-    } else {
-        console.log('Payment Failed for OID:', callback.merchant_oid);
-        await pool.query('UPDATE payment_transactions SET status = $1 WHERE merchant_oid = $2', ['FAILED', callback.merchant_oid]);
+            // Payment Successful
+            await pool.query(
+                `UPDATE payment_transactions SET status = 'COMPLETED', updated_at = NOW() WHERE merchant_oid = $1`,
+                [merchant_oid]
+            );
+
+            // Update user subscription
+            const userId = transaction.user_id;
+            const planId = transaction.plan_id;
+            let monthsToAdd = 0;
+            if (planId === '4_MONTHS') monthsToAdd = 4;
+            else if (planId === '8_MONTHS') monthsToAdd = 8;
+            else if (planId === '12_MONTHS') monthsToAdd = 12;
+
+            if (monthsToAdd > 0) {
+                // Get current end date
+                const userRes = await pool.query('SELECT subscription_end_date FROM users WHERE id = $1', [userId]);
+                const currentUser = userRes.rows[0];
+                let newEndDate = new Date();
+
+                if (currentUser && currentUser.subscription_end_date && new Date(currentUser.subscription_end_date) > new Date()) {
+                    newEndDate = new Date(currentUser.subscription_end_date);
+                }
+
+                newEndDate.setMonth(newEndDate.getMonth() + monthsToAdd);
+
+                await pool.query(
+                    "UPDATE users SET account_status = 'ACTIVE', subscription_plan = $1, subscription_end_date = $2 WHERE id = $3",
+                    [planId, newEndDate, userId]
+                );
+                console.log(`User ${userId} subscription extended by ${monthsToAdd} months to ${newEndDate}`);
+            } else {
+                console.warn(`Unknown plan_id ${planId} for transaction ${merchant_oid}, defaulting to ACTIVE without extension logic.`);
+                await pool.query("UPDATE users SET account_status = 'ACTIVE' WHERE id = $1", [userId]);
+            }
+
+        } else {
+            // Payment Failed
+            await pool.query(
+                `UPDATE payment_transactions SET status = 'FAILED', updated_at = NOW() WHERE merchant_oid = $1`,
+                [merchant_oid]
+            );
+        }
+
+        // Must return 'OK'
+        res.send('OK');
+
+    } catch (error) {
+        console.error('PayTR Callback Error:', error);
+        res.status(500).send('Internal Server Error');
     }
-
-    res.send('OK');
 });
 
 export default router;

@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runMigrations } from './config/migrate.js';
+import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -266,6 +267,8 @@ pool.connect().then(async (client) => {
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/api/payment', paymentRoutes);
 
 // --- CHAMPION CALCULATION LOGIC ---
 const calculateChampions = async (periodType, startDate, endDate) => {

@@ -427,8 +427,13 @@ export function PaymentLanding() {
                                     ) : iframeToken ? (
                                         <iframe
                                             src={`https://www.paytr.com/odeme/guvenli/${iframeToken}`}
+                                            id="paytriframe"
                                             className="w-full min-h-[600px] border-0 rounded-lg shadow-inner"
                                             scrolling="no"
+                                            onLoad={() => {
+                                                // @ts-ignore
+                                                if (window.iFrameResize) window.iFrameResize({}, '#paytriframe');
+                                            }}
                                         ></iframe>
                                     ) : (
                                         <div className="text-center">

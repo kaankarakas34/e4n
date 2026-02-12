@@ -101,6 +101,17 @@ export function PaymentLanding() {
         setShowIframe(false); // Reset if they change details
     };
 
+    // Load PayTR iframe resizer script dynamically
+    useEffect(() => {
+        const scriptId = 'paytr-iframe-resizer';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.src = 'https://www.paytr.com/js/iframeResizer.min.js';
+            script.id = scriptId;
+            document.body.appendChild(script);
+        }
+    }, []);
+
     const startPaymentProcess = () => {
         // Simple validation
         if (!billingInfo.address || !billingInfo.city || !billingInfo.phone) {

@@ -1,7 +1,5 @@
 import express from 'express';
 import crypto from 'crypto';
-import microtime from 'microtime';
-import nodeBase64 from 'nodejs-base64-converter';
 import fetch from 'node-fetch';
 import pool from '../config/db.js';
 import authenticateToken from '../middleware/auth.js';
@@ -71,7 +69,8 @@ router.post('/get-token', authenticateToken, async (req, res) => {
         if (!user_phone && req.user) user_phone = req.user.phone;
         if (!user_address) user_address = 'Adres bilgisi girilmemis';
 
-        const merchant_oid = "IN" + microtime.now(); // Unique Order ID
+        // Replace microtime with Date.now() + random suffix for uniqueness without native dependency
+        const merchant_oid = "IN" + Date.now() + Math.floor(Math.random() * 9999);
         const max_installment = '0'; // Installment limit (0 = max allowed)
         const no_installment = '0'; // 0 = Installment allowed, 1 = No installment
         const currency = 'TL';
@@ -90,7 +89,7 @@ router.post('/get-token', authenticateToken, async (req, res) => {
         // expected format for user_basket: [['Product Name', 'Price', Quantity], ...]
         // The API expects JSON stringified then Base64 encoded
         const basketStr = JSON.stringify(user_basket);
-        const user_basket_encoded = nodeBase64.encode(basketStr);
+        const user_basket_encoded = Buffer.from(basketStr).toString('base64');
 
         // Generate Hash
         // Formula: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode

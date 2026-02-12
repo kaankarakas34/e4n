@@ -80,6 +80,11 @@ router.post('/login', async (req, res) => {
         if (rows.length === 0) return res.status(400).json({ error: 'User not found' });
 
         const user = rows[0];
+
+        if (!user.password_hash) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) return res.status(401).json({ error: 'Invalid password' });
 

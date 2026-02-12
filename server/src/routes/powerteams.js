@@ -25,6 +25,19 @@ router.post('/', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Update Power Team
+router.put('/:id', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+    const { name, description, status } = req.body;
+    try {
+        const { rows } = await pool.query(
+            'UPDATE power_teams SET name = $1, description = $2, status = COALESCE($3, status) WHERE id = $4 RETURNING *',
+            [name, description, status || null, req.params.id]
+        );
+        res.json(rows[0]);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Delete Power Team
 router.delete('/:id', authenticateToken, async (req, res) => {
     if (req.user.role !== 'ADMIN') return res.sendStatus(403);

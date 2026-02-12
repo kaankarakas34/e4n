@@ -278,7 +278,11 @@ export function AdminGroupDetail() {
                                 <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
                                 <Button variant="primary" onClick={async () => {
                                     try {
-                                        await api.updateGroup(data.id, editForm);
+                                        if (isPowerTeam) {
+                                            await api.updatePowerTeam(data.id, editForm);
+                                        } else {
+                                            await api.updateGroup(data.id, editForm);
+                                        }
                                         // Update local data
                                         setData({ ...data, ...editForm });
                                         setShowEditModal(false);

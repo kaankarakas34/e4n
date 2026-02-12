@@ -442,6 +442,9 @@ export const api = {
   async createPowerTeam(payload: { name: string, description?: string }) {
     return await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) });
   },
+  async updatePowerTeam(id: string, payload: any) {
+    return await request(`/power-teams/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
   async deletePowerTeam(id: string) {
     return await request(`/power-teams/${id}`, { method: 'DELETE' });
   },

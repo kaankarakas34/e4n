@@ -52,6 +52,12 @@ import { AdminProfessions } from './pages/AdminProfessions';
 import { CreatePassword } from './pages/CreatePassword';
 import { PendingApproval } from './pages/PendingApproval';
 import { ComingSoon } from './pages/ComingSoon';
+import { DistanceSellingContract } from './pages/DistanceSellingContract';
+import { CancellationRefundPolicy } from './pages/CancellationRefundPolicy';
+import { PreInformationForm } from './pages/PreInformationForm';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { CookiePolicy } from './pages/CookiePolicy';
+import { TermsOfUse } from './pages/TermsOfUse';
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -124,6 +130,12 @@ function App() {
               <Route path="/auth/pending" element={<PendingApproval />} />
               <Route path="/public-events" element={<PublicEventsPage />} />
               <Route path="/event/:id" element={<EventDetail />} />
+              <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSellingContract />} />
+              <Route path="/iptal-ve-iade-kosullari" element={<CancellationRefundPolicy />} />
+              <Route path="/on-bilgilendirme-formu" element={<PreInformationForm />} />
+              <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
+              <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
+              <Route path="/cerez-politikasi" element={<CookiePolicy />} />
               {/* <Route path="/payment" element={<PaymentLanding />} /> */}
             </Route>
 

@@ -549,9 +549,17 @@ export function LandingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                         <div className="col-span-1 md:col-span-1">
                             <Logo className="h-8 w-auto mb-4" />
-                            <p className="text-gray-500 text-sm leading-relaxed">
+                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
                                 Profesyonel iş ağı ve referans yönetim sistemi ile işinizi büyütün.
                             </p>
+                            <div className="text-sm text-gray-500 space-y-1">
+                                <p className="font-semibold text-gray-700">Pardus Ticaret Haydar Karakaş</p>
+                                <p>Çeliktepe, İsmet İnönü Cd. no:11 NO: 501</p>
+                                <p>34413 Kağıthane/İstanbul</p>
+                                <p>Tel: 0536 319 7697</p>
+                                <p>E-posta: info@event4network.com</p>
+                                <p>Vergi No: 5130029725</p>
+                            </div>
                         </div>
                         <div>
                             <h4 className="font-bold text-gray-900 mb-4">Platform</h4>
@@ -572,13 +580,17 @@ export function LandingPage() {
                         <div>
                             <h4 className="font-bold text-gray-900 mb-4">Yasal</h4>
                             <ul className="space-y-2 text-sm text-gray-600">
-                                <li><a href="#" className="hover:text-red-600">Kullanım Şartları</a></li>
-                                <li><a href="#" className="hover:text-red-600">Gizlilik Politikası</a></li>
+                                <li><a href="/kullanim-kosullari" className="hover:text-red-600">Kullanım Koşulları</a></li>
+                                <li><a href="/gizlilik-politikasi" className="hover:text-red-600">Gizlilik ve KVKK Politikası</a></li>
+                                <li><a href="/cerez-politikasi" className="hover:text-red-600">Çerez Politikası</a></li>
+                                <li><a href="/on-bilgilendirme-formu" className="hover:text-red-600">Ön Bilgilendirme Formu</a></li>
+                                <li><a href="/mesafeli-satis-sozlesmesi" className="hover:text-red-600">Mesafeli Satış Sözleşmesi</a></li>
+                                <li><a href="/iptal-ve-iade-kosullari" className="hover:text-red-600">İptal ve İade Koşulları</a></li>
                             </ul>
                         </div>
                     </div>
                     <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; 2024 Event 4 Network. Tüm hakları saklıdır.</p>
+                        <p>&copy; {new Date().getFullYear()} Event 4 Network - Pardus Ticaret Haydar Karakaş. Tüm hakları saklıdır.</p>
                         <div className="flex space-x-6 mt-4 md:mt-0">
                             {/* Social icons would go here */}
                         </div>

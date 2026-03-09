@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
 import { Check, Shield, Zap } from 'lucide-react';
-import { PaymentModal } from '../components/PaymentModal';
-import { PayTRService } from '../services/paytrService';
 import { MembershipPlan } from '../types';
 
 export function MembershipPage() {
@@ -16,8 +14,6 @@ export function MembershipPage() {
     // Find current user's membership
     const currentMembership = items.find(m => m.user_id === user?.id);
 
-    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-    const [paymentToken, setPaymentToken] = useState<string | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<{ plan: MembershipPlan, price: number, title: string } | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -52,43 +48,19 @@ export function MembershipPage() {
         setSelectedPlan(plan);
 
         try {
-            // 1. Initialize Payment
-            const response = await PayTRService.getPaymentToken(
-                user,
-                { name: plan.title, price: plan.price },
-                'MEMBERSHIP'
-            );
-
-            if (response.status === 'success' && response.token) {
-                setPaymentToken(response.token);
-                setPaymentModalOpen(true);
+            if (currentMembership?.id) {
+                await renew(currentMembership.id, plan.plan);
+                alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
             } else {
-                alert('Ödeme başlatılamadı: ' + response.reason);
+                alert('Kullanıcı abonelik kaydı bulunamadı. Lütfen yönetici ile iletişime geçin.');
             }
         } catch (error) {
             console.error('Payment error:', error);
-            alert('Ödeme hatası oluştu.');
+            alert('Ödeme sırasında bir hata oluştu.');
         } finally {
             setLoading(false);
+            setSelectedPlan(null);
         }
-    };
-
-    const handlePaymentSuccess = async () => {
-        if (selectedPlan && currentMembership?.id) {
-            await renew(currentMembership.id, selectedPlan.plan);
-            alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
-        } else if (selectedPlan && user) {
-            // Handle case where user has no membership record yet (create new)
-            // Assuming user usually has at least a PENDING/EXPIRED one.
-            // If not, we might need create() call.
-            // For mock, we assume user has one or show error.
-            if (!currentMembership) {
-                alert('Kullanıcı abonelik kaydı bulunamadı. Lütfen yönetici ile iletişime geçin.');
-            }
-        }
-        setPaymentModalOpen(false);
-        setPaymentToken(null);
-        setSelectedPlan(null);
     };
 
     if (!user) return <div className="p-8">Lütfen giriş yapın.</div>;
@@ -173,13 +145,6 @@ export function MembershipPage() {
                 </div>
             </div>
 
-            <PaymentModal
-                isOpen={paymentModalOpen}
-                onClose={() => setPaymentModalOpen(false)}
-                token={paymentToken}
-                onSuccess={handlePaymentSuccess}
-                onFail={(err) => alert('Ödeme başarısız: ' + err)}
-            />
         </div>
     );
 }

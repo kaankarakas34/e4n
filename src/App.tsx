@@ -45,7 +45,7 @@ import { CreateMember } from './pages/CreateMember';
 
 import { MeetingRequests } from './pages/MeetingRequests';
 
-import { PaymentLanding } from './pages/PaymentLanding';
+
 import { SupportTickets } from './pages/SupportTickets';
 import { AdminSupportTickets } from './pages/AdminSupportTickets';
 import { AdminProfessions } from './pages/AdminProfessions';
@@ -136,7 +136,7 @@ function App() {
               <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
               <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
               <Route path="/cerez-politikasi" element={<CookiePolicy />} />
-              {/* <Route path="/payment" element={<PaymentLanding />} /> */}
+
             </Route>
 
             {/* Protected Routes */}

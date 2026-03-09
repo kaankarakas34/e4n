@@ -50,6 +50,7 @@ export function Navigation() {
 
   const commonNavigation = [
     { name: 'Aktiviteler', href: '/activities', icon: Zap },
+    { name: 'Üyelik İşlemleri', href: '/membership', icon: CreditCard },
   ];
 
   let navigation = [];
@@ -229,13 +230,6 @@ export function Navigation() {
               </div>
 
               <div className="space-y-1">
-                <Link
-                  to="/membership"
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${isActive('/membership') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <CreditCard className={`mr-3 h-5 w-5 ${isActive('/membership') ? 'text-red-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  Üyelik & Ödemeler
-                </Link>
                 {/* Support removed from mobile menu */}
                 {user?.role === 'ADMIN' && (
                   <>

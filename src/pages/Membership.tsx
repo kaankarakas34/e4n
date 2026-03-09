@@ -6,6 +6,7 @@ import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
 import { Check, Shield, Zap } from 'lucide-react';
 import { MembershipPlan } from '../types';
+import { PaymentModal } from '../components/PaymentModal';
 
 export function MembershipPage() {
     const { user } = useAuthStore();
@@ -16,6 +17,7 @@ export function MembershipPage() {
 
     const [selectedPlan, setSelectedPlan] = useState<{ plan: MembershipPlan, price: number, title: string } | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
 
     const PLANS = [
         {
@@ -44,18 +46,21 @@ export function MembershipPage() {
 
     const handleSelectPlan = async (plan: typeof PLANS[0]) => {
         if (!user) return;
-        setLoading(true);
         setSelectedPlan(plan);
+        setPaymentModalOpen(true);
+    };
 
+    const handlePaymentSuccess = async () => {
+        if (!selectedPlan || !user) return;
+
+        setLoading(true);
         try {
             if (currentMembership?.id) {
-                await renew(currentMembership.id, plan.plan);
+                await renew(currentMembership.id, selectedPlan.plan);
             } else {
-                // Determine the correct MembershipStatus
-                // Since this is immediate activation/mock, let's use 'ACTIVE'
                 await useMembershipStore.getState().create({
                     user_id: user.id!,
-                    plan: plan.plan,
+                    plan: selectedPlan.plan,
                     start_date: new Date().toISOString(),
                 });
                 await useMembershipStore.getState().fetchAll(); // refresh state
@@ -67,6 +72,7 @@ export function MembershipPage() {
         } finally {
             setLoading(false);
             setSelectedPlan(null);
+            setPaymentModalOpen(false);
         }
     };
 
@@ -152,6 +158,15 @@ export function MembershipPage() {
                 </div>
             </div>
 
+            {selectedPlan && (
+                <PaymentModal
+                    isOpen={isPaymentModalOpen}
+                    onClose={() => setPaymentModalOpen(false)}
+                    planTitle={selectedPlan.title}
+                    amount={selectedPlan.price}
+                    onSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 }

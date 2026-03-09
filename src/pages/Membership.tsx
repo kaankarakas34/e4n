@@ -50,10 +50,17 @@ export function MembershipPage() {
         try {
             if (currentMembership?.id) {
                 await renew(currentMembership.id, plan.plan);
-                alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
             } else {
-                alert('Kullanıcı abonelik kaydı bulunamadı. Lütfen yönetici ile iletişime geçin.');
+                // Determine the correct MembershipStatus
+                // Since this is immediate activation/mock, let's use 'ACTIVE'
+                await useMembershipStore.getState().create({
+                    user_id: user.id!,
+                    plan: plan.plan,
+                    start_date: new Date().toISOString(),
+                });
+                await useMembershipStore.getState().fetchAll(); // refresh state
             }
+            alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
         } catch (error) {
             console.error('Payment error:', error);
             alert('Ödeme sırasında bir hata oluştu.');

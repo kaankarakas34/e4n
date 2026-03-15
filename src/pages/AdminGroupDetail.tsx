@@ -20,7 +20,7 @@ export function AdminGroupDetail() {
     const [synergy, setSynergy] = useState<any[]>([]);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '' });
+    const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '', meeting_dates: [] as string[] });
 
     // Assignment Modal State
     const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -202,7 +202,8 @@ export function AdminGroupDetail() {
                                 meeting_day: data.meeting_day || '',
                                 meeting_time: data.meeting_time || '',
                                 meeting_link: data.meeting_link || '',
-                                description: data.description || ''
+                                description: data.description || '',
+                                meeting_dates: data.meeting_dates || []
                             });
                             setShowEditModal(true);
                         }}>{typeLabel} Düzenle</Button>
@@ -261,6 +262,37 @@ export function AdminGroupDetail() {
                                                 value={editForm.meeting_link}
                                                 onChange={e => setEditForm({ ...editForm, meeting_link: e.target.value })}
                                             />
+                                        </div>
+                                        <div className="mt-4 border-t pt-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Belirli Toplantı Tarihleri (4 Aylık vs.)</label>
+                                            <div className="flex gap-2 mb-3">
+                                                <input 
+                                                    type="date"
+                                                    id="new_meeting_date"
+                                                    className="flex-1 border rounded-md p-2"
+                                                />
+                                                <Button type="button" onClick={() => {
+                                                    const input = document.getElementById('new_meeting_date') as HTMLInputElement;
+                                                    const dateVal = input?.value;
+                                                    if(dateVal && !editForm.meeting_dates.includes(dateVal)) {
+                                                        setEditForm({...editForm, meeting_dates: [...editForm.meeting_dates, dateVal].sort()});
+                                                        input.value = '';
+                                                    }
+                                                }} variant="outline">Ekle</Button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 bg-gray-50 rounded border">
+                                                {editForm.meeting_dates.length === 0 && <span className="text-sm text-gray-400">Henüz tarih eklenmedi.</span>}
+                                                {editForm.meeting_dates.map(d => (
+                                                    <span key={d} className="bg-indigo-100 text-indigo-800 text-sm px-2 py-1 rounded inline-flex items-center">
+                                                        {new Date(d).toLocaleDateString()}
+                                                        <button 
+                                                            type="button" 
+                                                            className="ml-2 text-indigo-500 hover:text-indigo-900 font-bold"
+                                                            onClick={() => setEditForm({...editForm, meeting_dates: editForm.meeting_dates.filter(x => x !== d)})}
+                                                        >×</button>
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </>
                                 )}

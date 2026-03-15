@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 import { usePerformanceStore } from '../stores/performanceStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -24,10 +25,19 @@ import {
 export function Dashboard() {
   const { user } = useAuthStore();
   const { performance, isLoading, error, fetchPerformance } = usePerformanceStore();
+  const [myGroup, setMyGroup] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       fetchPerformance(user.id);
+      api.getUserGroups(user.id).then(async groups => {
+        if (groups && groups.length > 0) {
+          // fetch full group details to get meeting_dates
+          const allGroups = await api.getGroups();
+          const fullGroup = allGroups.find((g: any) => g.id === groups[0].id);
+          setMyGroup(fullGroup || groups[0]);
+        }
+      }).catch(console.error);
     }
   }, [user, fetchPerformance]);
 
@@ -61,7 +71,7 @@ export function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm text-gray-500">Grup Üyesi</p>
-                <p className="text-sm font-medium">İstanbul E4N</p>
+                <p className="text-sm font-medium">{myGroup ? myGroup.name : 'Yükleniyor...'}</p>
               </div>
             </div>
           </div>
@@ -147,18 +157,35 @@ export function Dashboard() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
                   <Clock className="h-5 w-5 mr-2" />
-                  Sonraki Toplantı
+                  Gelecek Toplantılar
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p className="font-medium">Salı, 14:00 - 16:00</p>
-                  <p className="text-sm text-gray-500">Hilton İstanbul Kozyatağı</p>
-                  <div className="flex items-center space-x-2 mt-4">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-600">Katılımınız Onaylandı</span>
+                {myGroup && myGroup.meeting_dates && myGroup.meeting_dates.length > 0 ? (
+                  <div className="space-y-4">
+                    {myGroup.meeting_dates.filter((d: string) => new Date(d) >= new Date(new Date().setHours(0,0,0,0))).slice(0, 3).map((dateStr: string, idx: number) => {
+                      const d = new Date(dateStr);
+                      return (
+                        <div key={idx} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                          <div>
+                            <p className="font-medium">{d.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p className="text-sm text-gray-500">{myGroup.meeting_time ? `${myGroup.meeting_time} ` : ''}({myGroup.meeting_link ? 'Online' : 'Yüz Yüze'})</p>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            {idx === 0 && <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-bold">Yaklaşan</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {myGroup.meeting_dates.filter((d: string) => new Date(d) >= new Date(new Date().setHours(0,0,0,0))).length === 0 && (
+                      <p className="text-sm text-gray-500">Gelecek toplantı tarihi bulunmuyor.</p>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="font-medium text-gray-500 text-sm">Toplantı tarihleri henüz planlanmamış.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

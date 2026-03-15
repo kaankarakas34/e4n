@@ -213,6 +213,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
     await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'MEMBER'");
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+    await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS meeting_dates JSONB DEFAULT '[]'::jsonb");
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS type VARCHAR(20)");
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'");
     await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS plan_id VARCHAR(50)");

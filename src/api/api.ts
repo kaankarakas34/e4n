@@ -170,6 +170,9 @@ export const api = {
   async createEvent(payload: any) {
     return await request('/events', { method: 'POST', body: JSON.stringify(payload) });
   },
+  async updateEvent(id: string, payload: any) {
+    return await request(`/events/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
   async deleteEvent(id: string) {
     await request(`/events/${id}`, { method: 'DELETE' });
   },

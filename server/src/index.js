@@ -1331,18 +1331,40 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
             VALUES($1, $2, 'PRESENT')-- 'PRESENT' as placeholder for registered / will attend
       `, [eventId, req.user.id]);
 
+      // 5. Generate Ticket if enabled
+      if (event.generate_tickets) {
+        const ticketNumber = `E4N-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        
+        let paymentStatus = 'FREE';
+        if (event.price > 0) {
+            paymentStatus = 'PENDING';
+        }
+
+        await client.query(`
+            INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status)
+            VALUES($1, $2, $3, $4)
+        `, [eventId, req.user.id, ticketNumber, paymentStatus]);
+
+        console.log(`🎫 Ticket Generated: ${ticketNumber} for User ${req.user.id} - Event ${eventId}`);
+      }
+
       await client.query('COMMIT');
 
       // Recalculate Score
       calculateMemberScore(req.user.id).catch(console.error);
 
-      res.json({ success: true, message: 'Successfully registered' });
+      res.json({ 
+        success: true, 
+        message: 'Successfully registered',
+        ticket_needed: event.generate_tickets,
+        price: event.price
+      });
 
     } catch (e) {
-      await client.query('ROLLBACK');
+      if (client) await client.query('ROLLBACK');
       throw e;
     } finally {
-      client.release();
+      if (client) client.release();
     }
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1714,37 +1736,85 @@ app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
 
 // Events: default to upcoming + recent past (2 weeks)
 app.get('/api/events', async (req, res) => {
+  const { type, group_id, limit, mode } = req.query;
   try {
-    let query = 'SELECT * FROM events WHERE 1=1';
-    let params = [];
+    let query = `
+      SELECT e.*, g.name as group_name 
+      FROM events e 
+      LEFT JOIN groups g ON e.group_id = g.id 
+      WHERE 1=1 
+    `;
+    const params = [];
+    let paramCount = 1;
 
-    // Optional query param ?all=true to fetch history
-    if (req.query.all !== 'true') {
-      // Default: Start date > 2 weeks ago
-      query += ' AND start_at > NOW() - INTERVAL \'14 days\'';
+    if (type) {
+      query += ` AND e.type = $${paramCount} `;
+      params.push(type);
+      paramCount++;
+    }
+    if (group_id) {
+      query += ` AND e.group_id = $${paramCount} `;
+      params.push(group_id);
+      paramCount++;
     }
 
-    // Order by Pinned DESC first, then start_at ASC
-    query += ' ORDER BY pinned DESC NULLS LAST, start_at ASC';
+    if (mode === 'admin') {
+      // Admin sees everything
+      query += ' ORDER BY e.start_at DESC';
+    } else {
+      // Public view
+      query += " AND status = 'PUBLISHED' AND (end_at > NOW() OR start_at > NOW() - INTERVAL '14 days')";
+      query += ' ORDER BY pinned DESC NULLS LAST, start_at ASC';
+    }
+
+    if (limit) {
+      query += ` LIMIT $${paramCount}`;
+      params.push(limit);
+    }
 
     const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (e) {
     console.error('SERVER ERROR in GET /api/events:', e);
-    // Explicitly convert error to string if message is missing
-    const errorMsg = e.message || String(e);
-    res.status(500).json({ error: errorMsg, details: e.stack });
+    res.status(500).json({ error: e.message || String(e) });
   }
+});
+
+// Get Single Event (Fix 404)
+app.get('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(`
+      SELECT e.*, g.name as group_name 
+      FROM events e 
+      LEFT JOIN groups g ON e.group_id = g.id 
+      WHERE e.id = $1
+    `, [id]);
+
+    if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = rows[0];
+
+    // Participants list
+    const attRes = await pool.query(`
+      SELECT u.id, u.name, u.avatar, u.profession, a.status 
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id 
+      WHERE a.event_id = $1
+    `, [id]);
+
+    event.attendees = attRes.rows;
+    res.json(event);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Create Event
 app.post('/api/events', authenticateToken, async (req, res) => {
-  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned } = req.body;
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING * `,
-      [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'DRAFT', pinned || false]
+      `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING * `,
+      [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false, price || 0, currency || 'TRY']
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1753,7 +1823,7 @@ VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING * 
 // Update Event
 app.put('/api/events/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned } = req.body;
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees, generate_tickets, price, currency } = req.body;
 
   try {
     const fields = [];
@@ -1773,6 +1843,10 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
     if (is_online !== undefined) { fields.push(`is_online = $${idx++} `); values.push(is_online); }
     if (status !== undefined) { fields.push(`status = $${idx++} `); values.push(status); }
     if (pinned !== undefined) { fields.push(`pinned = $${idx++} `); values.push(pinned); }
+    if (max_attendees !== undefined) { fields.push(`max_attendees = $${idx++} `); values.push(max_attendees); }
+    if (generate_tickets !== undefined) { fields.push(`generate_tickets = $${idx++} `); values.push(generate_tickets); }
+    if (price !== undefined) { fields.push(`price = $${idx++} `); values.push(price); }
+    if (currency !== undefined) { fields.push(`currency = $${idx++} `); values.push(currency); }
 
     if (fields.length === 0) return res.json({ message: 'No changes' });
 

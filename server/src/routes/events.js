@@ -47,12 +47,12 @@ router.get('/', async (req, res) => {
 
 // Create Event
 router.post('/', authenticateToken, async (req, res) => {
-    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned } = req.body;
+    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees } = req.body;
     try {
         const { rows } = await pool.query(
-            `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING * `,
-            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false]
+            `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * `,
+            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50]
         );
         res.status(201).json(rows[0]);
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -105,7 +105,7 @@ router.post('/attendance', authenticateToken, async (req, res) => {
 // Update Event
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned } = req.body;
+    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees } = req.body;
 
     try {
         const fields = [];
@@ -125,6 +125,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         if (is_online !== undefined) { fields.push(`is_online = $${idx++} `); values.push(is_online); }
         if (status !== undefined) { fields.push(`status = $${idx++} `); values.push(status); }
         if (pinned !== undefined) { fields.push(`pinned = $${idx++} `); values.push(pinned); }
+        if (max_attendees !== undefined) { fields.push(`max_attendees = $${idx++} `); values.push(max_attendees); }
 
         if (fields.length === 0) return res.json({ message: 'No changes' });
 

@@ -116,6 +116,7 @@ export function AdminEvents() {
         city: formData.city,
         is_online: formData.is_online,
         pinned: formData.pinned,
+        max_attendees: formData.max_attendees,
         status: formData.status,
         price: formData.price,
         currency: formData.currency

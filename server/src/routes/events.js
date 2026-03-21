@@ -45,6 +45,33 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Get Event Detail (with Attendees)
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rows } = await pool.query(`
+        SELECT e.*, g.name as group_name 
+        FROM events e 
+        LEFT JOIN groups g ON e.group_id = g.id 
+        WHERE e.id = $1
+      `, [id]);
+
+        if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+        const event = rows[0];
+
+        // Fetch attendees
+        const attendeesRes = await pool.query(`
+        SELECT u.id, u.name, u.avatar, u.profession, a.status 
+        FROM attendance a
+        JOIN users u ON a.user_id = u.id 
+        WHERE a.event_id = $1
+      `, [id]);
+
+        event.attendees = attendeesRes.rows;
+        res.json(event);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Create Event
 router.post('/', authenticateToken, async (req, res) => {
     const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees } = req.body;

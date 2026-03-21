@@ -24,6 +24,8 @@ import {
   XCircle,
   Pin
 } from 'lucide-react';
+import { Modal } from '../shared/Modal';
+import { api } from '../api/api';
 
 interface EventFormData {
   title: string;
@@ -57,6 +59,9 @@ export function AdminEvents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [viewingEventTitle, setViewingEventTitle] = useState('');
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -208,6 +213,19 @@ export function AdminEvents() {
       fetchEvents();
     } catch (error) {
       console.error('Statü güncellenirken hata:', error);
+    }
+  };
+
+  const handleViewParticipants = async (event: any) => {
+    try {
+      setViewingEventTitle(event.title);
+      // Backend route exists at /events/:id/attendance
+      const data = await api.getMeetingAttendance(event.id);
+      setParticipants(data);
+      setShowParticipants(true);
+    } catch (error) {
+      console.error('Katılımcılar yüklenirken hata:', error);
+      alert('Katılımcı listesi yüklenemedi.');
     }
   };
 
@@ -615,42 +633,88 @@ export function AdminEvents() {
                     </div>
                   </div>
 
-                  <div className="flex space-x-2 pt-2">
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/event/${event.id}`)}
-                      className="flex items-center flex-1"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Görüntüle
-                    </Button>
-                    {event.status === 'DRAFT' && (
+                    <div className="flex space-x-2 pt-2">
                       <Button
                         size="sm"
-                        onClick={() => handleStatusChange(event.id, 'PUBLISHED')}
-                        className="flex items-center"
+                        variant="secondary"
+                        onClick={() => handleViewParticipants(event)}
+                        className="flex items-center flex-1"
                       >
-                        <Send className="h-3 w-3 mr-1" />
-                        Yayınla
+                        <Users className="h-3 w-3 mr-1" />
+                        Katılımcılar
                       </Button>
-                    )}
-                    {event.status === 'PUBLISHED' && (
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => handleStatusChange(event.id, 'DRAFT')}
+                        onClick={() => navigate(`/event/${event.id}`)}
                         className="flex items-center"
                       >
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Taslak Yap
+                        <Eye className="h-3 w-3 mr-1" />
                       </Button>
-                    )}
+                      {event.status === 'DRAFT' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusChange(event.id, 'PUBLISHED')}
+                          className="flex items-center"
+                        >
+                          <Send className="h-3 w-3 mr-1" />
+                          Yayınla
+                        </Button>
+                      )}
+                      {event.status === 'PUBLISHED' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStatusChange(event.id, 'DRAFT')}
+                          className="flex items-center"
+                        >
+                          <XCircle className="h-3 w-3 mr-1" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Modal
+            open={showParticipants}
+            onClose={() => setShowParticipants(false)}
+            title={`${viewingEventTitle} - Katılımcı Listesi`}
+          >
+            <div className="space-y-4">
+              <div className="text-sm text-gray-500 mb-4">
+                Toplam Katılımcı: <span className="font-bold text-gray-900">{participants.length}</span>
+              </div>
+              {participants.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 italic">
+                  Henüz katılımcı bulunmamaktadır.
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              ) : (
+                <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                  {participants.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold overflow-hidden border border-indigo-200">
+                          {p.avatar ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" /> : p.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">{p.name}</div>
+                          <div className="text-xs text-gray-500">{p.profession || 'Meslek Belirtilmemiş'}</div>
+                        </div>
+                      </div>
+                      <Badge className={p.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                        {p.status === 'PRESENT' ? 'Kaydoldu' : p.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={() => setShowParticipants(false)}>Kapat</Button>
+              </div>
+            </div>
+          </Modal>
 
         {filteredEvents.length === 0 && (
           <Card>

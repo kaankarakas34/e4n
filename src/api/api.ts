@@ -163,9 +163,7 @@ export const api = {
     return await request('/events?mode=admin');
   },
   async getEvent(id: string) {
-    // In real app: return await request(`/events/${id}`);
-    const events = await this.getEvents();
-    return events.find((e: any) => e.id === id);
+    return await request(`/events/${id}`);
   },
   async createEvent(payload: any) {
     return await request('/events', { method: 'POST', body: JSON.stringify(payload) });

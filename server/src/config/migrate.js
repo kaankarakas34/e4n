@@ -209,9 +209,33 @@ export const runMigrations = async () => {
        )
     `);
 
+    // Power Teams
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS power_teams (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS power_team_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        power_team_id UUID REFERENCES power_teams(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'MEMBER',
+        status VARCHAR(20) DEFAULT 'ACTIVE',
+        joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(power_team_id, user_id)
+      )
+    `);
+
     // Ensure Columns exist for Core Tables (in case tables existed but were empty/partial)
     await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
     await client.query("ALTER TABLE group_members ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'MEMBER'");
+    await client.query("ALTER TABLE power_team_members ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'MEMBER'");
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS meeting_dates JSONB DEFAULT '[]'::jsonb");
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS type VARCHAR(20)");

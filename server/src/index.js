@@ -2066,7 +2066,7 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+       VALUES ($1, $2::varchar, $3, $4, $5::varchar) RETURNING *`,
       [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE']
     );
     res.status(201).json(rows[0]);
@@ -2079,7 +2079,7 @@ app.put('/api/groups/:id', authenticateToken, async (req, res) => {
   const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5 
+      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar 
        WHERE id = $6 RETURNING *`,
       [name, meeting_day, meeting_time, meeting_link, status, req.params.id]
     );
@@ -2311,6 +2311,17 @@ app.put('/api/power-teams/:id/members/:userId', authenticateToken, async (req, r
 // Remove Group Member (Reject/Kick)
 app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res) => {
   try {
+    // Authorization check
+    if (req.user.role !== 'ADMIN') {
+      const isPresident = await pool.query(
+        "SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2 AND role = 'PRESIDENT' AND status = 'ACTIVE'",
+        [req.params.id, req.user.id]
+      );
+      if (isPresident.rows.length === 0) {
+        return res.status(403).json({ error: 'Bu işlem için yetkiniz bulunmamaktadır.' });
+      }
+    }
+
     await pool.query(
       `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [req.params.id, req.params.userId]

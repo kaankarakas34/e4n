@@ -596,6 +596,23 @@ export function AdminGroupDetail() {
                                                                 </Button>
                                                             </div>
                                                         )}
+                                                        {member.status === 'ACTIVE' && (user?.role === 'ADMIN' || user?.role === 'PRESIDENT') && member.id !== user?.id && (
+                                                            <div className="flex justify-end">
+                                                                <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={async () => {
+                                                                    if (confirm(`${member.full_name} isimli üyeyi gruptan çıkarmak istediğinize emin misiniz?`)) {
+                                                                        try {
+                                                                            if (isPowerTeam) await api.deletePowerTeamMember(id!, member.id);
+                                                                            else await api.deleteGroupMember(id!, member.id);
+                                                                            setMembers(members.filter(m => m.id !== member.id));
+                                                                        } catch (e) {
+                                                                            alert('Üye çıkarılırken bir hata oluştu.');
+                                                                        }
+                                                                    }
+                                                                }}>
+                                                                    Üye Çıkar
+                                                                </Button>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}

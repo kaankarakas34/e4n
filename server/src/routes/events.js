@@ -246,10 +246,10 @@ router.post('/:id/register', authenticateToken, async (req, res) => {
 });
 
 // List Attendance (for Event)
-router.get('/:id/attendance', authenticateToken, async (req, res) => {
+router.get('/:id/attendance', async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT a.*, u.name as member_name 
+            `SELECT a.*, u.name, u.avatar, u.profession, u.name as member_name 
        FROM attendance a 
        JOIN users u ON a.user_id = u.id 
        WHERE a.event_id = $1`,

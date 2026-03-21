@@ -2213,7 +2213,7 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
 app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT a.*, u.name as member_name 
+      `SELECT a.*, u.name, u.avatar, u.profession, u.name as member_name 
        FROM attendance a 
        JOIN users u ON a.user_id = u.id 
        WHERE a.event_id = $1`,

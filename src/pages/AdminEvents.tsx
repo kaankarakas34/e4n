@@ -696,10 +696,10 @@ export function AdminEvents() {
                     <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold overflow-hidden border border-indigo-200">
-                          {p.avatar ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" /> : p.name.charAt(0)}
+                          {p.avatar ? <img src={p.avatar} alt={p.name || ''} className="w-full h-full object-cover" /> : (p.name || '?').charAt(0)}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900 text-sm">{p.name}</div>
+                          <div className="font-medium text-gray-900 text-sm">{p.name || 'İsimsiz Üye'}</div>
                           <div className="text-xs text-gray-500">{p.profession || 'Meslek Belirtilmemiş'}</div>
                         </div>
                       </div>

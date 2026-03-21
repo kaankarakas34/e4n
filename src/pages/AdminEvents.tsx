@@ -44,6 +44,7 @@ interface EventFormData {
   city?: string;
   is_online?: boolean;
   pinned?: boolean;
+  generate_tickets?: boolean;
 }
 
 const CITIES = [
@@ -78,7 +79,8 @@ export function AdminEvents() {
     has_equal_opportunity_badge: false,
     city: '',
     is_online: false,
-    pinned: false
+    pinned: false,
+    generate_tickets: false
   });
 
   useEffect(() => {
@@ -122,6 +124,7 @@ export function AdminEvents() {
         is_online: formData.is_online,
         pinned: formData.pinned,
         max_attendees: formData.max_attendees,
+        generate_tickets: formData.generate_tickets,
         status: formData.status,
         price: formData.price,
         currency: formData.currency
@@ -157,7 +160,8 @@ export function AdminEvents() {
       has_equal_opportunity_badge: false,
       city: '',
       is_online: false,
-      pinned: false
+      pinned: false,
+      generate_tickets: false
     });
     setShowForm(false);
     setEditingEvent(null);
@@ -501,9 +505,21 @@ export function AdminEvents() {
                   <label htmlFor="has_fe_badge" className="ml-2 block text-sm text-gray-900">
                     Fırsat Eşitliği (FE: Her meslekten tek kişi)
                   </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="generate_tickets"
+                      checked={formData.generate_tickets}
+                      onChange={(e) => setFormData({ ...formData, generate_tickets: e.target.checked })}
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="generate_tickets" className="text-sm font-medium text-gray-700">
+                      Bilet Sistemi Aktif (Eşsiz Numara ve Mail)
+                    </label>
+                  </div>
                 </div>
 
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end gap-3 pt-6 border-t font-primary">
                   <Button type="button" variant="outline" onClick={resetForm}>
                     İptal
                   </Button>

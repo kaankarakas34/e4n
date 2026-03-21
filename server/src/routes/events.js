@@ -74,12 +74,12 @@ router.get('/:id', async (req, res) => {
 
 // Create Event
 router.post('/', authenticateToken, async (req, res) => {
-    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees } = req.body;
+    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets } = req.body;
     try {
         const { rows } = await pool.query(
-            `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * `,
-            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50]
+            `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING * `,
+            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false]
         );
         res.status(201).json(rows[0]);
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -132,7 +132,7 @@ router.post('/attendance', authenticateToken, async (req, res) => {
 // Update Event
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees } = req.body;
+    const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees, generate_tickets } = req.body;
 
     try {
         const fields = [];
@@ -153,6 +153,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         if (status !== undefined) { fields.push(`status = $${idx++} `); values.push(status); }
         if (pinned !== undefined) { fields.push(`pinned = $${idx++} `); values.push(pinned); }
         if (max_attendees !== undefined) { fields.push(`max_attendees = $${idx++} `); values.push(max_attendees); }
+        if (generate_tickets !== undefined) { fields.push(`generate_tickets = $${idx++} `); values.push(generate_tickets); }
 
         if (fields.length === 0) return res.json({ message: 'No changes' });
 
@@ -227,12 +228,36 @@ router.post('/:id/register', authenticateToken, async (req, res) => {
             VALUES($1, $2, 'PRESENT')-- 'PRESENT' as placeholder for registered / will attend
       `, [eventId, req.user.id]);
 
+            // 5. Generate Ticket if enabled
+            if (event.generate_tickets) {
+                const ticketNumber = `E4N-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                
+                // Determine payment status (stub for now)
+                let paymentStatus = 'FREE';
+                if (event.price > 0) {
+                    paymentStatus = 'PENDING'; // Needs POS payment later
+                }
+
+                await client.query(`
+                    INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status)
+                    VALUES($1, $2, $3, $4)
+                `, [eventId, req.user.id, ticketNumber, paymentStatus]);
+
+                // STUB: Send Email logic would go here
+                console.log(`🎫 Ticket Generated: ${ticketNumber} for User ${req.user.id} - Event ${eventId}`);
+            }
+
             await client.query('COMMIT');
 
             // Recalculate Score
             calculateMemberScore(req.user.id).catch(console.error);
 
-            res.json({ success: true, message: 'Successfully registered' });
+            res.json({ 
+                success: true, 
+                message: 'Successfully registered',
+                ticket_needed: event.generate_tickets,
+                price: event.price
+            });
 
         } catch (e) {
             await client.query('ROLLBACK');

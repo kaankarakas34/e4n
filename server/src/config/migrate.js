@@ -243,6 +243,28 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS plan_id VARCHAR(50)");
     await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
 
+    // Event Table Enhancements
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS price DECIMAL(10, 2) DEFAULT 0");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'TRY'");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS max_attendees INTEGER DEFAULT 50");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS generate_tickets BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+
+    // Event Tickets Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS event_tickets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        ticket_number VARCHAR(50) UNIQUE NOT NULL,
+        payment_status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, PAID, FREE
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
     console.log('✅ Database Schema Synced');
   } catch (e) {
     console.error('❌ Migration Error:', e);

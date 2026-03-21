@@ -42,11 +42,20 @@ export function EventDetail() {
 
         setRegistering(true);
         try {
-            await api.registerForEvent(id!);
+            const result = await api.registerForEvent(id!);
             setRegistered(true);
-            alert('Kayıt başarılı!');
+            
+            if (result.ticket_needed) {
+                if (result.price > 0) {
+                    alert('Kayıt talebiniz alındı! Ödemeniz onaylandıktan sonra biletiniz e-posta ile gönderilecektir.');
+                } else {
+                    alert('Kayıt başarılı! Ücretsiz biletiniz e-posta adresinize gönderildi.');
+                }
+            } else {
+                alert('Etkinliğe başarıyla kayıt oldunuz!');
+            }
         } catch (error: any) {
-            alert('Kayıt başarısız: ' + error.message);
+            alert('Kayıt başarısız: ' + (error.error || error.message));
         } finally {
             setRegistering(false);
         }

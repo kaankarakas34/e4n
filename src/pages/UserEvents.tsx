@@ -47,11 +47,16 @@ export function UserEvents() {
         }
     };
 
-    // Event visibility: PUBLISHED only. Show until it ends.
+    // Event visibility: 
+    // - Regular User: PUBLISHED only. Show until it ends.
+    // - Admin: ALL events (so they can see their work immediately).
     const visibleEvents = events.filter(e => {
+        const isAdmin = user?.role === 'ADMIN';
         const isPublished = e.status === 'PUBLISHED' || !e.status;
         const endTime = e.end_at ? new Date(e.end_at) : new Date(e.start_at);
         const isUpcomingOrOngoing = endTime > new Date();
+
+        if (isAdmin) return true; // Admins see everything
         return isPublished && isUpcomingOrOngoing;
     });
 
@@ -87,6 +92,11 @@ export function UserEvents() {
                                             {event.city && (
                                                 <Badge className="bg-blue-50 text-blue-700 border border-blue-100">
                                                     {event.city}
+                                                </Badge>
+                                            )}
+                                             {event.status === 'DRAFT' && user?.role === 'ADMIN' && (
+                                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                                    TASLAK (GİZLİ)
                                                 </Badge>
                                             )}
                                         </div>

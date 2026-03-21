@@ -15,6 +15,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS performance_score INTEGER DEFAULT 0");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS performance_color VARCHAR(10) DEFAULT 'GREY'");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT");
 
     // Core Tables
     await client.query(`

@@ -1184,12 +1184,23 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
       [userId]
     );
 
+    // Get General Events (Public or User's Group Events)
+    const events = await pool.query(
+      `SELECT e.id, e.start_at, 'meeting' as type, e.title, e.location 
+       FROM events e
+       LEFT JOIN group_members gm ON e.group_id = gm.group_id AND gm.user_id = $1
+       WHERE e.status = 'PUBLISHED' 
+       AND (e.is_public = true OR gm.user_id IS NOT NULL)`,
+      [userId]
+    );
+
     // Combine all calendar items
     const calendar = [
       ...oneToOnes.rows,
       ...visitors.rows,
-      ...education.rows
-    ].sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
+      ...education.rows,
+      ...events.rows
+    ].sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
 
     res.json(calendar);
   } catch (e) {

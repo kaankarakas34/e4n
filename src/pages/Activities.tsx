@@ -179,6 +179,17 @@ export function Activities() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Added Events Card to Overview for visibility */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Yaklaşan Etkinlikler</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <UserEvents />
+                  </CardContent>
+                </Card>
+
                 <TasksCard />
               </div>
               <div className="space-y-6">

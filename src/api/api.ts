@@ -160,7 +160,7 @@ export const api = {
 
   // Events (admin-only)
   async getEvents() {
-    return await request('/events');
+    return await request('/events?mode=admin');
   },
   async getEvent(id: string) {
     // In real app: return await request(`/events/${id}`);

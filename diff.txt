@@ -1,0 +1,55 @@
+﻿diff --git a/server/src/routes/groups.js b/server/src/routes/groups.js
+index b75354b..9f41908 100644
+--- a/server/src/routes/groups.js
++++ b/server/src/routes/groups.js
+@@ -21,12 +21,12 @@ router.get('/', authenticateToken, async (req, res) => {
+ // Create Group
+ router.post('/', authenticateToken, async (req, res) => {
+     if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+-    const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
++    const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
+     try {
+         const { rows } = await pool.query(
+-            `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status) 
+-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+-            [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE']
++            `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status, meeting_dates) 
++       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
++            [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', meeting_dates ? JSON.stringify(meeting_dates) : '[]']
+         );
+         res.status(201).json(rows[0]);
+     } catch (e) { res.status(500).json({ error: e.message }); }
+@@ -53,13 +53,29 @@ router.get('/:id/members', authenticateToken, async (req, res) => {
+ // Update Group
+ router.put('/:id', authenticateToken, async (req, res) => {
+     if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+-    const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
++    const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
+     try {
++        // Fetch old meeting dates to compare
++        const oldGroup = await pool.query('SELECT meeting_dates FROM groups WHERE id = $1', [req.params.id]);
++        const oldDates = oldGroup.rows[0]?.meeting_dates || [];
++        
+         const { rows } = await pool.query(
+-            `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5 
+-       WHERE id = $6 RETURNING *`,
+-            [name, meeting_day, meeting_time, meeting_link, status, req.params.id]
++            `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5, meeting_dates = $6 
++       WHERE id = $7 RETURNING *`,
++            [name, meeting_day, meeting_time, meeting_link, status, meeting_dates ? JSON.stringify(meeting_dates) : '[]', req.params.id]
+         );
++        
++        // Check if meeting dates actually changed and trigger notification
++        if (meeting_dates && JSON.stringify(meeting_dates) !== JSON.stringify(oldDates)) {
++            const members = await pool.query("SELECT user_id FROM group_members WHERE group_id = $1 AND status = 'ACTIVE'", [req.params.id]);
++            for (let member of members.rows) {
++                await pool.query(
++                    "INSERT INTO notifications (user_id, type, content) VALUES ($1, $2, $3)",
++                    [member.user_id, 'SYSTEM', 'Grubunuzun toplant─▒ tarihleri g├╝ncellendi. L├╝tfen panelden kontrol ediniz.']
++                );
++            }
++        }
++        
+         res.json(rows[0]);
+     } catch (e) { res.status(500).json({ error: e.message }); }
+ });

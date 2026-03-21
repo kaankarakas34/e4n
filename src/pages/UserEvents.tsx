@@ -47,8 +47,13 @@ export function UserEvents() {
         }
     };
 
-    // Only show PUBLISHED events for users (or events with no status for mock/legacy)
-    const visibleEvents = events.filter(e => (e.status === 'PUBLISHED' || !e.status) && new Date(e.start_at) > new Date());
+    // Event visibility: PUBLISHED only. Show until it ends.
+    const visibleEvents = events.filter(e => {
+        const isPublished = e.status === 'PUBLISHED' || !e.status;
+        const endTime = e.end_at ? new Date(e.end_at) : new Date(e.start_at);
+        const isUpcomingOrOngoing = endTime > new Date();
+        return isPublished && isUpcomingOrOngoing;
+    });
 
     return (
         <div className="min-h-screen bg-gray-50">

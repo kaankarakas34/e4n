@@ -33,9 +33,8 @@ router.get('/', async (req, res) => {
             // see all
             query += ' ORDER BY e.start_at DESC';
         } else {
-            // Public/User View: Future events + Recent past?
-            // Default: Start date > 2 weeks ago
-            query += " AND start_at > NOW() - INTERVAL '14 days'";
+            // Public/User View: Published events only + Not ended yet (or recently started)
+            query += " AND status = 'PUBLISHED' AND (end_at > NOW() OR start_at > NOW() - INTERVAL '14 days')";
             query += ' ORDER BY pinned DESC NULLS LAST, start_at ASC';
         }
 
@@ -53,7 +52,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const { rows } = await pool.query(
             `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned)
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING * `,
-            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'DRAFT', pinned || false]
+            [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false]
         );
         res.status(201).json(rows[0]);
     } catch (e) { res.status(500).json({ error: e.message }); }

@@ -125,6 +125,17 @@ router.put('/:id/members/:userId', authenticateToken, async (req, res) => {
 // Remove Member
 router.delete('/:id/members/:userId', authenticateToken, async (req, res) => {
     try {
+        // Authorization check
+        if (req.user.role !== 'ADMIN') {
+            const isPresident = await pool.query(
+                "SELECT 1 FROM power_team_members WHERE power_team_id = $1 AND user_id = $2 AND role = 'PRESIDENT' AND status = 'ACTIVE'",
+                [req.params.id, req.user.id]
+            );
+            if (isPresident.rows.length === 0) {
+                return res.status(403).json({ error: 'Bu işlem için yetkiniz bulunmamaktadır.' });
+            }
+        }
+
         await pool.query(
             `DELETE FROM power_team_members WHERE power_team_id = $1 AND user_id = $2`,
             [req.params.id, req.params.userId]

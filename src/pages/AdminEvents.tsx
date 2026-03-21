@@ -115,7 +115,10 @@ export function AdminEvents() {
         has_equal_opportunity_badge: formData.has_equal_opportunity_badge,
         city: formData.city,
         is_online: formData.is_online,
-        pinned: formData.pinned
+        pinned: formData.pinned,
+        status: formData.status,
+        price: formData.price,
+        currency: formData.currency
       };
 
       if (editingEvent) {

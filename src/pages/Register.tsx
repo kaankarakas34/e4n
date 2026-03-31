@@ -43,7 +43,7 @@ export function Register() {
     }
     setLoading(true);
     try {
-      await api.requestRegistration(formData);
+      await api.requestRegistration({ ...formData, token });
       setSubmitted(true);
     } catch (error) {
       console.error('Registration error:', error);

@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runMigrations } from './config/migrate.js';
+import adminRoutes from './routes/admin.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -262,6 +263,7 @@ pool.connect().then(async (client) => {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/admin', adminRoutes);
 // app.use('/api/payment', paymentRoutes);
 
 // --- CHAMPION CALCULATION LOGIC ---
@@ -618,7 +620,18 @@ function authenticateToken(req, res, next) {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent } = req.body;
+    const { name, email, password, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent, token } = req.body;
+
+    // Validate invite token if public registration is closed
+    if (!token) {
+      return res.status(403).json({ error: 'Üyelik sadece davetiye ile mümkündür.' });
+    }
+
+    try {
+      jwt.verify(token, SECRET_KEY);
+    } catch (e) {
+      return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş davetiye.' });
+    }
 
     // Check existing
     const existing = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);

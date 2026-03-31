@@ -85,10 +85,10 @@ export function LandingPage() {
                         <div className="flex items-center gap-4">
                             <Button
                                 variant="ghost"
-                                onClick={() => navigate('/auth/register')}
+                                onClick={() => navigate('/ziyaretci-ol')}
                                 className="hidden md:inline-flex"
                             >
-                                Kayıt Ol
+                                Ziyaretçi Ol
                             </Button>
                             <Button
                                 variant="primary"
@@ -120,7 +120,7 @@ export function LandingPage() {
                                 <Button
                                     size="lg"
                                     variant="primary"
-                                    onClick={() => navigate('/auth/register')}
+                                    onClick={() => navigate('/ziyaretci-ol')}
                                     className="text-lg px-8 h-14 shadow-xl shadow-red-200"
                                 >
                                     Hemen Başvurun <ArrowRight className="ml-2 h-5 w-5" />
@@ -415,7 +415,7 @@ export function LandingPage() {
                                         <Button variant="outline" className="flex-1 justify-center" onClick={() => navigate(`/event/${event.id}`)}>
                                             İncele
                                         </Button>
-                                        <Button variant="ghost" className="justify-center px-3" onClick={() => navigate('/auth/register')}>
+                                        <Button variant="ghost" className="justify-center px-3" onClick={() => navigate('/ziyaretci-ol')}>
                                             <ExternalLink className="h-4 w-4 text-gray-400 hover:text-red-600 transition-colors" />
                                         </Button>
                                     </div>
@@ -534,7 +534,7 @@ export function LandingPage() {
                         <Button
                             size="lg"
                             variant="primary"
-                            onClick={() => navigate('/auth/register')}
+                            onClick={() => navigate('/ziyaretci-ol')}
                             className="text-lg h-14 px-10 bg-red-600 hover:bg-red-500"
                         >
                             Hemen Başvurun

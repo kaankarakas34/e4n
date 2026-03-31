@@ -3,6 +3,7 @@ import pool from '../config/db.js';
 import authenticateToken from '../middleware/auth.js';
 import { sendEmail } from '../utils/email.js';
 import { calculateChampions } from '../utils/scoring.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -43,6 +44,26 @@ router.get('/members', async (req, res) => {
         res.json(rows.map(r => ({ ...r, full_name: r.name })));
     } catch (e) {
         console.error('Admin Members Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/invite', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const token = jwt.sign({ inviteEmail: email }, process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b', { expiresIn: '7d' });
+        const link = `${process.env.FRONTEND_URL || 'https://www.event4network.com'}/auth/register?token=${token}`;
+        
+        await sendEmail(
+            email,
+            'Event 4 Network Üyelik Davetiyesi',
+            `<h2>Event 4 Network'e Davetlisiniz</h2>
+             <p>Aşağıdaki bağlantıya tıklayarak üyelik işleminizi tamamlayabilirsiniz:</p>
+             <a href="${link}" style="display:inline-block;padding:10px 20px;background-color:#dc2626;color:white;text-decoration:none;border-radius:5px;font-family:sans-serif;font-weight:bold;">Üye Ol</a>
+             <br><br><p>Bu bağlantı 7 gün boyunca geçerlidir.</p>`
+        );
+        res.json({ success: true, link });
+    } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });

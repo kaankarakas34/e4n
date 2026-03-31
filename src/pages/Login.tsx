@@ -176,10 +176,10 @@ export function Login() {
 
             <div className="mt-6 text-center">
               <Link
-                to="/auth/register"
+                to="/ziyaretci-ol"
                 className="font-medium text-red-600 hover:text-red-500 hover:underline inline-flex items-center"
               >
-                Hemen Kayıt Olun
+                Ziyaretçi Başvuru Formunu Doldurun
               </Link>
             </div>
           </div>

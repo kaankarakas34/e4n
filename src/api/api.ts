@@ -231,6 +231,9 @@ export const api = {
   async getMembers() {
     return await request('/admin/members');
   },
+  async sendInviteLink(email: string) {
+    return await request('/admin/invite', { method: 'POST', body: JSON.stringify({ email }) });
+  },
 
 
 

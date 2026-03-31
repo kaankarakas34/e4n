@@ -105,9 +105,9 @@ export function PublicEventsPage() {
                                         <p className="text-gray-500 text-sm mb-4 line-clamp-2">{event.description}</p>
                                         <Button
                                             className="w-full justify-center shadow-lg shadow-red-100 hover:shadow-red-200"
-                                            onClick={() => navigate('/auth/register')}
+                                            onClick={() => navigate('/ziyaretci-ol')}
                                         >
-                                            Katılım İçin Kaydol
+                                            Ziyaretçi Başvurusu Yap
                                         </Button>
                                     </div>
                                 </div>

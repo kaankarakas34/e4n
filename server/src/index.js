@@ -24,14 +24,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
 
-// Connection Configuration for Supabase
-// Using explicit env var
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false } // Required for Supabase
-});
+// Connection Configuration for Database (Local Docker or Supabase)
+import pool from './config/db.js';
 
 // Debug Logging for Connection (Safe)
 try {
@@ -2064,9 +2058,40 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
   res.json(plans);
 });
 
-// --- LMS ---
+// --- LMS (E-Akademi) ---
+app.get('/api/courses', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT c.*, 
+             (SELECT count(*)::int FROM lessons l WHERE l.course_id = c.id) as lesson_count,
+             (SELECT count(*)::int FROM enrollments e WHERE e.course_id = c.id AND e.user_id = $1) as is_enrolled
+      FROM courses c
+      WHERE c.status = 'ACTIVE'
+      ORDER BY c.created_at DESC
+    `, [req.user.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/courses/:id', authenticateToken, async (req, res) => {
+  try {
+    const courseRes = await pool.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
+    if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    
+    const lessonsRes = await pool.query('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC', [req.params.id]);
+    
+    res.json({
+      ...courseRes.rows[0],
+      lessons: lessonsRes.rows
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/lms/exams', authenticateToken, async (req, res) => {
-  res.json([]);
+  try {
+    const { rows } = await pool.query('SELECT * FROM exams ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- EMAIL CONFIGURATION ENDPOINTS ---

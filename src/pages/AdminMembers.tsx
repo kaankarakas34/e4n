@@ -17,7 +17,8 @@ import {
   Phone,
   MapPin,
   CheckCircle,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Mail
 } from 'lucide-react';
 
 interface Member {
@@ -60,6 +61,11 @@ export function AdminMembers() {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [targetGroupId, setTargetGroupId] = useState<string>('');
+
+  // Invite Modal State
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -207,6 +213,22 @@ export function AdminMembers() {
     }
   };
 
+  const handleSendInvite = async () => {
+    if (!inviteEmail) return;
+    setInviteLoading(true);
+    try {
+      await api.sendInviteLink(inviteEmail);
+      alert('Davetiye linki başarıyla gönderildi.');
+      setShowInviteModal(false);
+      setInviteEmail('');
+    } catch (e) {
+      console.error(e);
+      alert('Davetiye gönderilirken bir hata oluştu.');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   if (!user || user.role !== 'ADMIN') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -226,7 +248,11 @@ export function AdminMembers() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Üye Yönetimi</h1>
           <div className="flex gap-2">
-            <Button onClick={() => navigate('/admin/members/new')} className="flex items-center bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={() => setShowInviteModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Mail className="h-4 w-4 mr-2" />
+              Üyelik Linki Gönder
+            </Button>
+            <Button onClick={() => navigate('/admin/members/new')} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white">
               <UserPlus className="h-4 w-4 mr-2" />
               Yeni Üye Oluştur
             </Button>
@@ -428,6 +454,33 @@ export function AdminMembers() {
                 <Button variant="outline" onClick={() => setShowMoveModal(false)}>İptal</Button>
                 <Button variant="primary" onClick={handleMoveMember}>
                   <ArrowRightLeft className="h-4 w-4 mr-2" /> Taşı
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Invite Modal */}
+        {showInviteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-lg font-bold mb-4">Yeni Üyelik Davetiyesi Gönder</h2>
+              <p className="text-gray-600 mb-4 text-sm">
+                Aşağıdaki e-posta adresine, kişiye özel kayıt olma formunun linki gönderilecektir. Ziyaretçiler normalde üye olamazlar.
+              </p>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">E-posta Adresi</label>
+                <Input
+                  type="email"
+                  placeholder="ornek@sirket.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={() => setShowInviteModal(false)}>İptal</Button>
+                <Button variant="primary" onClick={handleSendInvite} disabled={inviteLoading || !inviteEmail}>
+                  {inviteLoading ? 'Gönderiliyor...' : <><Mail className="h-4 w-4 mr-2" /> Gönder</>}
                 </Button>
               </div>
             </div>

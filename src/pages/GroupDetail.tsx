@@ -7,7 +7,7 @@ import { Button } from '../shared/Button';
 import { api } from '../api/api';
 import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar } from 'lucide-react';
 
-export function AdminGroupDetail() {
+export function GroupDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -107,7 +107,7 @@ export function AdminGroupDetail() {
         return <div className="p-8">Erişim Kısıtlı</div>;
     }
 
-    const isAdminView = true;
+    const isAdminView = false;
 
     if (loading) {
         return <div className="p-8">Yükleniyor...</div>;
@@ -138,11 +138,11 @@ export function AdminGroupDetail() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <Button
                     variant="ghost"
-                    onClick={() => navigate('/admin/groups')}
+                    onClick={() => navigate('/chapter-management')}
                     className="mb-6 flex items-center text-gray-600 hover:text-gray-900"
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Yönetime Dön
+                    Gruplarıma Dön
                 </Button>
 
                 <div className="flex items-center justify-between mb-8">
@@ -184,7 +184,7 @@ export function AdminGroupDetail() {
                                             await api.deleteGroup(data.id);
                                         }
                                         alert('Grup başarıyla silindi.');
-                                        navigate('/admin/groups');
+                                        navigate('/chapter-management');
                                     } catch (e: any) {
                                         alert('Silme işlemi başarısız: ' + e.message);
                                     }

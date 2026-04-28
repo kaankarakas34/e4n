@@ -20,6 +20,7 @@ import { MemberProfile } from './pages/MemberProfile';
 import { AdminSubscriptions } from './pages/AdminSubscriptions';
 import { AdminGroups } from './pages/AdminGroups';
 import { AdminGroupDetail } from './pages/AdminGroupDetail';
+import { GroupDetail } from './pages/GroupDetail';
 import { AdminShuffle } from './pages/AdminShuffle';
 import { AdminExams } from './pages/AdminExams';
 import { AdminLMS } from './pages/AdminLMS';
@@ -174,6 +175,8 @@ function App() {
               <Route path="/admin/groups" element={<AdminGroups />} />
               <Route path="/admin/groups/:id" element={<AdminGroupDetail />} />
               <Route path="/admin/power-teams/:id" element={<AdminGroupDetail />} />
+              <Route path="/groups/:id" element={<GroupDetail />} />
+              <Route path="/power-teams/:id" element={<GroupDetail />} />
               <Route path="/admin/exams" element={<AdminExams />} />
               <Route path="/admin/lms" element={<AdminLMS />} />
               <Route path="/admin/lms/course/:id" element={<AdminCourseEditor />} />

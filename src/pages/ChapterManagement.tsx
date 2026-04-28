@@ -174,7 +174,10 @@ export function ChapterManagement() {
                         <span className="text-sm text-gray-900">{g.name}</span>
                         <div className="flex items-center space-x-3">
                           <span className="text-xs text-gray-500 flex items-center">Aktif Üyelik</span>
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/admin/groups/${g.id}`)}>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            const isAdmin = ['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '');
+                            navigate(isAdmin ? `/admin/groups/${g.id}` : `/groups/${g.id}`);
+                          }}>
                             {['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '') ? 'Yönet' : 'Grup Detayı'}
                           </Button>
                         </div>
@@ -197,7 +200,10 @@ export function ChapterManagement() {
                         <span className="text-sm text-gray-900">{pt.name}</span>
                         <div className="flex items-center space-x-3">
                           <span className="text-xs text-gray-500 flex items-center">Aktif Üyelik</span>
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/admin/power-teams/${pt.id}`)}>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            const isAdmin = ['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '');
+                            navigate(isAdmin ? `/admin/power-teams/${pt.id}` : `/power-teams/${pt.id}`);
+                          }}>
                             {['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '') ? 'Yönet' : 'Lonca Detayı'}
                           </Button>
                         </div>

@@ -208,6 +208,11 @@ export function AdminVisitors() {
                                                                     <Phone className="h-3 w-3 mr-1" /> {item.phone}
                                                                 </div>
                                                             )}
+                                                            {activeTab === 'visitors' && item.inviter_name && (
+                                                                <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    <UserPlus className="h-3 w-3 mr-1" /> Ref: {item.inviter_name}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>

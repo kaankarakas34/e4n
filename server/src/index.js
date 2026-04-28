@@ -162,6 +162,9 @@ pool.connect().then(async (client) => {
     // Professions Table
     await client.query("ALTER TABLE professions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'APPROVED'");
 
+    // Public Visitors Table Update
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS professions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -662,6 +665,41 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (e) {
     if (e.code === '23505') return res.status(409).json({ error: 'Email already exists' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* --- PUBLIC ENDPOINTS --- */
+app.get('/api/public/members/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.json([]);
+    
+    const { rows } = await pool.query(
+      `SELECT id, name, company 
+       FROM users 
+       WHERE account_status = 'ACTIVE' 
+       AND (name ILIKE $1 OR company ILIKE $1)
+       LIMIT 10`,
+      [`%${q}%`]
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/public/members/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, company 
+       FROM users 
+       WHERE id = $1 AND account_status = 'ACTIVE'`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -2004,11 +2042,11 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
-  const { name, email, phone, company, profession, source, kvkk_accepted } = req.body;
+  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id } = req.body;
   try {
     const { rows } = await pool.query(
-      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false]
+      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2017,7 +2055,12 @@ app.post('/api/visitors/apply', async (req, res) => {
 app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
   try {
-    const { rows } = await pool.query('SELECT * FROM public_visitors ORDER BY created_at DESC');
+    const { rows } = await pool.query(`
+      SELECT pv.*, u.name as inviter_name 
+      FROM public_visitors pv
+      LEFT JOIN users u ON pv.inviter_id = u.id
+      ORDER BY pv.created_at DESC
+    `);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

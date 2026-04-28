@@ -21,11 +21,11 @@ router.delete('/professions/:id', async (req, res) => {
 
 // Public Visitor Application
 router.post('/visitors/apply', async (req, res) => {
-    const { name, email, phone, company, profession, source, kvkk_accepted } = req.body;
+    const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id } = req.body;
     try {
         const { rows } = await pool.query(
-            'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, email, phone, company, profession, source || 'web', kvkk_accepted || false]
+            'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null]
         );
         res.status(201).json(rows[0]);
     } catch (e) { res.status(500).json({ error: e.message }); }

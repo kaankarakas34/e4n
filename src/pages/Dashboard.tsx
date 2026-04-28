@@ -213,65 +213,35 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Visitor Registration Card */}
+            {/* Visitor Link Generator */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
                   <Users className="h-5 w-5 mr-2 text-indigo-600" />
-                  Yeni Ziyaretçi Kaydı
+                  Ziyaretçi Davet Et
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-3" onSubmit={async (e) => {
-                  e.preventDefault();
-                  // Basic form data handling
-                  const form = e.target as HTMLFormElement;
-                  const formData = new FormData(form);
-                  const payload = {
-                    name: formData.get('name'),
-                    company: formData.get('company'),
-                    profession: formData.get('profession'),
-                    phone: formData.get('phone'),
-                    email: formData.get('email'),
-                    group_id: '1', // Default to user's group
-                    inviter_id: user.id
-                  };
-
-                  try {
-                    await import('../api/api').then(m => m.api.createVisitor(payload));
-                    alert('Ziyaretçi başarıyla kaydedildi! (+5 Puan kazandınız)');
-                    form.reset();
-                    fetchPerformance(user.id); // Refresh traffic light
-                  } catch (err) {
-                    alert('Hata oluştu.');
-                  }
-                }}>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Ad Soyad</label>
-                    <input name="name" required className="block w-full text-sm border-gray-300 rounded-md shadow-sm p-2 border" placeholder="Örn: Ahmet Yılmaz" />
+                <div className="space-y-4 text-sm text-gray-600">
+                  <p>
+                    Ziyaretçilerinizi doğrudan sisteme kaydetmek yerine onlara özel bir davet linki gönderebilirsiniz. 
+                    Bu link ile kayıt olduklarında sizin referansınızla geldikleri otomatik olarak kaydedilir.
+                  </p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={`${window.location.origin}/ziyaretci-ol?refId=${user.id}`} 
+                      className="flex-1 rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm p-2 border"
+                    />
+                    <Button onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/ziyaretci-ol?refId=${user.id}`);
+                      alert('Davet linki kopyalandı!');
+                    }}>
+                      Kopyala
+                    </Button>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Şirket İsmi</label>
-                    <input name="company" className="block w-full text-sm border-gray-300 rounded-md shadow-sm p-2 border" placeholder="Örn: Yılmaz A.Ş." />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700">Meslek</label>
-                    <input name="profession" required className="block w-full text-sm border-gray-300 rounded-md shadow-sm p-2 border" placeholder="Örn: Mimar" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Telefon</label>
-                      <input name="phone" required className="block w-full text-sm border-gray-300 rounded-md shadow-sm p-2 border" placeholder="0555..." />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">E-posta</label>
-                      <input name="email" type="email" required className="block w-full text-sm border-gray-300 rounded-md shadow-sm p-2 border" placeholder="ornek@mail.com" />
-                    </div>
-                  </div>
-                  <Button type="submit" variant="primary" className="w-full mt-2">
-                    Kaydet
-                  </Button>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </div>

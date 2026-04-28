@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight } from 'lucide-react';
+import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 
@@ -30,6 +30,38 @@ export function VisitorForm({ onSuccess, className = "", source = "landing" }: V
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Referral Search State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [selectedReferral, setSelectedReferral] = useState<any>(null);
+    const [isSearching, setIsSearching] = useState(false);
+
+    useEffect(() => {
+        // Check URL for refId
+        const params = new URLSearchParams(window.location.search);
+        const refId = params.get('refId');
+        if (refId) {
+            api.getPublicMember(refId).then(member => {
+                if (member) setSelectedReferral(member);
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        if (searchQuery.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        const delayDebounceFn = setTimeout(() => {
+            setIsSearching(true);
+            api.searchPublicMembers(searchQuery).then(results => {
+                setSearchResults(results);
+                setIsSearching(false);
+            });
+        }, 500);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
+
     const { register, handleSubmit, formState: { errors } } = useForm<VisitorFormData>({
         resolver: zodResolver(visitorSchema)
     });
@@ -44,7 +76,8 @@ export function VisitorForm({ onSuccess, className = "", source = "landing" }: V
                 company: data.company,
                 profession: data.profession,
                 kvkk_accepted: true,
-                source: source
+                source: source,
+                inviter_id: selectedReferral ? selectedReferral.id : undefined
             });
             setIsSubmitted(true);
             if (onSuccess) onSuccess();
@@ -149,6 +182,61 @@ export function VisitorForm({ onSuccess, className = "", source = "landing" }: V
                     />
                 </div>
                 {errors.profession && <p className="mt-1 text-xs text-red-500">{errors.profession.message}</p>}
+            </div>
+
+            {/* Referral Search Field */}
+            <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Referans Üye (Opsiyonel)</label>
+                
+                {selectedReferral ? (
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-gray-900">{selectedReferral.name}</span>
+                            {selectedReferral.company && <span className="text-xs text-gray-500">{selectedReferral.company}</span>}
+                        </div>
+                        <button 
+                            type="button" 
+                            onClick={() => { setSelectedReferral(null); setSearchQuery(''); }}
+                            className="text-gray-400 hover:text-red-500"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none"
+                                placeholder="Referans üye ara (İsim veya Şirket)"
+                            />
+                        </div>
+                        {isSearching && <p className="text-xs text-gray-500 mt-1">Aranıyor...</p>}
+                        
+                        {/* Search Results Dropdown */}
+                        {searchResults.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                {searchResults.map((member) => (
+                                    <div 
+                                        key={member.id}
+                                        onClick={() => {
+                                            setSelectedReferral(member);
+                                            setSearchResults([]);
+                                            setSearchQuery('');
+                                        }}
+                                        className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                    >
+                                        <div className="text-sm font-bold text-gray-900">{member.name}</div>
+                                        {member.company && <div className="text-xs text-gray-500">{member.company}</div>}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="pt-2">

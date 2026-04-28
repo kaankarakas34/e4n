@@ -130,6 +130,26 @@ export const api = {
     return await request('/groups');
   },
 
+  async getTicketStats() {
+    return await request('/tickets/stats');
+  },
+
+  // Public Endpoints
+  async searchPublicMembers(query: string) {
+    try {
+      return await request(`/public/members/search?q=${encodeURIComponent(query)}`);
+    } catch {
+      return [];
+    }
+  },
+  async getPublicMember(id: string) {
+    try {
+      return await request(`/public/members/${id}`);
+    } catch {
+      return null;
+    }
+  },
+
   async getTickets() {
     return await request('/tickets');
   },

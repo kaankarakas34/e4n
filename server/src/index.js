@@ -1169,7 +1169,7 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
        FROM one_to_ones o
        LEFT JOIN users u ON o.partner_id = u.id
        LEFT JOIN users u2 ON o.requester_id = u2.id
-       WHERE o.requester_id = $1 OR o.partner_id = $1`,
+       WHERE (o.requester_id = $1 OR o.partner_id = $1) AND o.status IN ('ACCEPTED', 'COMPLETED')`,
       [userId]
     );
 

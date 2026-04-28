@@ -63,32 +63,7 @@ export function Activities() {
   useEffect(() => {
     if (!user) return;
 
-    // 1. Generate Recurring Weekly Meetings (Client-side logic)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const meetings = [];
-
-    // Generate for current month + next 2 months
-    for (let m = month - 1; m <= month + 2; m++) {
-      const currentYear = year + Math.floor(m / 12);
-      const currentMonth = m % 12;
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(currentYear, currentMonth, d);
-        // Weekly Meeting on Tuesday (2)
-        if (date.getDay() === 2) {
-          meetings.push({
-            date: date.toISOString().split('T')[0],
-            type: 'meeting',
-            title: 'Haftalık E4N Toplantısı (07:00)'
-          });
-        }
-      }
-    }
-
-    // 2. Fetch Real Calendar Data from Backend
+    // Fetch Real Calendar Data from Backend
     const fetchCalendar = async () => {
       try {
         const apiEvents = await api.getCalendar(user.id);
@@ -97,10 +72,10 @@ export function Activities() {
           type: e.type,
           title: e.title
         }));
-        setCalendarEvents([...meetings, ...realEvents] as any);
+        setCalendarEvents(realEvents as any);
       } catch (e) {
         console.error(e);
-        setCalendarEvents(meetings as any);
+        setCalendarEvents([]);
       }
     };
 

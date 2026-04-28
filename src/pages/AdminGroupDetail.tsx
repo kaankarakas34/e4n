@@ -329,7 +329,7 @@ export function AdminGroupDetail() {
 
                 {/* Tabs */}
                 <div className="flex space-x-4 border-b border-gray-200 mb-6 overflow-x-auto">
-                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'REFERRALS', 'MEETINGS', ...(isPowerTeam ? ['SYNERGY'] : [])].map((tab) => (
+                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'REFERRALS', ...(isPowerTeam ? ['SYNERGY'] : [])].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -340,9 +340,7 @@ export function AdminGroupDetail() {
                         >
                             {tab === 'OVERVIEW' ? 'Genel Bakış' :
                                 tab === 'ATTENDANCE' ? 'Yoklama' :
-                                    tab === 'VISITORS' ? 'Ziyaretçiler' :
-                                        tab === 'REFERRALS' ? 'Yönlendirmeler' :
-                                            tab === 'MEETINGS' ? 'Toplantılar' : 'Sinerji Analizi'}
+                                    tab === 'VISITORS' ? 'Ziyaretçiler' : 'Yönlendirmeler'}
                         </button>
                     ))}
                 </div>
@@ -956,123 +954,7 @@ export function AdminGroupDetail() {
                     </Card>
                 )}
 
-                {/* MEETINGS TAB */}
-                {(activeTab === 'MEETINGS') && (
-                    <Card>
-                        <CardHeader className="flex items-center justify-between">
-                            <CardTitle>Geçmiş Toplantılar ve Raporlar</CardTitle>
-                            <Button size="sm" onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Yeni Yoklama / Rapor
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {(meetings && meetings.length > 0) ? (
-                                <div className="space-y-4">
-                                    {meetings.map((meeting: any) => (
-                                        <div key={meeting.id} className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
-                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer"
-                                                onClick={async (e) => {
-                                                    // Toggle details logic could be state based. For simplicity using a simple alert or ideally expanding.
-                                                    // Let's implement expansion state properly.
-                                                    const current = (data as any).expandedMeeting === meeting.id ? null : meeting.id;
-                                                    setData({ ...data, expandedMeeting: current });
-                                                    if (current) {
-                                                        const att = await api.getMeetingAttendance(current);
-                                                        setData((d: any) => ({ ...d, expandedMeetingData: att, expandedMeeting: current }));
-                                                    }
-                                                }}
-                                            >
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="bg-indigo-100 p-2 rounded-lg text-indigo-700">
-                                                        <Calendar className="h-6 w-6" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-gray-900">{meeting.topic}</h4>
-                                                        <p className="text-sm text-gray-500">{new Date(meeting.date).toLocaleDateString()}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-4 md:mt-0 flex items-center space-x-6 text-sm">
-                                                    <div className="text-center">
-                                                        <p className="text-gray-500">Katılım</p>
-                                                        <span className="font-bold text-gray-900">{meeting.attendees_count} / {meeting.total_members}</span>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-gray-500">Ortam</p>
-                                                        <span className="font-bold text-green-600">{meeting.report?.rating || '-'}/10</span>
-                                                    </div>
-                                                    <Button variant="ghost" size="sm">
-                                                        {(data as any).expandedMeeting === meeting.id ? 'Gizle' : 'Detaylar'}
-                                                    </Button>
-                                                </div>
-                                            </div>
 
-                                            {/* EXPANDED DETAILS */}
-                                            {(data as any).expandedMeeting === meeting.id && (
-                                                <div className="mt-4 pt-4 border-t grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
-                                                    {/* LEFT: REPORT INFO */}
-                                                    <div>
-                                                        <h5 className="font-bold text-gray-900 mb-3 flex items-center">
-                                                            <Layers className="h-4 w-4 mr-2 text-indigo-500" /> Toplantı Raporu
-                                                        </h5>
-                                                        <div className="bg-gray-50 p-4 rounded-md space-y-3 text-sm">
-                                                            <div>
-                                                                <span className="font-medium text-gray-700">En İyi Networker:</span>
-                                                                <span className="ml-2 text-gray-900">{meeting.report?.best_networker || '-'}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="font-medium text-gray-700">Yönetici Notu:</span>
-                                                                <p className="mt-1 text-gray-600 italic">"{meeting.report?.notes || 'Not girilmemiş.'}"</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* RIGHT: ATTENDANCE LIST */}
-                                                    <div>
-                                                        <h5 className="font-bold text-gray-900 mb-3 flex items-center">
-                                                            <Users className="h-4 w-4 mr-2 text-indigo-500" /> Katılım Listesi
-                                                        </h5>
-                                                        <div className="bg-white border rounded-md max-h-40 overflow-y-auto">
-                                                            {(data as any).expandedMeetingData ? (
-                                                                <table className="min-w-full text-sm">
-                                                                    <thead className="bg-gray-50 sticky top-0">
-                                                                        <tr>
-                                                                            <th className="px-4 py-2 text-left">Üye</th>
-                                                                            <th className="px-4 py-2 text-right">Durum</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {(data as any).expandedMeetingData.map((att: any, i: number) => (
-                                                                            <tr key={i} className="border-t">
-                                                                                <td className="px-4 py-2 text-gray-900">{att.member_name}</td>
-                                                                                <td className="px-4 py-2 text-right">
-                                                                                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${att.status === 'PRESENT' ? 'bg-green-100 text-green-800' :
-                                                                                        att.status === 'EXCUSED' ? 'bg-yellow-100 text-yellow-800' :
-                                                                                            'bg-red-100 text-red-800'
-                                                                                        }`}>
-                                                                                        {att.status === 'PRESENT' ? 'Var' : att.status === 'EXCUSED' ? 'İzinli/Yedek' : 'Yok'}
-                                                                                    </span>
-                                                                                </td>
-                                                                            </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
-                                                            ) : (
-                                                                <div className="p-4 text-center text-gray-500">Yükleniyor...</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-gray-500">Kayıt bulunamadı.</div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
                 {/* Assign Role Modal */}
                 {assignModalOpen && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">

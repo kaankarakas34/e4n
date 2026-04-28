@@ -18,7 +18,7 @@ export function AdminGroupDetail() {
     const [visitors, setVisitors] = useState<any[]>([]);
     const [referrals, setReferrals] = useState<any[]>([]);
     const [synergy, setSynergy] = useState<any[]>([]);
-    const [showReportModal, setShowReportModal] = useState(false);
+
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '', meeting_dates: [] as string[] });
 
@@ -166,12 +166,7 @@ export function AdminGroupDetail() {
                         </div>
                     </div>
                     <div className="flex space-x-2">
-                        {(activeTab === 'MEETINGS' || activeTab === 'OVERVIEW') && (
-                            <Button variant="outline" className="border-indigo-600 text-indigo-600 hover:bg-indigo-50" onClick={() => setShowReportModal(true)}>
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Toplantı Raporu Gir
-                            </Button>
-                        )}
+
                         <Button variant="outline"
                             className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                             onClick={async () => {
@@ -328,43 +323,7 @@ export function AdminGroupDetail() {
                     </div>
                 )}
 
-                {/* Report Modal */}
-                {showReportModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                            <h2 className="text-xl font-bold mb-4">Haftalık Toplantı Raporu</h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Toplantı Tarihi</label>
-                                    <input type="date" className="mt-1 block w-full border rounded-md p-2" defaultValue={new Date().toISOString().split('T')[0]} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">En İyi Networker</label>
-                                    <select className="mt-1 block w-full border rounded-md p-2">
-                                        <option value="">Seçiniz...</option>
-                                        {members.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Ortam Puanı (1-10)</label>
-                                    <input type="number" min="1" max="10" className="mt-1 block w-full border rounded-md p-2" defaultValue="8" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Yönetici Notları</label>
-                                    <textarea className="mt-1 block w-full border rounded-md p-2" rows={3} placeholder="Toplantı akışı, önemli duyurular vb."></textarea>
-                                </div>
-                            </div>
-                            <div className="mt-6 flex justify-end space-x-3">
-                                <Button variant="ghost" onClick={() => setShowReportModal(false)}>İptal</Button>
-                                <Button variant="primary" onClick={() => {
-                                    api.submitMeetingReport({ group_id: id, date: new Date().toISOString() });
-                                    setShowReportModal(false);
-                                    alert('Rapor başarıyla kaydedildi!');
-                                }}>Raporu Kaydet</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+
 
                 {/* Tabs */}
                 <div className="flex space-x-4 border-b border-gray-200 mb-6 overflow-x-auto">

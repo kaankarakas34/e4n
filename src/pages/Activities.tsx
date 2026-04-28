@@ -193,16 +193,9 @@ export function Activities() {
                 <TasksCard />
               </div>
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>İşlem Geçmişi</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="max-h-[600px] overflow-y-auto">
-                      <ActivitySummary />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="max-h-[800px] overflow-y-auto">
+                  <ActivitySummary />
+                </div>
               </div>
             </div>
           </div>

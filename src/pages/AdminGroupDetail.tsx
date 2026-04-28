@@ -101,11 +101,7 @@ export function AdminGroupDetail() {
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
     if (!user) return <div className="p-8">Giriş Yapılmalı</div>;
 
-    const allowedRoles = ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'];
-
-    if (!allowedRoles.includes(user.role)) {
-        return <div className="p-8">Erişim Kısıtlı</div>;
-    }
+    const isAdminView = user && ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'].includes(user.role);
 
     if (loading) {
         return <div className="p-8">Yükleniyor...</div>;
@@ -406,6 +402,50 @@ export function AdminGroupDetail() {
                             </Card>
                         </div>
 
+                        {/* Grup Bilgileri Kartı */}
+                        <Card className="mb-8 border-gray-200">
+                            <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+                                <CardTitle className="flex items-center text-gray-900">
+                                    <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
+                                    {typeLabel} Bilgileri
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Toplantı Zamanı</h4>
+                                            <p className="mt-1 text-base text-gray-900 font-medium">
+                                                {data.meeting_day ? 
+                                                    ({
+                                                        'Monday': 'Pazartesi', 'Tuesday': 'Salı', 'Wednesday': 'Çarşamba',
+                                                        'Thursday': 'Perşembe', 'Friday': 'Cuma', 'Saturday': 'Cumartesi', 'Sunday': 'Pazar'
+                                                    } as any)[data.meeting_day] || data.meeting_day 
+                                                : 'Belirtilmemiş'} 
+                                                {data.meeting_time ? ` - ${data.meeting_time}` : ''}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Toplantı Bağlantısı / Yeri</h4>
+                                            {data.meeting_link ? (
+                                                <a href={data.meeting_link.startsWith('http') ? data.meeting_link : `https://${data.meeting_link}`} target="_blank" rel="noreferrer" className="mt-1 text-base text-indigo-600 hover:text-indigo-800 font-medium break-all block">
+                                                    {data.meeting_link}
+                                                </a>
+                                            ) : (
+                                                <p className="mt-1 text-base text-gray-900">Belirtilmemiş</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Açıklama</h4>
+                                        <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-md border border-gray-100 min-h-[80px]">
+                                            {data.description || 'Açıklama bulunmuyor.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
                         <Card className="mb-8 border-indigo-200 bg-indigo-50/30">
                             <CardHeader className="border-b border-indigo-100 flex flex-row items-center justify-between">
                                 <CardTitle className="flex items-center text-indigo-900">
@@ -590,10 +630,12 @@ export function AdminGroupDetail() {
                     <Card>
                         <CardHeader className="flex items-center justify-between">
                             <CardTitle>Toplantı Geçmişi</CardTitle>
-                            <Button size="sm" onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Yeni Yoklama
-                            </Button>
+                            {isAdminView && (
+                                <Button size="sm" onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    Yeni Yoklama
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             {loading ? (
@@ -773,7 +815,7 @@ export function AdminGroupDetail() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        {visitor.status !== 'CONVERTED' && (
+                                                        {isAdminView && visitor.status !== 'CONVERTED' && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"

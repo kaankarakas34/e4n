@@ -172,13 +172,11 @@ export function ChapterManagement() {
                     ) : uniqueMyGroups.map(g => (
                       <li key={g.id} className="flex items-center justify-between p-3 border rounded-md">
                         <span className="text-sm text-gray-900">{g.name}</span>
-                        <div className="flex space-x-2">
+                        <div className="flex items-center space-x-3">
                           <span className="text-xs text-gray-500 flex items-center">Aktif Üyelik</span>
-                          {['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '') && (
-                            <Button size="sm" variant="outline" onClick={() => navigate(`/admin/groups/${g.id}`)}>
-                              Yönet
-                            </Button>
-                          )}
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/admin/groups/${g.id}`)}>
+                            {['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '') ? 'Yönet' : 'Grup Detayı'}
+                          </Button>
                         </div>
                       </li>
                     ))}
@@ -197,7 +195,12 @@ export function ChapterManagement() {
                     ) : myPowerTeams.map(pt => (
                       <li key={pt.id} className="flex items-center justify-between p-3 border rounded-md">
                         <span className="text-sm text-gray-900">{pt.name}</span>
-                        <span className="text-xs text-gray-500">Aktif Üyelik</span>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xs text-gray-500 flex items-center">Aktif Üyelik</span>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/admin/power-teams/${pt.id}`)}>
+                            {['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN'].includes(user?.role || '') ? 'Yönet' : 'Lonca Detayı'}
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>

@@ -101,12 +101,6 @@ export function GroupDetail() {
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
     if (!user) return <div className="p-8">Giriş Yapılmalı</div>;
 
-    const allowedRoles = ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'];
-
-    if (!allowedRoles.includes(user.role)) {
-        return <div className="p-8">Erişim Kısıtlı</div>;
-    }
-
     const isAdminView = false;
 
     if (loading) {
@@ -167,44 +161,46 @@ export function GroupDetail() {
                             )}
                         </div>
                     </div>
-                    <div className="flex space-x-2">
 
-                        <Button variant="outline"
-                            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                            onClick={async () => {
-                                if (members.length > 0) {
-                                    alert('HATA: İçinde aktif üye bulunan bir grubu silemezsiniz. Lütfen önce üyeleri çıkarın veya taşıyın.');
-                                    return;
-                                }
-                                if (confirm(`"${data.name}" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!`)) {
-                                    try {
-                                        if (isPowerTeam) {
-                                            await api.deletePowerTeam(data.id);
-                                        } else {
-                                            await api.deleteGroup(data.id);
-                                        }
-                                        alert('Grup başarıyla silindi.');
-                                        navigate('/chapter-management');
-                                    } catch (e: any) {
-                                        alert('Silme işlemi başarısız: ' + e.message);
+                    {isAdminView && (
+                        <div className="flex space-x-2">
+                            <Button variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                                onClick={async () => {
+                                    if (members.length > 0) {
+                                        alert('HATA: İçinde aktif üye bulunan bir grubu silemezsiniz. Lütfen önce üyeleri çıkarın veya taşıyın.');
+                                        return;
                                     }
-                                }
-                            }}
-                        >
-                            {typeLabel} Sil
-                        </Button>
-                        <Button variant="primary" onClick={() => {
-                            setEditForm({
-                                name: data.name || '',
-                                meeting_day: data.meeting_day || '',
-                                meeting_time: data.meeting_time || '',
-                                meeting_link: data.meeting_link || '',
-                                description: data.description || '',
-                                meeting_dates: data.meeting_dates || []
-                            });
-                            setShowEditModal(true);
-                        }}>{typeLabel} Düzenle</Button>
-                    </div>
+                                    if (confirm(`"${data.name}" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!`)) {
+                                        try {
+                                            if (isPowerTeam) {
+                                                await api.deletePowerTeam(data.id);
+                                            } else {
+                                                await api.deleteGroup(data.id);
+                                            }
+                                            alert('Grup başarıyla silindi.');
+                                            navigate('/chapter-management');
+                                        } catch (e: any) {
+                                            alert('Silme işlemi başarısız: ' + e.message);
+                                        }
+                                    }
+                                }}
+                            >
+                                {typeLabel} Sil
+                            </Button>
+                            <Button variant="primary" onClick={() => {
+                                setEditForm({
+                                    name: data.name || '',
+                                    meeting_day: data.meeting_day || '',
+                                    meeting_time: data.meeting_time || '',
+                                    meeting_link: data.meeting_link || '',
+                                    description: data.description || '',
+                                    meeting_dates: data.meeting_dates || []
+                                });
+                                setShowEditModal(true);
+                            }}>{typeLabel} Düzenle</Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Edit Modal */}

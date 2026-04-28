@@ -685,12 +685,14 @@ export function GroupDetail() {
                                     <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">Yoklama Kaydı Yok</h3>
                                     <p className="mt-1 text-sm text-gray-500">Henüz bu grup için bir yoklama kaydı oluşturulmadı.</p>
-                                    <div className="mt-6">
-                                        <Button onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            Yeni Yoklama Başlat
-                                        </Button>
-                                    </div>
+                                    {isAdminView && (
+                                        <div className="mt-6">
+                                            <Button onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
+                                                <Calendar className="h-4 w-4 mr-2" />
+                                                Yeni Yoklama Başlat
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </CardContent>
@@ -698,7 +700,7 @@ export function GroupDetail() {
                 )}
 
                 {/* TAKE ATTENDANCE VIEW */}
-                {(activeTab as any) === 'TAKE_ATTENDANCE' && (
+                {(activeTab as any) === 'TAKE_ATTENDANCE' && isAdminView && (
                     <Card>
                         <CardHeader className="flex items-center justify-between">
                             <div>

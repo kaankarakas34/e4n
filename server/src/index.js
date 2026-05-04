@@ -2094,11 +2094,38 @@ app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
-  const { status } = req.body;
+  const { status, group_id } = req.body;
+  const { id } = req.params;
+
+  const client = await pool.connect();
   try {
-    await pool.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, req.params.id]);
+    await client.query('BEGIN');
+
+    // 1. Update public_visitors status
+    await client.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, id]);
+
+    // 2. If it's a conversion to a group, create a record in the visitors table
+    if (status === 'CONVERTED' && group_id) {
+      // Get visitor details first
+      const { rows } = await client.query('SELECT * FROM public_visitors WHERE id = $1', [id]);
+      if (rows.length > 0) {
+        const v = rows[0];
+        await client.query(
+          `INSERT INTO visitors (name, email, phone, company, profession, group_id, inviter_id, status, visited_at) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'ATTENDED', NOW())`,
+          [v.name, v.email, v.phone, v.company, v.profession, group_id, v.inviter_id || null]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 
@@ -2382,12 +2409,11 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT v.*, u.name as inviter_name 
        FROM visitors v 
-       JOIN users u ON v.inviter_id = u.id 
+       LEFT JOIN users u ON v.inviter_id = u.id 
        WHERE v.group_id = $1 
        ORDER BY v.visited_at DESC`,
       [req.params.id]
     );
-    // If group_id not set on visitor, maybe check inviter's group? Default setup assumes group_id on visitor
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

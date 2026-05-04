@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
-import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar } from 'lucide-react';
+import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock } from 'lucide-react';
 
 export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();
@@ -26,6 +26,8 @@ export function AdminGroupDetail() {
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [targetRoleDef, setTargetRoleDef] = useState<any>(null);
     const [currentAssignee, setCurrentAssignee] = useState<any>(null);
+    const [attendanceSelectorModalOpen, setAttendanceSelectorModalOpen] = useState(false);
+    const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>('');
 
     const [loading, setLoading] = useState(true);
 
@@ -647,7 +649,14 @@ export function AdminGroupDetail() {
                         <CardHeader className="flex items-center justify-between">
                             <CardTitle>Toplantı Geçmişi</CardTitle>
                             {isAdminView && (
-                                <Button size="sm" onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
+                                <Button size="sm" onClick={() => {
+                                    if (data?.meeting_dates && data.meeting_dates.length > 0) {
+                                        setAttendanceSelectorModalOpen(true);
+                                    } else {
+                                        setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
+                                        setActiveTab('TAKE_ATTENDANCE' as any);
+                                    }
+                                }}>
                                     <Calendar className="h-4 w-4 mr-2" />
                                     Yeni Yoklama
                                 </Button>
@@ -702,7 +711,14 @@ export function AdminGroupDetail() {
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">Yoklama Kaydı Yok</h3>
                                     <p className="mt-1 text-sm text-gray-500">Henüz bu grup için bir yoklama kaydı oluşturulmadı.</p>
                                     <div className="mt-6">
-                                        <Button onClick={() => setActiveTab('TAKE_ATTENDANCE' as any)}>
+                                        <Button onClick={() => {
+                                            if (data?.meeting_dates && data.meeting_dates.length > 0) {
+                                                setAttendanceSelectorModalOpen(true);
+                                            } else {
+                                                setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
+                                                setActiveTab('TAKE_ATTENDANCE' as any);
+                                            }
+                                        }}>
                                             <Calendar className="h-4 w-4 mr-2" />
                                             Yeni Yoklama Başlat
                                         </Button>
@@ -719,7 +735,7 @@ export function AdminGroupDetail() {
                         <CardHeader className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Yeni Yoklama Al</CardTitle>
-                                <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString()} Tarihli Toplantı</p>
+                                <p className="text-sm text-gray-500 mt-1">{selectedAttendanceDate ? new Date(selectedAttendanceDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString()} Tarihli Toplantı</p>
                             </div>
                             <Button variant="ghost" onClick={() => setActiveTab('ATTENDANCE')}>İptal</Button>
                         </CardHeader>
@@ -766,7 +782,7 @@ export function AdminGroupDetail() {
                                     const newMeeting = {
                                         id: Math.random().toString(),
                                         group_id: id,
-                                        date: new Date().toISOString(),
+                                        date: selectedAttendanceDate || new Date().toISOString(),
                                         topic: 'Haftalık Toplantı',
                                         attendees_count: members.length, // Mock all present
                                         total_members: members.length
@@ -779,6 +795,54 @@ export function AdminGroupDetail() {
                             </div>
                         </CardContent>
                     </Card>
+                )}
+
+                {/* Attendance Date Selector Modal */}
+                {attendanceSelectorModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                Toplantı Seçin
+                            </h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Yoklamasını almak istediğiniz toplantı tarihini seçiniz.
+                            </p>
+
+                            <div className="space-y-3 max-h-60 overflow-y-auto mb-6">
+                                {data?.meeting_dates?.map((d: string) => (
+                                    <button
+                                        key={d}
+                                        onClick={() => {
+                                            setSelectedAttendanceDate(d);
+                                            setAttendanceSelectorModalOpen(false);
+                                            setActiveTab('TAKE_ATTENDANCE' as any);
+                                        }}
+                                        className="w-full text-left p-3 rounded-md border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-colors flex items-center justify-between group"
+                                    >
+                                        <span className="font-medium text-gray-900">
+                                            {new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}
+                                        </span>
+                                        <Calendar className="h-4 w-4 text-gray-400 group-hover:text-indigo-600" />
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => {
+                                        setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
+                                        setAttendanceSelectorModalOpen(false);
+                                        setActiveTab('TAKE_ATTENDANCE' as any);
+                                    }}
+                                    className="w-full text-left p-3 rounded-md border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-gray-50 transition-colors flex items-center justify-between text-gray-500"
+                                >
+                                    <span>Bugünün Tarihi ({new Date().toLocaleDateString('tr-TR')})</span>
+                                    <Clock className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button variant="ghost" onClick={() => setAttendanceSelectorModalOpen(false)}>İptal</Button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* VISITORS TAB */}

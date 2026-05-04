@@ -39,6 +39,10 @@ export function AdminVisitors() {
     const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'visitors' | 'members'>('visitors');
+    const [groups, setGroups] = useState<any[]>([]);
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+    const [selectedVisitorForGroup, setSelectedVisitorForGroup] = useState<PublicVisitor | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -47,12 +51,14 @@ export function AdminVisitors() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [visitorsData, membersData] = await Promise.all([
+            const [visitorsData, membersData, groupsData] = await Promise.all([
                 api.getPublicVisitors(),
-                api.getMembers()
+                api.getMembers(),
+                api.getGroups()
             ]);
 
             setVisitors(visitorsData || []);
+            setGroups(groupsData || []);
 
             if (Array.isArray(membersData)) {
                 // Filter only PENDING members for this view
@@ -65,12 +71,48 @@ export function AdminVisitors() {
         }
     };
 
-    const handleVisitorStatusChange = async (id: string, newStatus: string) => {
+    const handleVisitorStatusChange = async (id: string, newStatus: string, groupId?: string) => {
         try {
-            await api.updatePublicVisitorStatus(id, newStatus);
+            if (newStatus === 'REJECTED') {
+                await api.deletePublicVisitor(id);
+                setVisitors(visitors.filter(v => v.id !== id));
+                return;
+            }
+
+            if (groupId) {
+                await api.updatePublicVisitorStatus(id, newStatus, groupId);
+            } else {
+                await api.updatePublicVisitorStatus(id, newStatus);
+            }
             setVisitors(visitors.map(v => v.id === id ? { ...v, status: newStatus as any } : v));
         } catch (error) {
-            console.error('Statü güncellenirken hata:', error);
+            console.error('İşlem sırasında hata:', error);
+        }
+    };
+
+    const confirmVisitorApprove = async () => {
+        if (!selectedVisitorForGroup || !selectedGroupId) return;
+        try {
+            // Update backend
+            // Note: api.updatePublicVisitorStatus needs to accept group_id. We'll adjust the payload below if needed, or pass it.
+            // Our backend accepts { status, group_id } in req.body.
+            // Wait, api.ts only sends `{ status }`. Let's update api.ts later or use a custom fetch here.
+            // Let's use custom fetch for now or update api.ts.
+            const token = JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
+            await fetch(`${import.meta.env.PROD ? '/api' : 'http://localhost:4005/api'}/admin/public-visitors/${selectedVisitorForGroup.id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+                body: JSON.stringify({ status: 'CONVERTED', group_id: selectedGroupId })
+            });
+
+            setVisitors(visitors.map(v => v.id === selectedVisitorForGroup.id ? { ...v, status: 'CONVERTED' } : v));
+            setIsGroupModalOpen(false);
+            setSelectedVisitorForGroup(null);
+            setSelectedGroupId('');
+            alert('Ziyaretçi başarıyla gruba atandı ve onaylandı.');
+        } catch (error) {
+            console.error('Onay hatası:', error);
+            alert('İşlem sırasında bir hata oluştu.');
         }
     };
 
@@ -242,16 +284,27 @@ export function AdminVisitors() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     {activeTab === 'visitors' ? (
-                                                        <select
-                                                            value={item.status}
-                                                            onChange={(e) => handleVisitorStatusChange(item.id, e.target.value)}
-                                                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
-                                                        >
-                                                            <option value="PENDING">Bekliyor</option>
-                                                            <option value="CONTACTED">İletişime Geçildi</option>
-                                                            <option value="CONVERTED">Üye Oldu</option>
-                                                            <option value="REJECTED">Reddedildi</option>
-                                                        </select>
+                                                        <div className="flex space-x-2">
+                                                            {item.status !== 'CONVERTED' ? (
+                                                                <>
+                                                                    <Button size="sm" onClick={() => {
+                                                                        setSelectedVisitorForGroup(item);
+                                                                        setIsGroupModalOpen(true);
+                                                                    }} className="bg-green-600 hover:bg-green-700 text-white">
+                                                                        <CheckCircle className="w-4 h-4 mr-1" /> Onayla
+                                                                    </Button>
+                                                                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => {
+                                                                        if (confirm('Ziyaretçi başvurusunu reddetmek ve SİLMEK istediğinize emin misiniz?')) {
+                                                                            handleVisitorStatusChange(item.id, 'REJECTED');
+                                                                        }
+                                                                    }}>
+                                                                        <XCircle className="w-4 h-4 mr-1" /> Reddet
+                                                                    </Button>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-green-600 text-xs font-medium bg-green-50 px-2 py-1 rounded">Gruba Eklendi</span>
+                                                            )}
+                                                        </div>
                                                     ) : (
                                                         <div className="flex space-x-2">
                                                             <Button size="sm" onClick={() => handleApproveMember(item)} className="bg-green-600 hover:bg-green-700 text-white">
@@ -340,6 +393,44 @@ export function AdminVisitors() {
                             <Button variant="outline" onClick={() => setSelectedApplication(null)}>Kapat</Button>
                             <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleApproveMember(selectedApplication); setSelectedApplication(null); }}>
                                 <CheckCircle className="w-4 h-4 mr-2" /> Başvuruyu Onayla
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Group Assignment Modal for Visitors */}
+            {isGroupModalOpen && selectedVisitorForGroup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <h2 className="text-xl font-bold text-gray-900">Gruba Ata ve Onayla</h2>
+                            <button onClick={() => { setIsGroupModalOpen(false); setSelectedVisitorForGroup(null); }} className="text-gray-400 hover:text-gray-500">
+                                <span className="sr-only">Kapat</span>
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <p className="text-sm text-gray-500">
+                                <strong>{selectedVisitorForGroup.name}</strong> isimli ziyaretçi için hangi gruba atama yapmak istiyorsunuz?
+                            </p>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Grup Seçin</label>
+                                <select
+                                    value={selectedGroupId}
+                                    onChange={(e) => setSelectedGroupId(e.target.value)}
+                                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
+                                >
+                                    <option value="">-- Grup Seçiniz --</option>
+                                    {groups.filter(g => g.status === 'ACTIVE').map(g => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end space-x-3">
+                            <Button variant="outline" onClick={() => { setIsGroupModalOpen(false); setSelectedVisitorForGroup(null); }}>İptal</Button>
+                            <Button className="bg-green-600 hover:bg-green-700 text-white" disabled={!selectedGroupId} onClick={confirmVisitorApprove}>
+                                <CheckCircle className="w-4 h-4 mr-2" /> Onayla ve Ata
                             </Button>
                         </div>
                     </div>

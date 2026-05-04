@@ -564,8 +564,11 @@ export const api = {
   async getPublicVisitors() {
     return await request('/admin/public-visitors');
   },
-  async updatePublicVisitorStatus(id: string, status: string) {
-    return await request(`/admin/public-visitors/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+  async updatePublicVisitorStatus(id: string, status: string, groupId?: string) {
+    return await request(`/admin/public-visitors/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, group_id: groupId }) });
+  },
+  async deletePublicVisitor(id: string) {
+    return await request(`/admin/public-visitors/${id}`, { method: 'DELETE' });
   },
   async getFriendRequests(userId: string) { // Incoming
     return await request('/user/friends/requests?type=incoming');

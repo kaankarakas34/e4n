@@ -291,9 +291,20 @@ router.get('/public-visitors', async (req, res) => {
 });
 
 router.put('/public-visitors/:id/status', async (req, res) => {
-    const { status } = req.body;
+    const { status, group_id } = req.body;
     try {
-        await pool.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, req.params.id]);
+        if (group_id) {
+            await pool.query('UPDATE public_visitors SET status = $1, group_id = $2 WHERE id = $3', [status, group_id, req.params.id]);
+        } else {
+            await pool.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, req.params.id]);
+        }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/public-visitors/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM public_visitors WHERE id = $1', [req.params.id]);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

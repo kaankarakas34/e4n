@@ -8,10 +8,9 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(`
-        SELECT g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at, count(gm.id):: int as member_count 
-        FROM groups g 
-        LEFT JOIN group_members gm ON g.id = gm.group_id
-        GROUP BY g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at
+        SELECT g.*, 
+          (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = g.id) as member_count
+        FROM groups g
         ORDER BY g.name ASC
       `);
         // Ensure meeting_dates is an array if it comes as a string or is null
@@ -42,11 +41,10 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT g.*, count(gm.id)::int as member_count
+            `SELECT g.*, 
+             (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = g.id) as member_count
              FROM groups g
-             LEFT JOIN group_members gm ON g.id = gm.group_id
-             WHERE g.id = $1
-             GROUP BY g.id`,
+             WHERE g.id = $1`,
             [req.params.id]
         );
         if (!rows[0]) return res.status(404).json({ error: 'Grup bulunamadı' });

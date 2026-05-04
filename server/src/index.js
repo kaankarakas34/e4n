@@ -1721,15 +1721,37 @@ app.get('/api/user/power-teams', authenticateToken, async (req, res) => {
 // Groups & Members
 app.get('/api/groups', authenticateToken, async (req, res) => {
   try {
-    // Optimized Group List: JOIN instead of dependent subquery
     const { rows } = await pool.query(`
-        SELECT g.*, count(gm.id):: int as member_count 
-        FROM groups g 
-        LEFT JOIN group_members gm ON g.id = gm.group_id
-        GROUP BY g.id
+        SELECT g.*, 
+          (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = g.id) as member_count
+        FROM groups g
         ORDER BY g.name ASC
       `);
-    res.json(rows);
+    // Ensure meeting_dates is an array if it comes as a string or is null
+    const processedRows = rows.map(row => ({
+      ...row,
+      meeting_dates: Array.isArray(row.meeting_dates) ? row.meeting_dates :
+        (typeof row.meeting_dates === 'string' ? JSON.parse(row.meeting_dates) : [])
+    }));
+    res.json(processedRows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get Single Group by ID
+app.get('/api/groups/:id', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT g.*, 
+             (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = g.id) as member_count
+             FROM groups g
+             WHERE g.id = $1`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Grup bulunamadı' });
+    const group = rows[0];
+    group.meeting_dates = Array.isArray(group.meeting_dates) ? group.meeting_dates :
+      (typeof group.meeting_dates === 'string' ? JSON.parse(group.meeting_dates) : []);
+    res.json(group);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2233,12 +2255,12 @@ app.delete('/api/admin/email-config/:id', authenticateToken, async (req, res) =>
 // Create Group
 app.post('/api/groups', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
+  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status) 
-       VALUES ($1, $2::varchar, $3, $4, $5::varchar) RETURNING *`,
-      [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE']
+      `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status, meeting_dates) 
+       VALUES ($1, $2::varchar, $3, $4, $5::varchar, $6::jsonb) RETURNING *`,
+      [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', JSON.stringify(meeting_dates || [])]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2247,12 +2269,12 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
 // Update Group
 app.put('/api/groups/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, meeting_day, meeting_time, meeting_link, status } = req.body;
+  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar 
-       WHERE id = $6 RETURNING *`,
-      [name, meeting_day, meeting_time, meeting_link, status, req.params.id]
+      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar, meeting_dates = $6::jsonb 
+       WHERE id = $7 RETURNING *`,
+      [name, meeting_day, meeting_time, meeting_link, status, JSON.stringify(meeting_dates || []), req.params.id]
     );
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }

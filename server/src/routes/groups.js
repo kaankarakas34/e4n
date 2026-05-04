@@ -8,10 +8,10 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(`
-        SELECT g.*, count(gm.id):: int as member_count 
+        SELECT g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at, count(gm.id):: int as member_count 
         FROM groups g 
         LEFT JOIN group_members gm ON g.id = gm.group_id
-        GROUP BY g.id
+        GROUP BY g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at
         ORDER BY g.name ASC
       `);
         // Ensure meeting_dates is an array if it comes as a string or is null
@@ -31,8 +31,8 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
             `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status, meeting_dates) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', Array.isArray(meeting_dates) ? JSON.stringify(meeting_dates) : (meeting_dates || '[]')]
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING *`,
+            [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', JSON.stringify(meeting_dates || [])]
         );
         res.status(201).json(rows[0]);
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -66,9 +66,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
         const oldDates = oldGroup.rows[0]?.meeting_dates || [];
 
         const { rows } = await pool.query(
-            `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5, meeting_dates = $6 
+            `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5, meeting_dates = $6::jsonb 
        WHERE id = $7 RETURNING *`,
-            [name, meeting_day, meeting_time, meeting_link, status, Array.isArray(meeting_dates) ? JSON.stringify(meeting_dates) : (meeting_dates || '[]'), req.params.id]
+            [name, meeting_day, meeting_time, meeting_link, status, JSON.stringify(meeting_dates || []), req.params.id]
         );
         
         // Check if meeting dates actually changed and trigger notification

@@ -421,7 +421,7 @@ export function AdminVisitors() {
                                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md"
                                 >
                                     <option value="">-- Grup Seçiniz --</option>
-                                    {groups.filter(g => g.status === 'ACTIVE').map(g => (
+                                    {groups.filter(g => !g.status || g.status.toUpperCase() === 'ACTIVE').map(g => (
                                         <option key={g.id} value={g.id}>{g.name}</option>
                                     ))}
                                 </select>

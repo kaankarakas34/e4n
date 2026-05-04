@@ -42,12 +42,11 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at,
-             count(gm.id)::int as member_count
+            `SELECT g.*, count(gm.id)::int as member_count
              FROM groups g
              LEFT JOIN group_members gm ON g.id = gm.group_id
              WHERE g.id = $1
-             GROUP BY g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at`,
+             GROUP BY g.id`,
             [req.params.id]
         );
         if (!rows[0]) return res.status(404).json({ error: 'Grup bulunamadı' });

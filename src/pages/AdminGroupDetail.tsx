@@ -202,7 +202,7 @@ export function AdminGroupDetail() {
                                 meeting_time: data.meeting_time || '',
                                 meeting_link: data.meeting_link || '',
                                 description: data.description || '',
-                                meeting_dates: data.meeting_dates || []
+                                meeting_dates: Array.isArray(data.meeting_dates) ? data.meeting_dates : []
                             });
                             setShowEditModal(true);
                         }}>{typeLabel} Düzenle</Button>

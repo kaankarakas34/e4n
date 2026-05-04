@@ -141,6 +141,11 @@ pool.connect().then(async (client) => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(50)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reminder_trigger INTEGER");
 
+    // Fix groups table meeting_day column type mismatch (CRITICAL FIX)
+    console.log('🔄 Checking meeting_day column type...');
+    await client.query("ALTER TABLE groups ALTER COLUMN meeting_day TYPE VARCHAR(255) USING meeting_day::varchar");
+    console.log('✅ meeting_day column is VARCHAR');
+
     // Event Updates
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");

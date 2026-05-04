@@ -29,6 +29,7 @@ export const runMigrations = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
+    await client.query("ALTER TABLE groups ALTER COLUMN meeting_day TYPE VARCHAR(255) USING meeting_day::varchar");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS group_members (

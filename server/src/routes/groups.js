@@ -25,7 +25,7 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
             `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status, meeting_dates) 
-       VALUES ($1, $2::varchar, $3, $4, $5::varchar, $6::jsonb) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING *`,
             [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', meeting_dates ? JSON.stringify(meeting_dates) : '[]']
         );
         res.status(201).json(rows[0]);
@@ -60,7 +60,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         const oldDates = oldGroup.rows[0]?.meeting_dates || [];
 
         const { rows } = await pool.query(
-            `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar, meeting_dates = $6::jsonb 
+            `UPDATE groups SET name = $1, meeting_day = $2, meeting_time = $3, meeting_link = $4, status = $5, meeting_dates = $6::jsonb 
        WHERE id = $7 RETURNING *`,
             [name, meeting_day, meeting_time, meeting_link, status, meeting_dates ? JSON.stringify(meeting_dates) : '[]', req.params.id]
         );
@@ -196,11 +196,16 @@ router.get('/:id/activities', authenticateToken, async (req, res) => {
 router.get('/:id/visitors', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT v.*, u.name as inviter_name 
-         FROM visitors v 
-         JOIN users u ON v.inviter_id = u.id 
-         WHERE v.group_id = $1 
-         ORDER BY v.visited_at DESC`,
+            `SELECT v.id, v.name, v.profession, v.phone, v.email, v.visited_at, v.status, u.name as inviter_name, v.group_id, NULL as company
+             FROM visitors v 
+             LEFT JOIN users u ON v.inviter_id = u.id 
+             WHERE v.group_id = $1 
+             UNION ALL
+             SELECT pv.id, pv.name, pv.profession, pv.phone, pv.email, pv.created_at as visited_at, pv.status, u.name as inviter_name, pv.group_id, pv.company
+             FROM public_visitors pv
+             LEFT JOIN users u ON pv.inviter_id = u.id
+             WHERE pv.group_id = $1 AND pv.status = 'CONVERTED'
+             ORDER BY visited_at DESC`,
             [req.params.id]
         );
         res.json(rows);

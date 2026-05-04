@@ -200,6 +200,9 @@ export const api = {
   async getGroups() {
     return await request('/groups');
   },
+  async getGroup(id: string) {
+    return await request(`/groups/${id}`);
+  },
   async getPowerTeams() {
     return await request('/power-teams');
   },

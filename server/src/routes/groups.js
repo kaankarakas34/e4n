@@ -38,6 +38,26 @@ router.post('/', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Get Single Group by ID
+router.get('/:id', authenticateToken, async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at,
+             count(gm.id)::int as member_count
+             FROM groups g
+             LEFT JOIN group_members gm ON g.id = gm.group_id
+             WHERE g.id = $1
+             GROUP BY g.id, g.name, g.meeting_day, g.meeting_time, g.meeting_link, g.description, g.status, g.meeting_dates, g.created_at`,
+            [req.params.id]
+        );
+        if (!rows[0]) return res.status(404).json({ error: 'Grup bulunamadı' });
+        const group = rows[0];
+        group.meeting_dates = Array.isArray(group.meeting_dates) ? group.meeting_dates :
+            (typeof group.meeting_dates === 'string' ? JSON.parse(group.meeting_dates) : []);
+        res.json(group);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Get Group Members
 router.get('/:id/members', authenticateToken, async (req, res) => {
     try {

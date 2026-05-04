@@ -53,8 +53,7 @@ export function AdminGroupDetail() {
                     const teams = await api.getPowerTeams();
                     foundItem = teams.find((t: any) => t.id === id);
                 } else {
-                    const groups = await api.getGroups();
-                    foundItem = groups.find((g: any) => g.id === id);
+                    foundItem = await api.getGroup(id!);
                 }
 
                 if (foundItem) {

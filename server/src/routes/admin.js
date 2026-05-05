@@ -280,27 +280,8 @@ router.get('/stats/geo', async (req, res) => {
 });
 
 // Public Visitors Management (Admin)
-router.get('/public-visitors', async (req, res) => {
-    try {
-        const { rows } = await pool.query('SELECT * FROM public_visitors ORDER BY created_at DESC');
-        res.json(rows);
-    } catch (e) {
-        console.error('Public Visitors Error:', e);
-        res.status(500).json({ error: e.message });
-    }
-});
+// NOTE: GET and PUT for public-visitors are implemented in index.js for better transaction handling.
 
-router.put('/public-visitors/:id/status', async (req, res) => {
-    const { status, group_id } = req.body;
-    try {
-        if (group_id) {
-            await pool.query('UPDATE public_visitors SET status = $1, group_id = $2 WHERE id = $3', [status, group_id, req.params.id]);
-        } else {
-            await pool.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, req.params.id]);
-        }
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 router.delete('/public-visitors/:id', async (req, res) => {
     try {

@@ -1151,6 +1151,43 @@ app.get('/api/visitors', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Convert Visitor to Member
+app.post('/api/visitors/:id/convert', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { id } = req.params;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get Visitor Details
+    const vRes = await client.query('SELECT * FROM visitors WHERE id = $1', [id]);
+    if (vRes.rows.length === 0) return res.status(404).json({ error: 'Ziyaretçi bulunamadı' });
+    const v = vRes.rows[0];
+
+    // 2. Update Visitor Status
+    await client.query("UPDATE visitors SET status = 'CONVERTED' WHERE id = $1", [id]);
+
+    // 3. Create User if not exists
+    const userCheck = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [v.email]);
+    if (userCheck.rows.length === 0) {
+      await client.query(
+        `INSERT INTO users (name, email, phone, company, profession, account_status, role) 
+         VALUES ($1, $2, $3, $4, $5, 'PENDING', 'MEMBER')`,
+        [v.name, v.email, v.phone, v.company, v.profession]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.post('/api/visitors', authenticateToken, async (req, res) => {
   const { name, profession, phone, email, visitedAt, status } = req.body;
   try {

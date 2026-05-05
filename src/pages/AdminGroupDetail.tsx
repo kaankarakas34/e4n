@@ -849,16 +849,6 @@ export function AdminGroupDetail() {
                     <Card>
                         <CardHeader className="flex items-center justify-between">
                             <CardTitle>Ziyaretçi Listesi</CardTitle>
-                            <Button size="sm" onClick={() => {
-                                // Mock add visitor logic (simplified alert or console for now)
-                                const name = prompt('Ziyaretçi Adı:');
-                                if (name) {
-                                    api.createVisitor({ group_id: id, name, profession: 'Yeni Ziyaretçi', inviter_id: '1' }).then(newV => setVisitors([newV, ...visitors]));
-                                }
-                            }}>
-                                <Users className="h-4 w-4 mr-2" />
-                                Yeni Ziyaretçi Ekle
-                            </Button>
                         </CardHeader>
                         <CardContent>
                             {visitors.length > 0 ? (
@@ -867,24 +857,29 @@ export function AdminGroupDetail() {
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meslek</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meslek / Şirket</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Davet Eden</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarİh</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {visitors.map((visitor: any) => (
-                                                <tr key={visitor.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{visitor.name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{visitor.profession}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                                                        {/* Find inviter name from members list if possible, else show ID */}
-                                                        {members.find(m => m.id === visitor.inviter_id)?.full_name || 'Bilinmiyor'}
+                                                <tr key={visitor.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{visitor.name}</div>
+                                                        <div className="text-xs text-gray-500">{visitor.email}</div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                                                        {new Date(visitor.visited_at).toLocaleDateString()}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <div className="text-gray-900">{visitor.profession}</div>
+                                                        <div className="text-gray-500">{visitor.company}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {visitor.inviter_name || 'Bilinmiyor'}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {visitor.visited_at ? new Date(visitor.visited_at).toLocaleDateString('tr-TR') : '-'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${visitor.status === 'CONVERTED' ? 'bg-green-100 text-green-800' :
@@ -901,15 +896,19 @@ export function AdminGroupDetail() {
                                                                 className="text-indigo-600 hover:text-indigo-900"
                                                                 onClick={async () => {
                                                                     if (confirm(`${visitor.name} adlı ziyaretçiyi üye yapmak istiyor musunuz?`)) {
-                                                                        await api.convertVisitorToMember(visitor.id);
-                                                                        // Update local state
-                                                                        setVisitors(visitors.map(v => v.id === visitor.id ? { ...v, status: 'CONVERTED' } : v));
-                                                                        // Refresh members
-                                                                        const upgradedMembers = await api.getMembers();
-                                                                        setMembers(upgradedMembers.slice(0, 50)); // Simplified fetch
+                                                                        try {
+                                                                            await api.convertVisitorToMember(visitor.id);
+                                                                            // Update local state
+                                                                            setVisitors(visitors.map(v => v.id === visitor.id ? { ...v, status: 'CONVERTED' } : v));
+                                                                            alert('Ziyaretçi başarıyla üyeliğe dönüştürüldü.');
+                                                                        } catch (err) {
+                                                                            console.error('Conversion error:', err);
+                                                                            alert('İşlem sırasında bir hata oluştu.');
+                                                                        }
                                                                     }
                                                                 }}
                                                             >
+                                                                <UserPlus className="h-4 w-4 mr-1" />
                                                                 Üye Yap
                                                             </Button>
                                                         )}
@@ -920,21 +919,7 @@ export function AdminGroupDetail() {
                                     </table>
                                 </div>
                             ) : (
-                                <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                                    <Users className="mx-auto h-12 w-12 text-gray-400" />
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">Henüz Ziyaretçi Yok</h3>
-                                    <div className="mt-6">
-                                        <Button onClick={() => {
-                                            const name = prompt('Ziyaretçi Adı:');
-                                            if (name) {
-                                                api.createVisitor({ group_id: id, name, profession: 'Yeni Ziyaretçi', inviter_id: '1' }).then(newV => setVisitors([newV, ...visitors]));
-                                            }
-                                        }}>
-                                            <Users className="h-4 w-4 mr-2" />
-                                            Ziyaretçi Ekle
-                                        </Button>
-                                    </div>
-                                </div>
+                                <div className="text-center py-8 text-gray-500">Bu gruba ait ziyaretçi kaydı bulunamadı.</div>
                             )}
                         </CardContent>
                     </Card>

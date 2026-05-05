@@ -597,6 +597,20 @@ export const api = {
   async createReferral(payload: any) {
     return await request('/referrals', { method: 'POST', body: JSON.stringify(payload) });
   },
+  // System Settings
+  async getSystemSettings() {
+    return await request('/admin/system-settings');
+  },
+  async updateSystemSetting(key: string, value: string) {
+    return await request('/admin/system-settings', { method: 'POST', body: JSON.stringify({ key, value }) });
+  },
+  async sendMembershipInvite(visitorId: string) {
+    return await request(`/admin/visitors/${visitorId}/send-membership-invite`, { method: 'POST' });
+  },
+  async deleteVisitorGroup(id: string) {
+    return await request(`/admin/visitors/${id}`, { method: 'DELETE' });
+  }
 };
+
 
 export default api;

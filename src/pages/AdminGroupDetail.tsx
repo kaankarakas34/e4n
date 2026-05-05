@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
-import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock, UserPlus } from 'lucide-react';
+import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock, UserPlus, Trash2, Send } from 'lucide-react';
 
 export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();
@@ -931,21 +931,41 @@ export function AdminGroupDetail() {
                                                                 size="sm"
                                                                 className="text-indigo-600 hover:text-indigo-900"
                                                                 onClick={async () => {
-                                                                    if (confirm(`${visitor.name} adlı ziyaretçiyi üye yapmak istiyor musunuz?`)) {
+                                                                    if (confirm(`${visitor.name} adlı ziyaretçiye üyelik davet maili göndermek istiyor musunuz?`)) {
                                                                         try {
-                                                                            await api.convertVisitorToMember(visitor.id);
-                                                                            // Update local state
-                                                                            setVisitors(visitors.map(v => v.id === visitor.id ? { ...v, status: 'CONVERTED' } : v));
-                                                                            alert('Ziyaretçi başarıyla üyeliğe dönüştürüldü.');
+                                                                            await api.sendMembershipInvite(visitor.id);
+                                                                            alert('Üyelik davet maili başarıyla gönderildi.');
                                                                         } catch (err) {
-                                                                            console.error('Conversion error:', err);
-                                                                            alert('İşlem sırasında bir hata oluştu.');
+                                                                            console.error('Invite error:', err);
+                                                                            alert('E-posta gönderilirken bir hata oluştu.');
                                                                         }
                                                                     }
                                                                 }}
                                                             >
-                                                                <UserPlus className="h-4 w-4 mr-1" />
-                                                                Üye Yap
+                                                                <Send className="h-4 w-4 mr-1" />
+                                                                Üyelik Maili Gönder
+                                                            </Button>
+                                                        )}
+                                                        {(user.role === 'ADMIN' || (user.role === 'PRESIDENT' && members.find(m => m.user_id === user.id)?.role === 'PRESIDENT')) && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-red-600 hover:text-red-900 ml-2"
+                                                                onClick={async () => {
+                                                                    if (confirm(`${visitor.name} adlı ziyaretçiyi silmek istediğinize emin misiniz?`)) {
+                                                                        try {
+                                                                            await api.deleteVisitorGroup(visitor.id);
+                                                                            setVisitors(visitors.filter(v => v.id !== visitor.id));
+                                                                            alert('Ziyaretçi başarıyla silindi.');
+                                                                        } catch (err) {
+                                                                            console.error('Delete error:', err);
+                                                                            alert('Silme işlemi sırasında bir hata oluştu.');
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-1" />
+                                                                Sil
                                                             </Button>
                                                         )}
                                                     </td>

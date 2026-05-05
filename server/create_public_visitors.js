@@ -26,6 +26,7 @@ async function run() {
                     source VARCHAR(50) DEFAULT 'landing',
                     kvkk_accepted BOOLEAN DEFAULT FALSE,
                     status VARCHAR(50) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'CONTACTED', 'CONVERTED', 'REJECTED')),
+                    group_id UUID REFERENCES groups(id),
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                 );
             `);

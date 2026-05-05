@@ -283,6 +283,52 @@ export const runMigrations = async () => {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Seed default visitor template if not exists
+    await client.query(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('visitor_welcome_template', $1)
+      ON CONFLICT (key) DO NOTHING
+    `, [`
+      <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <p>Sayın <strong>{name}</strong>,</p>
+        <p><strong>Event4Network (E4N)</strong>, iş insanlarının bir araya gelerek güvene dayalı, sürdürülebilir iş ilişkileri kurduğu seçici bir networking platformudur.</p>
+        <p>Sizleri de bu yapıyı yakından tanıyabileceğiniz online toplantımıza davet etmek isteriz.</p>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
+          <p style="margin: 5px 0;">📅 <strong>Tarih:</strong> {meeting_date}</p>
+          <p style="margin: 5px 0;">🕢 <strong>Saat:</strong> {meeting_time}</p>
+          <p style="margin: 5px 0;">🔗 <strong>Katılım Linki:</strong> <a href="{meeting_link}" style="color: #4f46e5;">{meeting_link}</a></p>
+        </div>
+        <p>Toplantımızda hem sistemi daha detaylı aktaracak hem de katılımcılarla birebir tanışma fırsatı bulabileceksiniz.</p>
+        <p>Ayrıca öncesinde incelemek isterseniz:<br/>
+        📱 <strong>Instagram:</strong> <a href="https://www.instagram.com/event4network/" style="color: #4f46e5;">https://www.instagram.com/event4network/</a></p>
+        <p>Katılımınızı bekliyoruz.<br/>Görüşmek üzere.</p>
+        <p>İyi günler dileriz.</p>
+      </div>
+    `]);
+
+    await client.query(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('membership_invite_template', $1)
+      ON CONFLICT (key) DO NOTHING
+    `, [`
+      <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <h2>Üyelik Daveti</h2>
+        <p>Sayın <strong>{name}</strong>,</p>
+        <p>{group_name} grubumuzdaki toplantımıza katılımınız için teşekkür ederiz.</p>
+        <p>Sizi de E4N ailesinin bir parçası olarak görmekten mutluluk duyarız. Üyelik başvurunuzu aşağıdaki link üzerinden tamamlayabilirsiniz:</p>
+        <p><a href="https://www.event4network.com/apply" style="display: inline-block; background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Üyelik Başvurusunu Tamamla</a></p>
+        <p>Görüşmek üzere.</p>
+      </div>
+    `]);
+
     console.log('✅ Database Schema Synced');
   } catch (e) {
     console.error('❌ Migration Error:', e);

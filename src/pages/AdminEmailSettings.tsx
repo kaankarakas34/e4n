@@ -30,8 +30,8 @@ export function AdminEmailSettings() {
     const [testEmail, setTestEmail] = useState('');
 
     // Template State
-    const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-    const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
+    const [systemSettings, setSystemSettings] = useState<any>({});
+    const [selectedKey, setSelectedKey] = useState<string | null>(null);
     const [logs, setLogs] = useState<any[]>([]);
 
     useEffect(() => {
@@ -39,9 +39,16 @@ export function AdminEmailSettings() {
     }, []);
 
     const loadData = async () => {
-        // Load Templates (Mock Service)
-        setTemplates(emailService.getTemplates());
+        // Load Logs (Mock Service)
         setLogs(emailService.getLogs());
+
+        // Load System Settings (Real API)
+        try {
+            const settings = await api.getSystemSettings();
+            setSystemSettings(settings);
+        } catch (e) {
+            console.error('Failed to load system settings', e);
+        }
 
         // Load SMTP Configs (Real API)
         try {
@@ -107,27 +114,19 @@ export function AdminEmailSettings() {
 
 
     // --- Template Handlers ---
-    const handleSelectTemplate = (template: EmailTemplate) => {
-        setSelectedTemplate({ ...template });
-    };
+    const templateList = [
+        { key: 'visitor_welcome_template', name: 'Ziyaretçi Hoşgeldin (Otomatik)', description: 'Ziyaretçi onaylandığında gönderilen davet maili.' },
+        { key: 'membership_invite_template', name: 'Üyelik Başvuru Daveti', description: 'Toplantı sonrası üyelik başvurusu için gönderilen mail.' }
+    ];
 
-    const handleSaveTemplate = () => {
-        if (!selectedTemplate) return;
-        emailService.updateTemplate(selectedTemplate.id, {
-            subject: selectedTemplate.subject,
-            body: selectedTemplate.body,
-            senderName: selectedTemplate.senderName,
-            senderEmail: selectedTemplate.senderEmail
-        });
-        alert('Şablon güncellendi!');
-        loadData();
-    };
-
-    const handleResetTemplates = () => {
-        if (window.confirm('Tüm şablonlar varsayılan ayarlara dönecek. Emin misiniz?')) {
-            emailService.resetTemplates();
+    const handleSaveTemplate = async () => {
+        if (!selectedKey) return;
+        try {
+            await api.updateSystemSetting(selectedKey, systemSettings[selectedKey]);
+            alert('Şablon güncellendi!');
             loadData();
-            setSelectedTemplate(null);
+        } catch (e) {
+            alert('Kaydetme başarısız.');
         }
     };
 
@@ -308,72 +307,46 @@ export function AdminEmailSettings() {
                                     <CardTitle>Şablonlar</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    {templates.map(t => (
+                                    {templateList.map(t => (
                                         <div
-                                            key={t.id}
-                                            onClick={() => handleSelectTemplate(t)}
-                                            className={`p-3 rounded-md cursor-pointer border transition-colors ${selectedTemplate?.id === t.id ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-gray-50 border-gray-200'}`}
+                                            key={t.key}
+                                            onClick={() => setSelectedKey(t.key)}
+                                            className={`p-3 rounded-md cursor-pointer border transition-colors ${selectedKey === t.key ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500' : 'hover:bg-gray-50 border-gray-200'}`}
                                         >
                                             <div className="font-medium text-gray-900">{t.name}</div>
                                             <div className="text-xs text-gray-500 mt-1">{t.description}</div>
                                         </div>
                                     ))}
                                 </CardContent>
-                                <div className="p-4 border-t bg-gray-50 rounded-b-lg">
-                                    <Button variant="ghost" size="sm" onClick={handleResetTemplates} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
-                                        <RotateCcw className="h-4 w-4 mr-2" /> Varsayılana Dön
-                                    </Button>
-                                </div>
                             </Card>
                         </div>
 
                         {/* Editor */}
                         <div className="lg:col-span-2">
-                            {selectedTemplate ? (
+                            {selectedKey ? (
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Düzenle: {selectedTemplate.name}</CardTitle>
+                                        <CardTitle>Düzenle: {templateList.find(t => t.key === selectedKey)?.name}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Gönderen Adı</label>
-                                                <Input
-                                                    value={selectedTemplate.senderName}
-                                                    onChange={e => setSelectedTemplate({ ...selectedTemplate, senderName: e.target.value })}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Gönderen E-Posta</label>
-                                                <Input
-                                                    value={selectedTemplate.senderEmail}
-                                                    onChange={e => setSelectedTemplate({ ...selectedTemplate, senderEmail: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Konu</label>
-                                            <Input
-                                                value={selectedTemplate.subject}
-                                                onChange={e => setSelectedTemplate({ ...selectedTemplate, subject: e.target.value })}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">İçerik</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">İçerik (HTML)</label>
                                             <textarea
-                                                className="w-full h-64 border rounded-md p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
-                                                value={selectedTemplate.body}
-                                                onChange={e => setSelectedTemplate({ ...selectedTemplate, body: e.target.value })}
+                                                className="w-full h-96 border rounded-md p-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+                                                value={systemSettings[selectedKey] || ''}
+                                                onChange={e => setSystemSettings({ ...systemSettings, [selectedKey]: e.target.value })}
                                             />
                                             <div className="mt-2 p-3 bg-blue-50 text-blue-800 text-xs rounded border border-blue-100 flex items-start">
                                                 <Info className="h-4 w-4 mr-2 flex-shrink-0" />
-                                                <p>
-                                                    Kullanılabilir değişkenler: {'{{name}}'}, {'{{email}}'}, {'{{phone}}'}, {'{{company}}'}
-                                                    <br />
-                                                    Bu değişkenler mail gönderilirken gerçek verilerle değiştirilecektir.
-                                                </p>
+                                                <div>
+                                                    <p className="font-bold">Kullanılabilir değişkenler:</p>
+                                                    <code className="bg-blue-100 px-1">{'{name}'}</code>, 
+                                                    <code className="bg-blue-100 px-1">{'{group_name}'}</code>, 
+                                                    <code className="bg-blue-100 px-1">{'{meeting_date}'}</code>, 
+                                                    <code className="bg-blue-100 px-1">{'{meeting_time}'}</code>, 
+                                                    <code className="bg-blue-100 px-1">{'{meeting_link}'}</code>
+                                                    <p className="mt-1">Bu değişkenler mail gönderilirken gerçek verilerle değiştirilecektir.</p>
+                                                </div>
                                             </div>
                                         </div>
 

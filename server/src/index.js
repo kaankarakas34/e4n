@@ -2393,6 +2393,84 @@ app.put('/api/admin/email-config/:id/activate', authenticateToken, async (req, r
   }
 });
 
+// --- SYSTEM SETTINGS (Email Templates etc) ---
+app.get('/api/admin/system-settings', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    const { rows } = await pool.query('SELECT * FROM system_settings');
+    const settings = rows.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {});
+    res.json(settings);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/system-settings', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { key, value } = req.body;
+  try {
+    await pool.query(
+      'INSERT INTO system_settings (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()',
+      [key, value]
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Send Membership Invite to Visitor
+app.post('/api/admin/visitors/:id/send-membership-invite', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Get visitor and group info
+    const { rows } = await pool.query(`
+      SELECT v.*, g.name as group_name 
+      FROM visitors v 
+      JOIN groups g ON v.group_id = g.id 
+      WHERE v.id = $1
+    `, [id]);
+    
+    if (rows.length === 0) return res.status(404).json({ error: 'Visitor not found' });
+    const v = rows[0];
+
+    // 2. Get Template (Global fallback)
+    const setRes = await pool.query("SELECT value FROM system_settings WHERE key = 'membership_invite_template'");
+    let template = setRes.rows[0]?.value || `
+      <h2>Üyelik Daveti</h2>
+      <p>Sayın {name},</p>
+      <p>{group_name} grubumuzdaki toplantımıza katılımınız için teşekkür ederiz.</p>
+      <p>Sizi de E4N ailesinin bir parçası olarak görmekten mutluluk duyarız.</p>
+    `;
+
+    const html = template
+      .replace(/{name}/g, v.name)
+      .replace(/{group_name}/g, v.group_name);
+
+    await sendEmail(v.email, 'Üyelik Daveti - Event4Network', html);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete Visitor from Group
+app.delete('/api/admin/visitors/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Get visitor to find group_id for auth check
+    const vRes = await pool.query('SELECT group_id FROM visitors WHERE id = $1', [id]);
+    if (vRes.rows.length === 0) return res.status(404).json({ error: 'Visitor not found' });
+    const groupId = vRes.rows[0].group_id;
+
+    // Auth check: ADMIN or PRESIDENT of this group
+    if (req.user.role !== 'ADMIN') {
+      const pRes = await pool.query(
+        "SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2 AND role = 'PRESIDENT' AND status = 'ACTIVE'",
+        [groupId, req.user.id]
+      );
+      if (pRes.rows.length === 0) return res.status(403).json({ error: 'Yetkisiz işlem' });
+    }
+
+    await pool.query('DELETE FROM visitors WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/email-config/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   try {

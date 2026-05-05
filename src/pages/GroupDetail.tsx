@@ -101,7 +101,7 @@ export function GroupDetail() {
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
     if (!user) return <div className="p-8">Giriş Yapılmalı</div>;
 
-    const isAdminView = false;
+    const isAdminView = user?.role === 'ADMIN';
 
     if (loading) {
         return <div className="p-8">Yükleniyor...</div>;
@@ -792,7 +792,10 @@ export function GroupDetail() {
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meslek</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şirket / Meslek</th>
+                                                {isAdminView && (
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İletişim</th>
+                                                )}
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Davet Eden</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarİh</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
@@ -803,7 +806,16 @@ export function GroupDetail() {
                                             {visitors.map((visitor: any) => (
                                                 <tr key={visitor.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{visitor.name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{visitor.profession}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                        {visitor.company ? <div className="font-medium text-gray-700">{visitor.company}</div> : null}
+                                                        <div className="text-xs">{visitor.profession}</div>
+                                                    </td>
+                                                    {isAdminView && (
+                                                        <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-xs">
+                                                            <div>{visitor.phone || '-'}</div>
+                                                            <div>{visitor.email || '-'}</div>
+                                                        </td>
+                                                    )}
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                                                         {/* Find inviter name from members list if possible, else show ID */}
                                                         {members.find(m => m.id === visitor.inviter_id)?.full_name || 'Bilinmiyor'}

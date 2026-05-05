@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
-import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock } from 'lucide-react';
+import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock, UserPlus } from 'lucide-react';
 
 export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();

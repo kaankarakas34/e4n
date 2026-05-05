@@ -94,16 +94,8 @@ export function AdminVisitors() {
         if (!selectedVisitorForGroup || !selectedGroupId) return;
         try {
             // Update backend
-            // Note: api.updatePublicVisitorStatus needs to accept group_id. We'll adjust the payload below if needed, or pass it.
-            // Our backend accepts { status, group_id } in req.body.
-            // Wait, api.ts only sends `{ status }`. Let's update api.ts later or use a custom fetch here.
-            // Let's use custom fetch for now or update api.ts.
-            const token = JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-            await fetch(`${import.meta.env.PROD ? '/api' : 'http://localhost:4005/api'}/admin/public-visitors/${selectedVisitorForGroup.id}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-                body: JSON.stringify({ status: 'CONVERTED', group_id: selectedGroupId })
-            });
+            // Update backend using the api utility
+            await api.updatePublicVisitorStatus(selectedVisitorForGroup.id, 'CONVERTED', selectedGroupId);
 
             setVisitors(visitors.map(v => v.id === selectedVisitorForGroup.id ? { ...v, status: 'CONVERTED' } : v));
             setIsGroupModalOpen(false);

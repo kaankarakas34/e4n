@@ -84,6 +84,12 @@ export const runMigrations = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
+    // Ensure missing columns exist
+    await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
+    await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS email VARCHAR(255)");
+    await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
+    await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS profession VARCHAR(255)");
+
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS one_to_ones (

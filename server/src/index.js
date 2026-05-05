@@ -2108,6 +2108,9 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 app.post('/api/visitors/apply', async (req, res) => {
   const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id } = req.body;
   try {
+    // Lazy migration
+    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
+
     const { rows } = await pool.query(
       'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
       [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null]
@@ -2139,10 +2142,17 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
     await client.query('BEGIN');
 
     // 1. Update public_visitors status
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
     await client.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, id]);
 
     // 2. If it's a conversion to a group, create a record in the visitors table
     if (status === 'CONVERTED' && group_id) {
+      // Lazy migration: Ensure visitors table has necessary columns
+      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
+      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS email VARCHAR(255)");
+      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
+      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS profession VARCHAR(255)");
+
       // Get visitor details first
       const { rows } = await client.query('SELECT * FROM public_visitors WHERE id = $1', [id]);
       if (rows.length > 0) {

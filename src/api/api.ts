@@ -26,6 +26,7 @@ async function request(path: string, options?: RequestInit) {
   }
 
   const res = await fetch(`${BASE_URL}${path}`, {
+    cache: 'no-store',
     ...options,
     headers,
   });

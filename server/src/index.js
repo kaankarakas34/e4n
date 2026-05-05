@@ -2147,11 +2147,22 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
       const { rows } = await client.query('SELECT * FROM public_visitors WHERE id = $1', [id]);
       if (rows.length > 0) {
         const v = rows[0];
-        await client.query(
-          `INSERT INTO visitors (name, email, phone, company, profession, group_id, inviter_id, status, visited_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'ATTENDED', NOW())`,
-          [v.name, v.email, v.phone, v.company, v.profession, group_id, v.inviter_id || null]
-        );
+        try {
+          // ensure uuid formatting or null
+          let finalInviterId = v.inviter_id;
+          if (!finalInviterId || finalInviterId === 'null' || finalInviterId === '') {
+             finalInviterId = null;
+          }
+          await client.query(
+            `INSERT INTO visitors (name, email, phone, company, profession, group_id, inviter_id, status, visited_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'ATTENDED', NOW())`,
+            [v.name, v.email, v.phone, v.company, v.profession, group_id, finalInviterId]
+          );
+        } catch (insertError) {
+          console.error('[VISITOR INSERT ERROR] Failed to insert into visitors table:', insertError);
+          // Don't throw, just log it so the status update still succeeds, or decide to throw
+          throw new Error('Ziyaretçi gruba eklenemedi: ' + insertError.message);
+        }
       }
     }
 
@@ -2159,11 +2170,13 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
     res.json({ success: true });
   } catch (e) {
     await client.query('ROLLBACK');
+    console.error('[PUBLIC VISITOR STATUS UPDATE ERROR]:', e);
     res.status(500).json({ error: e.message });
   } finally {
     client.release();
   }
 });
+
 
 
 

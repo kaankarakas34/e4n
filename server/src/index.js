@@ -2174,19 +2174,52 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
           const gRes = await client.query('SELECT * FROM groups WHERE id = $1', [group_id]);
           if (gRes.rows.length > 0) {
             const group = gRes.rows[0];
-            const subject = group.visitor_email_subject || `${group.name} Ziyaretçi Onayı`;
+            const subject = group.visitor_email_subject || `${group.name} Ziyaretçi Davetiyesi`;
+            
+            // Calculate Next Meeting Date
+            let nextDateStr = '-';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            if (group.meeting_dates && Array.isArray(group.meeting_dates) && group.meeting_dates.length > 0) {
+              const futureDates = group.meeting_dates
+                .map(d => new Date(d))
+                .filter(d => d >= today)
+                .sort((a, b) => a.getTime() - b.getTime());
+              
+              if (futureDates.length > 0) {
+                nextDateStr = futureDates[0].toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+              }
+            } else if (group.meeting_day) {
+              // Fallback to day of week calculation
+              const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              const targetDay = days.indexOf(group.meeting_day);
+              if (targetDay !== -1) {
+                let d = new Date();
+                let diff = targetDay - d.getDay();
+                if (diff <= 0) diff += 7;
+                d.setDate(d.getDate() + diff);
+                nextDateStr = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+              }
+            }
+
             let template = group.visitor_email_template || `
-              <h1>Hoş Geldiniz!</h1>
-              <p>Sayın {name},</p>
-              <p>{group_name} grubuna yaptığınız ziyaret başvurusu onaylanmıştır.</p>
-              <p>Sizi aramızda göreceğimiz için heyecanlıyız.</p>
-              <p>Toplantı Detayları:</p>
-              <ul>
-                <li>Grup: {group_name}</li>
-                <li>Gün: {meeting_day}</li>
-                <li>Saat: {meeting_time}</li>
-              </ul>
-              <p>Saygılarımızla,<br/>Event4Network Ekibi</p>
+              <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p>Sayın <strong>{name}</strong>,</p>
+                <p><strong>Event4Network (E4N)</strong>, iş insanlarının bir araya gelerek güvene dayalı, sürdürülebilir iş ilişkileri kurduğu seçici bir networking platformudur.</p>
+                <p>Klasik networking anlayışının aksine, yüzeysel tanışmalar yerine güçlü bağlar ve nitelikli iş yönlendirmeleri oluşturmayı hedeflemektedir.</p>
+                <p>Sizleri de bu yapıyı yakından tanıyabileceğiniz online toplantımıza davet etmek isteriz.</p>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
+                  <p style="margin: 5px 0;">📅 <strong>Tarih:</strong> {meeting_date}</p>
+                  <p style="margin: 5px 0;">🕢 <strong>Saat:</strong> {meeting_time}</p>
+                  <p style="margin: 5px 0;">🔗 <strong>Katılım Linki:</strong> <a href="{meeting_link}" style="color: #4f46e5;">{meeting_link}</a></p>
+                </div>
+                <p>Toplantımızda hem sistemi daha detaylı aktaracak hem de katılımcılarla birebir tanışma fırsatı bulabileceksiniz.</p>
+                <p>Ayrıca öncesinde incelemek isterseniz:<br/>
+                📱 <strong>Instagram:</strong> <a href="https://www.instagram.com/event4network/" style="color: #4f46e5;">https://www.instagram.com/event4network/</a></p>
+                <p>Katılımınızı bekliyoruz.<br/>Görüşmek üzere.</p>
+                <p>İyi günler dileriz.</p>
+              </div>
             `;
 
             // Replace placeholders
@@ -2194,7 +2227,9 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
               .replace(/{name}/g, v.name)
               .replace(/{group_name}/g, group.name)
               .replace(/{meeting_day}/g, group.meeting_day || '-')
-              .replace(/{meeting_time}/g, group.meeting_time || '-');
+              .replace(/{meeting_time}/g, group.meeting_time || '-')
+              .replace(/{meeting_link}/g, group.meeting_link || '-')
+              .replace(/{meeting_date}/g, nextDateStr);
 
             await sendEmail(v.email, subject, html);
           }

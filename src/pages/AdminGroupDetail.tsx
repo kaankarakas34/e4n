@@ -20,7 +20,16 @@ export function AdminGroupDetail() {
     const [synergy, setSynergy] = useState<any[]>([]);
 
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '', meeting_dates: [] as string[] });
+    const [editForm, setEditForm] = useState({ 
+        name: '', 
+        meeting_day: '', 
+        meeting_time: '', 
+        meeting_link: '', 
+        description: '', 
+        meeting_dates: [] as string[],
+        visitor_email_subject: '',
+        visitor_email_template: ''
+    });
 
     // Assignment Modal State
     const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -201,7 +210,9 @@ export function AdminGroupDetail() {
                                 meeting_time: data.meeting_time || '',
                                 meeting_link: data.meeting_link || '',
                                 description: data.description || '',
-                                meeting_dates: Array.isArray(data.meeting_dates) ? data.meeting_dates : []
+                                meeting_dates: Array.isArray(data.meeting_dates) ? data.meeting_dates : [],
+                                visitor_email_subject: data.visitor_email_subject || '',
+                                visitor_email_template: data.visitor_email_template || ''
                             });
                             setShowEditModal(true);
                         }}>{typeLabel} Düzenle</Button>
@@ -302,6 +313,31 @@ export function AdminGroupDetail() {
                                         value={editForm.description}
                                         onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                                     />
+                                </div>
+                                <div className="border-t pt-4">
+                                    <h3 className="font-semibold text-sm mb-2 text-indigo-700">Ziyaretçi Hoşgeldin E-postası</h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500">E-posta Konusu</label>
+                                            <input
+                                                type="text"
+                                                className="mt-1 block w-full border rounded-md p-2 text-sm"
+                                                placeholder="Örn: {group_name} Grubumuza Hoş Geldiniz!"
+                                                value={editForm.visitor_email_subject}
+                                                onChange={e => setEditForm({ ...editForm, visitor_email_subject: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500">E-posta İçeriği (HTML Kullanılabilir)</label>
+                                            <textarea
+                                                className="mt-1 block w-full border rounded-md p-2 text-sm min-h-[150px]"
+                                                placeholder="Değişkenler: {name}, {group_name}, {meeting_day}, {meeting_time}"
+                                                value={editForm.visitor_email_template}
+                                                onChange={e => setEditForm({ ...editForm, visitor_email_template: e.target.value })}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">İpucu: Boş bırakılırsa sistem varsayılan şablonu kullanır.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end space-x-3">

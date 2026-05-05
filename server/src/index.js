@@ -2169,10 +2169,38 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'ATTENDED', NOW())`,
             [v.name, v.email, v.phone, v.company, v.profession, group_id, finalInviterId]
           );
+
+          // 3. Send Email to Visitor
+          const gRes = await client.query('SELECT * FROM groups WHERE id = $1', [group_id]);
+          if (gRes.rows.length > 0) {
+            const group = gRes.rows[0];
+            const subject = group.visitor_email_subject || `${group.name} Ziyaretçi Onayı`;
+            let template = group.visitor_email_template || `
+              <h1>Hoş Geldiniz!</h1>
+              <p>Sayın {name},</p>
+              <p>{group_name} grubuna yaptığınız ziyaret başvurusu onaylanmıştır.</p>
+              <p>Sizi aramızda göreceğimiz için heyecanlıyız.</p>
+              <p>Toplantı Detayları:</p>
+              <ul>
+                <li>Grup: {group_name}</li>
+                <li>Gün: {meeting_day}</li>
+                <li>Saat: {meeting_time}</li>
+              </ul>
+              <p>Saygılarımızla,<br/>Event4Network Ekibi</p>
+            `;
+
+            // Replace placeholders
+            const html = template
+              .replace(/{name}/g, v.name)
+              .replace(/{group_name}/g, group.name)
+              .replace(/{meeting_day}/g, group.meeting_day || '-')
+              .replace(/{meeting_time}/g, group.meeting_time || '-');
+
+            await sendEmail(v.email, subject, html);
+          }
         } catch (insertError) {
-          console.error('[VISITOR INSERT ERROR] Failed to insert into visitors table:', insertError);
-          // Don't throw, just log it so the status update still succeeds, or decide to throw
-          throw new Error('Ziyaretçi gruba eklenemedi: ' + insertError.message);
+          console.error('[VISITOR CONVERSION ERROR]:', insertError);
+          throw new Error('Ziyaretçi işlemleri sırasında hata: ' + insertError.message);
         }
       }
     }
@@ -2357,12 +2385,12 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
 // Update Group
 app.put('/api/groups/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
+  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates, visitor_email_subject, visitor_email_template } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar, meeting_dates = $6::jsonb 
-       WHERE id = $7 RETURNING *`,
-      [name, meeting_day, meeting_time, meeting_link, status, JSON.stringify(meeting_dates || []), req.params.id]
+      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar, meeting_dates = $6::jsonb, visitor_email_subject = $7, visitor_email_template = $8
+       WHERE id = $9 RETURNING *`,
+      [name, meeting_day, meeting_time, meeting_link, status, JSON.stringify(meeting_dates || []), visitor_email_subject, visitor_email_template, req.params.id]
     );
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2415,6 +2443,20 @@ app.post('/api/power-teams', authenticateToken, async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+app.put('/api/power-teams/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, description, status, visitor_email_subject, visitor_email_template } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE power_teams SET name = $1, description = $2, status = $3, visitor_email_subject = $4, visitor_email_template = $5
+       WHERE id = $6 RETURNING *`,
+      [name, description, status || 'ACTIVE', visitor_email_subject, visitor_email_template, req.params.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 
 app.delete('/api/power-teams/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);

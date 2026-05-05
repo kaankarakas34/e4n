@@ -26,10 +26,14 @@ export const runMigrations = async () => {
         meeting_time TIME,
         meeting_link VARCHAR(255),
         status VARCHAR(20) DEFAULT 'ACTIVE',
+        visitor_email_subject TEXT,
+        visitor_email_template TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
     await client.query("ALTER TABLE groups ALTER COLUMN meeting_day TYPE VARCHAR(255) USING meeting_day::varchar");
+    await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS visitor_email_subject TEXT");
+    await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS visitor_email_template TEXT");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS group_members (
@@ -225,9 +229,14 @@ export const runMigrations = async () => {
         name VARCHAR(255) NOT NULL,
         description TEXT,
         status VARCHAR(20) DEFAULT 'ACTIVE',
+        visitor_email_subject TEXT,
+        visitor_email_template TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
+    await client.query("ALTER TABLE power_teams ADD COLUMN IF NOT EXISTS visitor_email_subject TEXT");
+    await client.query("ALTER TABLE power_teams ADD COLUMN IF NOT EXISTS visitor_email_template TEXT");
+
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS power_team_members (

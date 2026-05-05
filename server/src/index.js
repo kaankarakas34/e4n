@@ -2152,6 +2152,7 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
       await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS email VARCHAR(255)");
       await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
       await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS profession VARCHAR(255)");
+      await client.query("ALTER TABLE visitors ALTER COLUMN inviter_id DROP NOT NULL");
 
       // Get visitor details first
       const { rows } = await client.query('SELECT * FROM public_visitors WHERE id = $1', [id]);

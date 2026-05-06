@@ -101,6 +101,7 @@ export function GroupDetail() {
     if (!user) return <div className="p-8">Giriş Yapılmalı</div>;
 
     const isAdminView = user?.role === 'ADMIN';
+    const isGroupPresident = members.some(m => m.id === user?.id && (m.role === 'PRESIDENT' || m.group_title === 'PRESIDENT'));
 
     if (loading) {
         return <div className="p-8">Yükleniyor...</div>;
@@ -463,7 +464,7 @@ export function GroupDetail() {
                                     <Users className="h-5 w-5 mr-2 text-indigo-600" />
                                     Liderlik Ekibi ve Görevliler
                                 </CardTitle>
-                                {user?.role === 'ADMIN' && <span className="text-xs text-indigo-500 font-normal border border-indigo-200 px-2 py-1 rounded-full">Yönetici Yetkisi</span>}
+                                {(user?.role === 'ADMIN' || isGroupPresident) && <span className="text-xs text-indigo-500 font-normal border border-indigo-200 px-2 py-1 rounded-full">{user?.role === 'ADMIN' ? 'Yönetici Yetkisi' : 'Başkan Yetkisi'}</span>}
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -506,7 +507,7 @@ export function GroupDetail() {
                                                     )}
                                                 </div>
 
-                                                {user?.role === 'ADMIN' && (
+                                                {(user?.role === 'ADMIN' || isGroupPresident) && (
                                                     <div className="mt-2">
                                                         <Button
                                                             size="sm"

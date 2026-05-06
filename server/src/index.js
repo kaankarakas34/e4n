@@ -3067,8 +3067,31 @@ app.post('/api/admin/trigger-champions', authenticateToken, async (req, res) => 
 
 // Assign Role
 app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   const { userId, role, groupTitle, contextId, type } = req.body;
+  
+  if (req.user.role !== 'ADMIN') {
+    if (!contextId) return res.sendStatus(403);
+    
+    // Check if the requester is the president of this context
+    if (type === 'POWER_TEAM') {
+      const checkPt = await pool.query("SELECT role FROM power_team_members WHERE user_id = $1 AND power_team_id = $2", [req.user.id, contextId]);
+      if (checkPt.rows.length === 0 || checkPt.rows[0].role !== 'PRESIDENT') {
+        return res.sendStatus(403);
+      }
+    } else {
+      // type === 'GROUP'
+      const checkGrp = await pool.query(`
+        SELECT u.role, u.group_title 
+        FROM group_members gm 
+        JOIN users u ON u.id = gm.user_id 
+        WHERE gm.group_id = $1 AND gm.user_id = $2 AND gm.status = 'ACTIVE'
+      `, [contextId, req.user.id]);
+      
+      if (checkGrp.rows.length === 0 || (checkGrp.rows[0].role !== 'PRESIDENT' && checkGrp.rows[0].group_title !== 'PRESIDENT')) {
+        return res.sendStatus(403);
+      }
+    }
+  }
 
   try {
     if (type === 'POWER_TEAM' && contextId) {

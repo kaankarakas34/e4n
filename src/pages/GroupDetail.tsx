@@ -51,8 +51,7 @@ export function GroupDetail() {
                     const teams = await api.getPowerTeams();
                     foundItem = teams.find((t: any) => t.id === id);
                 } else {
-                    const groups = await api.getGroups();
-                    foundItem = groups.find((g: any) => g.id === id);
+                    foundItem = await api.getGroup(id!);
                 }
 
                 if (foundItem) {
@@ -425,6 +424,18 @@ export function GroupDetail() {
                                                 {data.meeting_time ? ` - ${data.meeting_time}` : ''}
                                             </p>
                                         </div>
+                                        {data.meeting_dates && data.meeting_dates.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Planlanmış Toplantı Tarihleri</h4>
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {data.meeting_dates.map((d: string) => (
+                                                        <span key={d} className="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded border border-indigo-100 font-medium">
+                                                            {new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div>
                                             <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Toplantı Bağlantısı / Yeri</h4>
                                             {data.meeting_link ? (

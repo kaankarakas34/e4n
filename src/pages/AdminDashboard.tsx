@@ -134,6 +134,14 @@ export function AdminDashboard() {
               description="Grupları ve loncaları yönetin."
             />
             <QuickActionCard
+              title="Blog Yönetimi"
+              icon={BookOpen}
+              color="text-emerald-600"
+              bg="bg-emerald-50 hover:bg-emerald-100"
+              onClick={() => navigate('/admin/blogs')}
+              description="Blog içeriklerini ve SEO ayarlarını düzenleyin."
+            />
+            <QuickActionCard
               title="Başvurular"
               icon={UserPlus}
               color="text-purple-600"

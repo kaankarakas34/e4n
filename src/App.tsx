@@ -59,6 +59,10 @@ import { PreInformationForm } from './pages/PreInformationForm';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { CookiePolicy } from './pages/CookiePolicy';
 import { TermsOfUse } from './pages/TermsOfUse';
+import { AdminBlogs } from './pages/AdminBlogs';
+import { AdminBlogEditor } from './pages/AdminBlogEditor';
+import { BlogListPage } from './pages/BlogListPage';
+import { BlogPostPage } from './pages/BlogPostPage';
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -115,6 +119,8 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route path="/" element={<LandingPage />} />
               <Route path="/ziyaretci-ol" element={<VisitorApplication />} />
+              <Route path="/blog" element={<BlogListPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route
                 path="/auth/login"
                 element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
@@ -167,6 +173,8 @@ function App() {
               <Route path="/admin/events" element={<AdminEvents />} />
               <Route path="/admin/visitors" element={<AdminVisitors />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/blogs" element={<AdminBlogs />} />
+              <Route path="/admin/blogs/:id" element={<AdminBlogEditor />} />
               <Route path="/admin/members" element={<AdminMembers />} />
               <Route path="/admin/members/new" element={<CreateMember />} />
               <Route path="/admin/members/:id" element={<MemberProfile />} />

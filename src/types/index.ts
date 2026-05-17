@@ -452,3 +452,48 @@ export type TrafficLightResponse = PerformanceReport;
 export type CEU = Education;
 export type RevenueRecord = Revenue;
 export type AttendanceStatsReport = AttendanceReport;
+
+// Blog Types
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  featured_image?: string;
+  featured_image_alt?: string;
+  category_id?: string;
+  tags?: string[];
+  author_id?: string;
+  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  published_at?: string;
+  created_at: string;
+  updated_at: string;
+
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  focus_keyword?: string;
+  secondary_keywords?: string[];
+  canonical_url?: string;
+  robots: string;
+  schema_type: string;
+  include_in_sitemap: boolean;
+  sitemap_priority: number;
+  change_frequency: string;
+
+  // OG fields
+  og_title?: string;
+  og_description?: string;
+
+  // Relations
+  author?: User;
+  category?: BlogCategory;
+}

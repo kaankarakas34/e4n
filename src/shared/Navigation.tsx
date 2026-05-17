@@ -41,6 +41,7 @@ export function Navigation() {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Raporlar', href: '/reports', icon: BarChart3 },
     { name: 'Grup Yönetimi', href: '/admin/groups', icon: Users },
+    { name: 'Blog Yönetimi', href: '/admin/blogs', icon: BookOpen },
     { name: 'Destek', href: '/admin/support', icon: MessageSquare },
   ];
 

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { VisitorForm } from '../components/VisitorForm';
 
 import { useEffect, useState } from 'react';
@@ -125,6 +126,114 @@ export function LandingPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
+            <Helmet>
+                <title>Event4Network | İş İnsanları İçin Seçici Networking Platformu</title>
+                <meta name="description" content="Event4Network, iş insanlarını seçici networking gruplarında bir araya getirerek kalıcı iş ilişkileri, nitelikli referanslar ve güvene dayalı iş bağlantıları oluşturur." />
+                <meta name="author" content="Event4Network" />
+                <meta name="robots" content="index, follow" />
+                <meta name="keywords" content="networking, iş ağı, seçici networking, B2B networking, iş insanları, referansla iş geliştirme, nitelikli iş yönlendirmesi, kalıcı iş ilişkileri" />
+                <link rel="canonical" href="https://www.event4network.com/" />
+                
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content="Event4Network | İş İnsanları İçin Seçici Networking Platformu" />
+                <meta property="og:description" content="Event4Network, iş insanlarını seçici networking gruplarında bir araya getirerek kalıcı iş ilişkileri, nitelikli referanslar ve güvene dayalı iş bağlantıları oluşturur." />
+                <meta property="og:url" content="https://www.event4network.com/" />
+                <meta property="og:site_name" content="Event4Network" />
+                
+                <meta name="twitter:card" content="summary" />
+                <meta name="twitter:title" content="Event4Network | İş İnsanları İçin Seçici Networking Platformu" />
+                <meta name="twitter:description" content="Kalıcı iş ilişkileri, güvene dayalı referanslar ve seçici networking yapısı için Event4Network." />
+
+                <script type="application/ld+json">
+{`{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Event4Network",
+  "alternateName": "E4N",
+  "url": "https://www.event4network.com/",
+  "logo": "https://www.event4network.com/logo.png",
+  "description": "Event4Network, iş insanları için seçici networking grupları oluşturan, kalıcı iş ilişkileri, güvene dayalı bağlantılar ve nitelikli referans sistemi üzerine kurulu bir networking platformudur.",
+  "sameAs": [
+    "https://www.instagram.com/event4network/"
+  ],
+  "knowsAbout": [
+    "Networking",
+    "B2B networking",
+    "İş ağı kurma",
+    "İş geliştirme",
+    "Nitelikli iş yönlendirmesi",
+    "Referansla müşteri kazanma",
+    "Kalıcı iş ilişkileri",
+    "Girişimcilik",
+    "Profesyonel iş bağlantıları"
+  ]
+}`}
+                </script>
+                <script type="application/ld+json">
+{`{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Event4Network",
+  "url": "https://www.event4network.com/"
+}`}
+                </script>
+                <script type="application/ld+json">
+{`{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Event4Network nedir?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Event4Network, iş insanlarının düzenli olarak bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici ve güvene dayalı bir networking platformudur."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Event4Network kimler için uygundur?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Event4Network; şirket sahipleri, girişimciler, danışmanlar, B2B hizmet veren profesyoneller ve referansla iş geliştirmek isteyen işletmeler için uygundur."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Event4Network klasik networking etkinliklerinden nasıl ayrılır?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Event4Network, tek seferlik tanışmalar yerine düzenli toplantılar, birebir görüşmeler, seçici üyelik yapısı ve güvene dayalı nitelikli iş yönlendirmeleri üzerine kurulu sürdürülebilir bir networking sistemidir."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Event4Network üyelik süreci nasıl işler?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Event4Network üyelik süreci ön bilgilendirme ve ön değerlendirme ile ilerler. Başvuran kişinin veya şirketin faaliyet alanı, gruba değer katma potansiyeli ve mevcut grup yapısıyla uyumu değerlendirilir."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Event4Network’te birebir görüşmeler neden önemlidir?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Birebir görüşmeler, üyelerin birbirini daha yakından tanımasını sağlar. Gerçek iş bağlantıları çoğu zaman bu görüşmelerde oluşur çünkü kişiler birbirinin işini, çevresini ve potansiyel iş fırsatlarını daha iyi anlar."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Event4Network’te amaç sadece yeni insanlarla tanışmak mı?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hayır. Event4Network’te amaç yalnızca yeni insanlarla tanışmak değil; aynı kişilerle düzenli temas kurarak güven oluşturmak, birbirini tanımak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir."
+      }
+    }
+  ]
+}`}
+                </script>
+            </Helmet>
             {/* Header */}
             <header className="fixed w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,11 +243,11 @@ export function LandingPage() {
                         </div>
 
                         <nav className="hidden md:flex space-x-8">
-                            <a href="#felsefemiz" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Farkımız</a>
-                            <a href="#grup-yapisi" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Yapımız</a>
-                            <a href="#basarilar" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Başarılar</a>
-                            <a href="#etkinlikler" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Etkinlikler</a>
-                            <a href="#iletisim" className="text-gray-600 hover:text-red-600 font-medium transition-colors">İletişim</a>
+                            <a href="#event4network-nedir" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Nedir?</a>
+                            <a href="#nasil-calisir" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Nasıl Çalışır?</a>
+                            <a href="#kimler-icin" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Kimler İçin?</a>
+                            <a href="#sss" className="text-gray-600 hover:text-red-600 font-medium transition-colors">SSS</a>
+                            <a href="#on-bilgilendirme-formu" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Başvuru</a>
                         </nav>
 
                         <div className="flex items-center gap-4">
@@ -170,7 +279,7 @@ export function LandingPage() {
                                 🚀 Profesyonel İş Ağı Platformu
                             </div>
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
-                                Reklamdan Daha Güçlü Bir Şey Var: <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Güvene Dayalı İş Ağı</span>
+                                İş İnsanları İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Seçici Networking Platformu</span>
                             </h1>
                             <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
                                 Event4Network, iş insanlarını düzenli ve seçici gruplarda bir araya getirerek güvene dayalı, sürdürülebilir ve nitelikli iş bağlantıları kurulmasını sağlayan yeni nesil bir networking platformudur.
@@ -199,7 +308,11 @@ export function LandingPage() {
                             <div className="absolute -inset-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-2xl opacity-20 animate-pulse"></div>
                             <img
                                 src={processMeeting}
-                                alt="Business Meeting"
+                                alt="Event4Network iş insanları için seçici networking platformu"
+                                width="1200"
+                                height="700"
+                                loading="eager"
+                                fetchPriority="high"
                                 className="relative rounded-2xl shadow-2xl border border-gray-100 w-full object-cover transform hover:scale-[1.02] transition-transform duration-500"
                             />
                         </div>
@@ -207,14 +320,24 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* SEO Kısaca Block */}
+            <section id="event4network-nedir" className="py-16 bg-white border-t border-gray-100">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-6">Event4Network Nedir?</h2>
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                        Event4Network, iş insanlarının düzenli olarak bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici ve güvene dayalı bir networking platformudur.
+                    </p>
+                </div>
+            </section>
+
             {/* Problem Section: Why Classic Networking Fails */}
-            <section className="py-24 bg-white border-t border-b border-gray-100">
+            <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Neden Farklıyız?</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
-                            Klasik Networking Neden Çoğu Zaman Sonuç Vermez?
-                        </h3>
+                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Neden Farklıyız?</div>
+                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                            Klasik Networking Neden Yetersiz Kalır?
+                        </h2>
                         <div className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto space-y-4 leading-relaxed">
                             <p>
                                 Birçok networking etkinliğinde insanlar tanışır, kartvizit değiştirir ve sonra birbirini unutur. Çünkü güven oluşmaz, ilişki derinleşmez ve düzenli temas kurulmaz.
@@ -231,29 +354,29 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <XCircle className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Yüzeysel Tanışmalar</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Yüzeysel Tanışmalar</h3>
                             <p className="text-gray-600 leading-relaxed">
                                 Tek seferlik etkinliklerde insanlar birbirini yeterince tanıyamaz.
                             </p>
                         </div>
 
                         {/* Card 2: Güven Eksikliği */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <ShieldAlert className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Güven Eksikliği</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Güven Eksikliği</h3>
                             <p className="text-gray-600 leading-relaxed">
                                 İş yönlendirmesi için sadece tanışmak değil, güven oluşması gerekir.
                             </p>
                         </div>
 
                         {/* Card 3: Takip Eksikliği */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <AlertCircle className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Takip Eksikliği</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Takip Eksikliği</h3>
                             <p className="text-gray-600 leading-relaxed">
                                 Düzenli temas olmadığında ilişkiler kısa sürede kopar.
                             </p>
@@ -263,13 +386,13 @@ export function LandingPage() {
             </section>
 
             {/* Çözüm Section: Event4Network Nasıl Fark Yaratır? */}
-            <section id="felsefemiz" className="py-24 bg-gray-50/70 border-b border-gray-100">
+            <section id="neden-event4network" className="py-24 bg-gray-50/70 border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Çözüm Platformu</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
-                            Event4Network Nasıl Fark Yaratır?
-                        </h3>
+                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Çözüm Platformu</div>
+                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                            Neden Event4Network?
+                        </h2>
                         <p className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
                             Event4Network, iş insanlarını rastgele değil; dengeli, seçici ve sürdürülebilir gruplar içerisinde bir araya getirir. Her üye yalnızca kendi işiyle değil, çevresiyle birlikte bu yapıya değer katar.
                         </p>
@@ -281,7 +404,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Users className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Seçici Gruplar</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Seçici Gruplar</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Her grupta farklı sektörlerden iş insanları yer alır.
                             </p>
@@ -292,7 +415,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <ShieldCheck className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Meslek Koltuğu Sistemi</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Meslek Koltuğu Sistemi</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Aynı meslekten üyelerin çakışması engellenerek grup içi rekabet azaltılır.
                             </p>
@@ -303,7 +426,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Calendar className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Düzenli Toplantılar</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Düzenli Toplantılar</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Üyeler belirli aralıklarla bir araya gelerek görünürlüklerini artırır.
                             </p>
@@ -314,7 +437,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Handshake className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Birebir Görüşmeler</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Birebir Görüşmeler</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Asıl güven ve iş akışı, üyeler arasında yapılan birebir toplantılarla oluşur.
                             </p>
@@ -328,10 +451,10 @@ export function LandingPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
                         <div className="lg:col-span-6 mb-12 lg:mb-0">
-                            <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Nasıl Çalışır?</h2>
-                            <h3 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
-                                Güvene Dayalı Referans Sistemi
-                            </h3>
+                            <div className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Video Anlatım</div>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+                                Event4Network Nasıl Çalışır?
+                            </h2>
                             <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
                                 <p>
                                     Event4Network’te amaç yalnızca yeni insanlarla tanışmak değildir. Aynı kişilerle düzenli olarak bir araya gelmek, zaman içinde birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
@@ -347,11 +470,12 @@ export function LandingPage() {
                                 <iframe 
                                     className="absolute top-0 left-0 w-full h-full"
                                     src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
-                                    title="YouTube video player" 
+                                    title="Event4Network seçici networking platformu tanıtım videosu" 
                                     frameBorder="0" 
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                                     referrerPolicy="strict-origin-when-cross-origin" 
                                     allowFullScreen
+                                    loading="lazy"
                                 ></iframe>
                             </div>
                         </div>
@@ -363,7 +487,8 @@ export function LandingPage() {
             <section id="grup-yapisi" className="py-24 bg-gray-50 border-t border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h3 className="text-2xl font-bold text-gray-900">Grup Yapımız</h3>
+                        <div className="text-gray-900 font-semibold tracking-wide uppercase text-sm mb-3">Grup Yapımız</div>
+                        <h2 className="text-3xl font-bold text-gray-900">İki Ana Yapı</h2>
                         <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
                             Dinamik ve sürdürülebilir ilişkiler için iki ana yapı sunuyoruz.
                         </p>
@@ -379,7 +504,7 @@ export function LandingPage() {
                                 <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                     <Users className="h-6 w-6 text-red-600" />
                                 </div>
-                                <h4 className="text-xl font-bold text-gray-900 mb-4">Ana Gruplar</h4>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">Ana Gruplar</h3>
                                 <p className="text-gray-600 mb-4">
                                     Yaklaşık 35 iş insanından oluşan, genel networking faaliyetlerinin yürütüldüğü dinamik gruplardır.
                                 </p>
@@ -406,7 +531,7 @@ export function LandingPage() {
                                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
                                     <Users className="h-6 w-6 text-blue-600" />
                                 </div>
-                                <h4 className="text-xl font-bold text-gray-900 mb-4">Loncalar (Sektörel Takımlar)</h4>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">Loncalar (Sektörel Takımlar)</h3>
                                 <p className="text-gray-600 mb-4">
                                     Aynı sektöre hizmet eden ancak birbirinin rakibi olmayan, farklı uzmanlık alanlarından iş insanlarını bir araya getirir.
                                 </p>
@@ -437,8 +562,8 @@ export function LandingPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="lg:grid lg:grid-cols-2 gap-16 items-center">
                         <div>
-                            <h2 className="text-red-500 font-semibold tracking-wide uppercase text-sm mb-3">Toplantı Deneyimi</h2>
-                            <h3 className="text-3xl font-bold text-white mb-6">Sıkıcı Toplantılara Son</h3>
+                            <div className="text-red-500 font-semibold tracking-wide uppercase text-sm mb-3">Toplantı Deneyimi</div>
+                            <h2 className="text-3xl font-bold text-white mb-6">Sıkıcı Toplantılara Son</h2>
                             <p className="text-gray-300 text-lg mb-8 leading-relaxed">
                                 Ana grup toplantılarımızda sıkıcı, monoton sunumlar yerine interaktif ve eğlenceli bir akış sunuyoruz.
                             </p>
@@ -449,7 +574,7 @@ export function LandingPage() {
                                         <span className="text-red-500 font-bold">15</span>
                                     </div>
                                     <div className="ml-4">
-                                        <h4 className="text-xl font-bold text-white">Dakika İnteraktif Sunum</h4>
+                                        <h3 className="text-xl font-bold text-white">Dakika İnteraktif Sunum</h3>
                                         <p className="mt-1 text-gray-400">Üyelerimizin işini anlattığı kısa, öz ve etkileşimli sunumlar.</p>
                                     </div>
                                 </li>
@@ -458,7 +583,7 @@ export function LandingPage() {
                                         <Users className="h-5 w-5 text-blue-400" />
                                     </div>
                                     <div className="ml-4">
-                                        <h4 className="text-xl font-bold text-white">Networking Oyunları</h4>
+                                        <h3 className="text-xl font-bold text-white">Networking Oyunları</h3>
                                         <p className="mt-1 text-gray-400">Buzları eriten, tanışmayı hızlandıran ve eğlendiren aktiviteler.</p>
                                     </div>
                                 </li>
@@ -466,7 +591,7 @@ export function LandingPage() {
                         </div>
 
                         <div className="mt-12 lg:mt-0 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                            <h4 className="text-2xl font-bold text-white mb-6">Hibrit Yaklaşım: Online + Yüz Yüze</h4>
+                            <h3 className="text-2xl font-bold text-white mb-6">Hibrit Yaklaşım: Online + Yüz Yüze</h3>
                             <p className="text-gray-300 mb-6 leading-relaxed">
                                 Hem online'ın pratikliğinden hem de yüz yüze iletişimin gücünden faydalanıyoruz.
                             </p>
@@ -581,10 +706,10 @@ export function LandingPage() {
             <section id="sürecler" className="py-24 bg-white border-t border-gray-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-base font-semibold text-red-600 tracking-wide uppercase">Süreçler</h2>
-                        <h3 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Event4Network Sistemi Nasıl Çalışır?
-                        </h3>
+                        <div className="text-base font-semibold text-red-600 tracking-wide uppercase">Süreçler</div>
+                        <h2 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                            Üyelik Süreci Nasıl İşler?
+                        </h2>
                         <p className="mt-4 max-w-2xl text-lg text-gray-500 mx-auto">
                             Event4Network ailesine katılmak ve sistemin parçası olmak için izleyeceğiniz adımlar. Detayları görmek için adımların üzerine tıklayın.
                         </p>
@@ -655,13 +780,13 @@ export function LandingPage() {
             </section>
 
             {/* Qualification: Who is it for */}
-            <section className="py-24 bg-gray-50/70 border-t border-b border-gray-100">
+            <section id="kimler-icin" className="py-24 bg-gray-50/70 border-t border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Hedef Kitle</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Hedef Kitle</div>
+                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
                             Event4Network Kimler İçin Uygun?
-                        </h3>
+                        </h2>
                         <div className="mt-6 text-lg text-gray-600 max-w-4xl mx-auto space-y-4 leading-relaxed">
                             <p>
                                 Event4Network; işini büyütmek, doğru insanlarla tanışmak, çevresini genişletmek ve güvene dayalı iş ilişkileri kurmak isteyen profesyoneller için tasarlanmıştır.
@@ -678,7 +803,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-6">
                                 <Users className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Şirket Sahipleri</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Şirket Sahipleri</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Yeni iş bağlantıları ve stratejik ilişkiler kurmak isteyen işletme sahipleri.
                             </p>
@@ -689,7 +814,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Trophy className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Girişimciler</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Girişimciler</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Fikirlerini, ürünlerini veya hizmetlerini doğru çevrelerle buluşturmak isteyen girişimciler.
                             </p>
@@ -700,7 +825,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <CheckCircle className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">Danışmanlar ve Uzmanlar</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">Danışmanlar ve Uzmanlar</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Hizmet verdiği alanda güvenilir referanslarla büyümek isteyen profesyoneller.
                             </p>
@@ -711,7 +836,7 @@ export function LandingPage() {
                             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <BarChart className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-3">B2B Hizmet Sağlayıcıları</h4>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">B2B Hizmet Sağlayıcıları</h3>
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Şirketlere hizmet sunan ve karar vericilerle tanışmak isteyen firmalar.
                             </p>
@@ -721,11 +846,11 @@ export function LandingPage() {
             </section>
 
             {/* FAQ (SSS) Section */}
-            <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
+            <section id="sss" className="py-24 bg-gray-50 border-t border-b border-gray-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Destek</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Sıkça Sorulan Sorular</h3>
+                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Destek</div>
+                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Sıkça Sorulan Sorular</h2>
                         <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
                             Event4Network sistemi, üyelik süreci ve işleyiş hakkında merak ettiğiniz tüm soruların cevapları.
                         </p>
@@ -795,15 +920,15 @@ export function LandingPage() {
             </section>
 
             {/* Unified CTA Section */}
-            <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
+            <section id="on-bilgilendirme-formu" className="py-24 bg-gray-900 text-white relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute -top-1/2 -right-1/2 w-[1000px] h-[1000px] rounded-full bg-red-900/20 blur-3xl"></div>
                     <div className="absolute -bottom-1/2 -left-1/2 w-[1000px] h-[1000px] rounded-full bg-blue-900/10 blur-3xl"></div>
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <span className="bg-red-600/10 text-red-400 font-semibold tracking-wider uppercase text-xs px-4 py-1.5 rounded-full border border-red-500/20 mb-6 inline-block">
+                    <div className="bg-red-600/10 text-red-400 font-semibold tracking-wider uppercase text-xs px-4 py-1.5 rounded-full border border-red-500/20 mb-6 inline-block">
                         Hemen Katılın
-                    </span>
+                    </div>
                     <h2 className="text-4xl font-extrabold text-white sm:text-5xl mb-6 leading-tight">
                         Bu Networking Deneyimini Yaşayın – <span className="text-red-500">ÜCRETSİZ!</span>
                     </h2>

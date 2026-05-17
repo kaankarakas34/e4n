@@ -3,6 +3,7 @@ import { ShieldCheck, Building, User, Briefcase, Check } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { VisitorForm } from '../components/VisitorForm';
 
 export function VisitorApplication() {
@@ -12,6 +13,10 @@ export function VisitorApplication() {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <Helmet>
+          <title>Başvurunuz Alındı | Event4Network</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-green-100">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-green-600" />
@@ -30,6 +35,31 @@ export function VisitorApplication() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
+      <Helmet>
+        <title>Ön Bilgilendirme Formu | Event4Network</title>
+        <meta name="description" content="Event4Network seçici networking platformuna katılım süreci için ön bilgilendirme formunu doldurun. Başvurular ön değerlendirme sonrası incelenir." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.event4network.com/on-bilgilendirme-formu" />
+        <script type="application/ld+json">
+{`{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Event4Network",
+  "legalName": "Pardus Ticaret Haydar Karakaş",
+  "url": "https://www.event4network.com/",
+  "telephone": "+905363197697",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Çeliktepe, İsmet İnönü Cd. no:11 NO: 501",
+    "addressLocality": "Kağıthane",
+    "addressRegion": "İstanbul",
+    "postalCode": "34413",
+    "addressCountry": "TR"
+  },
+  "description": "Event4Network, iş insanları için seçici networking platformudur."
+}`}
+        </script>
+      </Helmet>
       {/* Mobile-First Header */}
       <header className="fixed w-full bg-white/90 backdrop-blur-md border-b border-gray-100 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -50,9 +80,9 @@ export function VisitorApplication() {
                 <span className="inline-block px-3 py-1 bg-red-50 text-red-600 text-xs font-semibold rounded-full mb-3">
                   ÜCRETSİZ KATILIM
                 </span>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Ziyaretçi Olun</h1>
-                <p className="text-gray-600">
-                  Global iş ağımızın bir parçası olmak için ilk adımı atın.
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Event4Network Ön Bilgilendirme Formu</h1>
+                <p className="text-gray-600 leading-relaxed">
+                  Event4Network ön bilgilendirme formu, iş insanları için seçici networking yapısına katılım sürecinin ilk adımıdır. Başvurular ön değerlendirme süreciyle incelenir ve uygunluk durumuna göre iletişime geçilir.
                 </p>
               </div>
 

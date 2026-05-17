@@ -63,6 +63,8 @@ import { AdminBlogs } from './pages/AdminBlogs';
 import { AdminBlogEditor } from './pages/AdminBlogEditor';
 import { BlogListPage } from './pages/BlogListPage';
 import { BlogPostPage } from './pages/BlogPostPage';
+import { NotFound } from './pages/NotFound';
+
 
 // Public Routes Layout - No Sidebar
 const PublicLayout = () => {
@@ -198,7 +200,7 @@ function App() {
             </Route>
 
             {/* Catch all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>
       </div>

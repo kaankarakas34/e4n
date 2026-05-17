@@ -4,7 +4,7 @@ import { VisitorForm } from '../components/VisitorForm';
 import { useEffect, useState } from 'react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
-import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import { api } from '../api/api';
 
@@ -148,8 +148,63 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Problem Section: Why Classic Networking Fails */}
+            <section className="py-24 bg-white border-t border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Neden Farklıyız?</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                            Klasik Networking Neden Çoğu Zaman Sonuç Vermez?
+                        </h3>
+                        <div className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto space-y-4 leading-relaxed">
+                            <p>
+                                Birçok networking etkinliğinde insanlar tanışır, kartvizit değiştirir ve sonra birbirini unutur. Çünkü güven oluşmaz, ilişki derinleşmez ve düzenli temas kurulmaz.
+                            </p>
+                            <p className="font-semibold text-red-600 bg-red-50/50 py-2 px-4 rounded-lg inline-block border border-red-100/50">
+                                Event4Network, bu problemi çözmek için yalnızca tanışmaya değil; tanınmaya, güven oluşturmaya ve sürdürülebilir iş ilişkileri kurmaya odaklanır.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {/* Card 1: Yüzeysel Tanışmalar */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <XCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Yüzeysel Tanışmalar</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                                Tek seferlik etkinliklerde insanlar birbirini yeterince tanıyamaz.
+                            </p>
+                        </div>
+
+                        {/* Card 2: Güven Eksikliği */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <ShieldAlert className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Güven Eksikliği</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                                İş yönlendirmesi için sadece tanışmak değil, güven oluşması gerekir.
+                            </p>
+                        </div>
+
+                        {/* Card 3: Takip Eksikliği */}
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <AlertCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Takip Eksikliği</h4>
+                            <p className="text-gray-600 leading-relaxed">
+                                Düzenli temas olmadığında ilişkiler kısa sürede kopar.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Core Philosophy Section */}
-            <section id="felsefemiz" className="py-24 bg-white">
+            <section id="felsefemiz" className="py-24 bg-gray-50/70 border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Farkımız Nedir?</h2>
@@ -161,7 +216,7 @@ export function LandingPage() {
 
                     <div className="grid md:grid-cols-3 gap-10">
                         {/* Feature 1: Regular & Focused */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
                             <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Users className="h-7 w-7 text-red-600" />
                             </div>
@@ -172,7 +227,7 @@ export function LandingPage() {
                         </div>
 
                         {/* Feature 2: Shuffle System */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
                             <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
                                 <Calendar className="h-7 w-7 text-orange-600" />
                             </div>
@@ -183,7 +238,7 @@ export function LandingPage() {
                         </div>
 
                         {/* Feature 3: Exclusivity */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
                             <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                                 <Trophy className="h-7 w-7 text-red-600" />
                             </div>

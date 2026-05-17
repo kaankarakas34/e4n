@@ -107,7 +107,6 @@ export function LandingPage() {
     const navigate = useNavigate();
     const [groups, setGroups] = useState<GroupStat[]>([]);
     const [events, setEvents] = useState<PublicEvent[]>([]);
-    const [openStep, setOpenStep] = useState<number | null>(0);
     const [openFaqs, setOpenFaqs] = useState<Record<number, boolean>>({});
     const [faqSearch, setFaqSearch] = useState("");
 
@@ -703,78 +702,66 @@ export function LandingPage() {
             </section>
 
             {/* Process Steps Section */}
-            <section id="sürecler" className="py-24 bg-white border-t border-gray-100">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
+            <section id="sürecler" className="py-24 bg-white border-t border-gray-100 overflow-hidden">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-20">
                         <div className="text-base font-semibold text-red-600 tracking-wide uppercase">Süreçler</div>
                         <h2 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
                             Üyelik Süreci Nasıl İşler?
                         </h2>
                         <p className="mt-4 max-w-2xl text-lg text-gray-500 mx-auto">
-                            Event4Network ailesine katılmak ve sistemin parçası olmak için izleyeceğiniz adımlar. Detayları görmek için adımların üzerine tıklayın.
+                            Event4Network ailesine katılmak ve sistemin parçası olmak için izleyeceğiniz adımlar.
                         </p>
                     </div>
 
-                    <div className="space-y-4">
-                        {[
-                            {
-                                step: "01",
-                                title: "Başvuru veya Davet",
-                                description: "Event4Network’e katılım başvuru veya davet yoluyla başlar."
-                            },
-                            {
-                                step: "02",
-                                title: "Ön Görüşme",
-                                description: "Adayın sektörü, beklentileri ve grup uygunluğu değerlendirilir."
-                            },
-                            {
-                                step: "03",
-                                title: "Tanışma Toplantısı",
-                                description: "Aday, sistemi yakından görmek için bir toplantıya davet edilir."
-                            },
-                            {
-                                step: "04",
-                                title: "Grup Üyeliği",
-                                description: "Uygun bulunan adaylar ilgili gruba dahil edilir."
-                            },
-                            {
-                                step: "05",
-                                title: "Düzenli Networking Süreci",
-                                description: "Toplantılar, birebir görüşmeler, etkinlikler ve referans yönlendirmeleriyle süreç devam eder."
-                            }
-                        ].map((item, index) => {
-                            const isOpen = openStep === index;
-                            return (
-                                <div 
-                                    key={index}
-                                    className="border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md bg-white"
-                                >
-                                    <button
-                                        onClick={() => setOpenStep(isOpen ? null : index)}
-                                        className="w-full flex items-center justify-between p-6 text-left focus:outline-none transition-colors duration-200 hover:bg-gray-50/50"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <span className={`text-xl font-bold font-mono px-3 py-1 rounded-lg transition-all duration-300 ${isOpen ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600'}`}>
-                                                {item.step}
-                                            </span>
-                                            <span className="text-xl font-bold text-gray-900">{item.title}</span>
-                                        </div>
-                                        <span className={`transform transition-transform duration-300 text-xl font-semibold text-gray-400 ${isOpen ? 'rotate-90 text-red-600' : ''}`}>
-                                            ➔
-                                        </span>
-                                    </button>
-                                    <div 
-                                        className={`transition-all duration-350 ease-in-out overflow-hidden ${
-                                            isOpen ? 'max-h-40 border-t border-gray-100 bg-gray-50/30' : 'max-h-0'
-                                        }`}
-                                    >
-                                        <p className="p-6 text-gray-600 text-lg leading-relaxed">
-                                            {item.description}
-                                        </p>
+                    <div className="relative">
+                        {/* Desktop Horizontal Line */}
+                        <div className="hidden lg:block absolute top-10 left-10 right-10 h-1 bg-red-100 rounded-full -z-10"></div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-8 relative">
+                            {[
+                                {
+                                    step: "01",
+                                    title: "Başvuru",
+                                    description: "Event4Network’e katılım başvuru veya davet yoluyla başlar."
+                                },
+                                {
+                                    step: "02",
+                                    title: "Ön Görüşme",
+                                    description: "Sektör, beklentiler ve grup uygunluğu değerlendirilir."
+                                },
+                                {
+                                    step: "03",
+                                    title: "Tanışma",
+                                    description: "Sistemi yakından görmek için bir toplantıya davet edilirsiniz."
+                                },
+                                {
+                                    step: "04",
+                                    title: "Üyelik",
+                                    description: "Uygun bulunan adaylar ilgili gruba dahil edilir."
+                                },
+                                {
+                                    step: "05",
+                                    title: "Networking",
+                                    description: "Düzenli toplantı ve referans yönlendirmeleri süreci."
+                                }
+                            ].map((item, index) => (
+                                <div key={index} className="relative group text-center flex flex-col items-center">
+                                    {/* Mobile Vertical Line */}
+                                    {index !== 4 && (
+                                        <div className="lg:hidden absolute top-20 bottom-[-3rem] left-1/2 w-1 bg-red-100 -translate-x-1/2 -z-10"></div>
+                                    )}
+                                    
+                                    <div className="w-20 h-20 bg-white border-4 border-red-50 text-red-600 rounded-full flex items-center justify-center font-black text-2xl mb-6 shadow-xl shadow-red-100/50 group-hover:-translate-y-2 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-100 transition-all duration-300 relative z-10">
+                                        {item.step}
                                     </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors">{item.title}</h3>
+                                    <p className="text-gray-600 text-sm leading-relaxed px-2">
+                                        {item.description}
+                                    </p>
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>

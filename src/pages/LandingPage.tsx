@@ -4,7 +4,7 @@ import { VisitorForm } from '../components/VisitorForm';
 import { useEffect, useState } from 'react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
-import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import { api } from '../api/api';
 
@@ -203,48 +203,61 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* Core Philosophy Section */}
+            {/* Çözüm Section: Event4Network Nasıl Fark Yaratır? */}
             <section id="felsefemiz" className="py-24 bg-gray-50/70 border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Farkımız Nedir?</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Nicelik Değil, Nitelik.</h3>
-                        <p className="mt-6 text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                            Klasik networking etkinliklerinden en büyük farkımız, kalabalık ve verimsiz toplantılar yerine, <span className="font-bold text-gray-900">35 kişilik seçkin gruplarla</span> düzenli ve derinlemesine ilişkiler kurmamızdır.
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Çözüm Platformu</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                            Event4Network Nasıl Fark Yaratır?
+                        </h3>
+                        <p className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                            Event4Network, iş insanlarını rastgele değil; dengeli, seçici ve sürdürülebilir gruplar içerisinde bir araya getirir. Her üye yalnızca kendi işiyle değil, çevresiyle birlikte bu yapıya değer katar.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-10">
-                        {/* Feature 1: Regular & Focused */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
-                            <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Users className="h-7 w-7 text-red-600" />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {/* Card 1: Seçici Gruplar */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Users className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-4">Düzenli ve Odaklı Gruplar</h4>
-                            <p className="text-gray-600 leading-relaxed">
-                                Gruplarımız iki haftada bir düzenli olarak bir araya gelir. Amaç yüzeysel tanışmalar değil; zaman içinde güçlenen, sürdürülebilir dostluklar ve iş ortaklıkları kurmaktır.
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Seçici Gruplar</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Her grupta farklı sektörlerden iş insanları yer alır.
                             </p>
                         </div>
 
-                        {/* Feature 2: Shuffle System */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
-                            <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
-                                <Calendar className="h-7 w-7 text-orange-600" />
+                        {/* Card 2: Meslek Koltuğu Sistemi */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <ShieldCheck className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-4">4 Ayda Bir "Shuffle"</h4>
-                            <p className="text-gray-600 leading-relaxed">
-                                Her 4 ayda bir ana gruplar yeniden karma hale (shuffle) getirilir. Bu sayede, edindiğiniz dostlukları cebinize koyarken, sürekli yeni iş insanlarıyla tanışma fırsatı bulursunuz.
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Meslek Koltuğu Sistemi</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Aynı meslekten üyelerin çakışması engellenerek grup içi rekabet azaltılır.
                             </p>
                         </div>
 
-                        {/* Feature 3: Exclusivity */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
-                            <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Trophy className="h-7 w-7 text-red-600" />
+                        {/* Card 3: Düzenli Toplantılar */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Calendar className="h-6 w-6 text-red-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-4">Fırsat Eşitliği</h4>
-                            <p className="text-gray-600 leading-relaxed">
-                                Her grupta <span className="font-bold text-gray-900">aynı meslekten sadece bir kişi</span> yer alır. Bu sayede kendi alanınızda rakipsiz olur, grup içindeki tüm potansiyeli değerlendirirsiniz.
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Düzenli Toplantılar</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Üyeler belirli aralıklarla bir araya gelerek görünürlüklerini artırır.
+                            </p>
+                        </div>
+
+                        {/* Card 4: Birebir Görüşmeler */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Handshake className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Birebir Görüşmeler</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Asıl güven ve iş akışı, üyeler arasında yapılan birebir toplantılarla oluşur.
                             </p>
                         </div>
                     </div>

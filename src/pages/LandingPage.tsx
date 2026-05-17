@@ -4,7 +4,7 @@ import { VisitorForm } from '../components/VisitorForm';
 import { useEffect, useState } from 'react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
-import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake, ChevronDown, ChevronUp, Search, Plus, Minus } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import { api } from '../api/api';
 
@@ -23,11 +23,92 @@ interface PublicEvent {
     location: string;
 }
 
+const faqs = [
+    {
+        q: "Event4Network’e kimler katılabilir?",
+        a: "Event4Network; şirket sahipleri, girişimciler, danışmanlar, uzmanlar ve B2B hizmet sağlayıcıları için uygundur.\n\nAncak üyelik sürecinde yalnızca meslek veya sektör uygunluğuna bakılmaz. Adayın faaliyet süresi, iş hacmi, hizmet kapasitesi, grup dengesi ve karşılıklı değer üretme potansiyeli de ön değerlendirme görüşmesinde ele alınır."
+    },
+    {
+        q: "Her başvuru kabul ediliyor mu?",
+        a: "Hayır. Event4Network seçici bir yapıya sahiptir.\n\nBaşvurular; adayın sektörü, iş yapma biçimi, mevcut grup yapısı, meslek koltuğu uygunluğu ve gruba sağlayabileceği katkılar doğrultusunda değerlendirilir.\n\nBu yaklaşım, grup içindeki güveni, dengeyi ve iş yönlendirme kalitesini korumak için önemlidir."
+    },
+    {
+        q: "Şirketin en az kaç yıldır açık olması gerekiyor?",
+        a: "Event4Network’e katılım için adayın belirli bir faaliyet geçmişine ve iş hacmine sahip olması önemlidir.\n\nGenel olarak en az 2 yıldır aktif faaliyet gösteren, belirli bir müşteri portföyü veya hizmet kapasitesi oluşmuş işletmeler daha uygun profil olarak değerlendirilir.\n\nAncak bu kriter tek başına yeterli veya belirleyici değildir. Detaylar ön değerlendirme görüşmesinde adayın sektörü, iş modeli ve grup içindeki potansiyel katkısı üzerinden değerlendirilir."
+    },
+    {
+        q: "Aynı meslekten birden fazla kişi aynı grupta yer alabilir mi?",
+        a: "Event4Network’te grup içi rekabeti azaltmak ve üyeler arasında daha sağlıklı referans ilişkileri kurmak için meslek koltuğu sistemine dikkat edilir.\n\nBu nedenle aynı grupta aynı meslek veya doğrudan rakip alanlarda faaliyet gösteren üyelerin çakışmamasına özen gösterilir."
+    },
+    {
+        q: "Meslek koltuğu sistemi nedir?",
+        a: "Meslek koltuğu sistemi, her grupta belirli meslek veya sektörlerden sınırlı sayıda kişinin yer almasını ifade eder.\n\nBu sistem sayesinde üyeler, grup içinde doğrudan rakipleriyle değil; birbirini tamamlayabilecek farklı sektörlerden profesyonellerle bir araya gelir.\n\nAmaç, grup içi güveni artırmak ve nitelikli iş yönlendirmelerini daha sağlıklı hale getirmektir."
+    },
+    {
+        q: "Toplantılar ne sıklıkla yapılıyor?",
+        a: "Event4Network grupları düzenli olarak bir araya gelir.\n\nGenellikle toplantılar belirli periyotlarla, örneğin ayın belirli haftalarında gerçekleştirilir. Toplantı düzeni, ilgili grubun yapısına ve dönem takvimine göre üyelerle paylaşılır.\n\nDüzenli katılım, üyelerin görünürlüğü ve güven inşası açısından oldukça önemlidir."
+    },
+    {
+        q: "Toplantılar online mı, fiziksel mi?",
+        a: "Event4Network’te hem online toplantılar hem de fiziksel buluşmalar yapılabilir.\n\nDüzenli grup toplantıları çoğunlukla online olarak gerçekleştirilebilirken; fiziksel buluşmalar, kahve toplantıları, beyaz yaka etkinlikleri ve farklı platformlarla yapılan iş birlikleri de network sürecinin bir parçasıdır."
+    },
+    {
+        q: "Toplantılara katılım zorunlu mu?",
+        a: "Event4Network’te düzenli katılım oldukça önemlidir.\n\nÇünkü networking, yalnızca bir defa görünmekle değil; düzenli olarak tanınmak, hatırlanmak ve güven oluşturmakla sonuç verir.\n\nBu nedenle üyelerin toplantılara mümkün olduğunca düzenli katılması beklenir. Katılım disiplini, hem kişinin kendi görünürlüğü hem de grubun sağlıklı ilerlemesi için önemlidir."
+    },
+    {
+        q: "Birebir toplantılar neden önemli?",
+        a: "Birebir toplantılar, Event4Network sisteminin en önemli parçalarından biridir.\n\nGenel toplantılarda insanlar birbirini tanımaya başlar; ancak asıl güven, detaylı tanışma ve iş yönlendirme potansiyeli birebir görüşmelerde oluşur.\n\nKimin kimi tanıdığını, hangi çevrelere ulaşabileceğini ve hangi iş birliklerinin doğabileceğini anlamanın en etkili yolu birebir toplantılardır."
+    },
+    {
+        q: "Event4Network doğrudan müşteri kazandırır mı?",
+        a: "Event4Network doğrudan satış garantisi veren bir yapı değildir.\n\nBuradaki temel amaç; doğru insanlarla düzenli temas kurmak, güven oluşturmak, referans ilişkileri geliştirmek ve zaman içinde nitelikli iş fırsatlarının doğabileceği bir çevre oluşturmaktır.\n\nReklam hızlı görünürlük sağlayabilir; ancak referans, güven üzerinden daha güçlü iş ilişkileri oluşturur."
+    },
+    {
+        q: "Gruptaki kişiler benim müşterim mi olacak?",
+        a: "Event4Network’te asıl değer, yalnızca gruptaki kişileri potansiyel müşteri olarak görmek değildir.\n\nBir grupta yer aldığınızda, zamanla 35 kişinin çevresinde güvenilir bir profesyonel olarak konumlanırsınız. Yani üyelerin kendisinden çok, onların çevresi sizin için daha büyük bir pazar haline gelebilir.\n\nBu nedenle Event4Network’te amaç satış yapmak değil; güvenilir şekilde tavsiye edilebilir hale gelmektir."
+    },
+    {
+        q: "Event4Network’te referans sistemi nasıl işler?",
+        a: "Üyeler düzenli toplantılar ve birebir görüşmeler sayesinde birbirlerinin işlerini, uzmanlıklarını ve hedef müşteri profillerini daha iyi tanır.\n\nBu güven oluştukça, üyeler kendi çevrelerinde uygun gördükleri kişilere diğer üyeleri tavsiye edebilir veya iş yönlendirmesi yapabilir.\n\nReferansların sağlıklı oluşması için üyelerin kendini net anlatması, toplantılara düzenli katılması ve birebir görüşmeler yapması önemlidir."
+    },
+    {
+        q: "Ziyaretçi olarak toplantıya katılabilir miyim?",
+        a: "Evet, uygun görülen adaylar Event4Network toplantılarına ziyaretçi olarak davet edilebilir.\n\nZiyaretçi katılımı, hem adayın sistemi yakından görmesi hem de Event4Network ekibinin adayın grup yapısına uygunluğunu değerlendirmesi için önemli bir adımdır."
+    },
+    {
+        q: "Üyelik süreci nasıl ilerliyor?",
+        a: "Üyelik süreci genellikle şu adımlardan oluşur:\n\n- Başvuru veya davet\n- Ön değerlendirme görüşmesi\n- Uygun grup ve meslek koltuğu kontrolü\n- Tanışma toplantısına katılım\n- Üyelik değerlendirmesi\n- Uygun bulunması halinde gruba dahil olma\n\nBu süreç, hem adayın beklentilerini hem de grubun yapısını korumak için uygulanır."
+    },
+    {
+        q: "Event4Network ücretli mi?",
+        a: "Event4Network bir üyelik sistemiyle çalışır.\n\nÜyelik detayları, dönemsel yapı, grup uygunluğu ve katılım şartları ön değerlendirme görüşmesinde paylaşılır.\n\nAmaç, yalnızca katılım sağlamak değil; düzenli, sürdürülebilir ve karşılıklı değer üreten bir iş ağına dahil olmaktır."
+    },
+    {
+        q: "Başvuru yaptıktan sonra ne oluyor?",
+        a: "Başvurunuz alındıktan sonra Event4Network ekibi sizinle iletişime geçer.\n\nÖn görüşmede işiniz, sektörünüz, hedef müşteri profiliniz, faaliyet süreniz, beklentileriniz ve uygun grup ihtimali değerlendirilir.\n\nUygun görülmeniz halinde sizi bir tanışma toplantısına veya ilgili üyelik sürecine yönlendiririz."
+    },
+    {
+        q: "Event4Network hangi sektörler için uygundur?",
+        a: "Event4Network birçok farklı sektör için uygundur. Özellikle B2B çalışan, hizmet sunan, referansla büyüyebilecek veya karar vericilerle ilişki kurmak isteyen profesyoneller için güçlü bir yapıdır.\n\nÖrnek olarak:\n- Danışmanlık\n- Hukuk\n- Finans\n- Sigorta\n- Yazılım\n- Pazarlama\n- Gayrimenkul\n- İnsan kaynakları\n- Eğitim\n- Sağlık turizmi\n- E-ticaret\n- Mimarlık ve mühendislik\n\nAncak her sektör için uygunluk, mevcut grup yapısı ve meslek koltuğu durumuna göre değerlendirilir."
+    },
+    {
+        q: "Event4Network sadece grup içi ilişkilerden mi oluşur?",
+        a: "Hayır. Event4Network yalnızca kapalı grup toplantılarından ibaret değildir.\n\nÜyelerin farklı çevrelerde de görünür olabilmesi için fiziksel buluşmalar, beyaz yaka toplantılar, dış etkinlik katılımları ve farklı platformlarla yapılan iş birlikleri de sürecin parçasıdır.\n\nBu sayede üyeler yalnızca kendi gruplarıyla değil, daha geniş bir iş ekosistemiyle temas kurabilir."
+    },
+    {
+        q: "Event4Network’e neden katılmalıyım?",
+        a: "Event4Network’e katılmak, yalnızca yeni insanlarla tanışmak anlamına gelmez.\n\nBurada düzenli olarak görünür olur, işinizi anlatır, diğer üyeleri tanır, birebir görüşmeler yapar ve zaman içinde güvenilir bir referans ağı içinde yer alırsınız.\n\nDoğru kişiler tarafından tanınmak, iş dünyasında reklamdan çok daha güçlü ve kalıcı sonuçlar doğurabilir."
+    }
+];
+
 export function LandingPage() {
     const navigate = useNavigate();
     const [groups, setGroups] = useState<GroupStat[]>([]);
     const [events, setEvents] = useState<PublicEvent[]>([]);
     const [openStep, setOpenStep] = useState<number | null>(0);
+    const [openFaqs, setOpenFaqs] = useState<Record<number, boolean>>({});
+    const [faqSearch, setFaqSearch] = useState("");
 
     useEffect(() => {
         // Fetch groups and events
@@ -639,79 +720,104 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* Visitor Form Section */}
-            <section id="ziyaretci-ol" className="py-24 bg-white relative overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
-                        <div className="lg:col-span-6 mb-12 lg:mb-0">
-                            <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Aramıza Katılın</h2>
-                            <h3 className="text-4xl font-extrabold text-gray-900 mb-6 leading-tight">
-                                Ziyaretçi Olmak İstiyorum
-                            </h3>
-                            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                Event 4 Network toplantılarına misafir olarak katılarak sistemimizi yakından tanıyabilir, iş çevrenizi genişletmek için ilk adımı atabilirsiniz.
-                            </p>
-
-                            <div className="space-y-6">
-                                <div className="flex items-start">
-                                    <div className="flex-shrink-0">
-                                        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-100 text-red-600">
-                                            <Users className="h-6 w-6" />
-                                        </div>
-                                    </div>
-                                    <div className="ml-4">
-                                        <h4 className="text-lg font-medium text-gray-900">Tanışma Toplantısı</h4>
-                                        <p className="mt-1 text-gray-500">
-                                            Size en yakın grupla tanışın ve işleyişi yerinde gözlemleyin.
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="flex-shrink-0">
-                                        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-100 text-red-600">
-                                            <Trophy className="h-6 w-6" />
-                                        </div>
-                                    </div>
-                                    <div className="ml-4">
-                                        <h4 className="text-lg font-medium text-gray-900">Fırsatları Keşfedin</h4>
-                                        <p className="mt-1 text-gray-500">
-                                            Sektörünüzde tek olma avantajını ve referans sistemini öğrenin.
-                                        </p>
-                                    </div>
-                                </div>
+            {/* FAQ (SSS) Section */}
+            <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Destek</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Sıkça Sorulan Sorular</h3>
+                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+                            Event4Network sistemi, üyelik süreci ve işleyiş hakkında merak ettiğiniz tüm soruların cevapları.
+                        </p>
+                        
+                        {/* Search Bar */}
+                        <div className="mt-8 max-w-md mx-auto relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-gray-400" />
                             </div>
+                            <input
+                                type="text"
+                                placeholder="Soru veya kelime ara..."
+                                value={faqSearch}
+                                onChange={(e) => setFaqSearch(e.target.value)}
+                                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-2xl bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm shadow-sm transition-all"
+                            />
                         </div>
+                    </div>
 
-                        <div className="lg:col-span-6">
-                            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-                                <VisitorForm source="main_page_section" />
-                            </div>
-                        </div>
+                    <div className="space-y-4">
+                        {(() => {
+                            const filteredFaqs = faqs.filter(faq => 
+                                faq.q.toLowerCase().includes(faqSearch.toLowerCase()) || 
+                                faq.a.toLowerCase().includes(faqSearch.toLowerCase())
+                            );
+
+                            return filteredFaqs.length > 0 ? (
+                                filteredFaqs.map((faq) => {
+                                    const originalIndex = faqs.findIndex(f => f.q === faq.q);
+                                    const isOpen = !!openFaqs[originalIndex];
+                                    return (
+                                        <div 
+                                            key={originalIndex}
+                                            className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setOpenFaqs(prev => ({ ...prev, [originalIndex]: !prev[originalIndex] }));
+                                                }}
+                                                className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
+                                            >
+                                                <span className="text-lg font-bold text-gray-900 pr-4">{faq.q}</span>
+                                                <span className={`flex-shrink-0 p-1.5 rounded-full bg-gray-50 text-gray-500 transition-all duration-300 ${isOpen ? 'bg-red-50 text-red-600 rotate-180' : ''}`}>
+                                                    <ChevronDown className="h-5 w-5" />
+                                                </span>
+                                            </button>
+                                            <div 
+                                                className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                                                    isOpen ? 'max-h-[500px] border-t border-gray-50' : 'max-h-0'
+                                                }`}
+                                            >
+                                                <div className="p-6 text-gray-600 leading-relaxed text-base whitespace-pre-line">
+                                                    {faq.a}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-center py-12 text-gray-500">
+                                    Arama kriterlerinize uygun soru bulunamadı.
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="py-20 bg-gray-900 relative overflow-hidden">
+            {/* Unified CTA Section */}
+            <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute -top-1/2 -right-1/2 w-[1000px] h-[1000px] rounded-full bg-red-900/20 blur-3xl"></div>
                     <div className="absolute -bottom-1/2 -left-1/2 w-[1000px] h-[1000px] rounded-full bg-blue-900/10 blur-3xl"></div>
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <h2 className="text-3xl font-extrabold text-white sm:text-4xl mb-6">
-                        İşinizi Bir Sonraki Seviyeye Taşıyın
+                    <span className="bg-red-600/10 text-red-400 font-semibold tracking-wider uppercase text-xs px-4 py-1.5 rounded-full border border-red-500/20 mb-6 inline-block">
+                        Hemen Katılın
+                    </span>
+                    <h2 className="text-4xl font-extrabold text-white sm:text-5xl mb-6 leading-tight">
+                        Bu Networking Deneyimini Yaşayın – <span className="text-red-500">ÜCRETSİZ!</span>
                     </h2>
-                    <p className="text-xl text-gray-300 mb-10">
-                        Siz de binlerce başarılı iş sahibi arasına katılın. Ücretsiz bilgilendirme toplantımıza davetlisiniz.
+                    <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Siz de Event4Network toplantılarına misafir olarak katılarak sistemimizi yakından tanıyabilir, iş çevrenizi genişletmek için ilk adımı atabilirsiniz.
                     </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    <div className="flex justify-center">
                         <Button
                             size="lg"
                             variant="primary"
                             onClick={() => navigate('/ziyaretci-ol')}
-                            className="text-lg h-14 px-10 bg-red-600 hover:bg-red-500"
+                            className="text-lg h-16 px-12 bg-red-600 hover:bg-red-500 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
                         >
-                            Hemen Başvurun
+                            Ziyaretçi Olarak Deneyimle (ÜCRETSİZ)
                         </Button>
                     </div>
                 </div>

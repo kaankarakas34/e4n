@@ -111,10 +111,10 @@ export function LandingPage() {
                                 🚀 Profesyonel İş Ağı Platformu
                             </div>
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
-                                Kalıcı İş İlişkileri İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Seçici Networking</span>
+                                Reklamdan Daha Güçlü Bir Şey Var: <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Güvene Dayalı İş Ağı</span>
                             </h1>
                             <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
-                                Event4Network, iş insanlarının bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici bir networking platformudur. Kalabalık etkinliklerin gürültüsünden uzak, düzenli ve odaklı gruplarla büyüyün.
+                                Event4Network, iş insanlarını düzenli ve seçici gruplarda bir araya getirerek güvene dayalı, sürdürülebilir ve nitelikli iş bağlantıları kurulmasını sağlayan yeni nesil bir networking platformudur.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Button
@@ -123,28 +123,16 @@ export function LandingPage() {
                                     onClick={() => navigate('/ziyaretci-ol')}
                                     className="text-lg px-8 h-14 shadow-xl shadow-red-200"
                                 >
-                                    Hemen Başvurun <ArrowRight className="ml-2 h-5 w-5" />
+                                    Ziyaretçi olarak denemek İstiyorum <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                                 <Button
                                     size="lg"
                                     variant="outline"
+                                    onClick={() => document.getElementById('nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}
                                     className="text-lg px-8 h-14"
                                 >
-                                    Detaylı Bilgi
+                                    Nasıl Çalışır?
                                 </Button>
-                            </div>
-
-                            <div className="mt-10 flex items-center gap-6 text-sm text-gray-500">
-                                <div className="flex items-center">
-                                    <div className="flex -space-x-2 mr-3">
-                                        {[1, 2, 3, 4].map((i) => (
-                                            <div key={i} className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white" />
-                                        ))}
-                                    </div>
-                                    <span>5000+ Üye</span>
-                                </div>
-                                <div className="h-4 w-px bg-gray-300"></div>
-                                <div>₺100M+ İş Hacmi</div>
                             </div>
                         </div>
 
@@ -209,25 +197,37 @@ export function LandingPage() {
             </section>
 
             {/* Video Section */}
-            <section className="py-24 bg-gray-50 border-t border-gray-100">
+            <section id="nasil-calisir" className="py-24 bg-white border-t border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Event 4 Network</h2>
-                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Nedir ve Nasıl Çalışır?</h3>
-                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-                            Event 4 Network'ün sunduğu avantajları ve işleyişini anlatan kısa videomuzu izleyin.
-                        </p>
-                    </div>
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video max-w-5xl mx-auto">
-                        <iframe 
-                            className="absolute top-0 left-0 w-full h-full"
-                            src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
-                            title="YouTube video player" 
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            referrerPolicy="strict-origin-when-cross-origin" 
-                            allowFullScreen
-                        ></iframe>
+                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
+                        <div className="lg:col-span-6 mb-12 lg:mb-0">
+                            <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Nasıl Çalışır?</h2>
+                            <h3 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+                                Güvene Dayalı Referans Sistemi
+                            </h3>
+                            <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
+                                <p>
+                                    Event4Network’te amaç yalnızca yeni insanlarla tanışmak değildir. Aynı kişilerle düzenli olarak bir araya gelmek, zaman içinde birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
+                                </p>
+                                <p className="border-l-4 border-red-600 pl-4 italic text-gray-700 font-medium bg-red-50/50 py-3 rounded-r-lg">
+                                    Burada gruptaki 35 kişi yalnızca potansiyel müşteriniz değildir; onların çevresi, güvenilir bir referansla ulaşabileceğiniz gerçek pazarınızdır.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-6">
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video w-full">
+                                <iframe 
+                                    className="absolute top-0 left-0 w-full h-full"
+                                    src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
+                                    title="YouTube video player" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    referrerPolicy="strict-origin-when-cross-origin" 
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

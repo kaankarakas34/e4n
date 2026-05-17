@@ -208,6 +208,30 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Video Section */}
+            <section className="py-24 bg-gray-50 border-t border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Event 4 Network</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Nedir ve Nasıl Çalışır?</h3>
+                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+                            Event 4 Network'ün sunduğu avantajları ve işleyişini anlatan kısa videomuzu izleyin.
+                        </p>
+                    </div>
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video max-w-5xl mx-auto">
+                        <iframe 
+                            className="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
+                            title="YouTube video player" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            referrerPolicy="strict-origin-when-cross-origin" 
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                </div>
+            </section>
+
             {/* Group Types Section */}
             <section id="grup-yapisi" className="py-24 bg-gray-50 border-t border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -27,6 +27,7 @@ export function LandingPage() {
     const navigate = useNavigate();
     const [groups, setGroups] = useState<GroupStat[]>([]);
     const [events, setEvents] = useState<PublicEvent[]>([]);
+    const [openStep, setOpenStep] = useState<number | null>(0);
 
     useEffect(() => {
         // Fetch groups and events
@@ -36,29 +37,6 @@ export function LandingPage() {
             setEvents(publicEvents);
         }).catch(() => { });
     }, []);
-
-    const processes = [
-        {
-            icon: <Users className="h-8 w-8 text-red-600" />,
-            title: "Başvuru ve Tanışma",
-            description: "Online form üzerinden başvurunuzu yapın. Size en yakın grupla tanışmanız için davet edileceksiniz."
-        },
-        {
-            icon: <CheckCircle className="h-8 w-8 text-red-600" />,
-            title: "Mülakat ve Kabul",
-            description: "Grup liderleri ile yapacağınız görüşme sonrası, sektörünüzde tek olma kuralına uygunluğunuz değerlendirilir."
-        },
-        {
-            icon: <Calendar className="h-8 w-8 text-red-600" />,
-            title: "Oryantasyon ve Eğitim",
-            description: "Kabul sonrası sistemin işleyişini ve networking stratejilerini öğreneceğiniz kapsamlı bir eğitim alırsınız."
-        },
-        {
-            icon: <BarChart className="h-8 w-8 text-red-600" />,
-            title: "İş Birliği ve Büyüme",
-            description: "Haftalık toplantılar ve düzenli etkinliklerle iş ağınızı genişletir, nitelikli referanslar alırsınız."
-        }
-    ];
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(value);
@@ -520,45 +498,149 @@ export function LandingPage() {
 
             {/* Process Steps Section */}
             <section id="sürecler" className="py-24 bg-white border-t border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-base font-semibold text-red-600 tracking-wide uppercase">Süreçler</h2>
-                        <p className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Platforma Nasıl Katılırsınız?
-                        </p>
-                        <p className="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-                            Event 4 Network ailesine katılmak ve işinizi büyütmek için izlemeniz gereken adımlar.
+                        <h3 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                            Event4Network Sistemi Nasıl Çalışır?
+                        </h3>
+                        <p className="mt-4 max-w-2xl text-lg text-gray-500 mx-auto">
+                            Event4Network ailesine katılmak ve sistemin parçası olmak için izleyeceğiniz adımlar. Detayları görmek için adımların üzerine tıklayın.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {processes.map((step, index) => (
-                            <div key={index} className="relative group">
-                                <div className="absolute inset-0 bg-white rounded-xl shadow-lg transform transition-transform group-hover:-translate-y-2 duration-300"></div>
-                                <div className="relative p-8 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-xl transition-shadow duration-300 h-full">
-                                    <div className="w-14 h-14 bg-red-50 rounded-lg flex items-center justify-center mb-6 group-hover:bg-red-600 group-hover:text-white transition-colors duration-300">
-                                        <div className="group-hover:text-white transition-colors duration-300">
-                                            {step.icon}
+                    <div className="space-y-4">
+                        {[
+                            {
+                                step: "01",
+                                title: "Başvuru veya Davet",
+                                description: "Event4Network’e katılım başvuru veya davet yoluyla başlar."
+                            },
+                            {
+                                step: "02",
+                                title: "Ön Görüşme",
+                                description: "Adayın sektörü, beklentileri ve grup uygunluğu değerlendirilir."
+                            },
+                            {
+                                step: "03",
+                                title: "Tanışma Toplantısı",
+                                description: "Aday, sistemi yakından görmek için bir toplantıya davet edilir."
+                            },
+                            {
+                                step: "04",
+                                title: "Grup Üyeliği",
+                                description: "Uygun bulunan adaylar ilgili gruba dahil edilir."
+                            },
+                            {
+                                step: "05",
+                                title: "Düzenli Networking Süreci",
+                                description: "Toplantılar, birebir görüşmeler, etkinlikler ve referans yönlendirmeleriyle süreç devam eder."
+                            }
+                        ].map((item, index) => {
+                            const isOpen = openStep === index;
+                            return (
+                                <div 
+                                    key={index}
+                                    className="border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md bg-white"
+                                >
+                                    <button
+                                        onClick={() => setOpenStep(isOpen ? null : index)}
+                                        className="w-full flex items-center justify-between p-6 text-left focus:outline-none transition-colors duration-200 hover:bg-gray-50/50"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <span className={`text-xl font-bold font-mono px-3 py-1 rounded-lg transition-all duration-300 ${isOpen ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600'}`}>
+                                                {item.step}
+                                            </span>
+                                            <span className="text-xl font-bold text-gray-900">{item.title}</span>
                                         </div>
+                                        <span className={`transform transition-transform duration-300 text-xl font-semibold text-gray-400 ${isOpen ? 'rotate-90 text-red-600' : ''}`}>
+                                            ➔
+                                        </span>
+                                    </button>
+                                    <div 
+                                        className={`transition-all duration-350 ease-in-out overflow-hidden ${
+                                            isOpen ? 'max-h-40 border-t border-gray-100 bg-gray-50/30' : 'max-h-0'
+                                        }`}
+                                    >
+                                        <p className="p-6 text-gray-600 text-lg leading-relaxed">
+                                            {item.description}
+                                        </p>
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                                    <p className="text-gray-600 leading-relaxed">
-                                        {step.description}
-                                    </p>
                                 </div>
-                                {index < processes.length - 1 && (
-                                    <div className="hidden lg:block absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 z-10">
-                                        <ArrowRight className="h-6 w-6 text-gray-300" />
-                                    </div>
-                                )}
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+
+            {/* Qualification: Who is it for */}
+            <section className="py-24 bg-gray-50/70 border-t border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Hedef Kitle</h2>
+                        <h3 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
+                            Event4Network Kimler İçin Uygun?
+                        </h3>
+                        <div className="mt-6 text-lg text-gray-600 max-w-4xl mx-auto space-y-4 leading-relaxed">
+                            <p>
+                                Event4Network; işini büyütmek, doğru insanlarla tanışmak, çevresini genişletmek ve güvene dayalı iş ilişkileri kurmak isteyen profesyoneller için tasarlanmıştır.
+                            </p>
+                            <p className="text-sm bg-red-50/50 border border-red-100/50 text-red-700 py-3 px-6 rounded-2xl max-w-3xl mx-auto font-medium">
+                                Event4Network’te üyelik yalnızca meslek veya sektör uygunluğuna göre değil; faaliyet süresi, iş hacmi, hizmet kalitesi, grup dengesi ve karşılıklı değer üretme potansiyeli dikkate alınarak değerlendirilir. Bu kriterler ön değerlendirme görüşmesinde detaylandırılır.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {/* Card 1: Şirket Sahipleri */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-6">
+                                <Users className="h-6 w-6 text-red-600" />
                             </div>
-                        ))}
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Şirket Sahipleri</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Yeni iş bağlantıları ve stratejik ilişkiler kurmak isteyen işletme sahipleri.
+                            </p>
+                        </div>
+
+                        {/* Card 2: Girişimciler */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <Trophy className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Girişimciler</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Fikirlerini, ürünlerini veya hizmetlerini doğru çevrelerle buluşturmak isteyen girişimciler.
+                            </p>
+                        </div>
+
+                        {/* Card 3: Danışmanlar ve Uzmanlar */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <CheckCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">Danışmanlar ve Uzmanlar</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Hizmet verdiği alanda güvenilir referanslarla büyümek isteyen profesyoneller.
+                            </p>
+                        </div>
+
+                        {/* Card 4: B2B Hizmet Sağlayıcıları */}
+                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                                <BarChart className="h-6 w-6 text-red-600" />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-3">B2B Hizmet Sağlayıcıları</h4>
+                            <p className="text-gray-600 leading-relaxed text-sm">
+                                Şirketlere hizmet sunan ve karar vericilerle tanışmak isteyen firmalar.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Visitor Form Section */}
-            <section id="ziyaretci-ol" className="py-24 bg-gray-50 relative overflow-hidden">
+            <section id="ziyaretci-ol" className="py-24 bg-white relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
                         <div className="lg:col-span-6 mb-12 lg:mb-0">

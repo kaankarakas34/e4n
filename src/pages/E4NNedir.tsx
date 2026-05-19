@@ -40,11 +40,13 @@ export function E4NNedir() {
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight max-w-4xl mx-auto">
             E4N Nedir?
           </h1>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto mb-6 leading-relaxed font-medium">
-            Event4Network, nitelikli iş insanlarının güvene dayalı ilişkiler kurduğu, değerlendirme süreciyle şekillenen seçici bir networking ekosistemidir.
-          </p>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-            E4N’de amaç yalnızca yeni insanlarla tanışmak değil; doğru kişilerle düzenli temas kurmak, birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
+          <div className="bg-red-950/40 border border-red-500/30 rounded-2xl px-6 py-4 max-w-3xl mx-auto mb-8 shadow-lg backdrop-blur-sm">
+            <p className="text-lg sm:text-xl text-white font-semibold leading-relaxed">
+              İş insanlarını bir araya getiren kalıcı iş ilişkilerinin kurulduğu seçici bir networking platformudur.
+            </p>
+          </div>
+          <p className="text-sm sm:text-base text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
+            Event4Network, nitelikli iş insanlarının güvene dayalı ilişkiler kurduğu, değerlendirme süreciyle şekillenen seçici bir networking ekosistemidir. E4N’de amaç yalnızca yeni insanlarla tanışmak değil; doğru kişilerle düzenli temas kurmak, birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button

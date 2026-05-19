@@ -434,7 +434,12 @@ export function DegerlendirmeBasvurusu() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Müşterilerinize en çok hangi konuda değer sağlıyorsunuz? *</label>
-                  <textarea {...register('value_provided')} rows={2} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.value_provided ? 'border-red-300' : 'border-gray-250'}`} />
+                  <textarea 
+                    {...register('value_provided')} 
+                    rows={2} 
+                    placeholder="Örn: Müşterilerime yalnızca hizmet sunmakla kalmıyor; işlerini daha verimli, görünür, kârlı veya sürdürülebilir hale getirecek stratejik katkılar sağlıyorum. En güçlü değerim, onların büyüme veya karar alma süreçlerinde güvenilir bir çözüm ortağı olmak."
+                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.value_provided ? 'border-red-300' : 'border-gray-250'}`} 
+                  />
                   {errors.value_provided && <p className="mt-1 text-xs text-red-500">{errors.value_provided.message}</p>}
                 </div>
 

@@ -37,22 +37,30 @@ export function BlogListPage() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24">
+    <div className="bg-white min-h-screen pb-24">
       <Helmet>
-        <title>Blog - Event4Network</title>
-        <meta name="description" content="Event4Network blog sayfasında iş dünyası, networking, B2B ilişkiler ve güncel sektörel haberleri takip edin." />
-        <link rel="canonical" href="https://www.event4network.com/blog" />
+        <title>İş Ağı Rehberi | Event4Network</title>
+        <meta name="description" content="Event4Network İş Ağı Rehberi. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler." />
+        <link rel="canonical" href="https://www.event4network.com/is-agi-rehberi" />
       </Helmet>
 
       {/* Hero Section */}
-      <div className="bg-white border-b border-gray-200 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl tracking-tight mb-4">Event4Network Blog</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            İş ağınızı genişletmenin yolları, sektör haberleri ve B2B iş geliştirme ipuçları.
+      <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 w-[800px] h-[800px] rounded-full bg-red-950/10 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6">
+            Bilgi ve Tecrübe Paylaşımı
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">
+            İş Ağı Rehberi
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4 leading-relaxed font-light">
+            Seçici networking prensipleri, referansla müşteri kazanımı ve iş dünyasında profesyonel temsil kültürüne dair rehber içeriklerimiz.
           </p>
         </div>
-      </div>
+      </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {/* Breadcrumb */}
@@ -61,7 +69,7 @@ export function BlogListPage() {
             <Home className="h-4 w-4" />
           </Link>
           <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
-          <span className="font-medium text-gray-900">Blog</span>
+          <span className="font-medium text-gray-900">İş Ağı Rehberi</span>
         </nav>
 
         {loading ? (
@@ -69,14 +77,14 @@ export function BlogListPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
           </div>
         ) : blogs.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div className="text-gray-400 mb-4">Henüz blog yazısı bulunmuyor.</div>
+          <div className="text-center py-24 bg-gray-50 rounded-2xl border border-gray-100">
+            <div className="text-gray-400 mb-4">Henüz rehber içeriği bulunmuyor.</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((blog) => (
-              <article key={blog.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
-                <Link to={`/blog/${blog.slug}`} className="block relative overflow-hidden aspect-[16/9]">
+              <article key={blog.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
+                <Link to={`/is-agi-rehberi/${blog.slug}`} className="block relative overflow-hidden aspect-[16/9]">
                   {blog.featured_image ? (
                     <img 
                       src={blog.featured_image} 
@@ -84,7 +92,7 @@ export function BlogListPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <div className="w-full h-full bg-gray-50 flex items-center justify-center">
                       <span className="text-gray-400 text-sm">Görsel Yok</span>
                     </div>
                   )}
@@ -111,7 +119,7 @@ export function BlogListPage() {
                     )}
                   </div>
                   
-                  <Link to={`/blog/${blog.slug}`} className="block group-hover:text-red-600 transition-colors">
+                  <Link to={`/is-agi-rehberi/${blog.slug}`} className="block group-hover:text-red-600 transition-colors">
                     <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
                       {blog.title}
                     </h2>
@@ -123,7 +131,7 @@ export function BlogListPage() {
                   
                   <div className="pt-4 border-t border-gray-100 mt-auto">
                     <Link 
-                      to={`/blog/${blog.slug}`}
+                      to={`/is-agi-rehberi/${blog.slug}`}
                       className="inline-flex items-center font-semibold text-red-600 hover:text-red-700 transition-colors text-sm group/btn"
                     >
                       Devamını Oku 

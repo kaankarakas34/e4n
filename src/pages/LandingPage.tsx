@@ -233,42 +233,6 @@ export function LandingPage() {
 }`}
                 </script>
             </Helmet>
-            {/* Header */}
-            <header className="fixed w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-20">
-                        <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                            <Logo className="h-10 w-auto" />
-                        </div>
-
-                        <nav className="hidden md:flex space-x-8">
-                            <a href="#event4network-nedir" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Nedir?</a>
-                            <a href="#nasil-calisir" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Nasıl Çalışır?</a>
-                            <a href="#kimler-icin" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Kimler İçin?</a>
-                            <a href="#sss" className="text-gray-600 hover:text-red-600 font-medium transition-colors">SSS</a>
-                            <a href="#on-bilgilendirme-formu" className="text-gray-600 hover:text-red-600 font-medium transition-colors">Başvuru</a>
-                        </nav>
-
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="ghost"
-                                onClick={() => navigate('/ziyaretci-ol')}
-                                className="hidden md:inline-flex"
-                            >
-                                Ziyaretçi Ol
-                            </Button>
-                            <Button
-                                variant="primary"
-                                onClick={() => navigate('/auth/login')}
-                                className="shadow-md hover:shadow-lg shadow-red-200"
-                            >
-                                Giriş Yap
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
             {/* Hero Section */}
             <section className="pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -926,7 +890,7 @@ export function LandingPage() {
                         <Button
                             size="lg"
                             variant="primary"
-                            onClick={() => navigate('/ziyaretci-ol')}
+                            onClick={() => navigate('/degerlendirme-basvurusu')}
                             className="text-lg h-16 px-12 bg-red-600 hover:bg-red-500 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
                         >
                             Ziyaretçi Olarak Deneyimle (ÜCRETSİZ)
@@ -934,61 +898,6 @@ export function LandingPage() {
                     </div>
                 </div>
             </section>
-
-            {/* Footer */}
-            <footer className="bg-white border-t border-gray-200 pt-16 pb-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-                        <div className="col-span-1 md:col-span-1">
-                            <Logo className="h-8 w-auto mb-4" />
-                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                                Profesyonel iş ağı ve referans yönetim sistemi ile işinizi büyütün.
-                            </p>
-                            <div className="text-sm text-gray-500 space-y-1">
-                                <p className="font-semibold text-gray-700">Pardus Ticaret Haydar Karakaş</p>
-                                <p>Çeliktepe, İsmet İnönü Cd. no:11 NO: 501</p>
-                                <p>34413 Kağıthane/İstanbul</p>
-                                <p>Tel: 0536 319 7697</p>
-                                <p>E-posta: info@event4network.com</p>
-                                <p>Vergi No: 5130029725</p>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-4">Platform</h4>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li><a href="#" className="hover:text-red-600">Hakkımızda</a></li>
-                                <li><a href="#" className="hover:text-red-600">Süreçler</a></li>
-                                <li><a href="#" className="hover:text-red-600">Başarı Hikayeleri</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-4">Kaynaklar</h4>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li><a href="#" className="hover:text-red-600">Blog</a></li>
-                                <li><a href="#" className="hover:text-red-600">Sıkça Sorulan Sorular</a></li>
-                                <li><a href="#" className="hover:text-red-600">İletişim</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-4">Yasal</h4>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li><a href="/kullanim-kosullari" className="hover:text-red-600">Kullanım Koşulları</a></li>
-                                <li><a href="/gizlilik-politikasi" className="hover:text-red-600">Gizlilik ve KVKK Politikası</a></li>
-                                <li><a href="/cerez-politikasi" className="hover:text-red-600">Çerez Politikası</a></li>
-                                <li><a href="/on-bilgilendirme-formu" className="hover:text-red-600">Ön Bilgilendirme Formu</a></li>
-                                <li><a href="/mesafeli-satis-sozlesmesi" className="hover:text-red-600">Mesafeli Satış Sözleşmesi</a></li>
-                                <li><a href="/iptal-ve-iade-kosullari" className="hover:text-red-600">İptal ve İade Koşulları</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; {new Date().getFullYear()} Event 4 Network - Pardus Ticaret Haydar Karakaş. Tüm hakları saklıdır.</p>
-                        <div className="flex space-x-6 mt-4 md:mt-0">
-                            {/* Social icons would go here */}
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 }

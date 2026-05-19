@@ -53,10 +53,10 @@ export function BlogPostPage() {
   }
 
   if (error || !blog) {
-    return <Navigate to="/blog" replace />;
+    return <Navigate to="/is-agi-rehberi" replace />;
   }
 
-  const defaultCanonicalUrl = `https://www.event4network.com/blog/${blog.slug}`;
+  const defaultCanonicalUrl = `https://www.event4network.com/is-agi-rehberi/${blog.slug}`;
   const canonicalUrl = blog.canonical_url || defaultCanonicalUrl;
   
   // JSON-LD Schema
@@ -90,7 +90,7 @@ export function BlogPostPage() {
     <div className="bg-white min-h-screen">
       <Helmet>
         {/* Basic SEO */}
-        <title>{blog.meta_title || `${blog.title} - Event4Network`}</title>
+        <title>{blog.meta_title || `${blog.title} | İş Ağı Rehberi | Event4Network`}</title>
         <meta name="description" content={blog.meta_description || blog.excerpt || blog.title} />
         
         {/* Keywords */}
@@ -111,7 +111,6 @@ export function BlogPostPage() {
         <meta property="og:url" content={canonicalUrl} />
         {blog.featured_image && <meta property="og:image" content={blog.featured_image} />}
         
-        {/* Twitter Card fallback (even though not explicitly requested, good standard practice, but we skip custom fields) */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={blog.og_title || blog.meta_title || blog.title} />
         <meta name="twitter:description" content={blog.og_description || blog.meta_description || blog.excerpt} />
@@ -147,7 +146,7 @@ export function BlogPostPage() {
           
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {blog.category?.name && (
-              <span className="inline-block px-4 py-1.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 text-sm font-bold tracking-wider uppercase mb-6">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-red-650/20 text-red-400 border border-red-500/30 text-sm font-bold tracking-wider uppercase mb-6">
                 {blog.category.name}
               </span>
             )}
@@ -181,8 +180,8 @@ export function BlogPostPage() {
                 <Home className="h-4 w-4" />
               </Link>
               <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
-              <Link to="/blog" className="hover:text-red-600 transition-colors">
-                Blog
+              <Link to="/is-agi-rehberi" className="hover:text-red-600 transition-colors">
+                İş Ağı Rehberi
               </Link>
               <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
               <span className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-xs">
@@ -191,7 +190,6 @@ export function BlogPostPage() {
             </nav>
 
             {/* Content Area */}
-            {/* We use dangerouslySetInnerHTML because content could be HTML output from a rich text editor */}
             <div 
               className="prose prose-lg prose-red max-w-none text-gray-700 leading-relaxed
                 prose-headings:font-bold prose-headings:text-gray-900

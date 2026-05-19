@@ -158,7 +158,7 @@ export function Register() {
               Sistemimize dahil olmak için ziyaretçi başvuru formunu doldurabilirsiniz.
             </p>
             <div className="flex flex-col space-y-3">
-              <Button onClick={() => navigate('/ziyaretci-ol')} variant="primary" className="w-full">
+              <Button onClick={() => navigate('/degerlendirme-basvurusu')} variant="primary" className="w-full">
                 Ziyaretçi Formunu Doldur
               </Button>
               <Button onClick={() => navigate('/')} variant="outline" className="w-full">

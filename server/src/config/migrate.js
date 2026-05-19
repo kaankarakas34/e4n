@@ -218,9 +218,27 @@ export const runMigrations = async () => {
          source VARCHAR(50),
          kvkk_accepted BOOLEAN DEFAULT FALSE,
          status VARCHAR(50) DEFAULT 'PENDING',
+         title VARCHAR(255),
+         web_linkedin VARCHAR(255),
+         activity_area VARCHAR(255),
+         duration VARCHAR(100),
+         target_customer TEXT,
+         why_join TEXT,
+         value_add TEXT,
+         previous_groups TEXT,
          created_at TIMESTAMP DEFAULT NOW()
        )
     `);
+
+    // Ensure new fields exist on existing public_visitors tables
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS title VARCHAR(255)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS web_linkedin VARCHAR(255)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS activity_area VARCHAR(255)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS duration VARCHAR(100)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS target_customer TEXT");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS why_join TEXT");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
 
     // Power Teams
     await client.query(`

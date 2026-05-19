@@ -176,7 +176,7 @@ export function Login() {
 
             <div className="mt-6 text-center">
               <Link
-                to="/ziyaretci-ol"
+                to="/degerlendirme-basvurusu"
                 className="font-medium text-red-600 hover:text-red-500 hover:underline inline-flex items-center"
               >
                 Ziyaretçi Başvuru Formunu Doldurun

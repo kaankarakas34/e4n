@@ -64,6 +64,14 @@ import { AdminBlogEditor } from './pages/AdminBlogEditor';
 import { BlogListPage } from './pages/BlogListPage';
 import { BlogPostPage } from './pages/BlogPostPage';
 import { NotFound } from './pages/NotFound';
+import { MainPublicLayout } from './components/MainPublicLayout';
+import { E4NNedir } from './pages/E4NNedir';
+import { Uyelik } from './pages/Uyelik';
+import { Hakkimizda } from './pages/Hakkimizda';
+import { SSS } from './pages/SSS';
+import { DegerlendirmeBasvurusu } from './pages/DegerlendirmeBasvurusu';
+import { ContactPage } from './pages/ContactPage';
+import { KVKK } from './pages/KVKK';
 
 
 // Public Routes Layout - No Sidebar
@@ -119,10 +127,6 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route element={<PublicLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/ziyaretci-ol" element={<VisitorApplication />} />
-              <Route path="/blog" element={<BlogListPage />} />
-              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route
                 path="/auth/login"
                 element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
@@ -137,15 +141,34 @@ function App() {
               />
               <Route path="/create-password" element={<CreatePassword />} />
               <Route path="/auth/pending" element={<PendingApproval />} />
-              <Route path="/public-events" element={<PublicEventsPage />} />
-              <Route path="/event/:id" element={<EventDetail />} />
-              <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSellingContract />} />
-              <Route path="/iptal-ve-iade-kosullari" element={<CancellationRefundPolicy />} />
-              <Route path="/on-bilgilendirme-formu" element={<PreInformationForm />} />
-              <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
-              <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
-              <Route path="/cerez-politikasi" element={<CookiePolicy />} />
 
+              {/* Legacy Redirects for SEO & backward compatibility */}
+              <Route path="/ziyaretci-ol" element={<Navigate to="/degerlendirme-basvurusu" replace />} />
+              <Route path="/public-events" element={<Navigate to="/etkinlikler" replace />} />
+              <Route path="/blog" element={<Navigate to="/is-agi-rehberi" replace />} />
+              <Route path="/blog/:slug" element={<Navigate to="/is-agi-rehberi/:slug" replace />} />
+
+              {/* Main Public Pages wrapped with Shared Header & Footer */}
+              <Route element={<MainPublicLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/e4n-nedir" element={<E4NNedir />} />
+                <Route path="/uyelik" element={<Uyelik />} />
+                <Route path="/etkinlikler" element={<PublicEventsPage />} />
+                <Route path="/event/:id" element={<EventDetail />} />
+                <Route path="/is-agi-rehberi" element={<BlogListPage />} />
+                <Route path="/is-agi-rehberi/:slug" element={<BlogPostPage />} />
+                <Route path="/hakkimizda" element={<Hakkimizda />} />
+                <Route path="/sikca-sorulan-sorular" element={<SSS />} />
+                <Route path="/degerlendirme-basvurusu" element={<DegerlendirmeBasvurusu />} />
+                <Route path="/iletisim" element={<ContactPage />} />
+                <Route path="/kvkk" element={<KVKK />} />
+                <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
+                <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSellingContract />} />
+                <Route path="/iptal-ve-iade-kosullari" element={<CancellationRefundPolicy />} />
+                <Route path="/on-bilgilendirme-formu" element={<PreInformationForm />} />
+                <Route path="/kullanim-kosullari" element={<TermsOfUse />} />
+                <Route path="/cerez-politikasi" element={<CookiePolicy />} />
+              </Route>
             </Route>
 
             {/* Protected Routes */}

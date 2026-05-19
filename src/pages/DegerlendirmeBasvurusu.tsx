@@ -440,7 +440,12 @@ export function DegerlendirmeBasvurusu() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Sizi doğru anlayan biri, sizi hangi ihtiyaçta ve kimlere önermeli? *</label>
-                  <textarea {...register('ideal_referral')} rows={3} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.ideal_referral ? 'border-red-300' : 'border-gray-250'}`} />
+                  <textarea 
+                    {...register('ideal_referral')} 
+                    rows={3} 
+                    placeholder="Örn: Beni, dijital pazarlama ve satış süreçlerini büyütmek isteyen sağlık turizmi şirketlerine, e-ticaret markalarına veya B2B hizmet firmalarına önerebilirsiniz. Özellikle daha nitelikli lead üretimi, reklam performansı ve büyüme stratejisi ihtiyacı olan işletmelere değer sağlayabilirim."
+                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.ideal_referral ? 'border-red-300' : 'border-gray-250'}`} 
+                  />
                   {errors.ideal_referral && <p className="mt-1 text-xs text-red-500">{errors.ideal_referral.message}</p>}
                 </div>
 
@@ -459,7 +464,12 @@ export function DegerlendirmeBasvurusu() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Event4Network topluluğuna nasıl bir değer katabileceğinizi düşünüyorsunuz? *</label>
-                  <textarea {...register('value_add')} rows={3} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.value_add ? 'border-red-300' : 'border-gray-250'}`} />
+                  <textarea 
+                    {...register('value_add')} 
+                    rows={3} 
+                    placeholder="Örn: Kendi uzmanlık alanımdaki deneyimimi paylaşarak, üyelerin dijital görünürlük, satış, iş geliştirme veya stratejik bağlantı ihtiyaçlarına katkı sağlayabilirim. Ayrıca uygun gördüğüm durumlarda kendi profesyonel çevremden doğru kişilerle nitelikli bağlantılar kurmalarına destek olabilirim."
+                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.value_add ? 'border-red-300' : 'border-gray-250'}`} 
+                  />
                   {errors.value_add && <p className="mt-1 text-xs text-red-500">{errors.value_add.message}</p>}
                 </div>
 
@@ -484,7 +494,12 @@ export function DegerlendirmeBasvurusu() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Grup içindeki diğer üyelere hangi tür bağlantılar veya fırsatlar sağlayabilirsiniz?</label>
-                  <textarea {...register('network_opportunities')} rows={2} className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
+                  <textarea 
+                    {...register('network_opportunities')} 
+                    rows={2} 
+                    placeholder="Örn: Sağlık, turizm, yazılım, e-ticaret ve hizmet sektörlerinde çalışan şirket sahipleri, yöneticiler ve karar vericilerle bağlantılar sağlayabilirim. Doğru ihtiyaç oluştuğunda üyeleri potansiyel müşteri, iş ortağı, tedarikçi veya stratejik partnerlerle tanıştırabilirim."
+                    className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400" 
+                  />
                 </div>
 
                 <div>
@@ -514,7 +529,12 @@ export function DegerlendirmeBasvurusu() {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Event4Network’e neden katılmak istiyorsunuz? *</label>
                   <p className="text-xs text-gray-500 mb-2">Lütfen niyetinizi, beklentinizi ve topluluğa katabileceğiniz değeri birkaç paragrafla anlatınız. (Minimum 100 karakter)</p>
-                  <textarea {...register('why_join')} rows={6} placeholder="Buraya detaylı niyet mektubunuzu yazabilirsiniz..." className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.why_join ? 'border-red-300' : 'border-gray-250'}`} />
+                  <textarea 
+                    {...register('why_join')} 
+                    rows={6} 
+                    placeholder="Örn: Sadece yeni insanlarla tanışmak için değil, güvene dayalı ve uzun vadeli iş ilişkileri kurabileceğim nitelikli bir çevrenin parçası olmak istiyorum. Kendi uzmanlığımı doğru insanlara anlatmak, değer katabileceğim profesyonellerle tanışmak ve karşılıklı referans kültürü içinde yer almak benim için önemli." 
+                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.why_join ? 'border-red-300' : 'border-gray-250'}`} 
+                  />
                   {errors.why_join && <p className="mt-1 text-xs text-red-500">{errors.why_join.message}</p>}
                 </div>
 

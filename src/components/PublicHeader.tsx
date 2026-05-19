@@ -53,7 +53,7 @@ export function PublicHeader() {
               onClick={() => navigate('/degerlendirme-basvurusu')}
               className="shadow-md hover:shadow-lg shadow-red-200"
             >
-              Değerlendirme Başvurusu
+              Katıl
             </Button>
           </div>
 
@@ -104,7 +104,7 @@ export function PublicHeader() {
               }}
               className="w-full justify-center shadow-md shadow-red-200"
             >
-              Değerlendirme Başvurusu
+              Katıl
             </Button>
           </div>
         </div>

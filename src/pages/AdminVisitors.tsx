@@ -16,6 +16,8 @@ interface PublicVisitor {
     profession: string;
     created_at: string;
     status: 'PENDING' | 'CONTACTED' | 'CONVERTED' | 'REJECTED';
+    inviter_name?: string;
+    form_data?: any;
 }
 
 interface Member {
@@ -43,6 +45,7 @@ export function AdminVisitors() {
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [selectedVisitorForGroup, setSelectedVisitorForGroup] = useState<PublicVisitor | null>(null);
     const [selectedGroupId, setSelectedGroupId] = useState('');
+    const [selectedVisitorDetails, setSelectedVisitorDetails] = useState<PublicVisitor | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -285,6 +288,9 @@ export function AdminVisitors() {
                                                                     }} className="bg-green-600 hover:bg-green-700 text-white">
                                                                         <CheckCircle className="w-4 h-4 mr-1" /> Onayla
                                                                     </Button>
+                                                                    <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => setSelectedVisitorDetails(item)}>
+                                                                        <FileText className="w-4 h-4 mr-1" /> Detayları Gör
+                                                                    </Button>
                                                                     <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => {
                                                                         if (confirm('Ziyaretçi başvurusunu reddetmek ve SİLMEK istediğinize emin misiniz?')) {
                                                                             handleVisitorStatusChange(item.id, 'REJECTED');
@@ -390,6 +396,122 @@ export function AdminVisitors() {
                     </div>
                 </div>
             )}
+            
+            {/* Visitor Detail Modal */}
+            {selectedVisitorDetails && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-start mb-6 pb-4 border-b">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Değerlendirme Başvurusu Detayı</h2>
+                                <p className="text-sm text-gray-500 mt-1">{new Date(selectedVisitorDetails.created_at).toLocaleString('tr-TR')}</p>
+                            </div>
+                            <button onClick={() => setSelectedVisitorDetails(null)} className="text-gray-400 hover:text-gray-500">
+                                <span className="sr-only">Kapat</span>
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <div className="space-y-8">
+                            {/* Temel Bilgiler */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Kişisel Bilgiler</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className="block text-sm text-gray-500">Ad Soyad</label><p className="font-medium text-gray-900">{selectedVisitorDetails.name}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Telefon</label><p className="font-medium text-gray-900">{selectedVisitorDetails.phone}</p></div>
+                                    <div><label className="block text-sm text-gray-500">E-posta</label><p className="font-medium text-gray-900">{selectedVisitorDetails.email}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Şehir</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.city || '-'}</p></div>
+                                    <div className="col-span-2"><label className="block text-sm text-gray-500">LinkedIn</label><p className="font-medium text-blue-600 break-all">{selectedVisitorDetails.form_data?.linkedin_profile || '-'}</p></div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Şirket / Profesyonel Profil</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className="block text-sm text-gray-500">Şirket</label><p className="font-medium text-gray-900">{selectedVisitorDetails.company}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Ünvan</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.title || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Faaliyet Alanı</label><p className="font-medium text-gray-900">{selectedVisitorDetails.profession}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Sektör</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.industry || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Faaliyet Süresi</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.duration || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Web / LinkedIn</label><p className="font-medium text-blue-600 break-all">{selectedVisitorDetails.form_data?.web_linkedin || '-'}</p></div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">İş Hacmi ve Uzmanlık</h3>
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div><label className="block text-sm text-gray-500">İşletme Seviyesi</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.business_level || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">İş Hacmi</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.business_volume || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Ekip Büyüklüğü</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.team_size || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Aylık Müşteri/Proje</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.monthly_customers || '-'}</p></div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div><label className="block text-sm text-gray-500">Hedef Müşteri Profili</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.target_customer || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">İş Tanımı (2-3 cümle)</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.business_description || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Ayıran Güçlü Yön</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.differentiating_factor || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Sağlanan Değer</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.value_provided || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">İdeal Yönlendirme</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.ideal_referral || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Başarı Örneği</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.success_story || '-'}</p></div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Networke Katkı ve Karşılıklı Değer</h3>
+                                <div className="space-y-4">
+                                    <div><label className="block text-sm text-gray-500">Event4Network'e Katacağı Değer</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.value_add || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Mevcut İş Çevresi</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.network_size || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Güçlü Bağlantı Sektörleri</label><p className="text-gray-900">{selectedVisitorDetails.form_data?.network_sectors || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Sağlayabileceği Bağlantılar</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.network_opportunities || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Referans Örneği</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.referral_example || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">Network Paylaşım Yaklaşımı</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.network_sharing_approach || '-'}</p></div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Niyet Mektubu ve Beklentiler</h3>
+                                <div className="space-y-4">
+                                    <div><label className="block text-sm text-gray-500">Katılım Niyeti</label><p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded">{selectedVisitorDetails.form_data?.why_join || '-'}</p></div>
+                                    <div>
+                                        <label className="block text-sm text-gray-500">Öncelikli Beklentiler</label>
+                                        <ul className="list-disc pl-5 mt-1 text-gray-900">
+                                            {Array.isArray(selectedVisitorDetails.form_data?.primary_expectation) 
+                                                ? selectedVisitorDetails.form_data.primary_expectation.map((e: string, i: number) => <li key={i}>{e}</li>)
+                                                : <li>{selectedVisitorDetails.form_data?.primary_expectation || '-'}</li>}
+                                        </ul>
+                                    </div>
+                                    <div><label className="block text-sm text-gray-500">Tanışmak İstenen Kişiler</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.target_connection_types || '-'}</p></div>
+                                    <div><label className="block text-sm text-gray-500">İdeal İş Yönlendirmesi Tanımı</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.ideal_referral_definition || '-'}</p></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="block text-sm text-gray-500">Zaman Ayırma Taahhüdü</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.time_commitment || '-'}</p></div>
+                                        <div><label className="block text-sm text-gray-500">Önemsenen En Temel Değer</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.core_value || '-'}</p></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Deneyim, Referans ve Onaylar</h3>
+                                <div className="space-y-4">
+                                    <div><label className="block text-sm text-gray-500">Daha Önceki Topluluk/Grup Deneyimi</label><p className="text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.previous_groups || '-'}</p></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="block text-sm text-gray-500">Nereden Duydu?</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.discovery_source || '-'}</p></div>
+                                        <div><label className="block text-sm text-gray-500">Sisteme Öneren Kişi (Referans)</label>
+                                            <p className="font-medium text-gray-900">
+                                                {selectedVisitorDetails.form_data?.referral_name || selectedVisitorDetails.inviter_name || '-'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+
+                        <div className="mt-8 flex justify-end space-x-3 pt-4 border-t">
+                            <Button variant="outline" onClick={() => setSelectedVisitorDetails(null)}>Kapat</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Group Assignment Modal for Visitors */}
             {isGroupModalOpen && selectedVisitorForGroup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

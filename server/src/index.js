@@ -2106,7 +2106,7 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
-  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups } = req.body;
+  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data } = req.body;
   try {
     // Lazy migration
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
@@ -2118,10 +2118,11 @@ app.post('/api/visitors/apply', async (req, res) => {
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS why_join TEXT");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
+    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
 
     const { rows } = await pool.query(
-      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *',
-      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null]
+      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *',
+      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, form_data || {}]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }

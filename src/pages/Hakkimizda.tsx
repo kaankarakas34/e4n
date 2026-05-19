@@ -156,20 +156,6 @@ export function Hakkimizda() {
         </div>
       </section>
 
-      {/* Kurucu Mesajı */}
-      <section className="py-24 bg-gray-50 border-t border-gray-150">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-gray-200 shadow-sm relative">
-            <h3 className="text-2xl font-extrabold text-gray-900 mb-6">Kurucu Mesajı</h3>
-            <blockquote className="text-lg text-gray-700 italic leading-relaxed mb-6">
-              "Event4Network, iş hayatında kalıcı başarıların ancak doğru çevre ve sarsılmaz bir güven ilişkisi ile kurulabileceği inancıyla doğdu. Amacımız, iş insanlarının kendilerini güvende hissettikleri, referanslarını gönül rahatlığıyla paylaştıkları seçkin bir liman oluşturmaktır."
-            </blockquote>
-            <div className="font-bold text-gray-900 text-base">Haydar Karakaş</div>
-            <div className="text-gray-500 text-sm">Kurucu, Event4Network</div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 bg-gray-950 text-white relative overflow-hidden text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -187,6 +173,24 @@ export function Hakkimizda() {
           >
             İletişim Formunu Doldur <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+        </div>
+      </section>
+
+      {/* Kurucular Section */}
+      <section className="py-24 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">YÖNETİM</span>
+            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">Kurucular</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm flex items-center justify-center h-32 hover:shadow-md transition-shadow duration-300">
+              <span className="text-xl font-bold text-gray-900">Kaan Karakaş</span>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm flex items-center justify-center h-32 hover:shadow-md transition-shadow duration-300">
+              <span className="text-xl font-bold text-gray-900">Ada Topçu</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>

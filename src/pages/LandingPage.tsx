@@ -886,13 +886,13 @@ export function LandingPage() {
                 </div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
                     <div className="bg-red-600/10 text-red-400 font-semibold tracking-wider uppercase text-xs px-4 py-1.5 rounded-full border border-red-500/20 mb-6 inline-block">
-                        Hemen Katılın
+                        Değerlendirme Başvurusu
                     </div>
                     <h2 className="text-4xl font-extrabold text-white sm:text-5xl mb-6 leading-tight">
-                        Bu Networking Deneyimini Yaşayın – <span className="text-red-500">ÜCRETSİZ!</span>
+                        Profesyonel İş Ağına İlk Adımı Atın
                     </h2>
                     <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Siz de Event4Network toplantılarına misafir olarak katılarak sistemimizi yakından tanıyabilir, iş çevrenizi genişletmek için ilk adımı atabilirsiniz.
+                        Event4Network’e katılım doğrudan kayıt sistemiyle değil, adayların iş profili ve topluluk dengesiyle uyumluluğunu ele alan bir ön değerlendirme süreciyle gerçekleşir. Siz de profesyonel profilinizi paylaşarak değerlendirme sürecini başlatabilirsiniz.
                     </p>
                     <div className="flex justify-center">
                         <Button
@@ -901,7 +901,7 @@ export function LandingPage() {
                             onClick={() => navigate('/degerlendirme-basvurusu')}
                             className="text-lg h-16 px-12 bg-red-600 hover:bg-red-500 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
                         >
-                            Ziyaretçi Olarak Deneyimle (ÜCRETSİZ)
+                            Değerlendirme Başvurusu Başlat
                         </Button>
                     </div>
                 </div>

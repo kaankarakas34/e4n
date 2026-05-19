@@ -281,6 +281,39 @@ export function Uyelik() {
         </div>
       </section>
 
+      {/* 7.5. Asıl Değer, Üyelerin Kendi Çevresindedir Section */}
+      <section className="py-20 bg-gray-50 border-t border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
+            <div className="lg:col-span-8">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">NETWORKING FELSEFESİ</span>
+              <h2 className="text-3xl font-extrabold text-gray-900 mt-2 mb-6">
+                Asıl Değer, Üyelerin Kendi Çevresindedir
+              </h2>
+              <div className="space-y-6 text-gray-650 text-base leading-relaxed">
+                <p>
+                  Event4Network, yalnızca tek bir sektörden insanların bulunduğu veya herkesin birbirine doğrudan müşteri olduğu bir yapı değildir. Elbette platformdaki üyeler zaman içinde birbirlerinin müşterisi olabilir; ancak E4N’nin asıl gücü, üyelerin birbirlerinin çevresine güvenilir şekilde açılabilmesidir.
+                </p>
+                <p>
+                  Burada önemli olan yalnızca grup içindeki kişilerle tanışmak değil; onların iş çevresinde, referans verebilecekleri profesyonel ağlarda ve doğru bağlantılarında görünür hale gelmektir.
+                </p>
+                <p>
+                  Bir üye sizi doğrudan müşteri olarak değerlendirmeyebilir; fakat sizi doğru anladığında, kendi çevresindeki çok daha uygun bir kişiye, şirkete veya karar vericiye önerebilir. Bu nedenle Event4Network’te networking, sadece içeride satış yapmak değil; güvene dayalı şekilde daha geniş bir iş çevresine erişmektir.
+                </p>
+              </div>
+            </div>
+            <div className="lg:col-span-4 mt-8 lg:mt-0">
+              <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
+                <h4 className="font-extrabold text-gray-900 text-lg mb-4">Temel Prensip</h4>
+                <p className="text-gray-700 text-base font-semibold leading-relaxed">
+                  E4N’de hedef yalnızca üyelerle tanışmak değil, üyelerin güvenilir çevrelerine doğru şekilde ulaşabilmektir.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 8. Başvuru Üyelik Garantisi Değildir */}
       <section className="py-12 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

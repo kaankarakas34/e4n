@@ -14,14 +14,6 @@ export function PublicFooter() {
             <p className="text-gray-500 text-sm leading-relaxed mb-4">
               Nitelikli iş insanlarını değerlendirme süreciyle bir araya getiren, güvene dayalı iş ilişkileri ve nitelikli referanslar oluşturan seçici bir networking ekosistemidir.
             </p>
-            <div className="text-sm text-gray-500 space-y-1">
-              <p className="font-semibold text-gray-700">Pardus Ticaret Haydar Karakaş</p>
-              <p>Çeliktepe, İsmet İnönü Cd. no:11 NO: 501</p>
-              <p>34413 Kağıthane/İstanbul</p>
-              <p>Tel: 0536 319 7697</p>
-              <p>E-posta: info@event4network.com</p>
-              <p>Vergi No: 5130029725</p>
-            </div>
           </div>
           <div>
             <h4 className="font-bold text-gray-900 mb-4">Platform</h4>
@@ -53,7 +45,7 @@ export function PublicFooter() {
           </div>
         </div>
         <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Event4Network - Pardus Ticaret Haydar Karakaş. Tüm hakları saklıdır.</p>
+          <p>&copy; {new Date().getFullYear()} Event4Network. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>

@@ -301,6 +301,43 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Video Section */}
+            <section id="nasil-calisir" className="py-24 bg-white border-t border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
+                        <div className="lg:col-span-6 mb-12 lg:mb-0">
+                            <div className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Video Anlatım</div>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+                                Event4Network Nasıl Çalışır?
+                            </h2>
+                            <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
+                                <p>
+                                    Event4Network’te amaç yalnızca yeni insanlarla tanışmak değildir. Aynı kişilerle düzenli olarak bir araya gelmek, zaman içinde birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
+                                </p>
+                                <p className="border-l-4 border-red-600 pl-4 italic text-gray-700 font-medium bg-red-50/50 py-3 rounded-r-lg">
+                                    Burada gruptaki 35 kişi yalnızca potansiyel müşteriniz değildir; onların çevresi, güvenilir bir referansla ulaşabileceğiniz gerçek pazarınızdır.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-6">
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video w-full">
+                                <iframe 
+                                    className="absolute top-0 left-0 w-full h-full"
+                                    src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
+                                    title="Event4Network seçici networking platformu tanıtım videosu" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    referrerPolicy="strict-origin-when-cross-origin" 
+                                    allowFullScreen
+                                    loading="lazy"
+                                ></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Problem Section: Why Classic Networking Fails */}
             <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -412,43 +449,6 @@ export function LandingPage() {
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Asıl güven ve iş akışı, üyeler arasında yapılan birebir toplantılarla oluşur.
                             </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Video Section */}
-            <section id="nasil-calisir" className="py-24 bg-white border-t border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
-                        <div className="lg:col-span-6 mb-12 lg:mb-0">
-                            <div className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Video Anlatım</div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
-                                Event4Network Nasıl Çalışır?
-                            </h2>
-                            <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
-                                <p>
-                                    Event4Network’te amaç yalnızca yeni insanlarla tanışmak değildir. Aynı kişilerle düzenli olarak bir araya gelmek, zaman içinde birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
-                                </p>
-                                <p className="border-l-4 border-red-600 pl-4 italic text-gray-700 font-medium bg-red-50/50 py-3 rounded-r-lg">
-                                    Burada gruptaki 35 kişi yalnızca potansiyel müşteriniz değildir; onların çevresi, güvenilir bir referansla ulaşabileceğiniz gerçek pazarınızdır.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="lg:col-span-6">
-                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video w-full">
-                                <iframe 
-                                    className="absolute top-0 left-0 w-full h-full"
-                                    src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
-                                    title="Event4Network seçici networking platformu tanıtım videosu" 
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                    referrerPolicy="strict-origin-when-cross-origin" 
-                                    allowFullScreen
-                                    loading="lazy"
-                                ></iframe>
-                            </div>
                         </div>
                     </div>
                 </div>

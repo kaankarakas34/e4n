@@ -24,38 +24,37 @@ const applicationSchema = z.object({
   industry: z.string().min(2, 'Hangi sektörde hizmet veriyorsunuz?'),
   duration: z.string().min(1, 'Şirket faaliyet süresi seçimi gereklidir'),
 
-  // Adım 3: İş Hacmi ve Uzmanlık
-  business_level: z.string().min(1, 'İşletmenizin mevcut seviyesini tanımlayınız'),
-  business_volume: z.string().min(1, 'Mevcut iş hacminizi tanımlayınız'),
+  // Adım 3: İş Hacmi ve Uzmanlık (Artık Niyet Mektubu içinde serbest metin olarak isteniyor)
+  business_level: z.string().optional(),
+  business_volume: z.string().optional(),
   team_size: z.string().optional(),
   monthly_customers: z.string().optional(),
-  target_customer: z.string().min(5, 'Hedef müşteri profiliniz kimlerden oluşur?'),
-  business_description: z.string().min(10, 'Yaptığınız işi tanımlayınız (En az 10 karakter)'),
-  differentiating_factor: z.string().min(5, 'Sizi ayıran en güçlü yön nedir?'),
-  value_provided: z.string().min(5, 'Müşterilerinize en çok hangi konuda değer sağlıyorsunuz?'),
+  target_customer: z.string().optional(),
+  business_description: z.string().optional(),
+  differentiating_factor: z.string().optional(),
+  value_provided: z.string().optional(),
   success_story: z.string().optional(),
-  ideal_referral: z.string().min(10, 'Sizi kimlere ve hangi ihtiyaçta önermeliyiz? (En az 10 karakter)'),
+  ideal_referral: z.string().optional(),
 
-  // Adım 4: Networke Katkı
-  value_add: z.string().min(10, 'Topluluğa nasıl bir değer katabileceğinizi düşünüyorsunuz? (En az 10 karakter)'),
-  network_size: z.string().min(1, 'Mevcut iş çevrenizi tanımlayınız'),
+  // Adım 4: Networke Katkı (Artık Niyet Mektubu içinde serbest metin olarak isteniyor)
+  value_add: z.string().optional(),
+  network_size: z.string().optional(),
   network_sectors: z.string().optional(),
   network_opportunities: z.string().optional(),
   referral_example: z.string().optional(),
-  network_sharing_approach: z.string().min(1, 'Network paylaşımı konusundaki yaklaşımınız nedir?'),
+  network_sharing_approach: z.string().optional(),
 
   // Adım 5: Niyet Mektubu ve Beklentiler
   why_join: z.string().min(100, 'Lütfen niyetinizi, beklentinizi ve katacağınız değeri daha detaylı anlatınız (En az 100 karakter)'),
-  primary_expectation: z.array(z.string()).min(1, 'En az bir beklenti seçmelisiniz'),
+  primary_expectation: z.array(z.string()).optional(),
   target_connection_types: z.string().optional(),
   ideal_referral_definition: z.string().optional(),
-  time_commitment: z.string().min(1, 'Toplantılara zaman ayırabilir misiniz?'),
+  time_commitment: z.string().optional(),
   core_value: z.string().optional(),
 
   // Adım 6: Referans ve Onaylar
   previous_networking_experience: z.string().optional(),
   discovery_source: z.string().optional(),
-  // referral_name is handled via states, but we can capture it here too
   kvkk: z.boolean().refine(val => val === true, {
     message: 'KVKK onayı zorunludur'
   }),
@@ -69,8 +68,6 @@ type ApplicationFormData = z.infer<typeof applicationSchema>;
 const STEPS = [
   'Kişisel Bilgiler',
   'Profesyonel Profil',
-  'İş Hacmi ve Uzmanlık',
-  'Networke Katkı',
   'Niyet Mektubu',
   'Referans ve Onaylar'
 ];
@@ -124,9 +121,8 @@ export function DegerlendirmeBasvurusu() {
     let fieldsToValidate: any[] = [];
     if (currentStep === 0) fieldsToValidate = ['name', 'phone', 'email', 'linkedin_profile', 'city'];
     if (currentStep === 1) fieldsToValidate = ['company', 'title', 'web_linkedin', 'activity_area', 'industry', 'duration'];
-    if (currentStep === 2) fieldsToValidate = ['business_level', 'business_volume', 'team_size', 'monthly_customers', 'target_customer', 'business_description', 'differentiating_factor', 'value_provided', 'success_story', 'ideal_referral'];
-    if (currentStep === 3) fieldsToValidate = ['value_add', 'network_size', 'network_sectors', 'network_opportunities', 'referral_example', 'network_sharing_approach'];
-    if (currentStep === 4) fieldsToValidate = ['why_join', 'primary_expectation', 'target_connection_types', 'ideal_referral_definition', 'time_commitment', 'core_value'];
+    if (currentStep === 2) fieldsToValidate = ['why_join'];
+    if (currentStep === 3) fieldsToValidate = ['kvkk', 'application_consent'];
     
     const isStepValid = await trigger(fieldsToValidate as any);
     if (isStepValid) {
@@ -353,258 +349,38 @@ export function DegerlendirmeBasvurusu() {
               </div>
             )}
 
-            {/* Adım 3: İş Hacmi ve Uzmanlık */}
+            {/* Adım 3: Niyet Mektubu */}
             {currentStep === 2 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">3. İş Hacmi ve Profesyonel Olgunluk</h3>
-                <p className="text-sm text-gray-500 mb-6">Başvuran kişinin işinin olgunluğunu, hacmini ve profesyonel seviyesini anlamak amacıyla.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">3. Niyet Mektubu</h3>
                 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">İşletmenizin mevcut seviyesini nasıl tanımlarsınız? *</label>
-                  <select {...register('business_level')} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.business_level ? 'border-red-300' : 'border-gray-250'}`}>
-                    <option value="">Seçiniz</option>
-                    <option value="Yeni kurulan / gelişim aşamasında">Yeni kurulan / gelişim aşamasında</option>
-                    <option value="Düzenli müşteri portföyü olan">Düzenli müşteri portföyü olan</option>
-                    <option value="Büyüme sürecinde olan">Büyüme sürecinde olan</option>
-                    <option value="Oturmuş sistem ve ekibe sahip olan">Oturmuş sistem ve ekibe sahip olan</option>
-                    <option value="Kurumsal / ölçeklenmiş yapı">Kurumsal / ölçeklenmiş yapı</option>
-                  </select>
-                  {errors.business_level && <p className="mt-1 text-xs text-red-500">{errors.business_level.message}</p>}
+                <div className="bg-red-50/50 border border-red-100 rounded-2xl p-6 mb-6">
+                  <h4 className="text-sm font-bold text-red-800 mb-3">Niyet mektubunuz şunlar gibi sorulara cevap vermeli:</h4>
+                  <ul className="space-y-2.5 text-sm text-gray-700 list-disc pl-5 leading-relaxed">
+                    <li><strong>İşinizin Tanımı ve Hedef Kitle:</strong> Yaptığınız işi tanımlayınız, sizi benzer hizmet veren kişilerden ayıran en güçlü yönünüz nedir ve hedef müşteri profiliniz kimlerden oluşur?</li>
+                    <li><strong>Uzmanlık ve Sağladığınız Değer:</strong> Müşterilerinize en çok hangi konuda değer sağlıyorsunuz ve sizi doğru anlayan biri, hangi ihtiyaçta kimlere önermeli?</li>
+                    <li><strong>Topluluğa Katkı ve Network:</strong> Event4Network topluluğuna nasıl bir değer katabileceğinizi düşünüyorsunuz ve networkünüzü paylaşma konusundaki yaklaşımınız nedir?</li>
+                    <li><strong>Beklentiler ve Katılım Disiplini:</strong> Event4Network’ten öncelikli beklentiniz nedir ve düzenli toplantılara / birebir görüşmelere zaman ayırabilir misiniz?</li>
+                  </ul>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Şirketinizin mevcut iş hacmini nasıl tanımlarsınız? *</label>
-                  <select {...register('business_volume')} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.business_volume ? 'border-red-300' : 'border-gray-250'}`}>
-                    <option value="">Seçiniz</option>
-                    <option value="Dönemsel ve değişken iş hacmi">Dönemsel ve değişken iş hacmi</option>
-                    <option value="Düzenli ama sınırlı iş hacmi">Düzenli ama sınırlı iş hacmi</option>
-                    <option value="Düzenli ve büyüyen iş hacmi">Düzenli ve büyüyen iş hacmi</option>
-                    <option value="Güçlü müşteri portföyü ve sürdürülebilir iş hacmi">Güçlü müşteri portföyü ve sürdürülebilir iş hacmi</option>
-                    <option value="Kurumsal ölçekte iş hacmi">Kurumsal ölçekte iş hacmi</option>
-                  </select>
-                  {errors.business_volume && <p className="mt-1 text-xs text-red-500">{errors.business_volume.message}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Ekibinizin büyüklüğü nedir?</label>
-                    <select {...register('team_size')} className="w-full px-4 py-3 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm">
-                      <option value="">Seçiniz</option>
-                      <option value="Tek kişi / freelance yapı">Tek kişi / freelance yapı</option>
-                      <option value="2-5 kişi">2-5 kişi</option>
-                      <option value="6-10 kişi">6-10 kişi</option>
-                      <option value="11-25 kişi">11-25 kişi</option>
-                      <option value="26-50 kişi">26-50 kişi</option>
-                      <option value="50+ kişi">50+ kişi</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Aylık ortalama hizmet verdiğiniz müşteri/proje sayısı?</label>
-                    <select {...register('monthly_customers')} className="w-full px-4 py-3 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm">
-                      <option value="">Seçiniz</option>
-                      <option value="Dönemsel">Dönemsel</option>
-                      <option value="1-3 aktif müşteri/proje">1-3 aktif müşteri/proje</option>
-                      <option value="4-10 aktif müşteri/proje">4-10 aktif müşteri/proje</option>
-                      <option value="10+ aktif müşteri/proje">10+ aktif müşteri/proje</option>
-                      <option value="Kurumsal portföy">Kurumsal portföy</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Hedef müşteri profiliniz kimlerden oluşur? *</label>
-                  <p className="text-xs text-gray-400 mb-2">Örn: KOBİ’ler, kurumsal şirketler, ihracat firmaları, sağlık turizmi şirketleri vb.</p>
-                  <textarea {...register('target_customer')} rows={2} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.target_customer ? 'border-red-300' : 'border-gray-250'}`} />
-                  {errors.target_customer && <p className="mt-1 text-xs text-red-500">{errors.target_customer.message}</p>}
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-900 pt-4 border-t border-gray-100 mt-6">Uzmanlık ve Değer Önerisi</h3>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Yaptığınız işi 2-3 cümleyle nasıl tanımlarsınız? *</label>
-                  <textarea {...register('business_description')} rows={3} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.business_description ? 'border-red-300' : 'border-gray-250'}`} />
-                  {errors.business_description && <p className="mt-1 text-xs text-red-500">{errors.business_description.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sizi benzer hizmet veren kişilerden ayıran en güçlü yön nedir? *</label>
-                  <textarea {...register('differentiating_factor')} rows={2} className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.differentiating_factor ? 'border-red-300' : 'border-gray-250'}`} />
-                  {errors.differentiating_factor && <p className="mt-1 text-xs text-red-500">{errors.differentiating_factor.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Müşterilerinize en çok hangi konuda değer sağlıyorsunuz? *</label>
-                  <textarea 
-                    {...register('value_provided')} 
-                    rows={2} 
-                    placeholder="Örn: Müşterilerime yalnızca hizmet sunmakla kalmıyor; işlerini daha verimli, görünür, kârlı veya sürdürülebilir hale getirecek stratejik katkılar sağlıyorum. En güçlü değerim, onların büyüme veya karar alma süreçlerinde güvenilir bir çözüm ortağı olmak."
-                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.value_provided ? 'border-red-300' : 'border-gray-250'}`} 
-                  />
-                  {errors.value_provided && <p className="mt-1 text-xs text-red-500">{errors.value_provided.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sizi doğru anlayan biri, sizi hangi ihtiyaçta ve kimlere önermeli? *</label>
-                  <textarea 
-                    {...register('ideal_referral')} 
-                    rows={3} 
-                    placeholder="Örn: Beni, dijital pazarlama ve satış süreçlerini büyütmek isteyen sağlık turizmi şirketlerine, e-ticaret markalarına veya B2B hizmet firmalarına önerebilirsiniz. Özellikle daha nitelikli lead üretimi, reklam performansı ve büyüme stratejisi ihtiyacı olan işletmelere değer sağlayabilirim."
-                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.ideal_referral ? 'border-red-300' : 'border-gray-250'}`} 
-                  />
-                  {errors.ideal_referral && <p className="mt-1 text-xs text-red-500">{errors.ideal_referral.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Gerçekleştirdiğiniz güçlü bir iş, proje veya başarı örneğini paylaşır mısınız?</label>
-                  <textarea {...register('success_story')} rows={2} className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
-                </div>
-              </div>
-            )}
-
-            {/* Adım 4: Networke Katkı */}
-            {currentStep === 3 && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">4. Networke Katkı ve Karşılıklı Değer</h3>
-                <p className="text-sm text-gray-500 mb-6">Topluluğa ne katabileceğinizi daha iyi anlamamız için.</p>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Event4Network topluluğuna nasıl bir değer katabileceğinizi düşünüyorsunuz? *</label>
-                  <textarea 
-                    {...register('value_add')} 
-                    rows={3} 
-                    placeholder="Örn: Kendi uzmanlık alanımdaki deneyimimi paylaşarak, üyelerin dijital görünürlük, satış, iş geliştirme veya stratejik bağlantı ihtiyaçlarına katkı sağlayabilirim. Ayrıca uygun gördüğüm durumlarda kendi profesyonel çevremden doğru kişilerle nitelikli bağlantılar kurmalarına destek olabilirim."
-                    className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.value_add ? 'border-red-300' : 'border-gray-250'}`} 
-                  />
-                  {errors.value_add && <p className="mt-1 text-xs text-red-500">{errors.value_add.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Mevcut iş çevrenizi nasıl tanımlarsınız? *</label>
-                  <select {...register('network_size')} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.network_size ? 'border-red-300' : 'border-gray-250'}`}>
-                    <option value="">Seçiniz</option>
-                    <option value="Sınırlı ama odaklı bir çevrem var">Sınırlı ama odaklı bir çevrem var</option>
-                    <option value="Belirli sektörlerde güçlü bağlantılarım var">Belirli sektörlerde güçlü bağlantılarım var</option>
-                    <option value="Geniş ve aktif bir profesyonel çevrem var">Geniş ve aktif bir profesyonel çevrem var</option>
-                    <option value="Karar verici seviyesinde güçlü bağlantılarım var">Karar verici seviyesinde güçlü bağlantılarım var</option>
-                    <option value="Farklı sektörlere erişebilen geniş bir networküm var">Farklı sektörlere erişebilen geniş bir networküm var</option>
-                  </select>
-                  {errors.network_size && <p className="mt-1 text-xs text-red-500">{errors.network_size.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Hangi sektörlerde güçlü bağlantılarınız var?</label>
-                  <p className="text-xs text-gray-400 mb-2">Örn: sağlık, gayrimenkul, finans, teknoloji, hukuk, üretim, e-ticaret, turizm vb.</p>
-                  <input type="text" {...register('network_sectors')} className="w-full px-4 py-3 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Grup içindeki diğer üyelere hangi tür bağlantılar veya fırsatlar sağlayabilirsiniz?</label>
-                  <textarea 
-                    {...register('network_opportunities')} 
-                    rows={2} 
-                    placeholder="Örn: Sağlık, turizm, yazılım, e-ticaret ve hizmet sektörlerinde çalışan şirket sahipleri, yöneticiler ve karar vericilerle bağlantılar sağlayabilirim. Doğru ihtiyaç oluştuğunda üyeleri potansiyel müşteri, iş ortağı, tedarikçi veya stratejik partnerlerle tanıştırabilirim."
-                    className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Daha önce bir kişiyi doğru bir iş fırsatıyla buluşturduğunuz bir örnek paylaşır mısınız?</label>
-                  <textarea {...register('referral_example')} rows={2} className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Networkünüzü paylaşma konusunda yaklaşımınız nedir? *</label>
-                  <select {...register('network_sharing_approach')} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.network_sharing_approach ? 'border-red-300' : 'border-gray-250'}`}>
-                    <option value="">Seçiniz</option>
-                    <option value="Uygun gördüğüm durumlarda bağlantı kurmaya açığım">Uygun gördüğüm durumlarda bağlantı kurmaya açığım</option>
-                    <option value="Güven oluştuğunda çevremi paylaşırım">Güven oluştuğunda çevremi paylaşırım</option>
-                    <option value="Doğru ihtiyaç ve doğru kişi eşleşirse aktif yönlendirme yaparım">Doğru ihtiyaç ve doğru kişi eşleşirse aktif yönlendirme yaparım</option>
-                    <option value="Network paylaşımını profesyonel iş kültürünün önemli parçası olarak görürüm">Network paylaşımını profesyonel iş kültürünün önemli parçası olarak görürüm</option>
-                  </select>
-                  {errors.network_sharing_approach && <p className="mt-1 text-xs text-red-500">{errors.network_sharing_approach.message}</p>}
-                </div>
-              </div>
-            )}
-
-            {/* Adım 5: Niyet Mektubu ve Beklentiler */}
-            {currentStep === 4 && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">5. Niyet Mektubu ve Beklentiler</h3>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Event4Network’e neden katılmak istiyorsunuz? *</label>
-                  <p className="text-xs text-gray-500 mb-2">Lütfen niyetinizi, beklentinizi ve topluluğa katabileceğiniz değeri birkaç paragrafla anlatınız. (Minimum 100 karakter)</p>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Başvuru Niyet Mektubunuz *</label>
                   <textarea 
                     {...register('why_join')} 
-                    rows={6} 
-                    placeholder="Örn: Sadece yeni insanlarla tanışmak için değil, güvene dayalı ve uzun vadeli iş ilişkileri kurabileceğim nitelikli bir çevrenin parçası olmak istiyorum. Kendi uzmanlığımı doğru insanlara anlatmak, değer katabileceğim profesyonellerle tanışmak ve karşılıklı referans kültürü içinde yer almak benim için önemli." 
+                    rows={8} 
+                    placeholder="Örn: Event4Network’e, sadece yeni insanlarla tanışmak için değil; güvene dayalı, sürdürülebilir iş ilişkileri kurabileceğim seçkin bir çevrenin parçası olmak amacıyla katılmak istiyorum. Sağlık turizmi ve dijital pazarlama alanında hizmet veriyorum. En güçlü yönüm..." 
                     className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm placeholder-gray-400 ${errors.why_join ? 'border-red-300' : 'border-gray-250'}`} 
                   />
                   {errors.why_join && <p className="mt-1 text-xs text-red-500">{errors.why_join.message}</p>}
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Event4Network’ten öncelikli beklentiniz nedir? * (Birden fazla seçebilirsiniz)</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      'Nitelikli iş insanlarıyla tanışmak',
-                      'Referansla iş geliştirmek',
-                      'Stratejik iş birlikleri kurmak',
-                      'Profesyonel çevremi güçlendirmek',
-                      'Kendi uzmanlığımı doğru çevrede görünür kılmak',
-                      'Yeni sektörlere erişim sağlamak'
-                    ].map((opt) => (
-                      <label key={opt} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                        <input type="checkbox" value={opt} {...register('primary_expectation')} className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded" />
-                        <span className="text-sm text-gray-700">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.primary_expectation && <p className="mt-1 text-xs text-red-500">{errors.primary_expectation.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hangi tür kişilerle veya şirketlerle tanışmak sizin için değerlidir?</label>
-                  <textarea {...register('target_connection_types')} rows={2} className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sizin için ideal bir iş yönlendirmesi nasıl olur?</label>
-                  <textarea {...register('ideal_referral_definition')} rows={2} className="w-full p-4 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Düzenli toplantı ve birebir görüşmelere zaman ayırabilir misiniz? *</label>
-                    <select {...register('time_commitment')} className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm ${errors.time_commitment ? 'border-red-300' : 'border-gray-250'}`}>
-                      <option value="">Seçiniz</option>
-                      <option value="Evet, düzenli zaman ayırabilirim">Evet, düzenli zaman ayırabilirim</option>
-                      <option value="Yoğunluğuma göre zaman ayırabilirim">Yoğunluğuma göre zaman ayırabilirim</option>
-                      <option value="Şu an emin değilim">Şu an emin değilim</option>
-                    </select>
-                    {errors.time_commitment && <p className="mt-1 text-xs text-red-500">{errors.time_commitment.message}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Profesyonel bir toplulukta en çok önem verdiğiniz değer nedir?</label>
-                    <select {...register('core_value')} className="w-full px-4 py-3 bg-gray-50 border border-gray-250 rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none text-sm">
-                      <option value="">Seçiniz</option>
-                      <option value="Güven">Güven</option>
-                      <option value="Nitelik">Nitelik</option>
-                      <option value="Disiplin">Disiplin</option>
-                      <option value="Karşılıklı fayda">Karşılıklı fayda</option>
-                      <option value="Uzun vadeli ilişki">Uzun vadeli ilişki</option>
-                      <option value="Profesyonel temsil">Profesyonel temsil</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             )}
 
-            {/* Adım 6: Referans ve Onaylar */}
-            {currentStep === 5 && (
+            {/* Adım 4: Referans ve Onaylar */}
+            {currentStep === 3 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">6. Deneyim, Referans ve Onaylar</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">4. Deneyim, Referans ve Onaylar</h3>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Daha önce herhangi bir networking grubu, iş kulübü, dernek veya profesyonel toplulukta yer aldınız mı?</label>

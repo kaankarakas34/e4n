@@ -72,6 +72,7 @@ import { SSS } from './pages/SSS';
 import { DegerlendirmeBasvurusu } from './pages/DegerlendirmeBasvurusu';
 import { ContactPage } from './pages/ContactPage';
 import { KVKK } from './pages/KVKK';
+import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 
 // Public Routes Layout - No Sidebar
@@ -225,6 +226,7 @@ function App() {
             {/* Catch all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ScrollToTopButton />
         </ErrorBoundary>
       </div>
     </BrowserRouter>

@@ -39,9 +39,9 @@ export function BlogListPage() {
   return (
     <div className="bg-white min-h-screen pb-24">
       <Helmet>
-        <title>İş Ağı Rehberi | Event4Network</title>
-        <meta name="description" content="Event4Network İş Ağı Rehberi. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler." />
-        <link rel="canonical" href="https://www.event4network.com/is-agi-rehberi" />
+        <title>Rehber | Event4Network</title>
+        <meta name="description" content="Event4Network Rehber. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler." />
+        <link rel="canonical" href="https://www.event4network.com/blog" />
       </Helmet>
 
       {/* Hero Section */}
@@ -54,7 +54,7 @@ export function BlogListPage() {
             Bilgi ve Tecrübe Paylaşımı
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">
-            İş Ağı Rehberi
+            Rehber
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4 leading-relaxed font-light">
             Seçici networking prensipleri, referansla müşteri kazanımı ve iş dünyasında profesyonel temsil kültürüne dair rehber içeriklerimiz.
@@ -69,7 +69,7 @@ export function BlogListPage() {
             <Home className="h-4 w-4" />
           </Link>
           <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
-          <span className="font-medium text-gray-900">İş Ağı Rehberi</span>
+          <span className="font-medium text-gray-900">Rehber</span>
         </nav>
 
         {loading ? (
@@ -84,7 +84,7 @@ export function BlogListPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((blog) => (
               <article key={blog.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
-                <Link to={`/is-agi-rehberi/${blog.slug}`} className="block relative overflow-hidden aspect-[16/9]">
+                <Link to={`/blog/${blog.slug}`} className="block relative overflow-hidden aspect-[16/9]">
                   {blog.featured_image ? (
                     <img 
                       src={blog.featured_image} 
@@ -119,7 +119,7 @@ export function BlogListPage() {
                     )}
                   </div>
                   
-                  <Link to={`/is-agi-rehberi/${blog.slug}`} className="block group-hover:text-red-600 transition-colors">
+                  <Link to={`/blog/${blog.slug}`} className="block group-hover:text-red-600 transition-colors">
                     <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
                       {blog.title}
                     </h2>
@@ -131,7 +131,7 @@ export function BlogListPage() {
                   
                   <div className="pt-4 border-t border-gray-100 mt-auto">
                     <Link 
-                      to={`/is-agi-rehberi/${blog.slug}`}
+                      to={`/blog/${blog.slug}`}
                       className="inline-flex items-center font-semibold text-red-600 hover:text-red-700 transition-colors text-sm group/btn"
                     >
                       Devamını Oku 

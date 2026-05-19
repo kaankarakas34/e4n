@@ -13,7 +13,7 @@ export function PublicHeader() {
     { name: 'E4N Nedir?', path: '/e4n-nedir' },
     { name: 'Üyelik', path: '/uyelik' },
     { name: 'Etkinlikler', path: '/etkinlikler' },
-    { name: 'İş Ağı Rehberi', path: '/is-agi-rehberi' },
+    { name: 'Rehber', path: '/blog' },
     { name: 'Hakkımızda', path: '/hakkimizda' }
   ];
 

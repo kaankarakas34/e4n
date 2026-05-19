@@ -145,8 +145,8 @@ function App() {
               {/* Legacy Redirects for SEO & backward compatibility */}
               <Route path="/ziyaretci-ol" element={<Navigate to="/degerlendirme-basvurusu" replace />} />
               <Route path="/public-events" element={<Navigate to="/etkinlikler" replace />} />
-              <Route path="/blog" element={<Navigate to="/is-agi-rehberi" replace />} />
-              <Route path="/blog/:slug" element={<Navigate to="/is-agi-rehberi/:slug" replace />} />
+              <Route path="/is-agi-rehberi" element={<Navigate to="/blog" replace />} />
+              <Route path="/is-agi-rehberi/:slug" element={<Navigate to="/blog/:slug" replace />} />
 
               {/* Main Public Pages wrapped with Shared Header & Footer */}
               <Route element={<MainPublicLayout />}>
@@ -155,8 +155,8 @@ function App() {
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />
                 <Route path="/event/:id" element={<EventDetail />} />
-                <Route path="/is-agi-rehberi" element={<BlogListPage />} />
-                <Route path="/is-agi-rehberi/:slug" element={<BlogPostPage />} />
+                <Route path="/blog" element={<BlogListPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/sikca-sorulan-sorular" element={<SSS />} />
                 <Route path="/degerlendirme-basvurusu" element={<DegerlendirmeBasvurusu />} />

@@ -53,10 +53,10 @@ export function BlogPostPage() {
   }
 
   if (error || !blog) {
-    return <Navigate to="/is-agi-rehberi" replace />;
+    return <Navigate to="/blog" replace />;
   }
 
-  const defaultCanonicalUrl = `https://www.event4network.com/is-agi-rehberi/${blog.slug}`;
+  const defaultCanonicalUrl = `https://www.event4network.com/blog/${blog.slug}`;
   const canonicalUrl = blog.canonical_url || defaultCanonicalUrl;
   
   // JSON-LD Schema
@@ -90,7 +90,7 @@ export function BlogPostPage() {
     <div className="bg-white min-h-screen">
       <Helmet>
         {/* Basic SEO */}
-        <title>{blog.meta_title || `${blog.title} | İş Ağı Rehberi | Event4Network`}</title>
+        <title>{blog.meta_title || `${blog.title} | Rehber | Event4Network`}</title>
         <meta name="description" content={blog.meta_description || blog.excerpt || blog.title} />
         
         {/* Keywords */}
@@ -180,8 +180,8 @@ export function BlogPostPage() {
                 <Home className="h-4 w-4" />
               </Link>
               <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
-              <Link to="/is-agi-rehberi" className="hover:text-red-600 transition-colors">
-                İş Ağı Rehberi
+              <Link to="/blog" className="hover:text-red-600 transition-colors">
+                Rehber
               </Link>
               <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
               <span className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-xs">

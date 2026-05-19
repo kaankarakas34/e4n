@@ -5,7 +5,7 @@ import { VisitorForm } from '../components/VisitorForm';
 import { useEffect, useState } from 'react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
-import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake, ChevronDown, ChevronUp, Search, Plus, Minus } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake, ChevronDown, ChevronUp, Search, Plus, Minus, Check } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import { api } from '../api/api';
 
@@ -799,6 +799,85 @@ export function LandingPage() {
                             <p className="text-gray-600 leading-relaxed text-sm">
                                 Şirketlere hizmet sunan ve karar vericilerle tanışmak isteyen firmalar.
                             </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Neden Değerlendirme Section */}
+            <section id="neden-degerlendirme" className="py-24 bg-white border-t border-gray-150">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-start">
+                        {/* Left column: Text Content (7 cols) */}
+                        <div className="lg:col-span-7">
+                            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">Seçici Networking</span>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2 mb-4 leading-tight">
+                                Üyelik Neden Değerlendirme ile Oluyor?
+                            </h2>
+                            <p className="text-lg text-red-700 font-semibold mb-8 leading-relaxed">
+                                Çünkü Event4Network’te amaç daha fazla kişiyi bir araya getirmek değil, doğru kişileri aynı çevrede buluşturmaktır.
+                            </p>
+                            <div className="space-y-6 text-gray-600 text-base leading-relaxed">
+                                <p>
+                                    Event4Network, herkesin doğrudan katılabildiği klasik bir networking yapısı olarak kurgulanmamıştır. Burada temel amaç; nitelikli iş insanlarının birbirini tanıdığı, güven geliştirdiği ve zaman içinde karşılıklı değer üretebildiği bir iş ağı oluşturmaktır.
+                                </p>
+                                <p>
+                                    Bu nedenle üyelik süreci yalnızca bir kayıt formundan ibaret değildir. Her başvuru; kişinin iş profili, profesyonel temsil gücü, faaliyet alanı, katılım disiplini ve topluluğa katabileceği değer açısından değerlendirilir.
+                                </p>
+                                <p>
+                                    Değerlendirme sürecinin amacı, topluluğun niteliğini korumak ve üyeler arasında sağlıklı bir güven zemini oluşturmaktır. Çünkü bir iş insanını kendi çevrenize önerebilmek için yalnızca ne iş yaptığını bilmek yeterli değildir; onun iş yapma biçimini, güvenilirliğini, uzmanlığını ve profesyonel duruşunu da tanımak gerekir.
+                                </p>
+                                <p>
+                                    Event4Network’te seçicilik bir dışlama mekanizması değil, topluluk kalitesini koruma prensibidir. Doğru kişilerin bir araya gelmesi, daha güçlü ilişkiler, daha nitelikli yönlendirmeler ve daha sürdürülebilir iş birlikleri oluşturur.
+                                </p>
+                                <p>
+                                    Bu yüzden Event4Network’e yapılan başvurular; uygunluk, karşılıklı değer potansiyeli ve profesyonel temsil standardı doğrultusunda incelenir. Başvuru yapmak üyelik garantisi oluşturmaz; uygun görülen adaylarla süreç karşılıklı değerlendirme ile ilerler.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Right column: Highlights and Bullets (5 cols) */}
+                        <div className="lg:col-span-5 mt-12 lg:mt-0 space-y-8">
+                            {/* Vurgulu Kutu */}
+                            <div className="bg-red-50 border border-red-100 rounded-3xl p-8 shadow-sm">
+                                <h3 className="font-extrabold text-red-950 text-lg mb-2">Önemli Konumlandırma</h3>
+                                <p className="text-red-900 text-base font-semibold leading-relaxed">
+                                    Event4Network’te üyelik bir kayıt işlemi değil, karşılıklı uygunluk değerlendirmesidir.
+                                </p>
+                            </div>
+
+                            {/* Madde Alanı */}
+                            <div className="bg-gray-50 border border-gray-150 rounded-3xl p-8 shadow-sm">
+                                <h3 className="font-bold text-gray-900 text-lg mb-6">Değerlendirme süreci şu amaçlarla yapılır:</h3>
+                                <ul className="space-y-4">
+                                    {[
+                                        "Topluluğun nitelik standardını korumak",
+                                        "Üyeler arasında güven ortamı oluşturmak",
+                                        "Karşılıklı değer üretebilecek profilleri bir araya getirmek",
+                                        "Profesyonel temsil gücünü korumak",
+                                        "Nitelikli referans kültürünü desteklemek",
+                                        "Uzun vadeli iş ilişkilerine uygun bir yapı oluşturmak"
+                                    ].map((item, idx) => (
+                                        <li key={idx} className="flex gap-3 items-start text-sm font-medium text-gray-700">
+                                            <Check className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                            <span>{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* CTA & Button */}
+                            <div className="bg-gray-950 text-white rounded-3xl p-8 text-center space-y-6 shadow-xl">
+                                <h4 className="font-extrabold text-lg text-white">Uygunluğunuzu Değerlendirelim</h4>
+                                <Button
+                                    size="lg"
+                                    variant="primary"
+                                    onClick={() => navigate('/degerlendirme-basvurusu')}
+                                    className="w-full text-base h-14 bg-red-600 hover:bg-red-500 font-bold rounded-xl shadow-lg shadow-red-900/30"
+                                >
+                                    Değerlendirme Başvurusu Yap
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

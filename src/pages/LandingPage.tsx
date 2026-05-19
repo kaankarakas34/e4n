@@ -251,18 +251,26 @@ export function LandingPage() {
                                 <Button
                                     size="lg"
                                     variant="primary"
-                                    onClick={() => navigate('/ziyaretci-ol')}
+                                    onClick={() => navigate('/degerlendirme-basvurusu')}
                                     className="text-lg px-8 h-14 shadow-xl shadow-red-200"
                                 >
-                                    Ziyaretçi olarak denemek İstiyorum <ArrowRight className="ml-2 h-5 w-5" />
+                                    Katıl <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                                 <Button
                                     size="lg"
                                     variant="outline"
-                                    onClick={() => document.getElementById('nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}
+                                    onClick={() => navigate('/e4n-nedir')}
                                     className="text-lg px-8 h-14"
                                 >
-                                    Nasıl Çalışır?
+                                    E4N Nedir?
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    onClick={() => navigate('/uyelik')}
+                                    className="text-lg px-8 h-14"
+                                >
+                                    Üyelik Süreci
                                 </Button>
                             </div>
                         </div>
@@ -654,7 +662,7 @@ export function LandingPage() {
                                         <Button variant="outline" className="flex-1 justify-center" onClick={() => navigate(`/event/${event.id}`)}>
                                             İncele
                                         </Button>
-                                        <Button variant="ghost" className="justify-center px-3" onClick={() => navigate('/ziyaretci-ol')}>
+                                        <Button variant="ghost" className="justify-center px-3" onClick={() => navigate('/degerlendirme-basvurusu')}>
                                             <ExternalLink className="h-4 w-4 text-gray-400 hover:text-red-600 transition-colors" />
                                         </Button>
                                     </div>

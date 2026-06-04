@@ -77,7 +77,7 @@ export function LandingPage() {
                   size="lg"
                   variant="outline"
                   onClick={() => scrollToSection('nasil-calisir')}
-                  className="text-base font-semibold px-8 h-14 bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white transform hover:-translate-y-0.5 transition-all w-full sm:w-auto"
+                  className="text-base font-semibold px-8 h-14 bg-white border-transparent text-slate-900 hover:bg-transparent hover:text-white border hover:border-white/20 transform hover:-translate-y-0.5 transition-all w-full sm:w-auto"
                 >
                   E4N Nasıl Çalışır?
                 </Button>

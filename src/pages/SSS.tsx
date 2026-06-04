@@ -173,7 +173,7 @@ export function SSS() {
               size="lg"
               variant="outline"
               onClick={() => navigate('/iletisim')}
-              className="text-lg h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 w-full sm:w-auto"
+              className="text-lg h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
             >
               İletişime Geç
             </Button>

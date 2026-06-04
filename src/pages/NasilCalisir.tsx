@@ -100,7 +100,7 @@ export function NasilCalisir() {
               size="lg"
               variant="outline"
               onClick={() => navigate('/uyelik')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 w-full sm:w-auto"
+              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
             >
               Üyelik Kriterleri
             </Button>
@@ -235,7 +235,7 @@ export function NasilCalisir() {
               size="lg"
               variant="outline"
               onClick={() => navigate('/e4n-nedir')}
-              className="text-base h-14 px-10 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 w-full sm:w-auto"
+              className="text-base h-14 px-10 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
             >
               Klasik Networking'den Farkı
             </Button>

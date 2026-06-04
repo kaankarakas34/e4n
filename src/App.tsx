@@ -66,6 +66,7 @@ import { BlogPostPage } from './pages/BlogPostPage';
 import { NotFound } from './pages/NotFound';
 import { MainPublicLayout } from './components/MainPublicLayout';
 import { E4NNedir } from './pages/E4NNedir';
+import { NasilCalisir } from './pages/NasilCalisir';
 import { Uyelik } from './pages/Uyelik';
 import { Hakkimizda } from './pages/Hakkimizda';
 import { SSS } from './pages/SSS';
@@ -153,6 +154,7 @@ function App() {
               <Route element={<MainPublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/e4n-nedir" element={<E4NNedir />} />
+                <Route path="/nasil-calisir" element={<NasilCalisir />} />
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />
                 <Route path="/event/:id" element={<EventDetail />} />

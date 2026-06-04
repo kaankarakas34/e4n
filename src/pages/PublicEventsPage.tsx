@@ -115,43 +115,47 @@ export function PublicEventsPage() {
         </div>
       </section>
 
-      {/* Özel Davetler ve Temalar */}
+      {/* Toplantı Modellerimiz */}
       <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="text-sm font-semibold text-red-600 uppercase tracking-wider">Formatlar</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">Etkinlik Yapımız</h2>
+            <span className="text-sm font-semibold text-red-600 uppercase tracking-wider">Toplantı Modellerimiz</span>
+            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">1 Online + 1 Yüz Yüze Yapısı</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm flex gap-6 items-start">
+              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Özel Üye Davetleri</h3>
-              <p className="text-gray-650 text-sm leading-relaxed">
-                Sadece üyelerimiz ve onların özel davetlileri olan potansiyel referans ortakları için düzenlenen, kapalı kapılar ardında iş geliştirme hedeflerini konuşabildiğimiz seçkin buluşmalar.
-              </p>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Online Toplantılar</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  Zamanı en verimli şekilde kullanmayı sağlayan düzenli temas alanımızdır. Bu toplantılarda üyeler görünürlük kazanır, kendilerini ve güncel hedeflerini anlatır, ihtiyaç duydukları bağlantı taleplerini net bir şekilde paylaşır.
+                </p>
+                <ul className="space-y-2 text-xs text-gray-500">
+                  <li className="flex items-center gap-2">✓ Düzenli temas ve yüksek katılım verimliliği</li>
+                  <li className="flex items-center gap-2">✓ Detaylı hedef bağlantı talebi paylaşımları</li>
+                  <li className="flex items-center gap-2">✓ Zaman tasarrufu sağlayan interaktif akış</li>
+                </ul>
+              </div>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm flex gap-6 items-start">
+              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
                 <Star className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Fiziksel Networking Etkinlikleri</h3>
-              <p className="text-gray-650 text-sm leading-relaxed">
-                Farklı şehirlerde veya bölgelerde yer alan Event4Network gruplarının ortak katılımıyla düzenlenen genişletilmiş iş birliği ve sinerji günleri.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
-                <ImageIcon className="h-6 w-6" />
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Yüz Yüze Toplantılar</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  Grup içi güvenin ve samimiyetin pekiştiği fiziksel buluşmalarımızdır. Yüz yüze iletişim, üyelerin birbirini daha doğal bir ortamda tanımasını sağlayarak ilişkileri derinleştirir ve güçlü iş birliklerine zemin hazırlar.
+                </p>
+                <ul className="space-y-2 text-xs text-gray-500">
+                  <li className="flex items-center gap-2">✓ Güveni derinleştiren gerçek temas</li>
+                  <li className="flex items-center gap-2">✓ Doğal ve kalıcı ilişkilerin inşası</li>
+                  <li className="flex items-center gap-2">✓ Stratejik ve yüksek değerli iş birliği ortamı</li>
+                </ul>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Tematik Beyaz Yaka Buluşmaları</h3>
-              <p className="text-gray-650 text-sm leading-relaxed">
-                B2B hizmet ve kurumsal satın alım yapan karar vericilerin, belirli sektörel başlıkları tartışmak ve iş çevresi edinmek için katıldığı niş oturumlar.
-              </p>
             </div>
           </div>
         </div>

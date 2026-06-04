@@ -11,6 +11,7 @@ export function PublicHeader() {
 
   const navLinks = [
     { name: 'E4N Nedir?', path: '/e4n-nedir' },
+    { name: 'Nasıl Çalışır?', path: '/nasil-calisir' },
     { name: 'Üyelik', path: '/uyelik' },
     { name: 'Etkinlikler', path: '/etkinlikler' },
     { name: 'Rehber', path: '/blog' },

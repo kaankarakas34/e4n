@@ -19,6 +19,7 @@ export function PublicFooter() {
             <h4 className="font-bold text-gray-900 mb-4">Platform</h4>
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/e4n-nedir" className="hover:text-red-600">E4N Nedir?</Link></li>
+              <li><Link to="/nasil-calisir" className="hover:text-red-600">Nasıl Çalışır?</Link></li>
               <li><Link to="/uyelik" className="hover:text-red-600">Üyelik</Link></li>
               <li><Link to="/etkinlikler" className="hover:text-red-600">Etkinlikler</Link></li>
             </ul>

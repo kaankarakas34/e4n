@@ -1,990 +1,636 @@
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { VisitorForm } from '../components/VisitorForm';
-
-import { useEffect, useState } from 'react';
 import { Button } from '../shared/Button';
-import { Logo } from '../shared/Logo';
-import { ArrowRight, CheckCircle, Users, BarChart, Calendar, Trophy, MapPin, ExternalLink, XCircle, ShieldAlert, AlertCircle, ShieldCheck, Handshake, ChevronDown, ChevronUp, Search, Plus, Minus, Check } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle,
+  Users,
+  Calendar,
+  Trophy,
+  XCircle,
+  ShieldAlert,
+  ShieldCheck,
+  Handshake,
+  Check,
+  Compass,
+  Target,
+  Sparkles,
+  Award,
+  AlertCircle
+} from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
-import { api } from '../api/api';
-
-interface GroupStat {
-    id: string;
-    name: string;
-    turnover: number;
-    member_count: number;
-}
-
-interface PublicEvent {
-    id: string;
-    title: string;
-    description: string;
-    start_at: string;
-    location: string;
-}
-
-const faqs = [
-    {
-        q: "Event4Network’e kimler katılabilir?",
-        a: "Event4Network; şirket sahipleri, girişimciler, danışmanlar, uzmanlar ve B2B hizmet sağlayıcıları için uygundur.\n\nAncak üyelik sürecinde yalnızca meslek veya sektör uygunluğuna bakılmaz. Adayın faaliyet süresi, iş hacmi, hizmet kapasitesi, grup dengesi ve karşılıklı değer üretme potansiyeli de ön değerlendirme görüşmesinde ele alınır."
-    },
-    {
-        q: "Her başvuru kabul ediliyor mu?",
-        a: "Hayır. Event4Network seçici bir yapıya sahiptir.\n\nBaşvurular; adayın sektörü, iş yapma biçimi, mevcut grup yapısı, meslek koltuğu uygunluğu ve gruba sağlayabileceği katkılar doğrultusunda değerlendirilir.\n\nBu yaklaşım, grup içindeki güveni, dengeyi ve iş yönlendirme kalitesini korumak için önemlidir."
-    },
-    {
-        q: "Şirketin en az kaç yıldır açık olması gerekiyor?",
-        a: "Event4Network’e katılım için adayın belirli bir faaliyet geçmişine ve iş hacmine sahip olması önemlidir.\n\nGenel olarak en az 2 yıldır aktif faaliyet gösteren, belirli bir müşteri portföyü veya hizmet kapasitesi oluşmuş işletmeler daha uygun profil olarak değerlendirilir.\n\nAncak bu kriter tek başına yeterli veya belirleyici değildir. Detaylar ön değerlendirme görüşmesinde adayın sektörü, iş modeli ve grup içindeki potansiyel katkısı üzerinden değerlendirilir."
-    },
-    {
-        q: "Aynı meslekten birden fazla kişi aynı grupta yer alabilir mi?",
-        a: "Event4Network’te grup içi rekabeti azaltmak ve üyeler arasında daha sağlıklı referans ilişkileri kurmak için meslek koltuğu sistemine dikkat edilir.\n\nBu nedenle aynı grupta aynı meslek veya doğrudan rakip alanlarda faaliyet gösteren üyelerin çakışmamasına özen gösterilir."
-    },
-    {
-        q: "Meslek koltuğu sistemi nedir?",
-        a: "Meslek koltuğu sistemi, her grupta belirli meslek veya sektörlerden sınırlı sayıda kişinin yer almasını ifade eder.\n\nBu sistem sayesinde üyeler, grup içinde doğrudan rakipleriyle değil; birbirini tamamlayabilecek farklı sektörlerden profesyonellerle bir araya gelir.\n\nAmaç, grup içi güveni artırmak ve nitelikli iş yönlendirmelerini daha sağlıklı hale getirmektir."
-    },
-    {
-        q: "Toplantılar ne sıklıkla yapılıyor?",
-        a: "Event4Network grupları düzenli olarak bir araya gelir.\n\nGenellikle toplantılar belirli periyotlarla, örneğin ayın belirli haftalarında gerçekleştirilir. Toplantı düzeni, ilgili grubun yapısına ve dönem takvimine göre üyelerle paylaşılır.\n\nDüzenli katılım, üyelerin görünürlüğü ve güven inşası açısından oldukça önemlidir."
-    },
-    {
-        q: "Toplantılar online mı, fiziksel mi?",
-        a: "Event4Network’te hem online toplantılar hem de fiziksel buluşmalar yapılabilir.\n\nDüzenli grup toplantıları çoğunlukla online olarak gerçekleştirilebilirken; fiziksel buluşmalar, kahve toplantıları, beyaz yaka etkinlikleri ve farklı platformlarla yapılan iş birlikleri de network sürecinin bir parçasıdır."
-    },
-    {
-        q: "Toplantılara katılım zorunlu mu?",
-        a: "Event4Network’te düzenli katılım oldukça önemlidir.\n\nÇünkü networking, yalnızca bir defa görünmekle değil; düzenli olarak tanınmak, hatırlanmak ve güven oluşturmakla sonuç verir.\n\nBu nedenle üyelerin toplantılara mümkün olduğunca düzenli katılması beklenir. Katılım disiplini, hem kişinin kendi görünürlüğü hem de grubun sağlıklı ilerlemesi için önemlidir."
-    },
-    {
-        q: "Birebir toplantılar neden önemli?",
-        a: "Birebir toplantılar, Event4Network sisteminin en önemli parçalarından biridir.\n\nGenel toplantılarda insanlar birbirini tanımaya başlar; ancak asıl güven, detaylı tanışma ve iş yönlendirme potansiyeli birebir görüşmelerde oluşur.\n\nKimin kimi tanıdığını, hangi çevrelere ulaşabileceğini ve hangi iş birliklerinin doğabileceğini anlamanın en etkili yolu birebir toplantılardır."
-    },
-    {
-        q: "Event4Network doğrudan müşteri kazandırır mı?",
-        a: "Event4Network doğrudan satış garantisi veren bir yapı değildir.\n\nBuradaki temel amaç; doğru insanlarla düzenli temas kurmak, güven oluşturmak, referans ilişkileri geliştirmek ve zaman içinde nitelikli iş fırsatlarının doğabileceği bir çevre oluşturmaktır.\n\nReklam hızlı görünürlük sağlayabilir; ancak referans, güven üzerinden daha güçlü iş ilişkileri oluşturur."
-    },
-    {
-        q: "Gruptaki kişiler benim müşterim mi olacak?",
-        a: "Event4Network’te asıl değer, yalnızca gruptaki kişileri potansiyel müşteri olarak görmek değildir.\n\nBir grupta yer aldığınızda, zamanla 35 kişinin çevresinde güvenilir bir profesyonel olarak konumlanırsınız. Yani üyelerin kendisinden çok, onların çevresi sizin için daha büyük bir pazar haline gelebilir.\n\nBu nedenle Event4Network’te amaç satış yapmak değil; güvenilir şekilde tavsiye edilebilir hale gelmektir."
-    },
-    {
-        q: "Event4Network’te referans sistemi nasıl işler?",
-        a: "Üyeler düzenli toplantılar ve birebir görüşmeler sayesinde birbirlerinin işlerini, uzmanlıklarını ve hedef müşteri profillerini daha iyi tanır.\n\nBu güven oluştukça, üyeler kendi çevrelerinde uygun gördükleri kişilere diğer üyeleri tavsiye edebilir veya iş yönlendirmesi yapabilir.\n\nReferansların sağlıklı oluşması için üyelerin kendini net anlatması, toplantılara düzenli katılması ve birebir görüşmeler yapması önemlidir."
-    },
-    {
-        q: "Ziyaretçi olarak toplantıya katılabilir miyim?",
-        a: "Evet, uygun görülen adaylar Event4Network toplantılarına ziyaretçi olarak davet edilebilir.\n\nZiyaretçi katılımı, hem adayın sistemi yakından görmesi hem de Event4Network ekibinin adayın grup yapısına uygunluğunu değerlendirmesi için önemli bir adımdır."
-    },
-    {
-        q: "Üyelik süreci nasıl ilerliyor?",
-        a: "Üyelik süreci genellikle şu adımlardan oluşur:\n\n- Başvuru veya davet\n- Ön değerlendirme görüşmesi\n- Uygun grup ve meslek koltuğu kontrolü\n- Tanışma toplantısına katılım\n- Üyelik değerlendirmesi\n- Uygun bulunması halinde gruba dahil olma\n\nBu süreç, hem adayın beklentilerini hem de grubun yapısını korumak için uygulanır."
-    },
-    {
-        q: "Event4Network ücretli mi?",
-        a: "Event4Network bir üyelik sistemiyle çalışır.\n\nÜyelik detayları, dönemsel yapı, grup uygunluğu ve katılım şartları ön değerlendirme görüşmesinde paylaşılır.\n\nAmaç, yalnızca katılım sağlamak değil; düzenli, sürdürülebilir ve karşılıklı değer üreten bir iş ağına dahil olmaktır."
-    },
-    {
-        q: "Başvuru yaptıktan sonra ne oluyor?",
-        a: "Başvurunuz alındıktan sonra Event4Network ekibi sizinle iletişime geçer.\n\nÖn görüşmede işiniz, sektörünüz, hedef müşteri profiliniz, faaliyet süreniz, beklentileriniz ve uygun grup ihtimali değerlendirilir.\n\nUygun görülmeniz halinde sizi bir tanışma toplantısına veya ilgili üyelik sürecine yönlendiririz."
-    },
-    {
-        q: "Event4Network hangi sektörler için uygundur?",
-        a: "Event4Network birçok farklı sektör için uygundur. Özellikle B2B çalışan, hizmet sunan, referansla büyüyebilecek veya karar vericilerle ilişki kurmak isteyen profesyoneller için güçlü bir yapıdır.\n\nÖrnek olarak:\n- Danışmanlık\n- Hukuk\n- Finans\n- Sigorta\n- Yazılım\n- Pazarlama\n- Gayrimenkul\n- İnsan kaynakları\n- Eğitim\n- Sağlık turizmi\n- E-ticaret\n- Mimarlık ve mühendislik\n\nAncak her sektör için uygunluk, mevcut grup yapısı ve meslek koltuğu durumuna göre değerlendirilir."
-    },
-    {
-        q: "Event4Network sadece grup içi ilişkilerden mi oluşur?",
-        a: "Hayır. Event4Network yalnızca kapalı grup toplantılarından ibaret değildir.\n\nÜyelerin farklı çevrelerde de görünür olabilmesi için fiziksel buluşmalar, beyaz yaka toplantılar, dış etkinlik katılımları ve farklı platformlarla yapılan iş birlikleri de sürecin parçasıdır.\n\nBu sayede üyeler yalnızca kendi gruplarıyla değil, daha geniş bir iş ekosistemiyle temas kurabilir."
-    },
-    {
-        q: "Event4Network’e neden katılmalıyım?",
-        a: "Event4Network’e katılmak, yalnızca yeni insanlarla tanışmak anlamına gelmez.\n\nBurada düzenli olarak görünür olur, işinizi anlatır, diğer üyeleri tanır, birebir görüşmeler yapar ve zaman içinde güvenilir bir referans ağı içinde yer alırsınız.\n\nDoğru kişiler tarafından tanınmak, iş dünyasında reklamdan çok daha güçlü ve kalıcı sonuçlar doğurabilir."
-    }
-];
 
 export function LandingPage() {
-    const navigate = useNavigate();
-    const [groups, setGroups] = useState<GroupStat[]>([]);
-    const [events, setEvents] = useState<PublicEvent[]>([]);
-    const [openFaqs, setOpenFaqs] = useState<Record<number, boolean>>({});
-    const [faqSearch, setFaqSearch] = useState("");
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        // Fetch groups and events
-        api.getGroups().then((data: any) => setGroups(data.slice(0, 4))).catch(() => { });
-        api.getEvents().then((data: any) => {
-            const publicEvents = data.filter((e: any) => e.is_public).slice(0, 3);
-            setEvents(publicEvents);
-        }).catch(() => { });
-    }, []);
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(value);
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50 font-sans">
-            <Helmet>
-                <title>Event4Network | İş İnsanları İçin Seçici Networking Platformu</title>
-                <meta name="description" content="Event4Network, iş insanlarını seçici networking gruplarında bir araya getirerek kalıcı iş ilişkileri, nitelikli referanslar ve güvene dayalı iş bağlantıları oluşturur." />
-                <meta name="author" content="Event4Network" />
-                <meta name="robots" content="index, follow" />
-                <meta name="keywords" content="networking, iş ağı, seçici networking, B2B networking, iş insanları, referansla iş geliştirme, nitelikli iş yönlendirmesi, kalıcı iş ilişkileri" />
-                <link rel="canonical" href="https://www.event4network.com/" />
-                
-                <meta property="og:type" content="website" />
-                <meta property="og:title" content="Event4Network | İş İnsanları İçin Seçici Networking Platformu" />
-                <meta property="og:description" content="Event4Network, iş insanlarını seçici networking gruplarında bir araya getirerek kalıcı iş ilişkileri, nitelikli referanslar ve güvene dayalı iş bağlantıları oluşturur." />
-                <meta property="og:url" content="https://www.event4network.com/" />
-                <meta property="og:site_name" content="Event4Network" />
-                
-                <meta name="twitter:card" content="summary" />
-                <meta name="twitter:title" content="Event4Network | İş İnsanları İçin Seçici Networking Platformu" />
-                <meta name="twitter:description" content="Kalıcı iş ilişkileri, güvene dayalı referanslar ve seçici networking yapısı için Event4Network." />
-
-                <script type="application/ld+json">
-{`{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Event4Network",
-  "alternateName": "E4N",
-  "url": "https://www.event4network.com/",
-  "logo": "https://www.event4network.com/logo.png",
-  "description": "Event4Network, iş insanları için seçici networking grupları oluşturan, kalıcı iş ilişkileri, güvene dayalı bağlantılar ve nitelikli referans sistemi üzerine kurulu bir networking platformudur.",
-  "sameAs": [
-    "https://www.instagram.com/event4network/"
-  ],
-  "knowsAbout": [
-    "Networking",
-    "B2B networking",
-    "İş ağı kurma",
-    "İş geliştirme",
-    "Nitelikli iş yönlendirmesi",
-    "Referansla müşteri kazanma",
-    "Kalıcı iş ilişkileri",
-    "Girişimcilik",
-    "Profesyonel iş bağlantıları"
-  ]
-}`}
-                </script>
-                <script type="application/ld+json">
-{`{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Event4Network",
-  "url": "https://www.event4network.com/"
-}`}
-                </script>
-                <script type="application/ld+json">
-{`{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Event4Network nedir?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Event4Network, iş insanlarının düzenli olarak bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici ve güvene dayalı bir networking platformudur."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Event4Network kimler için uygundur?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Event4Network; şirket sahipleri, girişimciler, danışmanlar, B2B hizmet veren profesyoneller ve referansla iş geliştirmek isteyen işletmeler için uygundur."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Event4Network klasik networking etkinliklerinden nasıl ayrılır?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Event4Network, tek seferlik tanışmalar yerine düzenli toplantılar, birebir görüşmeler, seçici üyelik yapısı ve güvene dayalı nitelikli iş yönlendirmeleri üzerine kurulu sürdürülebilir bir networking sistemidir."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Event4Network üyelik süreci nasıl işler?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Event4Network üyelik süreci ön bilgilendirme ve ön değerlendirme ile ilerler. Başvuran kişinin veya şirketin faaliyet alanı, gruba değer katma potansiyeli ve mevcut grup yapısıyla uyumu değerlendirilir."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Event4Network’te birebir görüşmeler neden önemlidir?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Birebir görüşmeler, üyelerin birbirini daha yakından tanımasını sağlar. Gerçek iş bağlantıları çoğu zaman bu görüşmelerde oluşur çünkü kişiler birbirinin işini, çevresini ve potansiyel iş fırsatlarını daha iyi anlar."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Event4Network’te amaç sadece yeni insanlarla tanışmak mı?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Hayır. Event4Network’te amaç yalnızca yeni insanlarla tanışmak değil; aynı kişilerle düzenli temas kurarak güven oluşturmak, birbirini tanımak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir."
-      }
+  // Smooth scroll helper
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  ]
-}`}
-                </script>
-            </Helmet>
-            {/* Hero Section */}
-            <section className="pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
-                        <div className="mb-12 lg:mb-0">
-                            <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-50 text-red-700 font-medium text-sm mb-6 border border-red-100">
-                                🚀 Profesyonel İş Ağı Platformu
-                            </div>
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
-                                İş İnsanları İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">Seçici Networking Platformu</span>
-                            </h1>
-                            <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl">
-                                Event4Network, iş insanlarını düzenli ve seçici gruplarda bir araya getirerek güvene dayalı, sürdürülebilir ve nitelikli iş bağlantıları kurulmasını sağlayan yeni nesil bir networking platformudur.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Button
-                                    size="lg"
-                                    variant="primary"
-                                    onClick={() => navigate('/degerlendirme-basvurusu')}
-                                    className="text-lg px-8 h-14 shadow-xl shadow-red-200"
-                                >
-                                    Katıl <ArrowRight className="ml-2 h-5 w-5" />
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    onClick={() => navigate('/e4n-nedir')}
-                                    className="text-lg px-8 h-14"
-                                >
-                                    E4N Nedir?
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    onClick={() => navigate('/uyelik')}
-                                    className="text-lg px-8 h-14"
-                                >
-                                    Üyelik Süreci
-                                </Button>
-                            </div>
-                        </div>
+  };
 
-                        <div className="relative">
-                            <div className="absolute -inset-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-2xl opacity-20 animate-pulse"></div>
-                            <img
-                                src={processMeeting}
-                                alt="Event4Network iş insanları için seçici networking platformu"
-                                width="1200"
-                                height="700"
-                                loading="eager"
-                                fetchPriority="high"
-                                className="relative rounded-2xl shadow-2xl border border-gray-100 w-full object-cover transform hover:scale-[1.02] transition-transform duration-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
+  return (
+    <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-red-500 selection:text-white">
+      <Helmet>
+        <title>Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking</title>
+        <meta name="description" content="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı seçici bir iş ağı içinde bir araya getirerek kalıcı iş ilişkileri oluşturur." />
+        <meta name="keywords" content="seçici networking, iş ağı, referansla iş geliştirme, şirket sahipleri, kurucu ortaklar, B2B networking, kalıcı iş ilişkileri, event4network" />
+        <link rel="canonical" href="https://www.event4network.com/" />
+      </Helmet>
 
-            {/* SEO Kısaca Block */}
-            <section id="event4network-nedir" className="py-16 bg-white border-t border-gray-100">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-6">Event4Network Nedir?</h2>
-                    <p className="text-lg text-gray-600 leading-relaxed">
-                        Event4Network, iş insanlarının düzenli olarak bir araya gelerek kalıcı iş ilişkileri kurduğu, seçici ve güvene dayalı bir networking platformudur.
-                    </p>
-                </div>
-            </section>
-
-            {/* Video Section */}
-            <section id="nasil-calisir" className="py-24 bg-white border-t border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
-                        <div className="lg:col-span-6 mb-12 lg:mb-0">
-                            <div className="text-red-600 font-semibold tracking-wide uppercase text-sm mb-3">Video Anlatım</div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
-                                Event4Network Nasıl Çalışır?
-                            </h2>
-                            <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
-                                <p>
-                                    Event4Network’te amaç yalnızca yeni insanlarla tanışmak değildir. Aynı kişilerle düzenli olarak bir araya gelmek, zaman içinde birbirini gerçekten tanımak, güven oluşturmak ve bu güven üzerinden nitelikli iş birlikleri geliştirmektir.
-                                </p>
-                                <p className="border-l-4 border-red-600 pl-4 italic text-gray-700 font-medium bg-red-50/50 py-3 rounded-r-lg">
-                                    Burada gruptaki 35 kişi yalnızca potansiyel müşteriniz değildir; onların çevresi, güvenilir bir referansla ulaşabileceğiniz gerçek pazarınızdır.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="lg:col-span-6">
-                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 aspect-video w-full">
-                                <iframe 
-                                    className="absolute top-0 left-0 w-full h-full"
-                                    src="https://www.youtube.com/embed/qGg8v6TRjNY?si=RcbLDMovaMS7L3gu" 
-                                    title="Event4Network seçici networking platformu tanıtım videosu" 
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                    referrerPolicy="strict-origin-when-cross-origin" 
-                                    allowFullScreen
-                                    loading="lazy"
-                                ></iframe>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Problem Section: Why Classic Networking Fails */}
-            <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Neden Farklıyız?</div>
-                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
-                            Klasik Networking Neden Yetersiz Kalır?
-                        </h2>
-                        <div className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto space-y-4 leading-relaxed">
-                            <p>
-                                Birçok networking etkinliğinde insanlar tanışır, kartvizit değiştirir ve sonra birbirini unutur. Çünkü güven oluşmaz, ilişki derinleşmez ve düzenli temas kurulmaz.
-                            </p>
-                            <p className="font-semibold text-red-600 bg-red-50/50 py-2 px-4 rounded-lg inline-block border border-red-100/50">
-                                Event4Network, bu problemi çözmek için yalnızca tanışmaya değil; tanınmaya, güven oluşturmaya ve sürdürülebilir iş ilişkileri kurmaya odaklanır.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {/* Card 1: Yüzeysel Tanışmalar */}
-                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <XCircle className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Yüzeysel Tanışmalar</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Tek seferlik etkinliklerde insanlar birbirini yeterince tanıyamaz.
-                            </p>
-                        </div>
-
-                        {/* Card 2: Güven Eksikliği */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <ShieldAlert className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Güven Eksikliği</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                İş yönlendirmesi için sadece tanışmak değil, güven oluşması gerekir.
-                            </p>
-                        </div>
-
-                        {/* Card 3: Takip Eksikliği */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg hover:border-red-100 transition-all duration-300">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <AlertCircle className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Takip Eksikliği</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Düzenli temas olmadığında ilişkiler kısa sürede kopar.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Çözüm Section: Event4Network Nasıl Fark Yaratır? */}
-            <section id="neden-event4network" className="py-24 bg-gray-50/70 border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Çözüm Platformu</div>
-                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
-                            Neden Event4Network?
-                        </h2>
-                        <p className="mt-6 text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                            Event4Network, iş insanlarını rastgele değil; dengeli, seçici ve sürdürülebilir gruplar içerisinde bir araya getirir. Her üye yalnızca kendi işiyle değil, çevresiyle birlikte bu yapıya değer katar.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {/* Card 1: Seçici Gruplar */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Users className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Seçici Gruplar</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Her grupta farklı sektörlerden iş insanları yer alır.
-                            </p>
-                        </div>
-
-                        {/* Card 2: Meslek Koltuğu Sistemi */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <ShieldCheck className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Meslek Koltuğu Sistemi</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Aynı meslekten üyelerin çakışması engellenerek grup içi rekabet azaltılır.
-                            </p>
-                        </div>
-
-                        {/* Card 3: Düzenli Toplantılar */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Calendar className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Düzenli Toplantılar</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Üyeler belirli aralıklarla bir araya gelerek görünürlüklerini artırır.
-                            </p>
-                        </div>
-
-                        {/* Card 4: Birebir Görüşmeler */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Handshake className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Birebir Görüşmeler</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Asıl güven ve iş akışı, üyeler arasında yapılan birebir toplantılarla oluşur.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Group Types Section */}
-            <section id="grup-yapisi" className="py-24 bg-gray-50 border-t border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <div className="text-gray-900 font-semibold tracking-wide uppercase text-sm mb-3">Grup Yapımız</div>
-                        <h2 className="text-3xl font-bold text-gray-900">İki Ana Yapı</h2>
-                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-                            Dinamik ve sürdürülebilir ilişkiler için iki ana yapı sunuyoruz.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {/* Main Groups */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Users className="h-32 w-32 text-red-600 transform rotate-12" />
-                            </div>
-                            <div className="relative z-10">
-                                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                    <Users className="h-6 w-6 text-red-600" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">Ana Gruplar</h3>
-                                <p className="text-gray-600 mb-4">
-                                    Yaklaşık 35 iş insanından oluşan, genel networking faaliyetlerinin yürütüldüğü dinamik gruplardır.
-                                </p>
-                                <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                                    <div className="flex items-start gap-3">
-                                        <Calendar className="h-5 w-5 text-red-600 mt-0.5" />
-                                        <div>
-                                            <span className="block font-bold text-gray-900 text-sm mb-1">Dinamik Döngü</span>
-                                            <p className="text-xs text-gray-600 leading-relaxed">
-                                                Dört aylık süreç sonunda kimlerle yol alabileceğiniz netleşir. "Shuffle" sistemi ile bu doğal süreci yeni bağlantılarla genişletiriz.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Loncalar */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <BarChart className="h-32 w-32 text-blue-600 transform rotate-12" />
-                            </div>
-                            <div className="relative z-10">
-                                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
-                                    <Users className="h-6 w-6 text-blue-600" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">Loncalar (Sektörel Takımlar)</h3>
-                                <p className="text-gray-600 mb-4">
-                                    Aynı sektöre hizmet eden ancak birbirinin rakibi olmayan, farklı uzmanlık alanlarından iş insanlarını bir araya getirir.
-                                </p>
-                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                                    <div className="flex items-start gap-3">
-                                        <Trophy className="h-5 w-5 text-blue-600 mt-0.5" />
-                                        <div>
-                                            <span className="block font-bold text-gray-900 text-sm mb-1">Tamamlayıcı Güç</span>
-                                            <p className="text-xs text-gray-600 leading-relaxed">
-                                                Bir sektördeki işletmelerin ihtiyaç duyduğu hizmetler, tamamlayıcı bir yapı içinde buluşur. Rekabet değil, iş birliği esastır.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Meeting Format Section */}
-            <section className="py-24 bg-gray-900 text-white relative overflow-hidden">
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-10"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/95 to-gray-900/90"></div>
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="lg:grid lg:grid-cols-2 gap-16 items-center">
-                        <div>
-                            <div className="text-red-500 font-semibold tracking-wide uppercase text-sm mb-3">Toplantı Deneyimi</div>
-                            <h2 className="text-3xl font-bold text-white mb-6">Sıkıcı Toplantılara Son</h2>
-                            <p className="text-gray-300 text-lg mb-8 leading-relaxed">
-                                Ana grup toplantılarımızda sıkıcı, monoton sunumlar yerine interaktif ve eğlenceli bir akış sunuyoruz.
-                            </p>
-
-                            <ul className="space-y-6">
-                                <li className="flex items-start">
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
-                                        <span className="text-red-500 font-bold">15</span>
-                                    </div>
-                                    <div className="ml-4">
-                                        <h3 className="text-xl font-bold text-white">Dakika İnteraktif Sunum</h3>
-                                        <p className="mt-1 text-gray-400">Üyelerimizin işini anlattığı kısa, öz ve etkileşimli sunumlar.</p>
-                                    </div>
-                                </li>
-                                <li className="flex items-start">
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                                        <Users className="h-5 w-5 text-blue-400" />
-                                    </div>
-                                    <div className="ml-4">
-                                        <h3 className="text-xl font-bold text-white">Networking Oyunları</h3>
-                                        <p className="mt-1 text-gray-400">Buzları eriten, tanışmayı hızlandıran ve eğlendiren aktiviteler.</p>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="mt-12 lg:mt-0 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                            <h3 className="text-2xl font-bold text-white mb-6">Hibrit Yaklaşım: Online + Yüz Yüze</h3>
-                            <p className="text-gray-300 mb-6 leading-relaxed">
-                                Hem online'ın pratikliğinden hem de yüz yüze iletişimin gücünden faydalanıyoruz.
-                            </p>
-                            <div className="space-y-4">
-                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                                        <span className="font-bold text-white">Online Yüzeyselliğine Son</span>
-                                    </div>
-                                    <p className="text-sm text-gray-400">
-                                        Genel gruplar ve loncalar için tasarlanan yüz yüze etkinlikler sayesinde sıkı iş bağlantıları kuruyoruz.
-                                    </p>
-                                </div>
-                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                                        <span className="font-bold text-white">Maksimum Verim</span>
-                                    </div>
-                                    <p className="text-sm text-gray-400">
-                                        Zamanı verimli kullanan online toplantılar ve ilişkiyi derinleştiren fiziksel buluşmaların mükemmel dengesi.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Group Success Stats Section */}
-            <section id="basarilar" className="py-20 bg-gray-900 text-white border-t border-gray-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-red-500 font-semibold tracking-wide uppercase text-sm">Başarılarımız</h2>
-                        <p className="mt-2 text-3xl font-bold sm:text-4xl">Gruplarımızın Yarattığı Ekonomi</p>
-                        <p className="mt-4 text-gray-400 max-w-2xl mx-auto">
-                            Event 4 Network grupları, üyeleri arasında güçlü iş birlikleri kurarak ticaret hacmini her geçen gün artırıyor.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {groups.map((group) => (
-                            <div key={group.id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-red-500/50 transition-colors duration-300">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="p-3 bg-red-500/10 rounded-lg">
-                                        <Trophy className="h-6 w-6 text-red-500" />
-                                    </div>
-                                    <span className="text-xs font-medium bg-gray-700 px-2.5 py-1 rounded-full text-gray-300">
-                                        {group.member_count} Üye
-                                    </span>
-                                </div>
-                                <h3 className="text-lg font-bold mb-2">{group.name}</h3>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-400">Yaratılan İş Hacmi</p>
-                                    <p className="text-2xl font-bold text-white tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                                        {formatCurrency(group.turnover || 0)}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Upcoming Events Section */}
-            <section id="etkinlikler" className="py-24 bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-end mb-12">
-                        <div>
-                            <h2 className="text-red-600 font-semibold tracking-wide uppercase text-sm">Takvim</h2>
-                            <p className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Yaklaşan Etkinlikler</p>
-                        </div>
-                        <Button variant="outline" className="hidden sm:flex" onClick={() => navigate('/public-events')}>
-                            Tümünü Gör <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {events.map((event) => (
-                            <div key={event.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-                                <div className="h-2 bg-red-600"></div>
-                                <div className="p-6">
-                                    <div className="flex items-center text-sm text-gray-500 mb-4 space-x-4">
-                                        <div className="flex items-center text-red-600 font-medium bg-red-50 px-3 py-1 rounded-full">
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            {new Date(event.start_at).toLocaleDateString()}
-                                        </div>
-                                        <div className="flex items-center">
-                                            <MapPin className="h-4 w-4 mr-1" />
-                                            {event.location}
-                                        </div>
-                                    </div>
-                                    <h3 onClick={() => navigate(`/event/${event.id}`)} className="text-xl font-bold text-gray-900 mb-3 cursor-pointer hover:text-red-600 transition-colors">{event.title}</h3>
-                                    <p className="text-gray-600 mb-6 line-clamp-2">
-                                        {event.description}
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" className="flex-1 justify-center" onClick={() => navigate(`/event/${event.id}`)}>
-                                            İncele
-                                        </Button>
-                                        <Button variant="ghost" className="justify-center px-3" onClick={() => navigate('/degerlendirme-basvurusu')}>
-                                            <ExternalLink className="h-4 w-4 text-gray-400 hover:text-red-600 transition-colors" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Process Steps Section */}
-            <section id="sürecler" className="py-24 bg-white border-t border-gray-100 overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-20">
-                        <div className="text-base font-semibold text-red-600 tracking-wide uppercase">Süreçler</div>
-                        <h2 className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                            Üyelik Süreci Nasıl İşler?
-                        </h2>
-                        <p className="mt-4 max-w-2xl text-lg text-gray-500 mx-auto">
-                            Event4Network ailesine katılmak ve sistemin parçası olmak için izleyeceğiniz adımlar.
-                        </p>
-                    </div>
-
-                    <div className="relative">
-                        {/* Desktop Horizontal Line */}
-                        <div className="hidden lg:block absolute top-10 left-10 right-10 h-1 bg-red-100 rounded-full -z-10"></div>
-                        
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-8 relative">
-                            {[
-                                {
-                                    step: "01",
-                                    title: "Başvuru",
-                                    description: "Event4Network’e katılım başvuru veya davet yoluyla başlar."
-                                },
-                                {
-                                    step: "02",
-                                    title: "Ön Görüşme",
-                                    description: "Sektör, beklentiler ve grup uygunluğu değerlendirilir."
-                                },
-                                {
-                                    step: "03",
-                                    title: "Tanışma",
-                                    description: "Sistemi yakından görmek için bir toplantıya davet edilirsiniz."
-                                },
-                                {
-                                    step: "04",
-                                    title: "Üyelik",
-                                    description: "Uygun bulunan adaylar ilgili gruba dahil edilir."
-                                },
-                                {
-                                    step: "05",
-                                    title: "Networking",
-                                    description: "Düzenli toplantı ve referans yönlendirmeleri süreci."
-                                }
-                            ].map((item, index) => (
-                                <div key={index} className="relative group text-center flex flex-col items-center">
-                                    {/* Mobile Vertical Line */}
-                                    {index !== 4 && (
-                                        <div className="lg:hidden absolute top-20 bottom-[-3rem] left-1/2 w-1 bg-red-100 -translate-x-1/2 -z-10"></div>
-                                    )}
-                                    
-                                    <div className="w-20 h-20 bg-white border-4 border-red-50 text-red-600 rounded-full flex items-center justify-center font-black text-2xl mb-6 shadow-xl shadow-red-100/50 group-hover:-translate-y-2 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-100 transition-all duration-300 relative z-10">
-                                        {item.step}
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors">{item.title}</h3>
-                                    <p className="text-gray-600 text-sm leading-relaxed px-2">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Qualification: Who is it for */}
-            <section id="kimler-icin" className="py-24 bg-gray-50/70 border-t border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Hedef Kitle</div>
-                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl leading-tight">
-                            Event4Network Kimler İçin Uygun?
-                        </h2>
-                        <div className="mt-6 text-lg text-gray-600 max-w-4xl mx-auto space-y-4 leading-relaxed">
-                            <p>
-                                Event4Network; işini büyütmek, doğru insanlarla tanışmak, çevresini genişletmek ve güvene dayalı iş ilişkileri kurmak isteyen profesyoneller için tasarlanmıştır.
-                            </p>
-                            <p className="text-sm bg-red-50/50 border border-red-100/50 text-red-700 py-3 px-6 rounded-2xl max-w-3xl mx-auto font-medium">
-                                Event4Network’te üyelik yalnızca meslek veya sektör uygunluğuna göre değil; faaliyet süresi, iş hacmi, hizmet kalitesi, grup dengesi ve karşılıklı değer üretme potansiyeli dikkate alınarak değerlendirilir. Bu kriterler ön değerlendirme görüşmesinde detaylandırılır.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {/* Card 1: Şirket Sahipleri */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-6">
-                                <Users className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Şirket Sahipleri</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Yeni iş bağlantıları ve stratejik ilişkiler kurmak isteyen işletme sahipleri.
-                            </p>
-                        </div>
-
-                        {/* Card 2: Girişimciler */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <Trophy className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Girişimciler</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Fikirlerini, ürünlerini veya hizmetlerini doğru çevrelerle buluşturmak isteyen girişimciler.
-                            </p>
-                        </div>
-
-                        {/* Card 3: Danışmanlar ve Uzmanlar */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <CheckCircle className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">Danışmanlar ve Uzmanlar</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Hizmet verdiği alanda güvenilir referanslarla büyümek isteyen profesyoneller.
-                            </p>
-                        </div>
-
-                        {/* Card 4: B2B Hizmet Sağlayıcıları */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:border-red-100 transition-all duration-300 flex flex-col h-full">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                                <BarChart className="h-6 w-6 text-red-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">B2B Hizmet Sağlayıcıları</h3>
-                            <p className="text-gray-600 leading-relaxed text-sm">
-                                Şirketlere hizmet sunan ve karar vericilerle tanışmak isteyen firmalar.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Neden Değerlendirme Section */}
-            <section id="neden-degerlendirme" className="py-24 bg-white border-t border-gray-150">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-start">
-                        {/* Left column: Text Content (7 cols) */}
-                        <div className="lg:col-span-7">
-                            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">Seçici Networking</span>
-                            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2 mb-4 leading-tight">
-                                Üyelik Neden Değerlendirme ile Oluyor?
-                            </h2>
-                            <p className="text-lg text-red-700 font-semibold mb-8 leading-relaxed">
-                                Çünkü Event4Network’te amaç daha fazla kişiyi bir araya getirmek değil, doğru kişileri aynı çevrede buluşturmaktır.
-                            </p>
-                            <div className="space-y-6 text-gray-600 text-base leading-relaxed">
-                                <p>
-                                    Event4Network, herkesin doğrudan katılabildiği klasik bir networking yapısı olarak kurgulanmamıştır. Burada temel amaç; nitelikli iş insanlarının birbirini tanıdığı, güven geliştirdiği ve zaman içinde karşılıklı değer üretebildiği bir iş ağı oluşturmaktır.
-                                </p>
-                                <p>
-                                    Bu nedenle üyelik süreci yalnızca bir kayıt formundan ibaret değildir. Her başvuru; kişinin iş profili, profesyonel temsil gücü, faaliyet alanı, katılım disiplini ve topluluğa katabileceği değer açısından değerlendirilir.
-                                </p>
-                                <p>
-                                    Değerlendirme sürecinin amacı, topluluğun niteliğini korumak ve üyeler arasında sağlıklı bir güven zemini oluşturmaktır. Çünkü bir iş insanını kendi çevrenize önerebilmek için yalnızca ne iş yaptığını bilmek yeterli değildir; onun iş yapma biçimini, güvenilirliğini, uzmanlığını ve profesyonel duruşunu da tanımak gerekir.
-                                </p>
-                                <p>
-                                    Event4Network’te seçicilik bir dışlama mekanizması değil, topluluk kalitesini koruma prensibidir. Doğru kişilerin bir araya gelmesi, daha güçlü ilişkiler, daha nitelikli yönlendirmeler ve daha sürdürülebilir iş birlikleri oluşturur.
-                                </p>
-                                <p>
-                                    Bu yüzden Event4Network’e yapılan başvurular; uygunluk, karşılıklı değer potansiyeli ve profesyonel temsil standardı doğrultusunda incelenir. Başvuru yapmak üyelik garantisi oluşturmaz; uygun görülen adaylarla süreç karşılıklı değerlendirme ile ilerler.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Right column: Highlights and Bullets (5 cols) */}
-                        <div className="lg:col-span-5 mt-12 lg:mt-0 space-y-8">
-                            {/* Vurgulu Kutu */}
-                            <div className="bg-red-50 border border-red-100 rounded-3xl p-8 shadow-sm">
-                                <h3 className="font-extrabold text-red-950 text-lg mb-2">Önemli Konumlandırma</h3>
-                                <p className="text-red-900 text-base font-semibold leading-relaxed">
-                                    Event4Network’te üyelik bir kayıt işlemi değil, karşılıklı uygunluk değerlendirmesidir.
-                                </p>
-                            </div>
-
-                            {/* Madde Alanı */}
-                            <div className="bg-gray-50 border border-gray-150 rounded-3xl p-8 shadow-sm">
-                                <h3 className="font-bold text-gray-900 text-lg mb-6">Değerlendirme süreci şu amaçlarla yapılır:</h3>
-                                <ul className="space-y-4">
-                                    {[
-                                        "Topluluğun nitelik standardını korumak",
-                                        "Üyeler arasında güven ortamı oluşturmak",
-                                        "Karşılıklı değer üretebilecek profilleri bir araya getirmek",
-                                        "Profesyonel temsil gücünü korumak",
-                                        "Nitelikli referans kültürünü desteklemek",
-                                        "Uzun vadeli iş ilişkilerine uygun bir yapı oluşturmak"
-                                    ].map((item, idx) => (
-                                        <li key={idx} className="flex gap-3 items-start text-sm font-medium text-gray-700">
-                                            <Check className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                                            <span>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* CTA & Button */}
-                            <div className="bg-gray-950 text-white rounded-3xl p-8 text-center space-y-6 shadow-xl">
-                                <h4 className="font-extrabold text-lg text-white">Uygunluğunuzu Değerlendirelim</h4>
-                                <Button
-                                    size="lg"
-                                    variant="primary"
-                                    onClick={() => navigate('/degerlendirme-basvurusu')}
-                                    className="w-full text-base h-14 bg-red-600 hover:bg-red-500 font-bold rounded-xl shadow-lg shadow-red-900/30"
-                                >
-                                    Değerlendirme Başvurusu Yap
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* FAQ (SSS) Section */}
-            <section id="sss" className="py-24 bg-gray-50 border-t border-b border-gray-100">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-red-600 font-semibold tracking-wide uppercase text-sm">Destek</div>
-                        <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">Sıkça Sorulan Sorular</h2>
-                        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-                            Event4Network sistemi, üyelik süreci ve işleyiş hakkında merak ettiğiniz tüm soruların cevapları.
-                        </p>
-                        
-                        {/* Search Bar */}
-                        <div className="mt-8 max-w-md mx-auto relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Soru veya kelime ara..."
-                                value={faqSearch}
-                                onChange={(e) => setFaqSearch(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-2xl bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm shadow-sm transition-all"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        {(() => {
-                            const filteredFaqs = faqs.filter(faq => 
-                                faq.q.toLowerCase().includes(faqSearch.toLowerCase()) || 
-                                faq.a.toLowerCase().includes(faqSearch.toLowerCase())
-                            );
-
-                            return filteredFaqs.length > 0 ? (
-                                filteredFaqs.map((faq) => {
-                                    const originalIndex = faqs.findIndex(f => f.q === faq.q);
-                                    const isOpen = !!openFaqs[originalIndex];
-                                    return (
-                                        <div 
-                                            key={originalIndex}
-                                            className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
-                                        >
-                                            <button
-                                                onClick={() => {
-                                                    setOpenFaqs(prev => ({ ...prev, [originalIndex]: !prev[originalIndex] }));
-                                                }}
-                                                className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
-                                            >
-                                                <span className="text-lg font-bold text-gray-900 pr-4">{faq.q}</span>
-                                                <span className={`flex-shrink-0 p-1.5 rounded-full bg-gray-50 text-gray-500 transition-all duration-300 ${isOpen ? 'bg-red-50 text-red-600 rotate-180' : ''}`}>
-                                                    <ChevronDown className="h-5 w-5" />
-                                                </span>
-                                            </button>
-                                            <div 
-                                                className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                                                    isOpen ? 'max-h-[500px] border-t border-gray-50' : 'max-h-0'
-                                                }`}
-                                            >
-                                                <div className="p-6 text-gray-600 leading-relaxed text-base whitespace-pre-line">
-                                                    {faq.a}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="text-center py-12 text-gray-500">
-                                    Arama kriterlerinize uygun soru bulunamadı.
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </div>
-            </section>
-
-            {/* Unified CTA Section */}
-            <section id="on-bilgilendirme-formu" className="py-24 bg-gray-900 text-white relative overflow-hidden">
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute -top-1/2 -right-1/2 w-[1000px] h-[1000px] rounded-full bg-red-900/20 blur-3xl"></div>
-                    <div className="absolute -bottom-1/2 -left-1/2 w-[1000px] h-[1000px] rounded-full bg-blue-900/10 blur-3xl"></div>
-                </div>
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <div className="bg-red-600/10 text-red-400 font-semibold tracking-wider uppercase text-xs px-4 py-1.5 rounded-full border border-red-500/20 mb-6 inline-block">
-                        Değerlendirme Başvurusu
-                    </div>
-                    <h2 className="text-4xl font-extrabold text-white sm:text-5xl mb-6 leading-tight">
-                        Profesyonel İş Ağına İlk Adımı Atın
-                    </h2>
-                    <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Event4Network’e katılım doğrudan kayıt sistemiyle değil, adayların iş profili ve topluluk dengesiyle uyumluluğunu ele alan bir ön değerlendirme süreciyle gerçekleşir. Siz de profesyonel profilinizi paylaşarak değerlendirme sürecini başlatabilirsiniz.
-                    </p>
-                    <div className="flex justify-center">
-                        <Button
-                            size="lg"
-                            variant="primary"
-                            onClick={() => navigate('/degerlendirme-basvurusu')}
-                            className="text-lg h-16 px-12 bg-red-600 hover:bg-red-500 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
-                        >
-                            Değerlendirme Başvurusu Başlat
-                        </Button>
-                    </div>
-                </div>
-            </section>
+      {/* 1. Hero Alanı */}
+      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 bg-slate-950 text-white overflow-hidden">
+        {/* Ambient Blur Effects */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-red-900/20 blur-[120px] animate-pulse"></div>
+          <div className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full bg-red-800/10 blur-[100px]"></div>
         </div>
-    );
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-7 text-left mb-16 lg:mb-0">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6 backdrop-blur-sm animate-fade-in">
+                ⚡ Seçici Profesyonel İş Ağı
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none mb-6">
+                Kalıcı iş ilişkileri için <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-400 to-red-600">
+                  seçici networking
+                </span>
+              </h1>
+              <p className="text-lg text-slate-300 mb-10 leading-relaxed max-w-2xl font-light">
+                Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı bir iş ağı içinde bir araya getirir. Amaç yalnızca tanışmak değil; birbirini gerçekten tanıyan, anlayan ve doğru çevrelere yönlendirebilen bir iş insanları topluluğu oluşturmaktır.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  size="lg"
+                  variant="primary"
+                  onClick={() => navigate('/degerlendirme-basvurusu')}
+                  className="text-base font-bold px-8 h-14 bg-red-600 hover:bg-red-500 shadow-xl shadow-red-900/30 transform hover:-translate-y-0.5 transition-all w-full sm:w-auto"
+                >
+                  Üyelik Başvurusu Yap
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => scrollToSection('nasil-calisir')}
+                  className="text-base font-semibold px-8 h-14 border-white/20 text-white hover:bg-white/10 transform hover:-translate-y-0.5 transition-all w-full sm:w-auto"
+                >
+                  E4N Nasıl Çalışır?
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Media */}
+            <div className="lg:col-span-5 relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl blur-2xl opacity-15"></div>
+              <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl backdrop-blur-sm bg-white/5 p-2">
+                <img
+                  src={processMeeting}
+                  alt="Event4Network Seçici İş Ağı Buluşması"
+                  className="rounded-2xl object-cover w-full h-[320px] sm:h-[400px] hover:scale-[1.02] transition-transform duration-700 ease-out"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Kalıcı İş İlişkileri İçin Seçici Networking (Ana Mesaj) */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest">ÖZ DEĞER ÖNERİSİ</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 mb-8 text-slate-900">
+            Güvene Dayalı, Nitelikli ve Sürdürülebilir Bağlantılar
+          </h2>
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100/55 border border-slate-150 rounded-3xl p-8 sm:p-10 shadow-sm text-left max-w-4xl mx-auto">
+            <p className="text-xl sm:text-2xl text-slate-950 font-bold leading-relaxed mb-6 border-l-4 border-red-600 pl-6">
+              Event4Network, iş insanlarını yalnızca tanıştıran değil; güvene dayalı ilişkiler, nitelikli bağlantılar ve uzun vadeli iş birlikleri geliştirmek için bir araya getiren seçici bir networking platformudur.
+            </p>
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed pl-6">
+              Burada amaç kalabalık bir çevre oluşturmak değil; doğru insanlarla düzenli olarak bir araya gelmek, zaman içinde güven inşa etmek ve bu güven üzerinden daha güçlü iş fırsatları yaratmaktır.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. E4N Nedir? */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div className="mb-12 lg:mb-0">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">NEDİR?</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+                E4N Seçici Networking Platformu
+              </h2>
+              <div className="space-y-6 text-slate-650 text-base sm:text-lg leading-relaxed">
+                <p>
+                  Event4Network, iş dünyasında güvene dayalı bağlantılar kurmak isteyen profesyoneller için tasarlanmış seçici bir networking platformudur.
+                </p>
+                <p>
+                  E4N’de üyeler yalnızca toplantılarda kendilerini tanıtmaz; zaman içinde birbirlerinin iş modellerini, hedef müşteri profillerini, güçlü yönlerini ve ulaşmak istedikleri çevreleri daha yakından tanır.
+                </p>
+                <p className="font-semibold text-slate-900">
+                  Bu yapı sayesinde networking, rastgele tanışmalardan çıkar; düzenli temas, güven ve karşılıklı katkı üzerinden iş birliği üreten bir sisteme dönüşür.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Nitelikli Topluluk</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Sadece iş profili ve değer katma hedefleri onaylanmış elit yöneticiler yer alır.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
+                  <Handshake className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Güven Odaklı Buluşma</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Tek seferlik kartvizit alışverişi yerine birbirini gerçekten tanıma esastır.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
+                  <Target className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Stratejik Ağ Paylaşımı</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Kişisel veya kurumsal bağlantı listeleri üzerinden bilinçli yönlendirmeler yapılır.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Süreç Verimliliği</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Toplantı ve 1-on-1 sistemleri sayesinde minimum zaman kaybı, maksimum iş hacmi.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. E4N Ne Değildir? */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">NET DURUŞUMUZ</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              E4N Ne Değildir?
+            </h2>
+            <p className="text-slate-550 text-base sm:text-lg">
+              Event4Network platformunu doğru anlamak için ne olduğu kadar ne olmadığını da bilmek önemlidir.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            {[
+              {
+                title: "Kartvizit Toplama Alanı Değildir",
+                desc: "Amacımız sadece kalabalık etkinliklerde yüzlerce kişiyle tanışıp kartvizit biriktirmek değildir. Önemli olan nitelikli ve işlevsel ilişkilerdir."
+              },
+              {
+                title: "Hızlı Satış Ortamı Değildir",
+                desc: "Herkesin herkese doğrudan ve ısrarla bir şeyler satmaya çalıştığı, yüzeysel ve rahatsız edici bir ticaret alanı değildir."
+              },
+              {
+                title: "Kalabalık Buluşma Kulübü Değildir",
+                desc: "Sadece kahve içip sohbet edilen veya kalabalık partiler düzenlenen, disiplinsiz ve verimsiz bir buluşma organizasyonu değildir."
+              },
+              {
+                title: "Pasif Bekleme Yeri Değildir",
+                desc: "Sadece kaydolup kenarda oturarak müşteri gelmesini umacağınız bir yer değildir. Düzenli katılım ve aktif katkı gerektirir."
+              }
+            ].map((item, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-150 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-600 mb-4">
+                    <XCircle className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-slate-900 mb-3">{item.title}</h4>
+                  <p className="text-xs text-slate-550 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-slate-950 text-white rounded-3xl p-8 text-center max-w-4xl mx-auto border border-white/10 shadow-lg">
+            <p className="text-lg sm:text-xl font-bold leading-relaxed">
+              💡 E4N; düzenli katılım, güven, katkı, görünürlük ve doğru yönlendirme kültürü üzerine kurulu seçici bir iş ağıdır.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Neden Seçici Networking? */}
+      <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(239,68,68,0.2),transparent_70%)]"></div>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <span className="text-xs font-bold text-red-500 uppercase tracking-widest">KOLTUK KALİTESİ VE SEÇİCİLİK</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 mb-6">
+            Neden Seçici Bir Networking Platformu?
+          </h2>
+          <p className="text-xl text-red-400 font-bold mb-8 max-w-3xl mx-auto">
+            Çünkü her tanışma değer üretmez.
+          </p>
+
+          <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed text-left max-w-3xl mx-auto mb-10">
+            <p>
+              İş dünyasında gerçek fırsatlar, rastgele temaslardan değil; güven duyulan, doğru zamanda doğru kişiye yönlendirilen ilişkilerden doğar.
+            </p>
+            <p>
+              E4N bu yüzden seçici bir yapı üzerine kuruludur. Amaç, mümkün olduğunca çok kişiyi bir araya getirmek değil; birbirine gerçekten değer katabilecek insanları aynı zeminde buluşturmaktır.
+            </p>
+            <p className="border-l-4 border-red-500 pl-4 font-semibold text-white">
+              Seçicilik, E4N’in kalite standardını korur. Böylece üyeler yalnızca yeni insanlarla tanışmaz; güvenilir, nitelikli ve sürdürülebilir bir iş çevresinin parçası olur.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. E4N Nasıl Çalışır? */}
+      <section id="nasil-calisir" className="py-24 bg-white relative border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">PLATFORM MEKANİĞİ</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              E4N Nasıl Çalışır?
+            </h2>
+            <p className="text-slate-600 text-base sm:text-lg">
+              E4N sistemi, rastgelelikten arındırılmış, belirli kurallar ve aşamalardan oluşan profesyonel bir süreçtir.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Başvuru ve Ön Değerlendirme",
+                desc: "E4N’e katılım başvuru süreciyle başlar. Adayın iş alanı, profili, beklentileri ve platforma sağlayabileceği katkı değerlendirilir."
+              },
+              {
+                step: "02",
+                title: "Tanışma ve Uyum Görüşmesi",
+                desc: "Başvuru sonrasında adayla bir ön görüşme yapılır. Bu görüşmede adayın E4N’den ne beklediği, hangi çevrelere ulaşmak istediği ve mevcut üyelerle nasıl bir değer alışverişi oluşturabileceği anlaşılır."
+              },
+              {
+                step: "03",
+                title: "Düzenli Toplantı Sistemi",
+                desc: "E4N’de üyeler her ay düzenli olarak bir araya gelir. Yeni dönemde yapı şu şekilde ilerler: Ayda 1 online toplantı (verimlilik için) + Ayda 1 yüz yüze toplantı (derin güven ve ilişkiler için)."
+              },
+              {
+                step: "04",
+                title: "Birebir Görüşmeler",
+                desc: "E4N’de asıl değer sadece toplu toplantılarda değil, üyelerin kendi aralarında yaptığı birebir görüşmelerde ortaya çıkar. Bu görüşmelerde üyeler birbirlerinin işini ve müşteri profilini tanır."
+              },
+              {
+                step: "05",
+                title: "Hedef Kişi ve Firma Listeleri",
+                desc: "Üyeler ulaşmak istedikleri şirketleri, sektörleri veya karar verici profillerini paylaşabilir. Amaç 'herkesle tanışmak' değil, doğru kişilere doğru şekilde ulaşabilmektir."
+              },
+              {
+                step: "06",
+                title: "Güvene Dayalı Yönlendirme",
+                desc: "İş yönlendirmesi, güven oluştuktan sonra anlam kazanır. Üyeler birbirini tanıdıkça, doğru fırsatlarda birbirlerini kendi çevrelerine tavsiye ederek referans sistemi oluşturur."
+              }
+            ].map((item, index) => (
+              <div key={index} className="bg-slate-50 border border-slate-200/70 hover:shadow-xl hover:bg-white hover:border-red-100 rounded-3xl p-8 transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                  <span className="text-4xl font-black text-slate-250 group-hover:text-red-500/10 transition-colors block mb-4">
+                    {item.step}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 group-hover:text-red-650 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. 1 Online + 1 Yüz Yüze Toplantı Modeli */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">YENİ DÖNEM MODELİ</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              1 Online + 1 Yüz Yüze Toplantı Modeli
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              E4N’nin yeni dönem toplantı modeli, hem sürdürülebilir zaman verimliliği hem de ilişki derinliği üzerine kuruludur.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            {/* Online */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Online Toplantılar (Her Ay 1 Kez)</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                Online toplantılar, üyelerin düzenli olarak temas kurmasını sağlar. Bu toplantılarda üyeler kendilerini, güncel hedeflerini, aradıkları bağlantıları ve sağlayabilecekleri katkıları paylaşır.
+              </p>
+              <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                ⏱️ Zaman Verimliliği & Temas Sürekliliği
+              </span>
+            </div>
+
+            {/* Fiziksel */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6">
+                <Compass className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Yüz Yüze Toplantılar (Her Ay 1 Kez)</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                Yüz yüze toplantılar, güvenin güçlendiği ana alanlardır. İnsanlar birbirini yalnızca ekran üzerinden değil, gerçek temasla tanıdığında ilişkiler daha doğal ve daha kalıcı hale gelir.
+              </p>
+              <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                🤝 İlişki Derinliği & Stratejik Temas
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 text-white rounded-3xl p-8 text-center max-w-4xl mx-auto border border-white/10 shadow-lg">
+            <h4 className="font-bold text-lg mb-2">Modelin Amacı</h4>
+            <p className="text-sm text-slate-350 leading-relaxed">
+              Bu sistem sayesinde üyeler hem düzenli olarak görünür kalır hem de yüz yüze temaslarla daha güçlü bağlar kurar. E4N’de networking bir defalık tanışma değil, sürekli gelişen bir ilişki sürecidir.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Kimler İçin Uygun? */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">HEDEF KİTLE</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              Kimler İçin Uygun?
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base">
+              E4N platformu, belirli bir profesyonel olgunluğa ve temsil gücüne sahip yöneticiler için verimlidir.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
+            {[
+              "Şirket Sahipleri",
+              "Kurucu Ortaklar",
+              "C-Level Yöneticiler",
+              "Üst Düzey Yöneticiler",
+              "İş Geliştirme Profesyonelleri",
+              "Nitelikli Bağlantı Arayanlar"
+            ].map((title, idx) => (
+              <div key={idx} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-center hover:border-red-500 hover:bg-white hover:shadow-md transition-all duration-300">
+                <span className="font-bold text-sm text-slate-900">{title}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-red-50 border border-red-200/80 rounded-3xl p-8 max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 shadow-sm">
+            <div className="w-12 h-12 bg-red-150 text-red-700 flex items-center justify-center rounded-2xl flex-shrink-0">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-red-950 text-lg mb-2">E4N'e Uygun Profil Felsefesi</h4>
+              <p className="text-sm text-red-900/90 leading-relaxed">
+                E4N’e katılacak kişiler yalnızca networkten faydalanmak isteyen değil, aynı zamanda networke katkı sağlayabilecek kişiler olmalıdır. Networke sadece almak için değil, katkı sağlamak için dahil olacak kişiler E4N kültürünün merkezindedir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Üyelerin Çevresine Açılan Güven Kapısı */}
+      <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <span className="text-xs font-bold text-red-500 uppercase tracking-widest">GÜVEN ZİNCİRİ</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 mb-6">
+            Üyelerin Çevresine Açılan Güven Kapısı
+          </h2>
+          <div className="space-y-6 text-slate-350 text-base sm:text-lg leading-relaxed text-left max-w-3xl mx-auto">
+            <p>
+              E4N’de değer yalnızca toplantıya katılan kişilerle sınırlı değildir. Bir üye sizi tanıdıkça, işinizi anladıkça ve size güven duydukça, kendi çevresinde sizi doğru kişilere önerebilir.
+            </p>
+            <p className="font-bold text-white border-l-4 border-red-500 pl-4">
+              Bu nedenle E4N’de asıl güç yalnızca masadaki kişilerden değil; o kişilerin çevrelerinden, ilişkilerinden ve güven ağlarından doğar.
+            </p>
+            <p>
+              Amaç, herkesin herkese satış yaptığı bir ortam yaratmak değil; doğru kişilerin doğru zamanda birbirine güvenle referans olabileceği bir sistem kurmaktır.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. Birebir Görüşmeler */}
+      <section className="py-24 bg-white relative border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div className="mb-12 lg:mb-0">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">DERİNLEMESİNE TANIŞMA</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+                Birebir Görüşmeler (1-on-1)
+              </h2>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mb-6">
+                E4N’de asıl değer sadece toplu toplantılarda değil, üyelerin kendi aralarında yaptığı birebir görüşmelerde ortaya çıkar.
+              </p>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed">
+                Bu görüşmelerde üyeler birbirlerinin işini daha iyi anlar, hedef müşteri profilini öğrenir ve hangi bağlantılarda birbirine yardımcı olabileceğini netleştirir. İlişkiyi hızlandırmanın en samimi ve kurumsal yolu budur.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-8">
+              <h4 className="font-bold text-slate-900 mb-4">Görüşme Çıktıları Nelerdir?</h4>
+              <ul className="space-y-4">
+                {[
+                  "İş modelinin ve güçlü yönlerin net anlaşılması",
+                  "Hedef müşteri portföyü ve kilit kişilerin tespiti",
+                  "Güven ilişkisinin bireysel seviyede derinleşmesi",
+                  "Sektörel tavsiyeler ve bilgi alışverişi"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-slate-700">
+                    <CheckCircle className="w-5 h-5 text-red-650 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 11. Hedef Kişi ve Firma Listeleri */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div className="order-2 lg:order-1 bg-white border border-slate-200 rounded-3xl p-8">
+              <h4 className="font-bold text-slate-900 mb-4">Stratejik Hedefleme Kapsamı</h4>
+              <ul className="space-y-4">
+                {[
+                  "Ulaşılmak istenen öncelikli şirketlerin listelenmesi",
+                  "Sektörel karar verici pozisyonların belirlenmesi",
+                  "Diğer üyelerin bu firmalardaki bağlantılarının taranması",
+                  "Soğuk arama yerine güvenli referansla giriş yapılması"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-slate-700">
+                    <Check className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="order-1 lg:order-2 mb-12 lg:mb-0">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">STRATEJİK HEDEFLEME</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+                Hedef Kişi ve Firma Listeleri
+              </h2>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed">
+                Üyeler ulaşmak istedikleri şirketleri, sektörleri veya karar verici profillerini paylaşabilir.
+              </p>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mt-4">
+                Bu sayea networking daha stratejik hale gelir. Amaç “herkesle tanışmak” değil, doğru kişilere doğru şekilde ulaşabilmektir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 12. Lonca Mantığı */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div className="mb-12 lg:mb-0">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">TAMAMLAYICI BİRLİKTELİK</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+                Lonca Mantığı (Sektörel Kümelenme)
+              </h2>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mb-6">
+                E4N içinde zamanla aynı müşteri kitlesine hizmet eden ama birbirinin doğrudan rakibi olmayan uzmanlar arasında daha odaklı iş birlikleri gelişebilir.
+              </p>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed">
+                Bu yapı, tamamlayıcı hizmet veren kişilerin birlikte daha güçlü fırsatlar üretmesini sağlar. Rekabet yerine kollektif iş geliştirme gücü esastır.
+              </p>
+            </div>
+
+            <div className="bg-slate-950 text-white rounded-3xl p-8 border border-white/10 shadow-xl">
+              <div className="flex gap-3 items-center mb-4 text-red-400">
+                <Sparkles className="w-6 h-6" />
+                <span className="font-bold">Örnek Lonca Ekosistemi</span>
+              </div>
+              <p className="text-sm text-slate-300 leading-relaxed mb-6">
+                Bir sağlık turizmi markasına hizmet veren; dijital pazarlama uzmanı, CRM danışmanı, çağrı merkezi çözüm sağlayıcısı, teşvik danışmanı ve video prodüksiyon firması aynı hedef kitleye farklı açılardan değer sunabilir.
+              </p>
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-xs text-slate-400 italic">
+                * Bu mantık, E4N içinde doğal olarak oluşabilecek en güçlü iş geliştirme alanlarından biridir.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 13. Üyelik Süreci */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">SÜREÇ ADIMLARI</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              Üyelik Süreci Nasıl İlerler?
+            </h2>
+            <p className="text-slate-650 text-sm sm:text-base">
+              E4N’e katılım doğrudan bir kayıt sistemiyle değil, başvuru ve değerlendirme süreciyle ilerler.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Desktop Line */}
+            <div className="hidden lg:block absolute top-12 left-12 right-12 h-0.5 bg-slate-200"></div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
+              {[
+                {
+                  step: "01",
+                  title: "Başvuru",
+                  desc: "Aday, temel bilgilerini ve E4N’e katılma motivasyonunu paylaşır."
+                },
+                {
+                  step: "02",
+                  title: "Ön Görüşme",
+                  desc: "Adayın iş profili, beklentileri ve platforma sağlayabileceği katkı değerlendirilir."
+                },
+                {
+                  step: "03",
+                  title: "Değerlendirme",
+                  desc: "E4N ekibi, adayın platform kültürüne ve mevcut yapıya uygunluğunu değerlendirir."
+                },
+                {
+                  step: "04",
+                  title: "Kabul ve Başlangıç",
+                  desc: "Uygun bulunan adaylar E4N yapısına dahil edilir ve oryantasyon süreci başlatılır."
+                }
+              ].map((item, index) => (
+                <div key={index} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-center relative z-10 flex flex-col items-center group">
+                  <div className="w-12 h-12 rounded-full bg-slate-950 text-white flex items-center justify-center font-bold text-sm mb-4 group-hover:bg-red-650 transition-colors">
+                    {item.step}
+                  </div>
+                  <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
+                  <p className="text-xs text-slate-550 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 14. Başvuru Çağrısı (Final CTA) */}
+      <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-1/2 -right-1/2 w-[1000px] h-[1000px] rounded-full bg-red-900/10 blur-3xl"></div>
+          <div className="absolute -bottom-1/2 -left-1/2 w-[1000px] h-[1000px] rounded-full bg-red-950/5 blur-3xl"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-4">KATILIM SÜRECİ</span>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-6">
+            E4N’e Katılmak İçin Başvurun
+          </h2>
+          <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
+            Event4Network seçici bir yapıyla çalışır. Başvurular, karşılıklı değer potansiyeli ve platform kültürüne uyum açısından değerlendirilir.
+          </p>
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={() => navigate('/degerlendirme-basvurusu')}
+              className="text-lg h-16 px-12 bg-red-600 hover:bg-red-550 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
+            >
+              Değerlendirme Başvurusu Yap <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

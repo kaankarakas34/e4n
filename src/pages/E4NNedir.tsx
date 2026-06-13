@@ -67,7 +67,72 @@ export function E4NNedir() {
         </div>
       </section>
 
-      {/* 2. Klasik Networking'den Farkı */}
+      {/* 2. Biz Kimiz & Ne Yapıyoruz */}
+      <section className="py-20 bg-slate-50 border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-stretch">
+            {/* Biz Kimiz? */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:border-red-100 transition-colors duration-300">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900">Biz Kimiz?</h2>
+                </div>
+                <p className="text-slate-800 text-base leading-relaxed mb-6 font-semibold">
+                  Event4Network; iş insanlarını, şirket sahiplerini, kurucu ortakları, girişimcileri, C-Level yöneticileri ve karar verici profesyonelleri bir araya getiren seçici bir network platformu ve iş kulübüdür.
+                </p>
+                <p className="text-slate-655 text-sm leading-relaxed mb-6">
+                  Amacımız yalnızca insanların tanışmasını veya birbirlerine satış yapmasını sağlamak değildir. E4N’de temel hedef; üyelerin birbirini tanıdığı, uzmanlığına güvendiği ve zaman içerisinde birbirine iş, bilgi, bağlantı ve fırsat yönlendirebildiği kalıcı ilişkiler oluşturmaktır.
+                </p>
+              </div>
+              <div className="pt-6 border-t border-slate-100 flex items-center gap-2 text-red-650 font-bold text-sm">
+                <Check className="w-5 h-5 flex-shrink-0" />
+                <span>Kalıcı iş ilişkileri için seçici networking.</span>
+              </div>
+            </div>
+
+            {/* Ne Yapıyoruz? */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:border-red-100 transition-colors duration-300">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                    <Handshake className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900">Ne Yapıyoruz?</h2>
+                </div>
+                <p className="text-slate-700 text-sm leading-relaxed mb-4">
+                  E4N üyeleri arasında;
+                </p>
+                <ul className="space-y-3 mb-6">
+                  {[
+                    "Nitelikli iş ilişkileri kurulmasını,",
+                    "Üyelerin birbirlerini ve işlerini yakından tanımasını,",
+                    "Güvene dayalı iş yönlendirmeleri oluşmasını,",
+                    "Doğru kişi ve şirketlerle tanışılmasını,",
+                    "Sektörel iş birlikleri ve projeler geliştirilmesini,",
+                    "Üyelerin network, bilgi ve deneyimlerini paylaşmasını"
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-600">
+                      <Check className="w-4 h-4 text-red-655 flex-shrink-0 mt-1" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-slate-700 text-sm font-semibold">
+                  sağlayan bir yapı oluşturuyoruz.
+                </p>
+              </div>
+              <div className="pt-6 border-t border-slate-100 text-xs text-slate-500 leading-relaxed italic">
+                * E4N doğrudan müşteri, satış, ciro, yatırım veya iş garantisi vermez. E4N doğru ortamı ve ilişki imkânını oluşturur; ticari sonuç üyelerin güvenilirliğine, takip disiplinine ve sundukları hizmetin kalitesine bağlıdır.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Klasik Networking'den Farkı */}
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
@@ -75,7 +140,7 @@ export function E4NNedir() {
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
               Klasik Networking ile Farkımız Nedir?
             </h2>
-            <p className="text-slate-650 text-base">
+            <p className="text-slate-655 text-base">
               Klasik etkinliklerde kartvizitler dağıtılır ve genellikle ertesi gün herkes birbirini unutur. E4N ise kalıcı ve sistemli iş ilişkileri inşa eder.
             </p>
           </div>
@@ -99,7 +164,7 @@ export function E4NNedir() {
                     "Disiplinsiz, takipsiz ve sürekliliği olmayan katılım",
                     "Güven bağı kurulmadan referans bekleme çıkmazı"
                   ].map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-600">
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-605">
                       <span className="w-2 h-2 rounded-full bg-slate-400 mt-1.5 flex-shrink-0"></span>
                       <span>{item}</span>
                     </li>
@@ -146,6 +211,138 @@ export function E4NNedir() {
           </div>
         </div>
       </section>
+
+      {/* 4. Üyelerden Ne Bekliyoruz? */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">SORUMLULUK & ETİK</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              Üyelerden Ne Bekliyoruz?
+            </h2>
+            <p className="text-slate-655 text-base leading-relaxed">
+              E4N bir pasif üyelik platformu değildir. Aktif ve sürekli katkı sağlayan bir topluluk kültürü için üyelerimizden belirli katılım ve iletişim standartlarına uymalarını bekleriz.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-slate-950 text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden mb-8">
+              <div className="absolute top-0 right-0 p-6 opacity-5">
+                <Users className="w-48 h-48" />
+              </div>
+              <h3 className="text-xl font-bold mb-6 text-red-400">Aktif üyelerden beklenen temel sorumluluklar:</h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <ul className="space-y-4">
+                  {[
+                    "Ana toplantıların en az yüzde 70’ine katılmaları,",
+                    "Ayda en az bir üye ile birebir görüşme yapmaları,",
+                    "Kendilerine yapılan yönlendirmelere en geç iki iş günü içerisinde dönüş yapmaları,",
+                    "Katılamayacakları toplantıları mümkünse önceden bildirmeleri,"
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
+                      <Check className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-4">
+                  {[
+                    "Üyeleri ve işlerini tanımaya zaman ayırmaları,",
+                    "Topluluğa bilgi, bağlantı ve deneyimleriyle katkı sunmaları,",
+                    "E4N’nin ve diğer üyelerin itibarını korumaları"
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
+                      <Check className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                  <li className="flex items-center gap-3 text-sm text-red-400 font-bold bg-white/5 p-3 rounded-xl border border-white/10 mt-2">
+                    <Zap className="w-4 h-4 flex-shrink-0" />
+                    <span>Üyeliğin devamı bu aktif katılım disiplinine bağlıdır.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200/80 rounded-2xl p-6 flex items-center gap-4 shadow-sm">
+              <div className="w-10 h-10 bg-red-100 text-red-700 flex items-center justify-center rounded-xl flex-shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <p className="text-sm text-red-950 font-medium leading-relaxed">
+                💡 <strong>Kota Muafiyeti:</strong> Üyeler için zorunlu müşteri veya ziyaretçi getirme kotası bulunmaz. Odak noktamız nicelik değil, niteliktir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Toplantı Sistemi Nasıl İşler? */}
+      <section className="py-24 bg-white border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">YAPILANDIRILMIŞ MODEL</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              Toplantı Sistemi Nasıl İşler?
+            </h2>
+            <p className="text-slate-655 text-base leading-relaxed">
+              E4N’nin temel toplantı sistemi aylık olarak; <strong>Bir çevrim içi üye toplantısı</strong> ve <strong>Bir yüz yüze toplantı veya etkinlik</strong> şeklindedir.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Çevrim İçi Toplantılar */}
+            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-all duration-300">
+              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Çevrim İçi Toplantılarda</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                Zaman verimliliğini korurken üyelerin hedeflerini güncel tutmasını ve yeni yönlendirmeleri paylaşmasını sağlayan dijital buluşmalardır.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Üyeler kendilerini ve işlerini tanıtır,",
+                  "Spesifik bağlantı ve ihtiyaçlarını paylaşır,",
+                  "Seçilen üyeler detaylı sunum gerçekleştirir,",
+                  "İş birliği ve yönlendirme fırsatları değerlendirilir."
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-655">
+                    <Check className="w-4 h-4 text-red-655 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Yüz Yüze Etkinlikler */}
+            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-all duration-300">
+              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                <Handshake className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Yüz Yüze Etkinliklerde</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                Üyeler arasındaki güveni derinleştiren, stratejik konuklarla tanışmayı sağlayan ve fiziksel temasın gücünü kullanan etkinliklerdir.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Üyeler arasındaki güven güçlendirilir,",
+                  "Konuşmacı ve panel içerikleri sunulur,",
+                  "Nitelikli ziyaretçilerle tanışılır,",
+                  "Yapılandırılmış ve serbest networking gerçekleştirilir."
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-655">
+                    <Check className="w-4 h-4 text-red-655 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Güvene Dayalı İlişki ve Karşılıklı Katkı */}
+      <section className="py-24 bg-slate-950 text-white relative overflow-hidden">    </section>
 
       {/* 3. Güvene Dayalı İlişki ve Karşılıklı Katkı */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">

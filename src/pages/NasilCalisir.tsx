@@ -13,7 +13,10 @@ import {
   Sparkles,
   Users,
   Clock,
-  Compass
+  Compass,
+  ShieldAlert,
+  XCircle,
+  Check
 } from 'lucide-react';
 
 export function NasilCalisir() {
@@ -164,16 +167,29 @@ export function NasilCalisir() {
                 Event4Network, iş dünyasının zaman hassasiyetini ve yüz yüze güvenin önemini çok iyi analiz etmiştir. Bu sebeple toplantı yapımız hem hız hem de derinlik sunar:
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex gap-4 items-start">
                   <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-1">
                     <Clock className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-bold text-gray-900">Online Toplantılar (Verimlilik)</h4>
-                    <p className="text-sm text-gray-600 leading-relaxed mt-1">
+                    <p className="text-sm text-gray-600 leading-relaxed mt-1 mb-3">
                       Ayda 1 kez gerçekleştirilen online toplantılarda üyeler güncel hedeflerini, aradıkları spesifik bağlantıları paylaşır ve zamanı en verimli şekilde kullanarak temaslarını canlı tutar.
                     </p>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white/40 p-4 rounded-2xl border border-gray-150 text-xs text-gray-650">
+                      {[
+                        "Üyeler kendilerini ve işlerini tanıtır,",
+                        "Spesifik bağlantı ve ihtiyaçlarını paylaşır,",
+                        "Seçilen üyeler detaylı sunum gerçekleştirir,",
+                        "İş birliği ve yönlendirme fırsatları değerlendirilir."
+                      ].map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <Check className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
@@ -181,11 +197,24 @@ export function NasilCalisir() {
                   <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-1">
                     <Compass className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-bold text-gray-900">Yüz Yüze Toplantılar (Derinlik)</h4>
-                    <p className="text-sm text-gray-600 leading-relaxed mt-1">
+                    <p className="text-sm text-gray-600 leading-relaxed mt-1 mb-3">
                       Ayda 1 kez fiziksel olarak bir araya geldiğimiz bu toplantılar, ekranların ötesinde samimi bir bağ kurmak, güveni pekiştirmek ve daha doğal, kalıcı iş ortaklıkları oluşturmak için tasarlanmıştır.
                     </p>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white/40 p-4 rounded-2xl border border-gray-150 text-xs text-gray-650">
+                      {[
+                        "Üyeler arasındaki güven güçlendirilir,",
+                        "Konuşmacı ve panel içerikleri sunulur,",
+                        "Nitelikli ziyaretçilerle tanışılır,",
+                        "Yapılandırılmış ve serbest networking gerçekleştirilir."
+                      ].map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <Check className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -207,6 +236,85 @@ export function NasilCalisir() {
                 <p className="text-xs text-gray-400 leading-relaxed">
                   Platformumuzda yer alan iş insanları, sadece iş fırsatı almak için değil; diğer üyelerin de büyümesine katkıda bulunmak ve ortak bir iş ahlakını temsil etmek için buradadır.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Rules & Ethics (Commission Ban & Sales Rules) */}
+      <section className="py-24 bg-white border-t border-gray-150">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">İŞ ETİĞİ VE İLKELER</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-2 mb-6">
+              Platform Kuralları & İş Etiği
+            </h2>
+            <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              E4N ekosisteminde güven, profesyonellik ve dürüstlük en üst düzeyde korunur. Üyelerimizin uyması zorunlu olan temel kurallar aşağıda belirtilmiştir.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Komisyon ve Maddi Menfaat Yasağı */}
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-red-100 transition-all duration-300 relative overflow-hidden group">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-655 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                    <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Komisyon ve Maddi Menfaat Yasağı</h3>
+                </div>
+                <p className="text-sm text-gray-650 leading-relaxed mb-6">
+                  E4N içerisinde oluşan iş yönlendirmeleri, referanslar ve tanıştırmalar karşılığında üyeler birbirlerine;
+                </p>
+                <ul className="grid grid-cols-2 gap-3 mb-6">
+                  {["Komisyon,", "Aracılık ücreti,", "Maddi hediye,", "Başka bir kişisel menfaat"].map((item, idx) => (
+                    <li key={idx} className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white p-3 rounded-xl border border-gray-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-550 flex-shrink-0"></span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-gray-650 leading-relaxed mb-4">
+                  teklif edemez veya karşı taraftan talep edemez. <strong>İş yönlendirmesinin kendisi ücret konusu yapılamaz.</strong>
+                </p>
+              </div>
+              <div className="pt-6 border-t border-gray-200 text-xs text-red-750 font-semibold leading-relaxed bg-red-50/50 p-4 rounded-xl border border-dashed border-red-200">
+                ⚠️ Bu yasağın ihlal edilmesi hâlinde ilgili kişinin üyeliği yalnızca bulunduğu grupta değil, E4N’nin bütün sisteminde sona erdirilebilir.
+              </div>
+            </div>
+
+            {/* Satış ve İletişim Kuralları */}
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-red-100 transition-all duration-300 relative overflow-hidden group">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-655 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                    <XCircle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Satış ve İletişim Kuralları</h3>
+                </div>
+                <p className="text-sm text-gray-650 leading-relaxed mb-4 font-semibold">
+                  E4N toplantıları ve iletişim grupları bir toplu satış alanı değildir.
+                </p>
+                <p className="text-xs text-gray-500 mb-4">Üyelerimiz aşağıdakileri yapmaktan kaçınmalıdır:</p>
+                <ul className="space-y-3 mb-6">
+                  {[
+                    "Israrlı teklif gönderemez,",
+                    "Olumsuz cevaba rağmen iletişimi sürdüremez,",
+                    "Üye listesini satış listesine çeviremez,",
+                    "Üyelere izinsiz toplu mesaj gönderemez,",
+                    "Her görüşmeyi ürün tanıtımına dönüştüremez."
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-650">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 flex-shrink-0"></span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="pt-6 border-t border-gray-200 text-xs text-gray-500 italic">
+                💡 İlişkilerin satıştan önce güven temelinde gelişmesi esastır. E4N’de önce güven inşa edilir, ardından ticari iş birlikleri doğal olarak gelişir.
               </div>
             </div>
           </div>

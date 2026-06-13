@@ -344,31 +344,65 @@ export function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             {/* Online */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6">
-                <Calendar className="w-6 h-6" />
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Online Toplantılar (Her Ay 1 Kez)</h3>
+                <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                  Online toplantılar, üyelerin düzenli olarak temas kurmasını sağlar. Bu toplantılarda üyeler kendilerini, güncel hedeflerini, aradıkları bağlantıları ve sağlayabilecekleri katkıları paylaşır.
+                </p>
+                <ul className="space-y-3 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200/60">
+                  {[
+                    "Üyeler kendilerini ve işlerini tanıtır,",
+                    "Spesifik bağlantı ve ihtiyaçlarını paylaşır,",
+                    "Seçilen üyeler detaylı sunum gerçekleştirir,",
+                    "İş birliği ve yönlendirme fırsatları değerlendirilir."
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-600">
+                      <Check className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Online Toplantılar (Her Ay 1 Kez)</h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-4">
-                Online toplantılar, üyelerin düzenli olarak temas kurmasını sağlar. Bu toplantılarda üyeler kendilerini, güncel hedeflerini, aradıkları bağlantıları ve sağlayabilecekleri katkıları paylaşır.
-              </p>
-              <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full">
-                ⏱️ Zaman Verimliliği & Temas Sürekliliği
-              </span>
+              <div>
+                <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full mt-2">
+                  ⏱️ Zaman Verimliliği & Temas Sürekliliği
+                </span>
+              </div>
             </div>
 
             {/* Fiziksel */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-              <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6">
-                <Compass className="w-6 h-6" />
+            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-6 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Yüz Yüze Toplantılar (Her Ay 1 Kez)</h3>
+                <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                  Yüz yüze toplantılar, güvenin güçlendiği ana alanlardır. İnsanlar birbirini yalnızca ekran üzerinden değil, gerçek temasla tanıdığında ilişkiler daha doğal ve daha kalıcı hale gelir.
+                </p>
+                <ul className="space-y-3 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200/60">
+                  {[
+                    "Üyeler arasındaki güven güçlendirilir,",
+                    "Konuşmacı ve panel içerikleri sunulur,",
+                    "Nitelikli ziyaretçilerle tanışılır,",
+                    "Yapılandırılmış ve serbest networking gerçekleştirilir."
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-600">
+                      <Check className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Yüz Yüze Toplantılar (Her Ay 1 Kez)</h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-4">
-                Yüz yüze toplantılar, güvenin güçlendiği ana alanlardır. İnsanlar birbirini yalnızca ekran üzerinden değil, gerçek temasla tanıdığında ilişkiler daha doğal ve daha kalıcı hale gelir.
-              </p>
-              <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full">
-                🤝 İlişki Derinliği & Stratejik Temas
-              </span>
+              <div>
+                <span className="inline-block text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full mt-2">
+                  🤝 İlişki Derinliği & Stratejik Temas
+                </span>
+              </div>
             </div>
           </div>
 
@@ -423,7 +457,67 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 9. Üyelerin Çevresine Açılan Güven Kapısı */}
+      {/* 9. Üyelerden Ne Bekliyoruz? */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">KATILIM DISIPLINI</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+              Üyelerden Ne Bekliyoruz?
+            </h2>
+            <p className="text-slate-605 text-sm sm:text-base leading-relaxed">
+              E4N, aktif ve disiplinli bir üye topluluğudur. Güven ağımızın verimli çalışması için aktif üyelerimizden aşağıdaki sorumlulukları yerine getirmelerini bekliyoruz.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-slate-950 text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden mb-8">
+              <div className="absolute top-0 right-0 p-6 opacity-5">
+                <Users className="w-48 h-48" />
+              </div>
+              <h3 className="text-lg font-bold mb-6 text-red-400">Aktif Üye Katılım Sorumlulukları</h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <ul className="space-y-4">
+                  {[
+                    "Ana toplantıların en az yüzde 70’ine katılmaları,",
+                    "Ayda en az bir üye ile birebir görüşme yapmaları,",
+                    "Kendilerine yapılan yönlendirmelere en geç iki iş günü içerisinde dönüş yapmaları,",
+                    "Katılamayacakları toplantıları mümkünse önceden bildirmeleri,"
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
+                      <Check className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-4">
+                  {[
+                    "Üyeleri ve işlerini tanımaya zaman ayırmaları,",
+                    "Topluluğa bilgi, bağlantı ve deneyimleriyle katkı sunmaları,",
+                    "E4N’nin ve diğer üyelerin itibarını korumaları"
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
+                      <Check className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex items-center gap-4 shadow-sm">
+              <div className="w-10 h-10 bg-red-50 text-red-650 flex items-center justify-center rounded-xl flex-shrink-0 font-bold">
+                💡
+              </div>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                <strong>Zorunlu Kota Bulunmaz:</strong> Üyeler için zorunlu müşteri veya ziyaretçi getirme kotası bulunmaz. Platformumuz nicelik değil, nitelik ve güvene dayalı derin iş ilişkileri kurmaya odaklanır.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. Üyelerin Çevresine Açılan Güven Kapısı */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <span className="text-xs font-bold text-red-500 uppercase tracking-widest">GÜVEN ZİNCİRİ</span>

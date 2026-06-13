@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
+import bizKimizNetwork from '../assets/biz_kimiz_network.png';
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -99,20 +100,66 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 2. Kalıcı İş İlişkileri İçin Seçici Networking (Ana Mesaj) */}
-      <section className="py-24 bg-white relative">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-xs font-bold text-red-600 uppercase tracking-widest">ÖZ DEĞER ÖNERİSİ</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mt-2 mb-8 text-slate-900">
-            Güvene Dayalı, Nitelikli ve Sürdürülebilir Bağlantılar
-          </h2>
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100/55 border border-slate-150 rounded-3xl p-8 sm:p-10 shadow-sm text-left max-w-4xl mx-auto">
-            <p className="text-xl sm:text-2xl text-slate-950 font-bold leading-relaxed mb-6 border-l-4 border-red-600 pl-6">
-              Event4Network, iş insanlarını yalnızca tanıştıran değil; güvene dayalı ilişkiler, nitelikli bağlantılar ve uzun vadeli iş birlikleri geliştirmek için bir araya getiren seçici bir networking platformudur.
-            </p>
-            <p className="text-slate-600 text-base sm:text-lg leading-relaxed pl-6">
-              Burada amaç kalabalık bir çevre oluşturmak değil; doğru insanlarla düzenli olarak bir araya gelmek, zaman içinde güven inşa etmek ve bu güven üzerinden daha güçlü iş fırsatları yaratmaktır.
-            </p>
+      {/* 2. Biz Kimiz? */}
+      <section className="relative py-20 lg:py-28 bg-slate-50 overflow-hidden border-b border-slate-200/60">
+        {/* Subtle background branding glow */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full bg-red-950/5 blur-[100px]"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            
+            {/* Text Content */}
+            <div className="lg:col-span-7 flex flex-col justify-center">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-605 font-bold text-xs uppercase tracking-wider border border-red-100 mb-6 w-fit">
+                🤝 Biz Kimiz?
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-8">
+                Nitelikli İş Ağınızı <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500">
+                  Güvenle İnşa Edin
+                </span>
+              </h2>
+              
+              <div className="space-y-6 text-slate-700">
+                <p className="text-lg sm:text-xl text-slate-900 font-bold leading-relaxed border-l-4 border-red-650 pl-5">
+                  Event4Network; iş insanlarını, şirket sahiplerini, kurucu ortakları, girişimcileri, C-Level yöneticileri ve karar verici profesyonelleri bir araya getiren seçici bir network platformu ve iş kulübüdür.
+                </p>
+                <p className="text-sm sm:text-base leading-relaxed text-slate-600 pl-5">
+                  Amacımız yalnızca insanların tanışmasını veya birbirlerine satış yapmasını sağlamak değildir. E4N’de temel hedef; üyelerin birbirini tanıdığı, uzmanlığına güvendiği ve zaman içerisinde birbirine iş, bilgi, bağlantı ve fırsat yönlendirebildiği kalıcı ilişkiler oluşturmaktır.
+                </p>
+              </div>
+
+              <div className="mt-8 bg-red-50/50 border border-red-100 rounded-2xl p-5 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 font-bold mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <h4 className="font-bold text-red-950 text-sm mb-1">E4N’nin Temel Yaklaşımı</h4>
+                  <p className="text-red-900/90 text-sm font-semibold">Kalıcı iş ilişkileri için seçici networking.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Premium Interactive Image Card (Optimized for Mobile/Desktop layout hierarchy) */}
+            <div className="lg:col-span-5 relative w-full flex justify-center">
+              <div className="absolute -inset-4 bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl blur-2xl opacity-10"></div>
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 bg-white p-2 group hover:scale-[1.01] transition-transform duration-500 max-w-md w-full">
+                <img
+                  src={bizKimizNetwork}
+                  alt="Event4Network Biz Kimiz"
+                  className="rounded-2xl object-cover w-full h-[280px] sm:h-[360px] lg:h-[440px] hover:scale-[1.02] transition-transform duration-700 ease-out"
+                />
+                
+                {/* Float pulse badge */}
+                <div className="absolute top-6 left-6 bg-slate-950/90 backdrop-blur-sm text-white px-4 py-2 rounded-2xl border border-white/10 text-xs font-bold shadow-lg flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  Güvene Dayalı Ekosistem
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

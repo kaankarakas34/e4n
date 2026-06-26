@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
-import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video } from 'lucide-react';
 
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
@@ -179,21 +179,44 @@ export function EventDetail() {
                         <div className="bg-white rounded-xl shadow-lg p-8">
                             <h2 className="text-xl font-bold text-gray-900 mb-4">Konum</h2>
                             <div className="flex items-center space-x-3 p-4 rounded-lg bg-red-50 border border-red-100">
-                                <MapPin className="h-6 w-6 text-red-600 flex-shrink-0" />
+                                {event.is_online ? (
+                                    <Video className="h-6 w-6 text-red-600 flex-shrink-0" />
+                                ) : (
+                                    <MapPin className="h-6 w-6 text-red-600 flex-shrink-0" />
+                                )}
                                 <div>
-                                    <a
-                                        href={event.location && (event.location.startsWith('http://') || event.location.startsWith('https://'))
-                                            ? event.location
-                                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((event.location || '') + (event.city ? ', ' + event.city : ''))}`
-                                        }
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1"
-                                    >
-                                        Etkinlik konumu için tıklayınız
-                                    </a>
-                                    {event.location && !event.location.startsWith('http') && (
-                                        <p className="text-xs text-gray-500 mt-0.5">({event.location})</p>
+                                    {event.is_online ? (
+                                        event.location && (event.location.startsWith('http://') || event.location.startsWith('https://')) ? (
+                                            <a
+                                                href={event.location}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-medium text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1"
+                                            >
+                                                Online / Zoom Meeting
+                                            </a>
+                                        ) : (
+                                            <span className="font-medium text-gray-900">
+                                                Online / Zoom Meeting
+                                            </span>
+                                        )
+                                    ) : (
+                                        <>
+                                            <a
+                                                href={event.location && (event.location.startsWith('http://') || event.location.startsWith('https://'))
+                                                    ? event.location
+                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((event.location || '') + (event.city ? ', ' + event.city : ''))}`
+                                                }
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-medium text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1"
+                                            >
+                                                Etkinlik konumu için tıklayınız
+                                            </a>
+                                            {event.location && !event.location.startsWith('http') && (
+                                                <p className="text-xs text-gray-500 mt-0.5">({event.location})</p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>

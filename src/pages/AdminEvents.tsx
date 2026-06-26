@@ -112,8 +112,8 @@ export function AdminEvents() {
         title: formData.title,
         description: formData.description,
         location: formData.location,
-        start_at: formData.start_at,
-        end_at: formData.end_at,
+        start_at: formData.start_at ? new Date(formData.start_at).toISOString() : '',
+        end_at: formData.end_at ? new Date(formData.end_at).toISOString() : '',
         created_by: user?.id,
         is_public: formData.is_public,
         type: typeMap[formData.event_type] || 'meeting',
@@ -172,7 +172,10 @@ export function AdminEvents() {
     const formatDateForInput = (dateStr: string) => {
       if (!dateStr) return '';
       try {
-        return new Date(dateStr).toISOString().slice(0, 16);
+        const d = new Date(dateStr);
+        const offset = d.getTimezoneOffset();
+        const localTime = new Date(d.getTime() - offset * 60 * 1000);
+        return localTime.toISOString().slice(0, 16);
       } catch (e) {
         return '';
       }
@@ -602,11 +605,13 @@ export function AdminEvents() {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center text-gray-500">
                       <Calendar className="h-4 w-4 mr-2" />
-                      {new Date(event.start_at).toLocaleString('tr-TR')}
-                    </div>
-                    <div className="flex items-center text-gray-500">
-                      <Clock className="h-4 w-4 mr-2" />
-                      {new Date(event.end_at).toLocaleString('tr-TR')}
+                      {new Date(event.start_at).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </div>
                     <div className="flex items-center text-gray-500">
                       <MapPin className="h-4 w-4 mr-2" />

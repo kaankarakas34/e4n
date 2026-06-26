@@ -151,18 +151,6 @@ export function EventDetail() {
                             </p>
 
                             <div className="mt-8 pt-8 border-t border-gray-100">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Konuşmacılar</h3>
-                                {/* Placeholder for speakers */}
-                                <div className="flex items-center space-x-4">
-                                    <div className="h-12 w-12 rounded-full bg-gray-200"></div>
-                                    <div>
-                                        <p className="font-medium text-gray-900">Murat Yılmaz</p>
-                                        <p className="text-sm text-gray-500">Event 4 Network Kurucusu</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 pt-8 border-t border-gray-100">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Katılımcılar ({event.attendees?.length || 0})</h3>
                                 {event.attendees && event.attendees.length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

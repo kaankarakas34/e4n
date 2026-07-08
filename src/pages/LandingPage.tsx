@@ -745,6 +745,79 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* 13.5 Networking Eğitimi Section */}
+      <section className="py-24 bg-white relative border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div className="mb-12 lg:mb-0">
+              <span className="text-xs font-bold text-red-650 uppercase tracking-widest block mb-2">ÖZEL EĞİTİM PROGRAMI</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
+                Doğru insanlarla tanışmayı biliyor musunuz?
+              </h2>
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mb-6">
+                Çünkü bazen tek bir tanışıklık; yatırımcıya, ilk büyük müşteriye, doğru ortağa veya hayalini kurduğunuz işe ulaşmanızı sağlayabilir.
+              </p>
+              
+              <div className="space-y-4 mb-8">
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/60">
+                  <h4 className="font-semibold text-slate-900 mb-3 text-sm tracking-wide uppercase">Networking ne değildir?</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center text-sm text-slate-600"><span className="text-red-500 mr-2 flex-shrink-0">❌</span> Kartvizit dağıtmak değildir.</li>
+                    <li className="flex items-center text-sm text-slate-600"><span className="text-red-500 mr-2 flex-shrink-0">❌</span> Aynı sektörden insanlarla tanışmak değildir.</li>
+                    <li className="flex items-center text-sm text-slate-600"><span className="text-red-500 mr-2 flex-shrink-0">❌</span> Herkesi LinkedIn'e eklemek değildir.</li>
+                  </ul>
+                </div>
+                <div className="bg-red-50/30 p-5 rounded-2xl border border-red-100/50">
+                  <h4 className="font-semibold text-red-900 mb-3 text-sm tracking-wide uppercase">Networking nedir?</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center text-sm text-slate-700"><span className="text-green-600 mr-2 flex-shrink-0">✔</span> Güven oluşturabilmektir.</li>
+                    <li className="flex items-center text-sm text-slate-700"><span className="text-green-600 mr-2 flex-shrink-0">✔</span> Değer üretebilmektir.</li>
+                    <li className="flex items-center text-sm text-slate-700"><span className="text-green-600 mr-2 flex-shrink-0">✔</span> İnsanların sizi hatırlamasını sağlamaktır.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/egitim')}
+                  className="shadow-md hover:shadow-lg shadow-red-200 font-bold px-8 h-12 rounded-xl"
+                >
+                  Eğitimi İncele
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/egitim-basvuru')}
+                  className="font-bold px-8 h-12 rounded-xl"
+                >
+                  Networking Eğitimine Katıl
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-8 sm:p-10 rounded-3xl border border-slate-200/60 shadow-sm relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-100/30 rounded-full blur-2xl"></div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Networking sadece insan tanımak değildir.</h3>
+              <p className="text-slate-650 text-sm sm:text-base leading-relaxed mb-6">
+                Doğru network; güven kurmak, değer yaratmak ve zamanla iş fırsatlarına dönüşen ilişkiler inşa etmektir.
+              </p>
+              <p className="text-slate-650 text-sm sm:text-base leading-relaxed mb-8">
+                Bu eğitimde; kartvizit toplamanın, rastgele bağlantılar kurmanın ve ilk görüşmede satış yapmaya çalışmanın ötesine geçerek, kalıcı ve güçlü iş ilişkileri kurmanın mantığını öğreneceksiniz.
+              </p>
+              <div className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-150">
+                <div className="w-12 h-12 bg-red-50 text-red-650 flex items-center justify-center rounded-xl font-bold flex-shrink-0">
+                  🎓
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Sınırlı Katılım Kontenjanı</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Hemen ön başvurunuzu tamamlayın.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 14. Başvuru Çağrısı (Final CTA) */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

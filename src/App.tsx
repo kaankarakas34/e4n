@@ -7,6 +7,8 @@ import { Dashboard } from './pages/Dashboard';
 import { ChapterManagement } from './pages/ChapterManagement';
 import { Reports } from './pages/Reports';
 import { Education } from './pages/Education';
+import { Egitim } from './pages/Egitim';
+import { EgitimBasvuru } from './pages/EgitimBasvuru';
 import LMS from './pages/LMS';
 import { CourseViewer } from './pages/CourseViewer';
 import { Profile } from './pages/Profile';
@@ -154,6 +156,8 @@ function App() {
               <Route element={<MainPublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/e4n-nedir" element={<E4NNedir />} />
+                <Route path="/egitim" element={<Egitim />} />
+                <Route path="/egitim-basvuru" element={<EgitimBasvuru />} />
                 <Route path="/nasil-calisir" element={<NasilCalisir />} />
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />

@@ -10,7 +10,7 @@ import {
   Phone, Briefcase, Eye, Trash2, CheckCircle, Clock, 
   XCircle, AlertCircle, RefreshCw, ChevronRight, UserCheck,
   Upload, FileText, Check, AlertTriangle, Play, X, Ban, Armchair,
-  Plus, Edit2
+  Plus, Edit2, GraduationCap
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -121,6 +121,11 @@ export function AdminCRM() {
   } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+
+  // File import source types
+  const [importSourceType, setImportSourceType] = useState<'meta_import' | 'education_application' | null>(null);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [importSourceModalOpen, setImportSourceModalOpen] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -433,6 +438,12 @@ export function AdminCRM() {
   };
 
   const handleFile = (file: File) => {
+    setPendingImportFile(file);
+    setImportSourceModalOpen(true);
+  };
+
+  const parseFileWithSource = (file: File, sourceType: 'meta_import' | 'education_application') => {
+    setImportSourceType(sourceType);
     setImportFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -450,6 +461,8 @@ export function AdminCRM() {
       }
     };
     reader.readAsBinaryString(file);
+    setImportSourceModalOpen(false);
+    setPendingImportFile(null);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -492,7 +505,7 @@ export function AdminCRM() {
           email: leadItem.email,
           phone: leadItem.phone,
           profession: leadItem.profession,
-          source: 'meta_import',
+          source: importSourceType || 'meta_import',
           kvkk_accepted: true,
           form_data: {
             city: leadItem.city,
@@ -1326,6 +1339,60 @@ export function AdminCRM() {
               </div>
             )}
           </>
+        )}
+
+        {/* Import Source Selection Modal */}
+        {importSourceModalOpen && pendingImportFile && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-55 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 border border-slate-100 space-y-5 animate-in zoom-in duration-200 text-center">
+              <div className="flex justify-between items-center border-b pb-3 text-left">
+                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-slate-650" /> Aktarım Türü
+                </h3>
+                <button 
+                  onClick={() => {
+                    setImportSourceModalOpen(false);
+                    setPendingImportFile(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-650 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="text-sm text-slate-500 leading-relaxed text-left">
+                Yüklenen Excel dosyasındaki veriler hangi başvuru türü olarak içeri aktarılsın?
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button
+                  onClick={() => parseFileWithSource(pendingImportFile, 'meta_import')}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
+                >
+                  <span className="w-10 h-10 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-slate-200 transition-colors">
+                    <Ban className="w-5 h-5 text-slate-600 animate-pulse" />
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm">Reklam Datası (Meta Ads)</span>
+                  <span className="text-xs text-slate-450 mt-1 leading-normal text-center">
+                    Genel kampanya müşteri adayları olarak içeri aktarılır.
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => parseFileWithSource(pendingImportFile, 'education_application')}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
+                >
+                  <span className="w-10 h-10 bg-purple-50 text-purple-650 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
+                    <GraduationCap className="w-5 h-5 text-purple-600 animate-bounce" />
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm">Eğitim Datası (Eğitim Başvurusu)</span>
+                  <span className="text-xs text-slate-455 mt-1 leading-normal text-center">
+                    Networking eğitimi başvurusu olarak içeri aktarılır.
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Add/Edit Column Settings Modal */}

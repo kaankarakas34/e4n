@@ -95,6 +95,7 @@ export function AdminCRM() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<PublicVisitor | null>(null);
+  const [selectedDuplicate, setSelectedDuplicate] = useState<any | null>(null);
   const [draggedOverCol, setDraggedOverCol] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
@@ -438,6 +439,13 @@ export function AdminCRM() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    if (status === 'PENDING') return 'Yeni Başvuru';
+    if (status === 'REJECTED') return 'Reddedildi';
+    if (status === 'FULL_SEAT') return 'Dolu Koltuk';
+    return columns.find(c => c.id === status)?.title || status;
+  };
+
   // Helper cleansers for robust duplicate matching
   const cleanPhoneStr = (phone?: string | number) => {
     if (!phone) return '';
@@ -480,6 +488,28 @@ export function AdminCRM() {
       const cleanedPh = cleanPhoneStr(phone);
       const cleanedEm = cleanEmailStr(email);
 
+      // Ensure we have at least a name
+      if (!String(name).trim()) return;
+
+      const isDuplicate = 
+        (cleanedEm && existingEmails.has(cleanedEm)) || 
+        (cleanedPh && existingPhones.has(cleanedPh));
+
+      // Find match
+      const matchingExistingLead = isDuplicate
+        ? leads.find(l => 
+            (cleanedEm && cleanEmailStr(l.email) === cleanedEm) ||
+            (cleanedPh && cleanPhoneStr(l.phone) === cleanedPh)
+          )
+        : null;
+
+      const matchingValidLead = !isDuplicate
+        ? valid.find(v => 
+            (cleanedEm && cleanEmailStr(v.email) === cleanedEm) || 
+            (cleanedPh && cleanPhoneStr(v.phone) === cleanedPh)
+          )
+        : null;
+
       const parsedLead = {
         name: String(name).trim(),
         email: String(email).trim(),
@@ -490,25 +520,16 @@ export function AdminCRM() {
         created_time: String(created_time).trim(),
         platform: String(platform).trim(),
         own_business: String(own_business).trim(),
-        originalIndex: index + 1
+        originalIndex: index + 1,
+        duplicateOf: matchingExistingLead 
+          ? { type: 'existing', lead: matchingExistingLead } 
+          : (matchingValidLead ? { type: 'uploaded', lead: matchingValidLead } : null)
       };
-
-      // Ensure we have at least a name
-      if (!parsedLead.name) return;
-
-      const isDuplicate = 
-        (cleanedEm && existingEmails.has(cleanedEm)) || 
-        (cleanedPh && existingPhones.has(cleanedPh));
 
       if (isDuplicate) {
         duplicates.push(parsedLead);
       } else {
-        // Also prevent duplicates within the uploaded file itself
-        const alreadyInValid = valid.some(v => 
-          (cleanedEm && cleanEmailStr(v.email) === cleanedEm) || 
-          (cleanedPh && cleanPhoneStr(v.phone) === cleanedPh)
-        );
-        if (alreadyInValid) {
+        if (matchingValidLead) {
           duplicates.push(parsedLead);
         } else {
           valid.push(parsedLead);
@@ -962,14 +983,20 @@ export function AdminCRM() {
                       </h3>
                       <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
                         {importResults.duplicates.map((lead, idx) => (
-                          <div key={idx} className="bg-white p-2.5 rounded-lg border border-amber-100/60 text-xs flex justify-between items-center">
-                            <div>
-                              <span className="font-bold text-slate-800">{lead.name}</span>
-                              <span className="text-slate-400 mx-2">|</span>
+                          <div 
+                            key={idx} 
+                            onClick={() => setSelectedDuplicate(lead)}
+                            className="bg-white p-3 rounded-xl border border-amber-100/60 text-xs flex justify-between items-center hover:border-amber-400 hover:shadow-sm cursor-pointer transition-all duration-200"
+                          >
+                            <div className="flex flex-col gap-0.5 text-left">
+                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                {lead.name}
+                                <span className="text-[10px] text-slate-400 font-normal">({lead.originalIndex}. Satır)</span>
+                              </span>
                               <span className="text-slate-500">{lead.email || lead.phone}</span>
                             </div>
-                            <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold uppercase">
-                              Zaten Kayıtlı
+                            <span className="text-[10px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-lg font-black uppercase tracking-wide">
+                              Detayları Gör
                             </span>
                           </div>
                         ))}
@@ -2012,6 +2039,133 @@ export function AdminCRM() {
                     <UserCheck className="w-4 h-4" /> Üye Olarak Kaydet
                   </Button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Duplicate Comparison Modal */}
+        {selectedDuplicate && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto border border-slate-100 space-y-6 animate-in zoom-in duration-200">
+              <div className="flex justify-between items-start border-b pb-4">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6 text-amber-500" />
+                    Mükerrer Kayıt Detayları
+                  </h2>
+                  <p className="text-xs text-slate-450 mt-1">
+                    Excel dosyasındaki bu kayıt sistemde veya yüklenen listede zaten mevcut.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setSelectedDuplicate(null)} 
+                  className="text-slate-455 hover:text-slate-650 bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Excel Row Data */}
+                <div className="bg-amber-50/20 border border-amber-100/50 rounded-2xl p-5 space-y-4">
+                  <h3 className="text-sm font-black text-amber-800 border-b border-amber-150/40 pb-2 flex items-center justify-between">
+                    <span>Excel Dosyasındaki Veri</span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-black uppercase">Satır {selectedDuplicate.originalIndex}</span>
+                  </h3>
+                  
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">Ad Soyad</span>
+                      <span className="font-bold text-slate-800">{selectedDuplicate.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">Telefon</span>
+                      <span className="font-bold text-slate-800">{selectedDuplicate.phone || <span className="text-slate-400 italic">Belirtilmemiş</span>}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">E-posta</span>
+                      <span className="font-bold text-slate-800">{selectedDuplicate.email || <span className="text-slate-400 italic">Belirtilmemiş</span>}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">Sektör / Meslek</span>
+                      <span className="font-bold text-slate-800">{selectedDuplicate.profession || <span className="text-slate-400 italic">Belirtilmemiş</span>}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">İl / Şehir</span>
+                      <span className="font-bold text-slate-800">{selectedDuplicate.city || <span className="text-slate-400 italic">Belirtilmemiş</span>}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Record Data */}
+                <div className="bg-slate-50/80 border border-slate-200/60 rounded-2xl p-5 space-y-4 text-left">
+                  <h3 className="text-sm font-black text-slate-900 border-b border-slate-200/50 pb-2">
+                    Mevcut Eşleşen Kayıt
+                  </h3>
+
+                  {selectedDuplicate.duplicateOf ? (
+                    selectedDuplicate.duplicateOf.type === 'existing' ? (
+                      <div className="space-y-3 text-xs">
+                        <div className="bg-slate-100/60 p-2.5 rounded-xl border border-slate-200/30 flex justify-between items-center mb-1">
+                          <span className="font-bold text-slate-700">Veritabanında Kayıtlı</span>
+                          <span className="text-[10px] bg-slate-900 text-white px-2 py-0.5 rounded font-black uppercase">Sistem Kaydı</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Ad Soyad</span>
+                          <span className="font-bold text-slate-900">{selectedDuplicate.duplicateOf.lead.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Telefon / E-posta</span>
+                          <span className="font-bold text-slate-900">
+                            {selectedDuplicate.duplicateOf.lead.phone || '-'} / {selectedDuplicate.duplicateOf.lead.email || '-'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Kategori / Kaynak</span>
+                          <span className="font-bold text-slate-900">{getSourceLabel(selectedDuplicate.duplicateOf.lead.source)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Aşama / Durum</span>
+                          <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-slate-800 animate-pulse" />
+                            {getStatusLabel(selectedDuplicate.duplicateOf.lead.status)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Kayıt Tarihi</span>
+                          <span className="font-bold text-slate-900">
+                            {new Date(selectedDuplicate.duplicateOf.lead.created_at).toLocaleDateString('tr-TR')}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 text-xs">
+                        <div className="bg-slate-100/60 p-2.5 rounded-xl border border-slate-200/30 flex justify-between items-center mb-1">
+                          <span className="font-bold text-slate-700">Excel Listesinde Mükerrer</span>
+                          <span className="text-[10px] bg-slate-900 text-white px-2 py-0.5 rounded font-black uppercase">Liste İçi</span>
+                        </div>
+                        <p className="text-slate-500 font-medium leading-relaxed">
+                          Bu kayıt, yüklediğiniz Excel dosyasında daha yukarıda yer alan <span className="font-bold text-slate-900">Satır {selectedDuplicate.duplicateOf.lead.originalIndex}</span> ({selectedDuplicate.duplicateOf.lead.name}) ile çakışmaktadır.
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-center py-6 text-slate-400 italic text-xs">
+                      Eşleşme detayı bulunamadı.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t">
+                <Button 
+                  onClick={() => setSelectedDuplicate(null)}
+                  variant="outline"
+                  className="h-10 border-slate-200 text-xs px-5 rounded-xl font-bold"
+                >
+                  Kapat
+                </Button>
               </div>
             </div>
           </div>

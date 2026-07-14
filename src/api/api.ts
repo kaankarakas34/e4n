@@ -568,8 +568,8 @@ export const api = {
   async getPublicVisitors() {
     return await request('/admin/public-visitors');
   },
-  async updatePublicVisitorStatus(id: string, status: string, groupId?: string) {
-    return await request(`/admin/public-visitors/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, group_id: groupId }) });
+  async updatePublicVisitorStatus(id: string, status: string, groupId?: string, formData?: any) {
+    return await request(`/admin/public-visitors/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, group_id: groupId, form_data: formData }) });
   },
   async deletePublicVisitor(id: string) {
     return await request(`/admin/public-visitors/${id}`, { method: 'DELETE' });

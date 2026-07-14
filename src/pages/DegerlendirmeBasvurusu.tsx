@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X, Globe, Clock, Target, HelpCircle, Award, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X, Globe, Clock, Target, HelpCircle, Award, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 
@@ -77,6 +77,7 @@ export function DegerlendirmeBasvurusu() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
 
   // Referral Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -187,13 +188,40 @@ export function DegerlendirmeBasvurusu() {
       await api.submitPublicVisitorApplication(payload);
       setIsSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed.error === 'blocked_rejection') {
+          setBlockedMessage(parsed.message);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      } catch (e) {}
       alert('Başvuru gönderilirken bir hata oluştu. Lütfen bilgilerinizi kontrol edip tekrar deneyiniz.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (blockedMessage) {
+    return (
+      <div className="bg-white min-h-screen py-24 flex items-center justify-center">
+        <Helmet>
+          <title>Başvuru Sonucu | Event4Network</title>
+        </Helmet>
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-200 shadow-md">
+            <AlertCircle className="w-10 h-10" />
+          </div>
+          <h3 className="text-3xl font-black text-slate-900 mb-6">Başvurunuz Daha Önce Değerlendirilmiştir</h3>
+          <div className="bg-rose-50/50 border border-rose-100/60 rounded-3xl p-8 text-left text-sm sm:text-base text-rose-800 leading-relaxed max-w-xl mx-auto whitespace-pre-wrap">
+            {blockedMessage.replace("Başvurunuz Daha Önce Değerlendirilmiştir\n\n", "")}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (

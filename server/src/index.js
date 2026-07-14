@@ -2108,6 +2108,27 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 app.post('/api/visitors/apply', async (req, res) => {
   const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data } = req.body;
   try {
+    const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '____NON_EXISTENT____';
+    const normalizedEmail = email ? email.trim().toLowerCase() : '____NON_EXISTENT____';
+
+    const checkDup = await pool.query(
+      `SELECT id FROM public_visitors 
+       WHERE status = 'REJECTED' 
+       AND (form_data->>'rejection_type' = 'permanent')
+       AND (
+         (email IS NOT NULL AND email != '' AND LOWER(email) = $1)
+         OR
+         (phone IS NOT NULL AND phone != '' AND (phone = $2 OR REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE $3))
+       )`,
+      [normalizedEmail, phone, `%${normalizedPhone}`]
+    );
+
+    if (checkDup.rows.length > 0) {
+      return res.status(400).json({ 
+        error: 'blocked_rejection',
+        message: `Başvurunuz Daha Önce Değerlendirilmiştir\n\nBu kişi veya şirket adına daha önce yapılan başvuru, E4N üyelik kriterleri kapsamında değerlendirilmiş ve uygun bulunmamıştır.\n\nAynı kişi veya şirket adına yeniden yapılacak başvurular değerlendirmeye alınmayacaktır.\n\nAnlayışınız için teşekkür ederiz.` 
+      });
+    }
     // Lazy migration
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS title VARCHAR(255)");
@@ -2143,7 +2164,7 @@ app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
-  const { status, group_id } = req.body;
+  const { status, group_id, form_data } = req.body;
   const { id } = req.params;
 
   const client = await pool.connect();
@@ -2152,7 +2173,12 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 
     // 1. Update public_visitors status
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
-    await client.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, id]);
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
+    if (form_data) {
+      await client.query('UPDATE public_visitors SET status = $1, form_data = COALESCE(form_data, \'{}\'::jsonb) || $3 WHERE id = $2', [status, id, JSON.stringify(form_data)]);
+    } else {
+      await client.query('UPDATE public_visitors SET status = $1 WHERE id = $2', [status, id]);
+    }
 
     // 2. If it's a conversion to a group, create a record in the visitors table
     if (status === 'CONVERTED' && group_id) {

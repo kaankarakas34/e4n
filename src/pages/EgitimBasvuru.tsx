@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, User, Mail, Phone, Briefcase, 
-  FileText, CheckCircle, GraduationCap, ShieldCheck 
+  FileText, CheckCircle, GraduationCap, ShieldCheck, AlertCircle 
 } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
@@ -28,6 +28,7 @@ export function EgitimBasvuru() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<EgitimFormData>({
     resolver: zodResolver(egitimFormSchema)
@@ -35,6 +36,7 @@ export function EgitimBasvuru() {
 
   const onSubmit = async (data: EgitimFormData) => {
     setIsSubmitting(true);
+    setBlockedMessage(null);
     try {
       const payload = {
         name: data.name,
@@ -54,8 +56,15 @@ export function EgitimBasvuru() {
       await api.submitPublicVisitorApplication(payload);
       setIsSubmitted(true);
       reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed.error === 'blocked_rejection') {
+          setBlockedMessage(parsed.message);
+          return;
+        }
+      } catch (e) {}
       alert('Başvuru gönderilirken bir hata oluştu. Lütfen bilgilerinizi kontrol edip tekrar deneyiniz.');
     } finally {
       setIsSubmitting(false);
@@ -90,7 +99,17 @@ export function EgitimBasvuru() {
             </p>
           </div>
 
-          {isSubmitted ? (
+          {blockedMessage ? (
+            <div className="text-center py-10 px-4 bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xl">
+              <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-100">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-rose-950 mb-4">Başvurunuz Daha Önce Değerlendirilmiştir</h3>
+              <div className="bg-rose-50/50 border border-rose-100/60 rounded-2xl p-5 text-left text-sm text-rose-800 leading-relaxed max-w-lg mx-auto whitespace-pre-wrap">
+                {blockedMessage.replace("Başvurunuz Daha Önce Değerlendirilmiştir\n\n", "")}
+              </div>
+            </div>
+          ) : isSubmitted ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="w-8 h-8" />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X } from 'lucide-react';
+import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X, AlertCircle } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 
@@ -29,6 +29,7 @@ interface VisitorFormProps {
 export function VisitorForm({ onSuccess, className = "", source = "landing" }: VisitorFormProps) {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
 
     // Referral Search State
     const [searchQuery, setSearchQuery] = useState('');
@@ -68,6 +69,7 @@ export function VisitorForm({ onSuccess, className = "", source = "landing" }: V
 
     const onSubmit = async (data: VisitorFormData) => {
         setIsSubmitting(true);
+        setBlockedMessage(null);
         try {
             await api.submitPublicVisitorApplication({
                 name: `${data.firstName} ${data.lastName}`,
@@ -81,13 +83,34 @@ export function VisitorForm({ onSuccess, className = "", source = "landing" }: V
             });
             setIsSubmitted(true);
             if (onSuccess) onSuccess();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            try {
+                const parsed = JSON.parse(error.message);
+                if (parsed.error === 'blocked_rejection') {
+                    setBlockedMessage(parsed.message);
+                    return;
+                }
+            } catch (e) {}
             alert('Bir hata oluştu. Lütfen tekrar deneyiniz.');
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    if (blockedMessage) {
+        return (
+            <div className={`p-8 bg-rose-50 rounded-2xl border border-rose-100 text-center ${className}`}>
+                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-8 h-8 text-rose-600" />
+                </div>
+                <h3 className="text-lg font-black text-rose-950 mb-3">Başvurunuz Daha Önce Değerlendirilmiştir</h3>
+                <div className="text-left text-xs sm:text-sm text-rose-800 leading-relaxed whitespace-pre-wrap bg-white/50 p-4 rounded-xl border border-rose-100/50">
+                    {blockedMessage.replace("Başvurunuz Daha Önce Değerlendirilmiştir\n\n", "")}
+                </div>
+            </div>
+        );
+    }
 
     if (isSubmitted) {
         return (

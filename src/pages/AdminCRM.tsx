@@ -9,7 +9,8 @@ import {
   Shield, Kanban, List, Search, Filter, Calendar, Mail, 
   Phone, Briefcase, Eye, Trash2, CheckCircle, Clock, 
   XCircle, AlertCircle, RefreshCw, ChevronRight, UserCheck,
-  Upload, FileText, Check, AlertTriangle, Play, X, Ban, Armchair
+  Upload, FileText, Check, AlertTriangle, Play, X, Ban, Armchair,
+  Plus, Edit2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -21,7 +22,7 @@ interface PublicVisitor {
   company: string;
   profession: string;
   created_at: string;
-  status: 'PENDING' | 'CONTACTED' | 'CONVERTED' | 'REJECTED' | 'FULL_SEAT';
+  status: string; // Dynamic statuses
   inviter_name?: string;
   title?: string;
   web_linkedin?: string;
@@ -36,7 +37,7 @@ interface PublicVisitor {
 }
 
 interface Column {
-  id: 'PENDING' | 'CONTACTED' | 'CONVERTED';
+  id: string;
   title: string;
   color: string;
   bgColor: string;
@@ -44,7 +45,7 @@ interface Column {
   icon: any;
 }
 
-const COLUMNS: Column[] = [
+const DEFAULT_COLUMNS: Column[] = [
   {
     id: 'PENDING',
     title: 'Yeni Başvuru',
@@ -71,10 +72,21 @@ const COLUMNS: Column[] = [
   }
 ];
 
+const COLOR_SCHEMES = [
+  { name: 'Mavi', color: 'text-blue-600 bg-blue-50', bgColor: 'bg-blue-50/50', borderColor: 'border-blue-200' },
+  { name: 'Yeşil', color: 'text-green-600 bg-green-50', bgColor: 'bg-green-50/50', borderColor: 'border-green-200' },
+  { name: 'Sarı/Turuncu', color: 'text-amber-600 bg-amber-50', bgColor: 'bg-amber-50/50', borderColor: 'border-amber-250' },
+  { name: 'Mor', color: 'text-purple-600 bg-purple-50', bgColor: 'bg-purple-50/50', borderColor: 'border-purple-205' },
+  { name: 'Pembe', color: 'text-pink-600 bg-pink-50', bgColor: 'bg-pink-50/50', borderColor: 'border-pink-200' },
+  { name: 'İndigo', color: 'text-indigo-600 bg-indigo-50', bgColor: 'bg-indigo-50/50', borderColor: 'border-indigo-200' },
+  { name: 'Gül Rengi', color: 'text-rose-600 bg-rose-50', bgColor: 'bg-rose-50/50', borderColor: 'border-rose-200' },
+];
+
 export function AdminCRM() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [leads, setLeads] = useState<PublicVisitor[]>([]);
+  const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'import' | 'rejected' | 'full_seat'>('kanban');
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,6 +103,12 @@ export function AdminCRM() {
   const [rejectTargetLead, setRejectTargetLead] = useState<PublicVisitor | null>(null);
   const [rejectionType, setRejectionType] = useState<'permanent' | 'not_qualified' | 'full_seat'>('permanent');
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Column Add/Edit Modal states
+  const [colModalOpen, setColModalOpen] = useState(false);
+  const [editingCol, setEditingCol] = useState<Column | null>(null);
+  const [colTitle, setColTitle] = useState('');
+  const [selectedColorScheme, setSelectedColorScheme] = useState(0);
 
   // File Upload states
   const [dragActive, setDragActive] = useState(false);
@@ -111,8 +129,27 @@ export function AdminCRM() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const data = await api.getPublicVisitors();
-      setLeads(data || []);
+      const [leadsData, settingsData] = await Promise.all([
+        api.getPublicVisitors(),
+        api.getSystemSettings()
+      ]);
+      
+      setLeads(leadsData || []);
+
+      if (settingsData && settingsData.crm_columns) {
+        try {
+          const parsed = JSON.parse(settingsData.crm_columns);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const mapped = parsed.map((col: any) => ({
+              ...col,
+              icon: col.id === 'PENDING' ? Clock : col.id === 'CONTACTED' ? Phone : col.id === 'CONVERTED' ? CheckCircle : List
+            }));
+            setColumns(mapped);
+          }
+        } catch (err) {
+          console.error('Error parsing crm_columns:', err);
+        }
+      }
     } catch (e) {
       console.error('Leads fetching error:', e);
     } finally {
@@ -120,7 +157,7 @@ export function AdminCRM() {
     }
   };
 
-  const handleStatusChange = async (leadId: string, newStatus: 'PENDING' | 'CONTACTED' | 'CONVERTED' | 'REJECTED' | 'FULL_SEAT', formData?: any) => {
+  const handleStatusChange = async (leadId: string, newStatus: string, formData?: any) => {
     setIsUpdating(leadId);
     try {
       setLeads(prev => prev.map(lead => lead.id === leadId ? { 
@@ -171,6 +208,98 @@ export function AdminCRM() {
     setRejectTargetLead(null);
   };
 
+  // Column Add/Edit Initiators
+  const startAddColumn = () => {
+    setEditingCol(null);
+    setColTitle('');
+    setSelectedColorScheme(0);
+    setColModalOpen(true);
+  };
+
+  const startEditColumn = (col: Column) => {
+    setEditingCol(col);
+    setColTitle(col.title);
+    const idx = COLOR_SCHEMES.findIndex(s => s.color === col.color) || 0;
+    setSelectedColorScheme(idx >= 0 ? idx : 0);
+    setColModalOpen(true);
+  };
+
+  const handleSaveColumn = async () => {
+    if (!colTitle.trim()) return;
+
+    let updatedCols = [...columns];
+    const scheme = COLOR_SCHEMES[selectedColorScheme];
+
+    if (editingCol) {
+      updatedCols = updatedCols.map(c => c.id === editingCol.id ? {
+        ...c,
+        title: colTitle.trim(),
+        color: scheme.color,
+        bgColor: scheme.bgColor,
+        borderColor: scheme.borderColor
+      } : c);
+    } else {
+      const newCol: Column = {
+        id: 'col_' + Date.now(),
+        title: colTitle.trim(),
+        color: scheme.color,
+        bgColor: scheme.bgColor,
+        borderColor: scheme.borderColor,
+        icon: List
+      };
+      updatedCols.push(newCol);
+    }
+
+    setColumns(updatedCols);
+    setColModalOpen(false);
+    setEditingCol(null);
+    setColTitle('');
+
+    try {
+      const cleanToSave = updatedCols.map(({ id, title, color, bgColor, borderColor }) => ({
+        id, title, color, bgColor, borderColor
+      }));
+      await api.updateSystemSetting('crm_columns', JSON.stringify(cleanToSave));
+    } catch (err) {
+      console.error('Error saving columns setting:', err);
+    }
+  };
+
+  const handleDeleteColumn = async (colId: string) => {
+    const col = columns.find(c => c.id === colId);
+    if (!col) return;
+
+    const leadsInCol = leads.filter(l => l.status === colId);
+    const confirmMsg = leadsInCol.length > 0 
+      ? `Bu kolonu silmek istediğinizden emin misiniz? Kolon içindeki ${leadsInCol.length} adet aday 'Yeni Başvuru' sütununa aktarılacaktır.`
+      : `Bu kolonu silmek istediğinizden emin misiniz?`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    const updatedCols = columns.filter(c => c.id !== colId);
+    setColumns(updatedCols);
+
+    if (leadsInCol.length > 0) {
+      for (const lead of leadsInCol) {
+        try {
+          await api.updatePublicVisitorStatus(lead.id, 'PENDING');
+        } catch (err) {
+          console.error('Error migrating lead status:', lead.id, err);
+        }
+      }
+      fetchLeads();
+    }
+
+    try {
+      const cleanToSave = updatedCols.map(({ id, title, color, bgColor, borderColor }) => ({
+        id, title, color, bgColor, borderColor
+      }));
+      await api.updateSystemSetting('crm_columns', JSON.stringify(cleanToSave));
+    } catch (err) {
+      console.error('Error saving columns setting:', err);
+    }
+  };
+
   const handleDeleteLead = async (leadId: string) => {
     if (!confirm('Bu başvuruyu kalıcı olarak silmek istediğinizden emin misiniz?')) return;
     try {
@@ -199,7 +328,7 @@ export function AdminCRM() {
     setDraggedOverCol(null);
   };
 
-  const handleDrop = (e: React.DragEvent, targetStatus: 'PENDING' | 'CONTACTED' | 'CONVERTED') => {
+  const handleDrop = (e: React.DragEvent, targetStatus: string) => {
     e.preventDefault();
     setDraggedOverCol(null);
     const leadId = e.dataTransfer.getData('text/plain');
@@ -456,7 +585,7 @@ export function AdminCRM() {
               CRM Yönetimi
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              Potansiyel adayları ve üye başvurularını yönetin, Excel import gerçekleştirin ve reddedilen kayıtları takip edin.
+              Potansiyel adayları yönetin, Kanban kolonlarını özelleştirin, Excel aktarımı yapın ve reddedilenleri takip edin.
             </p>
           </div>
           
@@ -725,7 +854,7 @@ export function AdminCRM() {
                 </button>
               </div>
 
-              <div className="text-xs text-slate-450 font-bold">
+              <div className="text-xs text-slate-455 font-bold">
                 * Kalıcı reddedilenlerin yeni başvuruları otomatik olarak engellenir.
               </div>
             </div>
@@ -808,7 +937,7 @@ export function AdminCRM() {
                                   <Eye className="w-3.5 h-3.5 mr-1" /> İncele
                                 </Button>
                                 <Button 
-                                  onClick={() => handleStatusChange(lead.id, 'PENDING', { rejection_type: undefined, rejection_reason: undefined })}
+                                  onClick={() => handleStatusChange(lead.id, 'PENDING', { rejection_type: undefined, rejection_reason: undefined, rejected_at: undefined })}
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 border-emerald-100 hover:bg-emerald-50 text-emerald-650 text-xs px-2.5"
@@ -958,8 +1087,8 @@ export function AdminCRM() {
               </div>
             ) : viewMode === 'kanban' ? (
               /* KANBAN BOARD VIEW */
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                {COLUMNS.map((col) => {
+              <div className="flex gap-6 overflow-x-auto pb-6 items-start select-none scrollbar-thin scrollbar-thumb-slate-200">
+                {columns.map((col) => {
                   const colLeads = filteredLeads.filter(l => l.status === col.id);
                   const isOver = draggedOverCol === col.id;
 
@@ -969,17 +1098,37 @@ export function AdminCRM() {
                       onDragOver={(e) => handleDragOver(e, col.id)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, col.id)}
-                      className={`flex flex-col max-h-[80vh] rounded-2xl border transition-all duration-200 ${col.bgColor} ${isOver ? 'border-slate-950 ring-4 ring-slate-950/5 scale-[1.01]' : col.borderColor}`}
+                      className={`flex flex-col max-h-[80vh] w-[300px] flex-shrink-0 rounded-2xl border transition-all duration-200 group/col ${col.bgColor} ${isOver ? 'border-slate-950 ring-4 ring-slate-950/5 scale-[1.01]' : col.borderColor}`}
                     >
                       {/* Column Header */}
                       <div className="p-4 border-b flex items-center justify-between font-bold text-sm bg-white rounded-t-2xl">
-                        <div className="flex items-center gap-2 text-slate-800">
-                          <col.icon className="w-4 h-4 text-slate-500" />
-                          <span>{col.title}</span>
+                        <div className="flex items-center gap-2 text-slate-800 truncate max-w-[65%]">
+                          <col.icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                          <span className="truncate" title={col.title}>{col.title}</span>
+                          <span className="text-slate-400 font-medium text-xs ml-1 flex-shrink-0">
+                            ({colLeads.length})
+                          </span>
                         </div>
-                        <span className="text-slate-450 bg-slate-100 px-2 py-0.5 rounded-full text-xs">
-                          {colLeads.length}
-                        </span>
+                        
+                        {/* Header Settings Actions */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover/col:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => startEditColumn(col)} 
+                            className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                            title="Kolonu Düzenle"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          {col.id !== 'PENDING' && col.id !== 'CONVERTED' && (
+                            <button 
+                              onClick={() => handleDeleteColumn(col.id)} 
+                              className="p-1 hover:bg-rose-50 rounded text-rose-600"
+                              title="Kolonu Sil"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Column Body / Cards List */}
@@ -1010,7 +1159,7 @@ export function AdminCRM() {
                               </p>
 
                               {lead.form_data?.city && (
-                                <p className="text-[11px] text-slate-450 font-bold mb-3 flex items-center gap-1">
+                                <p className="text-[11px] text-slate-455 font-bold mb-3 flex items-center gap-1">
                                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                   Şehir: {lead.form_data.city}
                                 </p>
@@ -1065,6 +1214,16 @@ export function AdminCRM() {
                     </div>
                   );
                 })}
+
+                {/* Add Column Card */}
+                <div 
+                  onClick={startAddColumn}
+                  className="flex flex-col min-w-[280px] h-32 border-2 border-dashed border-slate-300 hover:border-slate-450 rounded-2xl items-center justify-center text-slate-500 hover:text-slate-700 cursor-pointer transition-all bg-white/50 hover:bg-white shadow-sm flex-shrink-0"
+                >
+                  <span className="flex items-center gap-1.5 font-bold text-sm">
+                    <Plus className="w-4.5 h-4.5" /> Kolon Ekle
+                  </span>
+                </div>
               </div>
             ) : (
               /* LIST / TABLE VIEW */
@@ -1121,9 +1280,9 @@ export function AdminCRM() {
                                   disabled={isUpdating === lead.id}
                                   className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-slate-950/10 cursor-pointer"
                                 >
-                                  <option value="PENDING">Yeni Başvuru</option>
-                                  <option value="CONTACTED">İletişimde</option>
-                                  <option value="CONVERTED">Üye Oldu</option>
+                                  {columns.map((col) => (
+                                    <option key={col.id} value={col.id}>{col.title}</option>
+                                  ))}
                                   <option value="REJECTED">Kayıt Reddet</option>
                                 </select>
                               </td>
@@ -1169,6 +1328,93 @@ export function AdminCRM() {
           </>
         )}
 
+        {/* Add/Edit Column Settings Modal */}
+        {colModalOpen && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-55 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 border border-slate-100 space-y-5 animate-in zoom-in duration-200">
+              <div className="flex items-center justify-between border-b pb-3">
+                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Kanban className="w-5 h-5 text-slate-700" />
+                  {editingCol ? 'Kolonu Düzenle' : 'Yeni Kolon Ekle'}
+                </h3>
+                <button 
+                  onClick={() => {
+                    setColModalOpen(false);
+                    setEditingCol(null);
+                    setColTitle('');
+                  }}
+                  className="text-slate-400 hover:text-slate-650 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-slate-450 font-bold uppercase tracking-wider mb-2">
+                    Kolon Başlığı
+                  </label>
+                  <input
+                    type="text"
+                    value={colTitle}
+                    onChange={(e) => setColTitle(e.target.value)}
+                    placeholder="Örn: Sıcak Takip, Görüşme Yapıldı..."
+                    className="w-full border rounded-xl p-3 text-xs focus:ring-2 focus:ring-slate-950/10 focus:border-slate-950 outline-none font-bold"
+                    maxLength={30}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-450 font-bold uppercase tracking-wider mb-2">
+                    Renk Paleti Seçin
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {COLOR_SCHEMES.map((scheme, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedColorScheme(idx)}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all ${
+                          selectedColorScheme === idx 
+                            ? 'border-slate-900 ring-2 ring-slate-950/5 bg-slate-50' 
+                            : 'border-slate-100 hover:bg-slate-50 bg-white'
+                        }`}
+                      >
+                        <span className={scheme.color}>{scheme.name}</span>
+                        <span className={`w-3.5 h-3.5 rounded-full border border-slate-200`} style={{ backgroundColor: scheme.bgColor.includes('bg-') ? undefined : scheme.bgColor }}>
+                          <span className={`w-full h-full rounded-full block ${scheme.bgColor.split(' ')[0]}`}></span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t">
+                <Button 
+                  onClick={() => {
+                    setColModalOpen(false);
+                    setEditingCol(null);
+                    setColTitle('');
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Vazgeç
+                </Button>
+                <Button 
+                  onClick={handleSaveColumn}
+                  disabled={!colTitle.trim()}
+                  className="bg-slate-900 hover:bg-slate-800 text-white text-xs px-4"
+                >
+                  Kaydet
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Rejection Cause Modal (Popup Card) */}
         {rejectModalOpen && rejectTargetLead && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-55">
@@ -1194,7 +1440,7 @@ export function AdminCRM() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-450 font-bold uppercase tracking-wider mb-2">
+                  <label className="block text-xs text-slate-455 font-bold uppercase tracking-wider mb-2">
                     Reddetme Türü
                   </label>
                   <div className="space-y-2">
@@ -1252,7 +1498,7 @@ export function AdminCRM() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-450 font-bold uppercase tracking-wider mb-2">
+                  <label className="block text-xs text-slate-455 font-bold uppercase tracking-wider mb-2">
                     Reddetme Nedeni / Gerekçe <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -1304,7 +1550,7 @@ export function AdminCRM() {
                 </div>
                 <button 
                   onClick={() => setSelectedLead(null)} 
-                  className="text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors"
+                  className="text-slate-400 hover:text-slate-650 bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors"
                 >
                   <span className="sr-only">Kapat</span>
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1349,24 +1595,22 @@ export function AdminCRM() {
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-sm font-semibold text-slate-700">Başvuru Durumu:</div>
                     <div className="flex gap-2 flex-wrap">
-                      {(['PENDING', 'CONTACTED', 'CONVERTED'] as const).map((status) => (
+                      {columns.map((col) => (
                         <button
-                          key={status}
-                          onClick={() => handleStatusChange(selectedLead.id, status)}
+                          key={col.id}
+                          onClick={() => handleStatusChange(selectedLead.id, col.id)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                            selectedLead.status === status
+                            selectedLead.status === col.id
                               ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                              : 'bg-white text-slate-650 hover:bg-slate-100 border-slate-200'
+                              : 'bg-white text-slate-655 hover:bg-slate-100 border-slate-200'
                           }`}
                         >
-                          {status === 'PENDING' && 'Yeni Başvuru'}
-                          {status === 'CONTACTED' && 'İletişimde'}
-                          {status === 'CONVERTED' && 'Üye Yap'}
+                          {col.title}
                         </button>
                       ))}
                       <button
                         onClick={() => startRejectionProcess(selectedLead)}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-200 bg-rose-50 text-rose-650 hover:bg-rose-100 transition-all"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-250 bg-rose-50 text-rose-650 hover:bg-rose-100 transition-all"
                       >
                         Reddet / Ele
                       </button>

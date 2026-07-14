@@ -17,6 +17,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { AdminEvents } from './pages/AdminEvents';
 import { UserEvents } from './pages/UserEvents';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminCRM } from './pages/AdminCRM';
 import { AdminMembers } from './pages/AdminMembers';
 import { MemberProfile } from './pages/MemberProfile';
 import { AdminSubscriptions } from './pages/AdminSubscriptions';
@@ -204,6 +205,7 @@ function App() {
               <Route path="/events" element={<UserEvents />} />
               <Route path="/admin/events" element={<AdminEvents />} />
               <Route path="/admin/visitors" element={<AdminVisitors />} />
+              <Route path="/admin/crm" element={<AdminCRM />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/blogs" element={<AdminBlogs />} />
               <Route path="/admin/blogs/:id" element={<AdminBlogEditor />} />

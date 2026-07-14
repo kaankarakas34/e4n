@@ -17,7 +17,8 @@ import {
   Settings,
   Clock,
   UserPlus,
-  Mail
+  Mail,
+  FolderKanban
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -148,6 +149,14 @@ export function AdminDashboard() {
               bg="bg-purple-50 hover:bg-purple-100"
               onClick={() => navigate('/admin/visitors')}
               description="Yeni ziyaretçi başvurularını inceleyin."
+            />
+            <QuickActionCard
+              title="CRM Yönetimi"
+              icon={FolderKanban}
+              color="text-rose-650"
+              bg="bg-rose-50 hover:bg-rose-100"
+              onClick={() => navigate('/admin/crm')}
+              description="Adayları Kanban ve liste görünümüyle takip edin."
             />
             <QuickActionCard
               title="Üye Yönetimi"

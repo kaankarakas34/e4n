@@ -10,7 +10,7 @@ import {
   Phone, Briefcase, Eye, Trash2, CheckCircle, Clock, 
   XCircle, AlertCircle, RefreshCw, ChevronRight, UserCheck,
   Upload, FileText, Check, AlertTriangle, Play, X, Ban, Armchair,
-  Plus, Edit2, GraduationCap, Users
+  Plus, Edit2, GraduationCap, Users, Database
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -90,7 +90,7 @@ export function AdminCRM() {
   const [loading, setLoading] = useState(true);
   
   // CRM Navigation Tabs
-  const [crmTab, setCrmTab] = useState<'active' | 'education' | 'evaluation' | 'meta' | 'import' | 'rejected' | 'full_seat'>('active');
+  const [crmTab, setCrmTab] = useState<'active' | 'education' | 'evaluation' | 'meta' | 'legacy' | 'import' | 'rejected' | 'full_seat'>('active');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +126,7 @@ export function AdminCRM() {
   const [importProgress, setImportProgress] = useState(0);
 
   // File import source types
-  const [importSourceType, setImportSourceType] = useState<'meta_import' | 'education_application' | null>(null);
+  const [importSourceType, setImportSourceType] = useState<'meta_import' | 'education_application' | 'legacy_data' | null>(null);
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [importSourceModalOpen, setImportSourceModalOpen] = useState(false);
 
@@ -396,6 +396,8 @@ export function AdminCRM() {
         return null; // Removed to prevent layout overflows
       case 'meta_import':
         return <Badge className="bg-blue-100 text-blue-800 border border-blue-200">Meta Reklam</Badge>;
+      case 'legacy_data':
+        return <Badge className="bg-slate-150 text-slate-700 border border-slate-250">Eski Data</Badge>;
       default:
         return <Badge className="bg-slate-100 text-slate-800 border border-slate-200">Web</Badge>;
     }
@@ -409,6 +411,8 @@ export function AdminCRM() {
         return 'Değerlendirme Formu';
       case 'meta_import':
         return 'Meta Reklam Formu';
+      case 'legacy_data':
+        return 'Eski Data / Arşiv';
       default:
         return 'Web Sitesi Başvurusu';
     }
@@ -505,7 +509,7 @@ export function AdminCRM() {
     setImportSourceModalOpen(true);
   };
 
-  const parseFileWithSource = (file: File, sourceType: 'meta_import' | 'education_application') => {
+  const parseFileWithSource = (file: File, sourceType: 'meta_import' | 'education_application' | 'legacy_data') => {
     setImportSourceType(sourceType);
     setImportFile(file);
     const reader = new FileReader();
@@ -594,6 +598,8 @@ export function AdminCRM() {
     // Auto redirect to correct source category
     if (importSourceType === 'education_application') {
       setCrmTab('education');
+    } else if (importSourceType === 'legacy_data') {
+      setCrmTab('legacy');
     } else {
       setCrmTab('meta');
     }
@@ -611,7 +617,7 @@ export function AdminCRM() {
     if (!matchesSearch) return false;
 
     if (crmTab === 'active') {
-      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source !== 'education_application' && lead.source !== 'on_degerlendirme' && lead.source !== 'meta_import';
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source !== 'education_application' && lead.source !== 'on_degerlendirme' && lead.source !== 'meta_import' && lead.source !== 'legacy_data';
     }
     if (crmTab === 'education') {
       return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'education_application';
@@ -621,6 +627,9 @@ export function AdminCRM() {
     }
     if (crmTab === 'meta') {
       return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'meta_import';
+    }
+    if (crmTab === 'legacy') {
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'legacy_data';
     }
     if (crmTab === 'rejected') {
       return lead.status === 'REJECTED';
@@ -665,7 +674,7 @@ export function AdminCRM() {
           >
             <Users className="w-3.5 h-3.5" /> Genel Adaylar
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'active' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
-              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source !== 'education_application' && l.source !== 'on_degerlendirme' && l.source !== 'meta_import').length}
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source !== 'education_application' && l.source !== 'on_degerlendirme' && l.source !== 'meta_import' && l.source !== 'legacy_data').length}
             </span>
           </button>
           
@@ -700,6 +709,16 @@ export function AdminCRM() {
           </button>
 
           <button
+            onClick={() => { setCrmTab('legacy'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'legacy' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <Database className="w-3.5 h-3.5" /> Eski Data
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'legacy' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source === 'legacy_data').length}
+            </span>
+          </button>
+
+          <button
             onClick={() => { setCrmTab('import'); setSearchTerm(''); }}
             className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'import' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
           >
@@ -728,7 +747,7 @@ export function AdminCRM() {
         </div>
 
         {/* Filter Toolbar (Search & View Mode Toggle) */}
-        {(crmTab === 'active' || crmTab === 'education' || crmTab === 'evaluation' || crmTab === 'meta') && (
+        {(crmTab === 'active' || crmTab === 'education' || crmTab === 'evaluation' || crmTab === 'meta' || crmTab === 'legacy') && (
           <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in duration-200">
             <div className="relative w-full sm:w-80">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -1160,6 +1179,100 @@ export function AdminCRM() {
               </div>
             </div>
           </div>
+        ) : crmTab === 'legacy' ? (
+          /* ESKİ DATA TAB VIEW */
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-left">
+                  <thead className="bg-slate-50 text-slate-550 text-xs font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">Ad Soyad / İletişim</th>
+                      <th className="px-6 py-4">Sektör / Şehir</th>
+                      <th className="px-6 py-4">Durum</th>
+                      <th className="px-6 py-4">İçe Aktarım Tarihi</th>
+                      <th className="px-6 py-4 text-right">İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200 text-sm">
+                    {filteredLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-12 text-slate-500">
+                          Eski data kapsamında kayıtlı aday bulunamadı.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredLeads.map((lead) => (
+                        <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-900">{lead.name}</div>
+                            <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
+                              {lead.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-slate-400" /> {lead.email}</span>}
+                              {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-400" /> {lead.phone}</span>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
+                            {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <select
+                              value={lead.status}
+                              onChange={(e) => {
+                                if (e.target.value === 'REJECTED') {
+                                  startRejectionProcess(lead);
+                                } else {
+                                  handleStatusChange(lead.id, e.target.value as any);
+                                }
+                              }}
+                              disabled={isUpdating === lead.id}
+                              className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-slate-950/10 cursor-pointer"
+                            >
+                              {columns.map((col) => (
+                                <option key={col.id} value={col.id}>{col.title}</option>
+                              ))}
+                              <option value="REJECTED">Kayıt Reddet</option>
+                            </select>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
+                            {new Date(lead.created_at).toLocaleDateString('tr-TR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                onClick={() => setSelectedLead(lead)} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 border-slate-200 text-xs px-2.5"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" /> İncele
+                              </Button>
+                              <Button 
+                                onClick={() => startRejectionProcess(lead)} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 border-rose-100 hover:bg-rose-50 text-rose-655 text-xs px-2.5"
+                              >
+                                <Ban className="w-3.5 h-3.5 mr-1" /> Reddet
+                              </Button>
+                              <Button 
+                                onClick={() => handleDeleteLead(lead.id)} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 border-red-100 hover:bg-red-50 text-red-655 text-xs px-2.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             {loading ? (
@@ -1542,6 +1655,19 @@ export function AdminCRM() {
                   <span className="font-bold text-slate-900 text-sm">Eğitim Datası (Eğitim Başvurusu)</span>
                   <span className="text-xs text-slate-455 mt-1 leading-normal text-center">
                     Networking eğitimi başvurusu olarak içeri aktarılır.
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => parseFileWithSource(pendingImportFile, 'legacy_data')}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
+                >
+                  <span className="w-10 h-10 bg-slate-50 text-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-slate-250 transition-colors">
+                    <Database className="w-5 h-5 text-slate-600 animate-pulse" />
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm">Eski Data (Geçmiş Başvurular)</span>
+                  <span className="text-xs text-slate-450 mt-1 leading-normal text-center">
+                    Arşiv amaçlı geçmiş başvuru verileri olarak içeri aktarılır.
                   </span>
                 </button>
               </div>

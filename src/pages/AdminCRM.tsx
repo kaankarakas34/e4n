@@ -393,7 +393,7 @@ export function AdminCRM() {
       case 'education_application':
         return <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Eğitim</Badge>;
       case 'on_degerlendirme':
-        return <Badge className="bg-cyan-100 text-cyan-800 border border-cyan-200">Ön Değerlendirme</Badge>;
+        return null; // Removed to prevent layout overflows
       case 'meta_import':
         return <Badge className="bg-blue-100 text-blue-800 border border-blue-200">Meta Reklam</Badge>;
       default:
@@ -406,7 +406,7 @@ export function AdminCRM() {
       case 'education_application':
         return 'Eğitim Programı Başvurusu';
       case 'on_degerlendirme':
-        return 'Ön Değerlendirme Formu';
+        return 'Değerlendirme Formu';
       case 'meta_import':
         return 'Meta Reklam Formu';
       default:

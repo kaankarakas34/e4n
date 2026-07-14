@@ -54,7 +54,12 @@ export function AdminVisitors() {
 
     const getFilteredItems = () => {
         if (activeTab === 'visitors') {
-            return visitors.filter(v => v.source !== 'education_application');
+            return visitors.filter(v => 
+                v.source !== 'education_application' && 
+                v.source !== 'on_degerlendirme' && 
+                v.source !== 'meta_import' && 
+                v.source !== 'legacy_data'
+            );
         } else if (activeTab === 'education') {
             return visitors.filter(v => v.source === 'education_application');
         } else {
@@ -203,7 +208,12 @@ export function AdminVisitors() {
                         className={`pb-2 px-4 text-sm font-medium transition-colors border-b-2 flex items-center ${activeTab === 'visitors' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
                         <FileText className="w-4 h-4 mr-2" />
-                        Ziyaretçi Formları ({visitors.filter(v => v.source !== 'education_application').length})
+                        Ziyaretçi Formları ({visitors.filter(v => 
+                            v.source !== 'education_application' && 
+                            v.source !== 'on_degerlendirme' && 
+                            v.source !== 'meta_import' && 
+                            v.source !== 'legacy_data'
+                        ).length})
                     </button>
                     <button
                         onClick={() => setActiveTab('members')}

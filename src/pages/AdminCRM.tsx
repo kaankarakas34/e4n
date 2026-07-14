@@ -352,11 +352,31 @@ export function AdminCRM() {
   const getRowVal = (row: any, keywords: string[]) => {
     const keys = Object.keys(row);
     
+    // Normalization helper (case & Turkish-character insensitive)
+    const norm = (str: string) => {
+      return String(str)
+        .replace(/İ/g, 'i')
+        .replace(/ı/g, 'i')
+        .replace(/I/g, 'i')
+        .replace(/Ğ/g, 'g')
+        .replace(/ğ/g, 'g')
+        .replace(/Ü/g, 'u')
+        .replace(/ü/g, 'u')
+        .replace(/Ş/g, 's')
+        .replace(/ş/g, 's')
+        .replace(/Ö/g, 'o')
+        .replace(/ö/g, 'o')
+        .replace(/Ç/g, 'c')
+        .replace(/ç/g, 'c')
+        .toLowerCase()
+        .replace(/[\s_?\/\\()\-]/g, '');
+    };
+
     // First pass: exact matches (case-insensitive and clean-character-insensitive)
     for (const k of keys) {
-      const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+      const cleanK = norm(k);
       for (const kw of keywords) {
-        const cleanKw = kw.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+        const cleanKw = norm(kw);
         if (cleanK === cleanKw) {
           return row[k];
         }
@@ -364,10 +384,10 @@ export function AdminCRM() {
     }
 
     // Second pass: partial matches (includes) for keywords > 3 chars
-    const isSearchingName = keywords.includes('first_name') || keywords.includes('name') || keywords.includes('ad') || keywords.includes('adsoyad');
+    const isSearchingName = keywords.includes('first_name') || keywords.includes('name') || keywords.includes('ad') || keywords.includes('adsoyad') || keywords.includes('isim');
     
     for (const k of keys) {
-      const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+      const cleanK = norm(k);
       
       // If we are looking for a person's name, skip common marketing campaign/form columns containing "name" or "id"
       if (isSearchingName) {
@@ -377,7 +397,7 @@ export function AdminCRM() {
       }
       
       for (const kw of keywords) {
-        const cleanKw = kw.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+        const cleanKw = norm(kw);
         if (cleanKw.length <= 3) continue; // Skip short keywords in partial matching to avoid false positives (like 'il' in 'email' or 'ad' in 'adid')
         
         if (cleanK.includes(cleanKw) || cleanKw.includes(cleanK)) {

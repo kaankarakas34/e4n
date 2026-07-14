@@ -1187,8 +1187,10 @@ export function AdminCRM() {
                 <table className="min-w-full divide-y divide-gray-200 text-left">
                   <thead className="bg-slate-50 text-slate-550 text-xs font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Ad Soyad / İletişim</th>
-                      <th className="px-6 py-4">Sektör / Şehir</th>
+                      <th className="px-6 py-4">Ad Soyad</th>
+                      <th className="px-6 py-4">E-posta</th>
+                      <th className="px-6 py-4">Sektör / Meslek</th>
+                      <th className="px-6 py-4">İl</th>
                       <th className="px-6 py-4">Durum</th>
                       <th className="px-6 py-4">İçe Aktarım Tarihi</th>
                       <th className="px-6 py-4 text-right">İşlemler</th>
@@ -1197,23 +1199,24 @@ export function AdminCRM() {
                   <tbody className="bg-white divide-y divide-gray-200 text-sm">
                     {filteredLeads.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-12 text-slate-500">
+                        <td colSpan={7} className="text-center py-12 text-slate-500">
                           Eski data kapsamında kayıtlı aday bulunamadı.
                         </td>
                       </tr>
                     ) : (
                       filteredLeads.map((lead) => (
                         <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-slate-900">{lead.name}</div>
-                            <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
-                              {lead.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-slate-400" /> {lead.email}</span>}
-                              {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-400" /> {lead.phone}</span>}
-                            </div>
+                          <td className="px-6 py-4 font-bold text-slate-900">
+                            {lead.name}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
-                            {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
+                          <td className="px-6 py-4 text-slate-655">
+                            {lead.email || <span className="text-slate-400 italic">Belirtilmemiş</span>}
+                          </td>
+                          <td className="px-6 py-4 text-slate-700 font-medium">
+                            {lead.profession || <span className="text-slate-400 italic">Belirtilmemiş</span>}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 font-medium">
+                            {lead.form_data?.city || <span className="text-slate-400 italic">Belirtilmemiş</span>}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select

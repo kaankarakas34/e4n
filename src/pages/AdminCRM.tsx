@@ -349,7 +349,7 @@ export function AdminCRM() {
   const getRowVal = (row: any, keywords: string[]) => {
     const keys = Object.keys(row);
     
-    // First pass: exact matches
+    // First pass: exact matches (case-insensitive and clean-character-insensitive)
     for (const k of keys) {
       const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
       for (const kw of keywords) {
@@ -360,21 +360,23 @@ export function AdminCRM() {
       }
     }
 
-    // Second pass: partial matches (includes)
-    const isSearchingName = keywords.includes('first_name') || keywords.includes('name') || keywords.includes('ad');
+    // Second pass: partial matches (includes) for keywords > 3 chars
+    const isSearchingName = keywords.includes('first_name') || keywords.includes('name') || keywords.includes('ad') || keywords.includes('adsoyad');
     
     for (const k of keys) {
       const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
       
-      // If we are looking for a person's name, skip common marketing campaign/form columns containing "name"
+      // If we are looking for a person's name, skip common marketing campaign/form columns containing "name" or "id"
       if (isSearchingName) {
-        if (cleanK.includes('campaign') || cleanK.includes('adset') || cleanK.includes('form') || cleanK.includes('creative') || cleanK.includes('adname')) {
+        if (cleanK.includes('campaign') || cleanK.includes('adset') || cleanK.includes('form') || cleanK.includes('creative') || cleanK.includes('adid') || cleanK.includes('adname') || cleanK === 'id' || cleanK === 'leadid') {
           continue;
         }
       }
       
       for (const kw of keywords) {
         const cleanKw = kw.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+        if (cleanKw.length <= 3) continue; // Skip short keywords in partial matching to avoid false positives (like 'il' in 'email' or 'ad' in 'adid')
+        
         if (cleanK.includes(cleanKw) || cleanKw.includes(cleanK)) {
           return row[k];
         }
@@ -405,19 +407,19 @@ export function AdminCRM() {
 
     data.forEach((row, index) => {
       // Map columns
-      const name = getRowVal(row, ['first_name', 'name', 'ad', 'adsoyad']) || '';
-      const email = getRowVal(row, ['email', 'e-mail', 'eposta']) || '';
-      const phone = getRowVal(row, ['phone_number', 'phone', 'tel', 'telefon']) || '';
+      const name = getRowVal(row, ['first_name', 'first name', 'firstname', 'name', 'ad', 'adı', 'adsoyad', 'ad soyad', 'ad_soyad']) || '';
+      const email = getRowVal(row, ['email', 'e-mail', 'eposta', 'e-posta']) || '';
+      const phone = getRowVal(row, ['phone_number', 'phone', 'tel', 'telefon', 'telefon_numarası', 'telefon numarası']) || '';
       
-      const workStatusVal = getRowVal(row, ['çalışma_durumunuz', 'unvan', 'calisma_durumu']) || '';
-      const sectorVal = getRowVal(row, ['faaliyet_gösterdiğiniz_sektör', 'sektor', 'is_kolu', 'faaliyet_gosterilen']) || '';
+      const workStatusVal = getRowVal(row, ['çalışma_durumunuz', 'unvan', 'ünvan', 'calisma_durumu', 'calisma_durumunuz_/_unvaniniz']) || '';
+      const sectorVal = getRowVal(row, ['faaliyet_gösterdiğiniz_sektör', 'sektör', 'sektor', 'is_kolu', 'iş_kolu', 'faaliyet_gosterilen']) || '';
       
       // If we are importing training data, prioritize work status as the primary profession
       const profession = importSourceType === 'education_application'
         ? (workStatusVal || sectorVal)
         : (sectorVal || workStatusVal);
 
-      const city = getRowVal(row, ['city', 'sehir', 'il']) || '';
+      const city = getRowVal(row, ['city', 'sehir', 'şehir', 'il', 'ili', 'sehirler', 'şehirler']) || '';
       const created_time = getRowVal(row, ['created_time', 'tarih', 'created_at']) || '';
       const platform = getRowVal(row, ['platform']) || '';
       const own_business = getRowVal(row, ['kendi_işinizin_sahibi_misiniz', 'kendi_isiniz', 'sahibi_misiniz', 'is_sahibi']) || '';

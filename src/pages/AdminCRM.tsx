@@ -348,8 +348,31 @@ export function AdminCRM() {
   // Helper keyword matcher
   const getRowVal = (row: any, keywords: string[]) => {
     const keys = Object.keys(row);
+    
+    // First pass: exact matches
     for (const k of keys) {
       const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+      for (const kw of keywords) {
+        const cleanKw = kw.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+        if (cleanK === cleanKw) {
+          return row[k];
+        }
+      }
+    }
+
+    // Second pass: partial matches (includes)
+    const isSearchingName = keywords.includes('first_name') || keywords.includes('name') || keywords.includes('ad');
+    
+    for (const k of keys) {
+      const cleanK = k.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
+      
+      // If we are looking for a person's name, skip common marketing campaign/form columns containing "name"
+      if (isSearchingName) {
+        if (cleanK.includes('campaign') || cleanK.includes('adset') || cleanK.includes('form') || cleanK.includes('creative') || cleanK.includes('adname')) {
+          continue;
+        }
+      }
+      
       for (const kw of keywords) {
         const cleanKw = kw.toLowerCase().replace(/[\s_?\/\\()\-]/g, '');
         if (cleanK.includes(cleanKw) || cleanKw.includes(cleanK)) {

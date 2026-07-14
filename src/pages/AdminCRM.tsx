@@ -1188,6 +1188,7 @@ export function AdminCRM() {
                   <thead className="bg-slate-50 text-slate-550 text-xs font-bold uppercase tracking-wider">
                     <tr>
                       <th className="px-6 py-4">Ad Soyad</th>
+                      <th className="px-6 py-4">Telefon</th>
                       <th className="px-6 py-4">E-posta</th>
                       <th className="px-6 py-4">Sektör / Meslek</th>
                       <th className="px-6 py-4">İl</th>
@@ -1199,7 +1200,7 @@ export function AdminCRM() {
                   <tbody className="bg-white divide-y divide-gray-200 text-sm">
                     {filteredLeads.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-12 text-slate-500">
+                        <td colSpan={8} className="text-center py-12 text-slate-500">
                           Eski data kapsamında kayıtlı aday bulunamadı.
                         </td>
                       </tr>
@@ -1208,6 +1209,9 @@ export function AdminCRM() {
                         <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 font-bold text-slate-900">
                             {lead.name}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 font-medium">
+                            {lead.phone || <span className="text-slate-400 italic">Belirtilmemiş</span>}
                           </td>
                           <td className="px-6 py-4 text-slate-655">
                             {lead.email || <span className="text-slate-400 italic">Belirtilmemiş</span>}

@@ -10,7 +10,7 @@ import {
   Phone, Briefcase, Eye, Trash2, CheckCircle, Clock, 
   XCircle, AlertCircle, RefreshCw, ChevronRight, UserCheck,
   Upload, FileText, Check, AlertTriangle, Play, X, Ban, Armchair,
-  Plus, Edit2, GraduationCap
+  Plus, Edit2, GraduationCap, Users
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -88,9 +88,12 @@ export function AdminCRM() {
   const [leads, setLeads] = useState<PublicVisitor[]>([]);
   const [columns, setColumns] = useState<Column[]>(DEFAULT_COLUMNS);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'import' | 'rejected' | 'full_seat'>('kanban');
+  
+  // CRM Navigation Tabs
+  const [crmTab, setCrmTab] = useState<'active' | 'education' | 'evaluation' | 'meta' | 'import' | 'rejected' | 'full_seat'>('active');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('all');
   const [selectedLead, setSelectedLead] = useState<PublicVisitor | null>(null);
   const [draggedOverCol, setDraggedOverCol] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -385,6 +388,32 @@ export function AdminCRM() {
     return undefined;
   };
 
+  const getSourceBadge = (source?: string) => {
+    switch (source) {
+      case 'education_application':
+        return <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Eğitim</Badge>;
+      case 'on_degerlendirme':
+        return <Badge className="bg-cyan-100 text-cyan-800 border border-cyan-200">Ön Değerlendirme</Badge>;
+      case 'meta_import':
+        return <Badge className="bg-blue-100 text-blue-800 border border-blue-200">Meta Reklam</Badge>;
+      default:
+        return <Badge className="bg-slate-100 text-slate-800 border border-slate-200">Web</Badge>;
+    }
+  };
+
+  const getSourceLabel = (source?: string) => {
+    switch (source) {
+      case 'education_application':
+        return 'Eğitim Programı Başvurusu';
+      case 'on_degerlendirme':
+        return 'Ön Değerlendirme Formu';
+      case 'meta_import':
+        return 'Meta Reklam Formu';
+      default:
+        return 'Web Sitesi Başvurusu';
+    }
+  };
+
   // Helper cleansers for robust duplicate matching
   const cleanPhoneStr = (phone?: string | number) => {
     if (!phone) return '';
@@ -561,11 +590,17 @@ export function AdminCRM() {
     setImportFile(null);
     setImportResults(null);
     setImportPreview([]);
-    setViewMode('kanban');
+    
+    // Auto redirect to correct source category
+    if (importSourceType === 'education_application') {
+      setCrmTab('education');
+    } else {
+      setCrmTab('meta');
+    }
     fetchLeads();
   };
 
-  // Filters
+  // Filter leads based on Tab and Search Term
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -573,111 +608,45 @@ export function AdminCRM() {
       (lead.profession && lead.profession.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (lead.company && lead.company.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesSource = 
-      sourceFilter === 'all' || 
-      lead.source === sourceFilter ||
-      (sourceFilter === 'web' && !lead.source);
+    if (!matchesSearch) return false;
 
-    return matchesSearch && matchesSource;
+    if (crmTab === 'active') {
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source !== 'education_application' && lead.source !== 'on_degerlendirme' && lead.source !== 'meta_import';
+    }
+    if (crmTab === 'education') {
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'education_application';
+    }
+    if (crmTab === 'evaluation') {
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'on_degerlendirme';
+    }
+    if (crmTab === 'meta') {
+      return lead.status !== 'REJECTED' && lead.status !== 'FULL_SEAT' && lead.source === 'meta_import';
+    }
+    if (crmTab === 'rejected') {
+      return lead.status === 'REJECTED';
+    }
+    if (crmTab === 'full_seat') {
+      return lead.status === 'FULL_SEAT';
+    }
+    return true;
   });
-
-  // Count leads by status
-  const rejectedLeadsCount = filteredLeads.filter(l => l.status === 'REJECTED').length;
-  const fullSeatLeadsCount = filteredLeads.filter(l => l.status === 'FULL_SEAT').length;
-
-  const getSourceBadge = (source?: string) => {
-    switch (source) {
-      case 'education_application':
-        return <Badge className="bg-purple-100 text-purple-800">Eğitim</Badge>;
-      case 'on_degerlendirme':
-        return <Badge className="bg-indigo-100 text-indigo-800">Değerlendirme</Badge>;
-      case 'meta_import':
-        return <Badge className="bg-emerald-100 text-emerald-800">Meta Excel</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">Genel Web</Badge>;
-    }
-  };
-
-  const getSourceLabel = (source?: string) => {
-    switch (source) {
-      case 'education_application': return 'Eğitim Başvurusu';
-      case 'on_degerlendirme': return 'Değerlendirme Formu';
-      case 'meta_import': return 'Meta CRM Veri Aktarımı';
-      default: return 'Web Ziyaretçi Formu';
-    }
-  };
-
-  if (!user || user.role !== 'ADMIN') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md p-6 bg-white rounded-2xl border shadow-sm">
-          <Shield className="h-12 w-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Erişim Kısıtlı</h2>
-          <p className="text-gray-500 mb-6">Bu sayfayı yalnızca yöneticiler görüntüleyebilir.</p>
-          <Button onClick={() => navigate('/dashboard')} variant="primary" className="w-full">
-            Panele Dön
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Page Header */}
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               CRM Yönetimi
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              Potansiyel adayları yönetin, Kanban kolonlarını özelleştirin, Excel aktarımı yapın ve reddedilenleri takip edin.
+              Başvuruları kanallara göre filtreleyin, Kanban board üzerinde sürükleyip bırakarak yönetin.
             </p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
-            {/* View Mode Tabs Navigation */}
-            <div className="bg-white border rounded-xl p-1 flex shadow-sm flex-wrap">
-              <button
-                onClick={() => setViewMode('kanban')}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${viewMode === 'kanban' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <Kanban className="w-3.5 h-3.5" /> Kanban
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${viewMode === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <List className="w-3.5 h-3.5" /> Liste
-              </button>
-              <button
-                onClick={() => setViewMode('import')}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${viewMode === 'import' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <Upload className="w-3.5 h-3.5" /> Excel Aktarımı
-              </button>
-              <button
-                onClick={() => setViewMode('rejected')}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${viewMode === 'rejected' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <Ban className="w-3.5 h-3.5" /> Reddedilenler
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${viewMode === 'rejected' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
-                  {rejectedLeadsCount}
-                </span>
-              </button>
-              <button
-                onClick={() => setViewMode('full_seat')}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${viewMode === 'full_seat' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-              >
-                <Armchair className="w-3.5 h-3.5" /> Dolu Koltuk
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${viewMode === 'full_seat' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
-                  {fullSeatLeadsCount}
-                </span>
-              </button>
-            </div>
-
             <Button onClick={fetchLeads} variant="outline" size="sm" className="h-10 border-slate-200">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
@@ -688,8 +657,111 @@ export function AdminCRM() {
           </div>
         </div>
 
+        {/* CRM Core Category Navigation Tabs */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-1 flex shadow-sm flex-wrap gap-1 mb-8">
+          <button
+            onClick={() => { setCrmTab('active'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'active' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <Users className="w-3.5 h-3.5" /> Genel Adaylar
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'active' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source !== 'education_application' && l.source !== 'on_degerlendirme' && l.source !== 'meta_import').length}
+            </span>
+          </button>
+          
+          <button
+            onClick={() => { setCrmTab('education'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'education' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <GraduationCap className="w-3.5 h-3.5" /> Eğitim Başvuruları
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'education' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source === 'education_application').length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setCrmTab('evaluation'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'evaluation' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <FileText className="w-3.5 h-3.5" /> Değerlendirme Formları
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'evaluation' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source === 'on_degerlendirme').length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setCrmTab('meta'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'meta' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <Ban className="w-3.5 h-3.5" /> Meta Reklam Leads
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'meta' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT' && l.source === 'meta_import').length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setCrmTab('import'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'import' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <Upload className="w-3.5 h-3.5" /> Excel Aktarımı
+          </button>
+
+          <button
+            onClick={() => { setCrmTab('rejected'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'rejected' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <XCircle className="w-3.5 h-3.5 animate-pulse" /> Reddedilenler
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'rejected' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status === 'REJECTED').length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setCrmTab('full_seat'); setSearchTerm(''); }}
+            className={`p-2.5 px-4 rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${crmTab === 'full_seat' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-655 hover:bg-slate-100'}`}
+          >
+            <Armchair className="w-3.5 h-3.5" /> Dolu Koltuk
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${crmTab === 'full_seat' ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-600'}`}>
+              {leads.filter(l => l.status === 'FULL_SEAT').length}
+            </span>
+          </button>
+        </div>
+
+        {/* Filter Toolbar (Search & View Mode Toggle) */}
+        {(crmTab === 'active' || crmTab === 'education' || crmTab === 'evaluation' || crmTab === 'meta') && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in duration-200">
+            <div className="relative w-full sm:w-80">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Search className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="İsim, e-posta veya meslek ara..."
+                className="pl-10 pr-4 py-2 w-full border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-950/10 focus:border-slate-950"
+              />
+            </div>
+
+            <div className="bg-slate-100 p-1 rounded-xl flex shadow-inner">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'kanban' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <Kanban className="w-3.5 h-3.5" /> Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <List className="w-3.5 h-3.5" /> Liste
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* View Mode content routing */}
-        {viewMode === 'import' ? (
+        {crmTab === 'import' ? (
           /* EXCEL IMPORT TAB */
           <div className="space-y-6">
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
@@ -736,7 +808,7 @@ export function AdminCRM() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border">
                     <div className="flex items-center gap-3">
-                      <div className="bg-white p-2.5 rounded-lg border text-slate-650">
+                      <div className="bg-white p-2.5 rounded-lg border text-slate-655">
                         <FileText className="w-6 h-6" />
                       </div>
                       <div>
@@ -870,7 +942,7 @@ export function AdminCRM() {
               )}
             </div>
           </div>
-        ) : viewMode === 'rejected' ? (
+        ) : crmTab === 'rejected' ? (
           /* REDDEDİLENLER TAB VIEW */
           <div className="space-y-6">
             {/* Sub Filters for Rejections */}
@@ -882,7 +954,7 @@ export function AdminCRM() {
                     rejectedSubFilter === 'all_rejected' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Tüm Reddedilenler ({filteredLeads.filter(l => l.status === 'REJECTED').length})
+                  Tüm Reddedilenler ({filteredLeads.length})
                 </button>
                 <button
                   onClick={() => setRejectedSubFilter('permanent')}
@@ -890,7 +962,7 @@ export function AdminCRM() {
                     rejectedSubFilter === 'permanent' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Kalıcı Reddedilenler ({filteredLeads.filter(l => l.status === 'REJECTED' && l.form_data?.rejection_type === 'permanent').length})
+                  Kalıcı Reddedilenler ({filteredLeads.filter(l => l.form_data?.rejection_type === 'permanent').length})
                 </button>
                 <button
                   onClick={() => setRejectedSubFilter('not_qualified')}
@@ -898,7 +970,7 @@ export function AdminCRM() {
                     rejectedSubFilter === 'not_qualified' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Not Qualified ({filteredLeads.filter(l => l.status === 'REJECTED' && l.form_data?.rejection_type === 'not_qualified').length})
+                  Not Qualified ({filteredLeads.filter(l => l.form_data?.rejection_type === 'not_qualified').length})
                 </button>
               </div>
 
@@ -924,7 +996,6 @@ export function AdminCRM() {
                   <tbody className="bg-white divide-y divide-gray-200 text-sm">
                     {filteredLeads
                       .filter(lead => {
-                        if (lead.status !== 'REJECTED') return false;
                         if (rejectedSubFilter === 'permanent') return lead.form_data?.rejection_type === 'permanent';
                         if (rejectedSubFilter === 'not_qualified') return lead.form_data?.rejection_type === 'not_qualified';
                         return true;
@@ -938,7 +1009,6 @@ export function AdminCRM() {
                     ) : (
                       filteredLeads
                         .filter(lead => {
-                          if (lead.status !== 'REJECTED') return false;
                           if (rejectedSubFilter === 'permanent') return lead.form_data?.rejection_type === 'permanent';
                           if (rejectedSubFilter === 'not_qualified') return lead.form_data?.rejection_type === 'not_qualified';
                           return true;
@@ -961,7 +1031,7 @@ export function AdminCRM() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
-                              {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
+                              {lead.form_data?.city && <div className="text-xs text-slate-455 mt-0.5">Şehir: {lead.form_data.city}</div>}
                             </td>
                             <td className="px-6 py-4 max-w-xs">
                               <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed" title={lead.form_data?.rejection_reason}>
@@ -1002,7 +1072,7 @@ export function AdminCRM() {
               </div>
             </div>
           </div>
-        ) : viewMode === 'full_seat' ? (
+        ) : crmTab === 'full_seat' ? (
           /* DOLU KOLTUK TAB VIEW */
           <div className="space-y-6">
             {/* Info Message Box */}
@@ -1031,61 +1101,59 @@ export function AdminCRM() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200 text-sm">
-                    {filteredLeads.filter(lead => lead.status === 'FULL_SEAT').length === 0 ? (
+                    {filteredLeads.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-12 text-slate-500">
                           Dolu koltuk nedeniyle ayrılmış aday bulunamadı.
                         </td>
                       </tr>
                     ) : (
-                      filteredLeads
-                        .filter(lead => lead.status === 'FULL_SEAT')
-                        .map((lead) => (
-                          <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-slate-900">{lead.name}</div>
-                              <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
-                                {lead.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {lead.email}</span>}
-                                {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {lead.phone}</span>}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
-                              {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
-                            </td>
-                            <td className="px-6 py-4 max-w-xs">
-                              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed" title={lead.form_data?.rejection_reason}>
-                                {lead.form_data?.rejection_reason || <span className="text-slate-400 italic">Sebep belirtilmemiş</span>}
-                              </p>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
-                              {lead.form_data?.rejected_at 
-                                ? new Date(lead.form_data.rejected_at).toLocaleDateString('tr-TR')
-                                : new Date(lead.created_at).toLocaleDateString('tr-TR')
-                              }
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button 
-                                  onClick={() => setSelectedLead(lead)} 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 border-slate-200 text-xs px-2.5"
-                                >
-                                  <Eye className="w-3.5 h-3.5 mr-1" /> İncele
-                                </Button>
-                                <Button 
-                                  onClick={() => handleStatusChange(lead.id, 'PENDING', { rejection_reason: undefined })}
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 border-emerald-100 hover:bg-emerald-50 text-emerald-650 text-xs px-2.5"
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5 mr-1" /> Yeniden Değerlendir
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                      filteredLeads.map((lead) => (
+                        <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-900">{lead.name}</div>
+                            <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
+                              {lead.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {lead.email}</span>}
+                              {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {lead.phone}</span>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
+                            {lead.form_data?.city && <div className="text-xs text-slate-455 mt-0.5">Şehir: {lead.form_data.city}</div>}
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed" title={lead.form_data?.rejection_reason}>
+                              {lead.form_data?.rejection_reason || <span className="text-slate-400 italic">Sebep belirtilmemiş</span>}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
+                            {lead.form_data?.rejected_at 
+                              ? new Date(lead.form_data.rejected_at).toLocaleDateString('tr-TR')
+                              : new Date(lead.created_at).toLocaleDateString('tr-TR')
+                            }
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button 
+                                onClick={() => setSelectedLead(lead)} 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 border-slate-200 text-xs px-2.5"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" /> İncele
+                              </Button>
+                              <Button 
+                                onClick={() => handleStatusChange(lead.id, 'PENDING', { rejection_reason: undefined })}
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 border-emerald-100 hover:bg-emerald-50 text-emerald-650 text-xs px-2.5"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Yeniden Değerlendir
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -1094,40 +1162,6 @@ export function AdminCRM() {
           </div>
         ) : (
           <>
-            {/* Filter Controls (Shown in Kanban/List) */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-              <div className="relative w-full md:w-80">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Search className="w-4 h-4" />
-                </span>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="İsim, e-posta veya meslek ara..."
-                  className="pl-10 pr-4 py-2 w-full border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-950/10 focus:border-slate-950"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Filter className="w-4 h-4" />
-                  <span>Kaynak Filtresi:</span>
-                </div>
-                <select
-                  value={sourceFilter}
-                  onChange={(e) => setSourceFilter(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-950/10 focus:border-slate-950"
-                >
-                  <option value="all">Tüm Kaynaklar</option>
-                  <option value="education_application">Eğitim Başvuruları</option>
-                  <option value="on_degerlendirme">Değerlendirme Başvuruları</option>
-                  <option value="meta_import">Meta Excel Aktarımı</option>
-                  <option value="web">Ziyaretçi Talepleri</option>
-                </select>
-              </div>
-            </div>
-
             {loading ? (
               <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
                 <RefreshCw className="w-10 h-10 animate-spin text-slate-400 mb-4" />
@@ -1149,7 +1183,7 @@ export function AdminCRM() {
                       className={`flex flex-col max-h-[80vh] w-[300px] flex-shrink-0 rounded-2xl border transition-all duration-200 group/col ${col.bgColor} ${isOver ? 'border-slate-950 ring-4 ring-slate-950/5 scale-[1.01]' : col.borderColor}`}
                     >
                       {/* Column Header */}
-                      <div className="p-4 border-b flex items-center justify-between font-bold text-sm bg-white rounded-t-2xl">
+                      <div className="p-4 border-b flex items-center justify-between font-bold text-sm bg-white rounded-t-2xl animate-in fade-in duration-200">
                         <div className="flex items-center gap-2 text-slate-800 truncate max-w-[65%]">
                           <col.icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
                           <span className="truncate" title={col.title}>{col.title}</span>
@@ -1275,7 +1309,7 @@ export function AdminCRM() {
               </div>
             ) : (
               /* LIST / TABLE VIEW */
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-200">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 text-left">
                     <thead className="bg-slate-50 text-slate-550 text-xs font-bold uppercase tracking-wider">
@@ -1289,71 +1323,69 @@ export function AdminCRM() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
-                      {filteredLeads.filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT').length === 0 ? (
+                      {filteredLeads.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="text-center py-12 text-slate-500">
-                            Arama kriterlerine uygun aktif aday bulunamadı.
+                            Bu aşamada kayıtlı aktif aday bulunamadı.
                           </td>
                         </tr>
                       ) : (
-                        filteredLeads
-                          .filter(l => l.status !== 'REJECTED' && l.status !== 'FULL_SEAT')
-                          .map((lead) => (
-                            <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900">{lead.name}</div>
-                                <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
-                                  {lead.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {lead.email}</span>}
-                                  {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {lead.phone}</span>}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {getSourceBadge(lead.source)}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
-                                {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
-                                {lead.company && <div className="text-xs text-slate-500 mt-0.5">{lead.company}</div>}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <select
-                                  value={lead.status}
-                                  onChange={(e) => {
-                                    if (e.target.value === 'REJECTED') {
-                                      startRejectionProcess(lead);
-                                    } else {
-                                      handleStatusChange(lead.id, e.target.value as any);
-                                    }
-                                  }}
-                                  disabled={isUpdating === lead.id}
-                                  className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-slate-950/10 cursor-pointer"
+                        filteredLeads.map((lead) => (
+                          <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-bold text-slate-900">{lead.name}</div>
+                              <div className="flex flex-col sm:flex-row gap-x-3 text-xs text-slate-500 mt-1">
+                                {lead.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {lead.email}</span>}
+                                {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {lead.phone}</span>}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getSourceBadge(lead.source)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-slate-700">{lead.profession || '-'}</div>
+                              {lead.form_data?.city && <div className="text-xs text-slate-450 mt-0.5">Şehir: {lead.form_data.city}</div>}
+                              {lead.company && <div className="text-xs text-slate-500 mt-0.5">{lead.company}</div>}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <select
+                                value={lead.status}
+                                onChange={(e) => {
+                                  if (e.target.value === 'REJECTED') {
+                                    startRejectionProcess(lead);
+                                  } else {
+                                    handleStatusChange(lead.id, e.target.value as any);
+                                  }
+                                }}
+                                disabled={isUpdating === lead.id}
+                                className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-slate-950/10 cursor-pointer"
+                              >
+                                {columns.map((col) => (
+                                  <option key={col.id} value={col.id}>{col.title}</option>
+                                ))}
+                                <option value="REJECTED">Kayıt Reddet</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
+                              {new Date(lead.created_at).toLocaleDateString('tr-TR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button 
+                                  onClick={() => setSelectedLead(lead)} 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 border-slate-200 text-xs px-2.5"
                                 >
-                                  {columns.map((col) => (
-                                    <option key={col.id} value={col.id}>{col.title}</option>
-                                  ))}
-                                  <option value="REJECTED">Kayıt Reddet</option>
-                                </select>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
-                                {new Date(lead.created_at).toLocaleDateString('tr-TR')}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Button 
-                                    onClick={() => setSelectedLead(lead)} 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="h-8 border-slate-200 text-xs px-2.5"
-                                  >
-                                    <Eye className="w-3.5 h-3.5 mr-1" /> İncele
-                                  </Button>
-                                  <Button 
-                                    onClick={() => startRejectionProcess(lead)} 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="h-8 border-rose-100 hover:bg-rose-50 text-rose-650 text-xs px-2.5"
-                                  >
-                                    <Ban className="w-3.5 h-3.5 mr-1" /> Reddet
+                                  <Eye className="w-3.5 h-3.5 mr-1" /> İncele
+                                </Button>
+                                <Button 
+                                  onClick={() => startRejectionProcess(lead)} 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 border-rose-100 hover:bg-rose-50 text-rose-655 text-xs px-2.5"
+                                >
+                                  <Ban className="w-3.5 h-3.5 mr-1" /> Reddet
                                   </Button>
                                   <Button 
                                     onClick={() => handleDeleteLead(lead.id)} 
@@ -1374,60 +1406,6 @@ export function AdminCRM() {
               </div>
             )}
           </>
-        )}
-
-        {/* Import Source Selection Modal */}
-        {importSourceModalOpen && pendingImportFile && (
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-55 animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 border border-slate-100 space-y-5 animate-in zoom-in duration-200 text-center">
-              <div className="flex justify-between items-center border-b pb-3 text-left">
-                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-slate-650" /> Aktarım Türü
-                </h3>
-                <button 
-                  onClick={() => {
-                    setImportSourceModalOpen(false);
-                    setPendingImportFile(null);
-                  }}
-                  className="text-slate-400 hover:text-slate-650 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <div className="text-sm text-slate-500 leading-relaxed text-left">
-                Yüklenen Excel dosyasındaki veriler hangi başvuru türü olarak içeri aktarılsın?
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 pt-2">
-                <button
-                  onClick={() => parseFileWithSource(pendingImportFile, 'meta_import')}
-                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
-                >
-                  <span className="w-10 h-10 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-slate-200 transition-colors">
-                    <Ban className="w-5 h-5 text-slate-600 animate-pulse" />
-                  </span>
-                  <span className="font-bold text-slate-900 text-sm">Reklam Datası (Meta Ads)</span>
-                  <span className="text-xs text-slate-450 mt-1 leading-normal text-center">
-                    Genel kampanya müşteri adayları olarak içeri aktarılır.
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => parseFileWithSource(pendingImportFile, 'education_application')}
-                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
-                >
-                  <span className="w-10 h-10 bg-purple-50 text-purple-650 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
-                    <GraduationCap className="w-5 h-5 text-purple-600 animate-bounce" />
-                  </span>
-                  <span className="font-bold text-slate-900 text-sm">Eğitim Datası (Eğitim Başvurusu)</span>
-                  <span className="text-xs text-slate-455 mt-1 leading-normal text-center">
-                    Networking eğitimi başvurusu olarak içeri aktarılır.
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
         )}
 
         {/* Add/Edit Column Settings Modal */}
@@ -1512,6 +1490,60 @@ export function AdminCRM() {
                 >
                   Kaydet
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import Source Selection Modal */}
+        {importSourceModalOpen && pendingImportFile && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-55 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 border border-slate-100 space-y-5 animate-in zoom-in duration-200 text-center">
+              <div className="flex justify-between items-center border-b pb-3 text-left">
+                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-slate-650" /> Aktarım Türü
+                </h3>
+                <button 
+                  onClick={() => {
+                    setImportSourceModalOpen(false);
+                    setPendingImportFile(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-650 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="text-sm text-slate-500 leading-relaxed text-left">
+                Yüklenen Excel dosyasındaki veriler hangi başvuru türü olarak içeri aktarılsın?
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button
+                  onClick={() => parseFileWithSource(pendingImportFile, 'meta_import')}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
+                >
+                  <span className="w-10 h-10 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mb-3 group-hover:bg-slate-200 transition-colors">
+                    <Ban className="w-5 h-5 text-slate-600 animate-pulse" />
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm">Reklam Datası (Meta Ads)</span>
+                  <span className="text-xs text-slate-450 mt-1 leading-normal text-center">
+                    Genel kampanya müşteri adayları olarak içeri aktarılır.
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => parseFileWithSource(pendingImportFile, 'education_application')}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border border-slate-200 hover:border-slate-850 hover:bg-slate-50 transition-all text-left w-full group"
+                >
+                  <span className="w-10 h-10 bg-purple-50 text-purple-650 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
+                    <GraduationCap className="w-5 h-5 text-purple-600 animate-bounce" />
+                  </span>
+                  <span className="font-bold text-slate-900 text-sm">Eğitim Datası (Eğitim Başvurusu)</span>
+                  <span className="text-xs text-slate-455 mt-1 leading-normal text-center">
+                    Networking eğitimi başvurusu olarak içeri aktarılır.
+                  </span>
+                </button>
               </div>
             </div>
           </div>
@@ -1652,7 +1684,7 @@ export function AdminCRM() {
                 </div>
                 <button 
                   onClick={() => setSelectedLead(null)} 
-                  className="text-slate-400 hover:text-slate-650 bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors"
+                  className="text-slate-450 hover:text-slate-650 bg-slate-100 hover:bg-slate-200 p-2 rounded-xl transition-colors"
                 >
                   <span className="sr-only">Kapat</span>
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1801,7 +1833,7 @@ export function AdminCRM() {
                         
                         return (
                           <div key={key}>
-                            <label className="block text-xs text-slate-450 font-semibold mb-1">{label}</label>
+                            <label className="block text-xs text-slate-455 font-semibold mb-1">{label}</label>
                             <p className="text-sm font-medium text-slate-800">
                               {Array.isArray(val) ? val.join(', ') : String(val || '-')}
                             </p>

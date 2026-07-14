@@ -385,7 +385,15 @@ export function AdminCRM() {
       const name = getRowVal(row, ['first_name', 'name', 'ad', 'adsoyad']) || '';
       const email = getRowVal(row, ['email', 'e-mail', 'eposta']) || '';
       const phone = getRowVal(row, ['phone_number', 'phone', 'tel', 'telefon']) || '';
-      const profession = getRowVal(row, ['faaliyet_gösterdiğiniz_sektör', 'sektor', 'is_kolu', 'faaliyet_gosterilen']) || '';
+      
+      const workStatusVal = getRowVal(row, ['çalışma_durumunuz', 'unvan', 'calisma_durumu']) || '';
+      const sectorVal = getRowVal(row, ['faaliyet_gösterdiğiniz_sektör', 'sektor', 'is_kolu', 'faaliyet_gosterilen']) || '';
+      
+      // If we are importing training data, prioritize work status as the primary profession
+      const profession = importSourceType === 'education_application'
+        ? (workStatusVal || sectorVal)
+        : (sectorVal || workStatusVal);
+
       const city = getRowVal(row, ['city', 'sehir', 'il']) || '';
       const created_time = getRowVal(row, ['created_time', 'tarih', 'created_at']) || '';
       const platform = getRowVal(row, ['platform']) || '';
@@ -399,6 +407,7 @@ export function AdminCRM() {
         email: String(email).trim(),
         phone: String(phone).trim(),
         profession: String(profession).trim(),
+        work_status: String(workStatusVal).trim(),
         city: String(city).trim(),
         created_time: String(created_time).trim(),
         platform: String(platform).trim(),
@@ -511,7 +520,8 @@ export function AdminCRM() {
             city: leadItem.city,
             own_business: leadItem.own_business,
             platform: leadItem.platform,
-            created_time: leadItem.created_time
+            created_time: leadItem.created_time,
+            work_status: leadItem.work_status || undefined
           }
         });
       } catch (err) {

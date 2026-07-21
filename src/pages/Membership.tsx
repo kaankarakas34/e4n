@@ -21,28 +21,41 @@ export function MembershipPage() {
 
     const PLANS = [
         {
-            plan: '4_MONTHS' as MembershipPlan,
-            title: '4 Aylık Paket',
-            price: 10000,
-            monthly: '2.500 TL',
-            features: ['Tüm Etkinliklere Erişim', 'Networking', 'Eğitim Materyalleri']
+            plan: '1_MONTH' as MembershipPlan,
+            title: 'Aylık Paket',
+            price: 7200,
+            netPrice: '6.000 TL + KDV',
+            monthly: '7.200 TL KDV Dahil',
+            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri']
         },
         {
-            plan: '8_MONTHS' as MembershipPlan,
-            title: '8 Aylık Paket',
-            price: 16000,
-            monthly: '2.000 TL',
-            features: ['Tüm Etkinliklere Erişim', 'Networking', 'Eğitim Materyalleri', '%10 Etkinlik İndirimi']
+            plan: '6_MONTHS' as MembershipPlan,
+            title: '6 Aylık Paket',
+            price: 39000,
+            netPrice: '32.500 TL + KDV',
+            monthly: 'Ort. 6.500 TL KDV Dahil / ay',
+            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%10 Etkinlik İndirimi']
         },
         {
             plan: '12_MONTHS' as MembershipPlan,
             title: '12 Aylık Paket',
-            price: 22800,
-            monthly: '1.900 TL',
-            features: ['Tüm Etkinliklere Erişim', 'Networking', 'Eğitim Materyalleri', '%20 Etkinlik İndirimi', 'Öcelikli Destek'],
+            price: 69000,
+            netPrice: '57.500 TL + KDV',
+            monthly: 'Ort. 5.750 TL KDV Dahil / ay',
+            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%20 Etkinlik İndirimi', 'Öncelikli Destek'],
             popular: true
         }
     ];
+
+    const formatPlanName = (plan?: string) => {
+        if (!plan) return 'Varsayılan';
+        if (plan === '1_MONTH') return 'Aylık Paket';
+        if (plan === '6_MONTHS') return '6 Aylık Paket';
+        if (plan === '12_MONTHS') return '12 Aylık Paket';
+        if (plan === '4_MONTHS') return '4 Aylık Paket';
+        if (plan === '8_MONTHS') return '8 Aylık Paket';
+        return plan.replace('_', ' ');
+    };
 
     const handleSelectPlan = async (plan: typeof PLANS[0]) => {
         if (!user) return;
@@ -76,7 +89,7 @@ export function MembershipPage() {
         }
     };
 
-    if (!user) return <div className="p-8">Lütfen giriş yapın.</div>;
+    if (!user) return <div className="p-8 text-center text-gray-600">Lütfen giriş yapın.</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -92,62 +105,65 @@ export function MembershipPage() {
 
                 {/* Current Status */}
                 {currentMembership && (
-                    <div className="mb-12 bg-white rounded-lg shadow p-6 max-w-3xl mx-auto">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <div className="mb-12 bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl mx-auto">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                             <Shield className="h-5 w-5 mr-2 text-indigo-600" />
                             Mevcut Üyelik Durumu
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
                                 <span className="block text-gray-500">Plan</span>
-                                <span className="font-semibold">{currentMembership.plan?.replace('_', ' ')}</span>
+                                <span className="font-semibold text-gray-900">{formatPlanName(currentMembership.plan)}</span>
                             </div>
                             <div>
                                 <span className="block text-gray-500">Durum</span>
                                 <Badge className={currentMembership.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                    {currentMembership.status}
+                                    {currentMembership.status === 'ACTIVE' ? 'Aktif' : currentMembership.status === 'EXPIRED' ? 'Süresi Doldu' : currentMembership.status}
                                 </Badge>
                             </div>
                             <div>
                                 <span className="block text-gray-500">Bitiş Tarihi</span>
-                                <span className="font-semibold">{new Date(currentMembership.end_date).toLocaleDateString()}</span>
+                                <span className="font-semibold text-gray-900">{new Date(currentMembership.end_date).toLocaleDateString('tr-TR')}</span>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {/* Pricing Cards */}
-                <div className="space-y-12 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
+                <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
                     {PLANS.map((plan) => (
-                        <div key={plan.plan} className={`relative p-8 bg-white border rounded-2xl shadow-sm flex flex-col ${plan.popular ? 'ring-2 ring-indigo-600' : 'border-gray-200'}`}>
+                        <div key={plan.plan} className={`relative p-8 bg-white border rounded-2xl shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md ${plan.popular ? 'ring-2 ring-indigo-600 border-transparent' : 'border-gray-200'}`}>
                             {plan.popular && (
                                 <div className="absolute top-0 right-0 -mt-4 mr-4">
-                                    <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-600 text-white">
-                                        Popüler
+                                    <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-600 text-white shadow-sm">
+                                        En Çok Tercih Edilen
                                     </span>
                                 </div>
                             )}
-                            <div className="flex-1">
-                                <h3 className="text-xl font-semibold text-gray-900">{plan.title}</h3>
-                                <p className="mt-4 flex items-baseline text-gray-900">
-                                    <span className="text-4xl font-extrabold tracking-tight">₺{plan.price.toLocaleString()}</span>
-                                    <span className="ml-1 text-xl font-semibold text-gray-500">/toplam</span>
-                                </p>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    Aylık ortalama {plan.monthly}
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900">{plan.title}</h3>
+                                <div className="mt-4">
+                                    <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">₺{plan.price.toLocaleString('tr-TR')}</span>
+                                    <span className="ml-2 text-sm font-medium text-gray-500">KDV Dahil</span>
+                                </div>
+                                <div className="mt-1 text-xs font-semibold text-indigo-600 bg-indigo-50 inline-block px-2.5 py-1 rounded">
+                                    {plan.netPrice}
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    {plan.monthly}
                                 </p>
 
-                                <ul className="mt-6 space-y-6">
+                                <ul className="mt-6 space-y-4 border-t border-gray-100 pt-6">
                                     {plan.features.map((feature) => (
-                                        <li key={feature} className="flex">
-                                            <Check className="flex-shrink-0 w-6 h-6 text-indigo-500" aria-hidden="true" />
-                                            <span className="ml-3 text-gray-500">{feature}</span>
+                                        <li key={feature} className="flex items-center">
+                                            <Check className="flex-shrink-0 w-5 h-5 text-indigo-500" aria-hidden="true" />
+                                            <span className="ml-3 text-sm text-gray-600">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                             <Button
-                                className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-md text-center font-medium ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
+                                className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-xl text-center font-semibold text-base transition-colors ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
                                 onClick={() => handleSelectPlan(plan)}
                                 disabled={loading}
                             >

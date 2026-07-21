@@ -55,11 +55,12 @@ export function MemberProfile() {
   const membership = items.find(m => m.user_id === id);
 
   const ensureMembership = async (plan: string) => {
-    let validPlan: MembershipPlan = '4_MONTHS';
+    let validPlan: MembershipPlan = '1_MONTH';
     if (plan === 'YEARLY' || plan === '12_MONTHS') validPlan = '12_MONTHS';
+    if (plan === '6_MONTHS') validPlan = '6_MONTHS';
     if (plan === 'QUARTERLY' || plan === '4_MONTHS') validPlan = '4_MONTHS';
     if (plan === '8_MONTHS') validPlan = '8_MONTHS';
-    if (plan === '1_MONTH') validPlan = '1_MONTH';
+    if (plan === '1_MONTH' || plan === 'MONTHLY') validPlan = '1_MONTH';
 
     if (!id || !user) return;
     try {

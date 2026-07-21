@@ -146,8 +146,10 @@ export function AdminSubscriptions() {
             </div>
             <Select value={filterPlan} onChange={(e: any) => setFilterPlan(e.target.value)} className="w-full md:w-48">
               <option value="ALL">Tüm Paketler</option>
-              <option value="4_MONTHS">4 Aylık</option>
-              <option value="8_MONTHS">8 Aylık</option>
+              <option value="1_MONTH">Aylık</option>
+              <option value="4_MONTHS">4 Aylık (Eski)</option>
+              <option value="6_MONTHS">6 Aylık</option>
+              <option value="8_MONTHS">8 Aylık (Eski)</option>
               <option value="12_MONTHS">12 Aylık</option>
             </Select>
             <Select value={filterStatus} onChange={(e: any) => setFilterStatus(e.target.value as any)} className="w-full md:w-48">

@@ -74,7 +74,9 @@ export const useMembershipStore = create<MembershipStore>()(
 
         const newEnd = new Date(effectiveStart);
 
-        if (nextPlan === '4_MONTHS') newEnd.setMonth(newEnd.getMonth() + 4);
+        if (nextPlan === '1_MONTH') newEnd.setMonth(newEnd.getMonth() + 1);
+        else if (nextPlan === '4_MONTHS') newEnd.setMonth(newEnd.getMonth() + 4);
+        else if (nextPlan === '6_MONTHS') newEnd.setMonth(newEnd.getMonth() + 6);
         else if (nextPlan === '8_MONTHS') newEnd.setMonth(newEnd.getMonth() + 8);
         else newEnd.setMonth(newEnd.getMonth() + 12); // 12 Months
 

@@ -2135,14 +2135,20 @@ app.post('/api/payment/pay', async (req, res) => {
     return res.status(400).json({ error: 'Eksik kart veya ödeme bilgileri.' });
   }
 
+  // Load configs from environment variables with fallback to Sipay test values
+  const sipayApiUrl = process.env.SIPAY_API_URL || 'https://provisioning.sipay.com.tr/ccpayment';
+  const sipayAppId = process.env.SIPAY_APP_ID || '6d4a7e9374a76c15260fcc75e315b0b9';
+  const sipayAppSecret = process.env.SIPAY_APP_SECRET || 'b46a67571aa1e7ef5641dc3fa6f1712a';
+  const sipayMerchantKey = process.env.SIPAY_MERCHANT_KEY || '$2y$10$HmRgYosneqcwHj.UH7upGuyCZqpQ1ITgSMj9Vvxn.t6f.Vdf2SQFO';
+
   try {
     // 1. Generate token
-    const tokenResponse = await fetch('https://provisioning.sipay.com.tr/ccpayment/api/token', {
+    const tokenResponse = await fetch(`${sipayApiUrl}/api/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        app_id: "6d4a7e9374a76c15260fcc75e315b0b9",
-        app_secret: "b46a67571aa1e7ef5641dc3fa6f1712a",
+        app_id: sipayAppId,
+        app_secret: sipayAppSecret,
         app_lang: "tr"
       })
     });
@@ -2159,8 +2165,6 @@ app.post('/api/payment/pay', async (req, res) => {
 
     // 2. Generate Hash Signature
     const invoice_id = "INV-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    const merchant_key = "$2y$10$HmRgYosneqcwHj.UH7upGuyCZqpQ1ITgSMj9Vvxn.t6f.Vdf2SQFO";
-    const app_secret = "b46a67571aa1e7ef5641dc3fa6f1712a";
     
     // Sipay amount format is strictly string float with 2 decimal places in hash (e.g. "1000.00")
     const formattedTotal = parseFloat(total).toFixed(2);
@@ -2168,15 +2172,15 @@ app.post('/api/payment/pay', async (req, res) => {
       formattedTotal,
       "1", // installment
       "TRY", // currency_code
-      merchant_key,
+      sipayMerchantKey,
       invoice_id
     ];
     
-    const hash_key = generateSipayHash(hashParts, app_secret);
+    const hash_key = generateSipayHash(hashParts, sipayAppSecret);
 
     // 3. Make POS Payment
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
-    const payResponse = await fetch('https://provisioning.sipay.com.tr/ccpayment/api/paySmart2D', {
+    const payResponse = await fetch(`${sipayApiUrl}/api/paySmart2D`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2190,7 +2194,7 @@ app.post('/api/payment/pay', async (req, res) => {
         cvv: cvv,
         card_holder_name: cardHolderName,
         cc_holder_name: cardHolderName,
-        merchant_key: merchant_key,
+        merchant_key: sipayMerchantKey,
         total: parseFloat(total),
         installment: 1,
         installments_number: 1,

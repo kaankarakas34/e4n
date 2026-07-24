@@ -13,6 +13,7 @@ import { ActivitySummary } from '../shared/ActivitySummary';
 import { TasksCard } from '../shared/TasksCard';
 import { GroupMembersWidget } from '../shared/GroupMembersWidget';
 import { FriendRequestsWidget } from '../shared/FriendRequestsWidget';
+import { VisitorInviteWidget } from '../shared/VisitorInviteWidget';
 import {
   Users,
   TrendingUp,
@@ -112,6 +113,7 @@ export function Dashboard() {
           <div className="space-y-6">
             <FriendRequestsWidget />
             <QuickActions />
+            <VisitorInviteWidget />
             <GroupMembersWidget />
             {/* Stats Cards */}
             <div className="grid grid-cols-1 gap-4">

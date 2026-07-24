@@ -565,6 +565,12 @@ export const api = {
   async submitPublicVisitorApplication(payload: any) {
     return await request('/visitors/apply', { method: 'POST', body: JSON.stringify(payload) });
   },
+  async sendVisitorInvite(payload: { email: string, origin: string }) {
+    return await request('/visitor-invite', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  async verifyVisitorInvite(token: string) {
+    return await request(`/visitor-invite/verify?token=${encodeURIComponent(token)}`);
+  },
   async getPublicVisitors() {
     return await request('/admin/public-visitors');
   },

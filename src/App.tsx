@@ -43,6 +43,7 @@ import AdminReports from './pages/AdminReports';
 import { AdminEmailSettings } from './pages/AdminEmailSettings';
 import { MeetingTimer } from './pages/MeetingTimer';
 import { VisitorApplication } from './pages/VisitorApplication';
+import { VisitorPaymentPage } from './pages/VisitorPaymentPage';
 import { AdminVisitors } from './pages/AdminVisitors';
 import { EventDetail } from './pages/EventDetail';
 import { CreateMember } from './pages/CreateMember';
@@ -168,6 +169,7 @@ function App() {
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/sikca-sorulan-sorular" element={<SSS />} />
                 <Route path="/degerlendirme-basvurusu" element={<DegerlendirmeBasvurusu />} />
+                <Route path="/ziyaretci" element={<VisitorPaymentPage />} />
                 <Route path="/iletisim" element={<ContactPage />} />
                 <Route path="/kvkk" element={<KVKK />} />
                 <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />

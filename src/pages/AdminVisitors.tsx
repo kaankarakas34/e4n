@@ -74,6 +74,12 @@ export function AdminVisitors() {
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [selectedVisitorDetails, setSelectedVisitorDetails] = useState<PublicVisitor | null>(null);
 
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteLoading, setInviteLoading] = useState(false);
+    const [inviteStatus, setInviteStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [inviteError, setInviteError] = useState('');
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -198,10 +204,20 @@ export function AdminVisitors() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">Gelen Başvurular</h1>
-                    <Button onClick={() => navigate('/admin')} className="flex items-center">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Admin Paneli
-                    </Button>
+                    <div className="flex space-x-3">
+                        <Button onClick={() => {
+                            setIsInviteModalOpen(true);
+                            setInviteStatus('idle');
+                            setInviteEmail('');
+                        }} className="bg-red-600 hover:bg-red-700 text-white flex items-center">
+                            <Mail className="h-4 w-4 mr-2" />
+                            Ziyaretçi Davet Et
+                        </Button>
+                        <Button onClick={() => navigate('/admin')} className="flex items-center" variant="outline">
+                            <Shield className="h-4 w-4 mr-2" />
+                            Admin Paneli
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -282,7 +298,19 @@ export function AdminVisitors() {
                                                             {(item.name || item.full_name).charAt(0)}
                                                         </div>
                                                         <div className="ml-4">
-                                                            <div className="text-sm font-medium text-gray-900">{item.name || item.full_name}</div>
+                                                            <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                                                {item.name || item.full_name}
+                                                                {(item.source === 'visitor_invite' || item.form_data?.payment_status === 'FREE') && (
+                                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                                                                        Davetli (Ücretsiz)
+                                                                    </span>
+                                                                )}
+                                                                {item.source === 'visitor_payment' && item.form_data?.payment_status === 'PAID' && (
+                                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+                                                                        Ödemeli (₺1.000)
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <div className="flex items-center text-xs text-gray-500 mt-0.5">
                                                                 <Mail className="h-3 w-3 mr-1" /> {item.email}
                                                             </div>
@@ -522,6 +550,28 @@ export function AdminVisitors() {
                                     </div>
                                 </section>
 
+                                {(selectedVisitorDetails.form_data?.tax_number || selectedVisitorDetails.form_data?.address || selectedVisitorDetails.form_data?.payment_status) && (
+                                    <section>
+                                        <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">Fatura &amp; Ödeme Bilgileri</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="block text-sm text-gray-500">Vergi Numarası / T.C.</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.tax_number || '-'}</p></div>
+                                            <div>
+                                                <label className="block text-sm text-gray-500">Ödeme Durumu</label>
+                                                <p className="font-medium text-gray-900">
+                                                    {selectedVisitorDetails.form_data?.payment_status === 'FREE' ? (
+                                                        <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded text-xs">Davetli (Ücretsiz)</span>
+                                                    ) : selectedVisitorDetails.form_data?.payment_status === 'PAID' ? (
+                                                        <span className="text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded text-xs">₺1.000 (Ödendi)</span>
+                                                     ) : (
+                                                         '-'
+                                                     )}
+                                                </p>
+                                            </div>
+                                            <div className="col-span-2"><label className="block text-sm text-gray-500">Fatura Adresi</label><p className="font-medium text-gray-900 whitespace-pre-wrap">{selectedVisitorDetails.form_data?.address || '-'}</p></div>
+                                        </div>
+                                    </section>
+                                )}
+
                                 <section>
                                     <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">İş Hacmi ve Uzmanlık</h3>
                                     <div className="grid grid-cols-2 gap-4 mb-4">
@@ -633,6 +683,75 @@ export function AdminVisitors() {
                                 <CheckCircle className="w-4 h-4 mr-2" /> Onayla ve Ata
                             </Button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Admin Visitor Invitation Modal */}
+            {isInviteModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-gray-900">Ziyaretçi Davet Et</h2>
+                            <button onClick={() => setIsInviteModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                                <span className="sr-only">Kapat</span>
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        
+                        <p className="text-sm text-gray-500 mb-4">
+                            Bu alandan davet edeceğiniz e-posta adresine 6 saat geçerli, ücretsiz ziyaretçi kayıt bağlantısı gönderilir.
+                        </p>
+
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!inviteEmail.trim()) return;
+                            setInviteLoading(true);
+                            setInviteStatus('idle');
+                            try {
+                                await api.sendVisitorInvite({
+                                    email: inviteEmail.trim(),
+                                    origin: window.location.origin
+                                });
+                                setInviteStatus('success');
+                                setInviteEmail('');
+                            } catch (err: any) {
+                                console.error(err);
+                                setInviteStatus('error');
+                                setInviteError(err.message || 'Davetiye gönderilemedi.');
+                            } finally {
+                                setInviteLoading(false);
+                            }
+                        }} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">E-posta Adresi</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={inviteEmail}
+                                    onChange={(e) => setInviteEmail(e.target.value)}
+                                    placeholder="davetli@sirket.com"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-red-500 focus:border-red-500 text-sm outline-none animate-all"
+                                />
+                            </div>
+
+                            {inviteStatus === 'success' && (
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700 font-medium">
+                                    Davetiye başarıyla gönderildi!
+                                </div>
+                            )}
+
+                            {inviteStatus === 'error' && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium">
+                                    {inviteError}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end space-x-2 pt-2">
+                                <Button type="button" variant="outline" onClick={() => setIsInviteModalOpen(false)}>Kapat</Button>
+                                <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white" isLoading={inviteLoading}>Gönder</Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

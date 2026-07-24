@@ -2104,12 +2104,117 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
   }
 });
 
+/* --- VISITOR INVITATION ENDPOINTS --- */
+
+// Send Visitor Invite (Auth required)
+app.post('/api/visitor-invite', authenticateToken, async (req, res) => {
+  const { email, origin } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'E-posta adresi gereklidir.' });
+  }
+  
+  try {
+    // Generate token valid for 6 hours
+    const token = jwt.sign(
+      { email: email.trim().toLowerCase(), inviter_id: req.user.id, type: 'visitor_invite' },
+      SECRET_KEY,
+      { expiresIn: '6h' }
+    );
+    
+    // Construct invitation link
+    const inviteLink = `${origin || 'http://localhost:5173'}/ziyaretci?token=${token}`;
+    
+    // Send email
+    const subject = 'Ziyaretçi Daveti - Event4Network';
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="text-align: center; margin-bottom: 25px;">
+          <h2 style="color: #ef4444; margin: 0; font-size: 28px; font-weight: 800; tracking-tight">Event4Network</h2>
+          <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px; font-weight: 500;">Seçici Networking Platformu</p>
+        </div>
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 25px;">
+          <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">Merhaba,</p>
+          <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">E4N (Event4Network) üyelerimizden biri tarafından platformumuzdaki toplantımıza ziyaretçi olarak katılmanız için davet edildiniz.</p>
+          <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">Aşağıdaki bağlantıya tıklayarak <strong>ücretsiz</strong> ziyaretçi kaydınızı oluşturabilirsiniz:</p>
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${inviteLink}" style="background-color: #ef4444; color: white; padding: 14px 30px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Daveti Kabul Et ve Kaydol</a>
+          </div>
+          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 8px; margin: 25px 0;">
+            <p style="color: #991b1b; font-size: 14px; font-weight: 600; margin: 0;">Önemli Not: Bu davet bağlantısı güvenlik amacıyla sadece 6 saat geçerlidir.</p>
+          </div>
+          <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">Toplantımızda sizi de aramızda görmekten memnuniyet duyacağız.</p>
+        </div>
+        <div style="border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8; margin-top: 30px; padding-top: 20px; line-height: 1.5;">
+          Bu e-posta, talep üzerine Event4Network sistemi tarafından gönderilmiştir.<br />
+          © 2026 Event4Network. Tüm Hakları Saklıdır.
+        </div>
+      </div>
+    `;
+    
+    await sendEmail(email.trim().toLowerCase(), subject, html);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Visitor invite error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify Visitor Invite Token (Public)
+app.get('/api/visitor-invite/verify', async (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return res.status(400).json({ valid: false, error: 'Token gereklidir.' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    if (decoded.type !== 'visitor_invite') {
+      return res.status(400).json({ valid: false, error: 'Geçersiz davetiye tipi.' });
+    }
+    
+    // Get inviter details
+    const { rows } = await pool.query('SELECT name FROM users WHERE id = $1', [decoded.inviter_id]);
+    const inviterName = rows.length > 0 ? rows[0].name : 'E4N Üyesi';
+    
+    res.json({
+      valid: true,
+      email: decoded.email,
+      inviter_id: decoded.inviter_id,
+      inviter_name: inviterName
+    });
+  } catch (err) {
+    console.error('Token verify error:', err);
+    res.status(400).json({ valid: false, error: 'Davetiyenin süresi dolmuş veya geçersiz.', message: err.message });
+  }
+});
+
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
-  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data } = req.body;
+  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, token } = req.body;
   try {
+    let finalInviterId = inviter_id;
+    let finalSource = source || 'web';
+    let finalEmail = email;
+    let paymentInfo = {};
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        if (decoded.type === 'visitor_invite') {
+          finalInviterId = decoded.inviter_id;
+          finalSource = 'visitor_invite';
+          finalEmail = decoded.email;
+          paymentInfo = { payment_status: 'FREE', payment_amount: 0, invited: true };
+        }
+      } catch (err) {
+        return res.status(400).json({ error: 'invalid_token', message: 'Davet linkinin süresi dolmuş veya geçersiz.' });
+      }
+    } else if (source === 'visitor_payment') {
+      paymentInfo = { payment_status: 'PAID', payment_amount: 1000 };
+    }
+
     const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '____NON_EXISTENT____';
-    const normalizedEmail = email ? email.trim().toLowerCase() : '____NON_EXISTENT____';
+    const normalizedEmail = finalEmail ? finalEmail.trim().toLowerCase() : '____NON_EXISTENT____';
 
     const checkDup = await pool.query(
       `SELECT id FROM public_visitors 
@@ -2141,9 +2246,14 @@ app.post('/api/visitors/apply', async (req, res) => {
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
 
+    const finalFormData = {
+      ...(form_data || {}),
+      ...paymentInfo
+    };
+
     const { rows } = await pool.query(
       'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *',
-      [name, email, phone, company, profession, source || 'web', kvkk_accepted || false, inviter_id || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, form_data || {}]
+      [name, finalEmail, phone, company, profession || 'Ziyaretçi', finalSource, kvkk_accepted || false, finalInviterId || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, finalFormData]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }

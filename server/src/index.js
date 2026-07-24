@@ -2545,16 +2545,6 @@ app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MEMBERSHIPS ---
-app.get('/api/memberships', authenticateToken, async (req, res) => {
-  const plans = [
-    { id: '4_MONTHS', name: '4 Aylık Üyelik', price: 9500, duration_months: 4 },
-    { id: '8_MONTHS', name: '8 Aylık Üyelik', price: 19000, duration_months: 8 },
-    { id: '12_MONTHS', name: '12 Aylık Üyelik', price: 28500, duration_months: 12 }
-  ];
-  res.json(plans);
-});
-
 // --- LMS (E-Akademi) ---
 app.get('/api/courses', authenticateToken, async (req, res) => {
   try {
@@ -3561,13 +3551,15 @@ app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
     if (endDate) {
       newEnd = new Date(endDate);
       if (!newPlan) newPlan = 'MANUAL';
-    } else if (months && [4, 8, 12].includes(months)) {
+    } else if (months && [1, 6, 12].includes(months)) {
       const currentEnd = rows[0].subscription_end_date ? new Date(rows[0].subscription_end_date) : new Date();
       const now = new Date();
       const effectiveStart = (currentEnd > now) ? currentEnd : now;
       newEnd = new Date(effectiveStart);
       newEnd.setMonth(newEnd.getMonth() + months);
-      if (!newPlan) newPlan = `${months} _MONTHS`;
+      if (!newPlan) {
+        newPlan = months === 12 ? '12_MONTHS' : months === 6 ? '6_MONTHS' : '1_MONTH';
+      }
     } else {
       return res.status(400).json({ error: 'Invalid duration or missing endDate' });
     }

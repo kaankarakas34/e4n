@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import os from 'os';
 import multer from 'multer';
 import { runMigrations } from './config/migrate.js';
 import adminRoutes from './routes/admin.js';
@@ -27,10 +28,17 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
 
-// Static uploads path serving & multer setup
-const uploadDir = path.resolve('uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Static uploads path serving & multer setup (Uses OS tmp directory on Vercel)
+const uploadDir = process.env.VERCEL 
+  ? path.join(os.tmpdir(), 'uploads') 
+  : path.resolve('uploads');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.error('Failed to create upload directory:', err);
 }
 app.use('/uploads', express.static(uploadDir));
 

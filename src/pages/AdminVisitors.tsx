@@ -52,7 +52,7 @@ export function AdminVisitors() {
     const [visitors, setVisitors] = useState<PublicVisitor[]>([]);
     const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'members' | 'education'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'registrations' | 'members' | 'education'>('visitors');
     const [groups, setGroups] = useState<any[]>([]);
     const [events, setEvents] = useState<any[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<string>('');
@@ -63,6 +63,10 @@ export function AdminVisitors() {
                 if (selectedEventId && v.event_id !== selectedEventId) {
                     return false;
                 }
+                // Exclude payments and token invitations from visitor_checkout
+                if (v.source === 'visitor_invite' || v.source === 'visitor_payment') {
+                    return false;
+                }
                 if (v.why_join && v.why_join.trim() !== '') return true;
                 return (
                     v.source !== 'education_application' && 
@@ -70,6 +74,13 @@ export function AdminVisitors() {
                     v.source !== 'meta_import' && 
                     v.source !== 'legacy_data'
                 );
+            });
+        } else if (activeTab === 'registrations') {
+            return visitors.filter(v => {
+                if (selectedEventId && v.event_id !== selectedEventId) {
+                    return false;
+                }
+                return v.source === 'visitor_invite' || v.source === 'visitor_payment';
             });
         } else if (activeTab === 'education') {
             return visitors.filter(v => {
@@ -243,6 +254,7 @@ export function AdminVisitors() {
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Ziyaretçi Formları ({visitors.filter(v => {
+                            if (v.source === 'visitor_invite' || v.source === 'visitor_payment') return false;
                             if (v.why_join && v.why_join.trim() !== '') return true;
                             return (
                                 v.source !== 'education_application' && 
@@ -251,6 +263,13 @@ export function AdminVisitors() {
                                 v.source !== 'legacy_data'
                             );
                         }).length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('registrations')}
+                        className={`pb-2 px-4 text-sm font-medium transition-colors border-b-2 flex items-center ${activeTab === 'registrations' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Ödemeli &amp; Davetli Ziyaretçiler ({visitors.filter(v => v.source === 'visitor_invite' || v.source === 'visitor_payment').length})
                     </button>
                     <button
                         onClick={() => setActiveTab('members')}
@@ -273,11 +292,13 @@ export function AdminVisitors() {
                         <CardTitle>
                             {activeTab === 'visitors' 
                                 ? 'Web Sitesi Ziyaretçi Talepleri' 
-                                : activeTab === 'education' 
-                                    ? 'Eğitim Başvuruları' 
-                                    : 'Onay Bekleyen Üyelik Başvuruları'}
+                                : activeTab === 'registrations'
+                                    ? 'Ziyaretçi Katılımları (/ziyaretci)'
+                                    : activeTab === 'education' 
+                                        ? 'Eğitim Başvuruları' 
+                                        : 'Onay Bekleyen Üyelik Başvuruları'}
                         </CardTitle>
-                        {(activeTab === 'visitors' || activeTab === 'education') && (
+                        {(activeTab === 'visitors' || activeTab === 'registrations' || activeTab === 'education') && (
                             <div className="flex items-center space-x-2 w-full md:w-auto">
                                 <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">Etkinlik Filtresi:</label>
                                 <select
@@ -351,12 +372,12 @@ export function AdminVisitors() {
                                                                     <Phone className="h-3 w-3 mr-1" /> {item.phone}
                                                                 </div>
                                                             )}
-                                                            {(activeTab === 'visitors' || activeTab === 'education') && item.inviter_name && (
+                                                            {(activeTab === 'visitors' || activeTab === 'registrations' || activeTab === 'education') && item.inviter_name && (
                                                                 <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                                                     <UserPlus className="h-3 w-3 mr-1" /> Ref: {item.inviter_name}
                                                                 </div>
                                                             )}
-                                                            {(activeTab === 'visitors' || activeTab === 'education') && item.event_title && (
+                                                            {(activeTab === 'visitors' || activeTab === 'registrations' || activeTab === 'education') && item.event_title && (
                                                                 <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                                                     <Calendar className="h-3 w-3 mr-1" /> Etkinlik: {item.event_title} {item.event_start_at && `(${new Date(item.event_start_at).toLocaleDateString('tr-TR')})`}
                                                                 </div>
@@ -384,16 +405,16 @@ export function AdminVisitors() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    {(activeTab === 'visitors' || activeTab === 'education') ? getStatusBadge(item.status) : (
+                                                    {(activeTab === 'visitors' || activeTab === 'registrations' || activeTab === 'education') ? getStatusBadge(item.status) : (
                                                         <Badge className="bg-orange-100 text-orange-800">Onay Bekliyor</Badge>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    {(activeTab === 'visitors' || activeTab === 'education') ? (
+                                                    {(activeTab === 'visitors' || activeTab === 'registrations' || activeTab === 'education') ? (
                                                         <div className="flex space-x-2">
                                                             {item.status !== 'CONVERTED' ? (
                                                                 <>
-                                                                    {activeTab === 'visitors' && (
+                                                                    {(activeTab === 'visitors' || activeTab === 'registrations') && (
                                                                         <Button size="sm" onClick={() => {
                                                                             setSelectedVisitorForGroup(item);
                                                                             setIsGroupModalOpen(true);

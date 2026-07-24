@@ -58,6 +58,7 @@ import pool from './config/db.js';
 
 // Debug Logging for Connection (Safe)
 try {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (connectionString) {
     // Basic parse to log HOST and PORT only
     const match = connectionString.match(/@([^:]+):(\d+)\//);
@@ -157,152 +158,7 @@ const sendEmail = async (to, subject, html, attachments = []) => {
   }
 };
 
-// Lazy DB Connection Check (Don't block startup)
-// We removed the immediate pool.connect() call to prevent Vercel init timeout crashes.
-// The connection will be established on the first API request.
-// Auto-Migration for Subscription fields
-pool.connect().then(async (client) => {
-  console.log('✅ DB Connected Successfully to port', process.env.DB_PORT || 5435);
-
-  try {
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) DEFAULT 'ACTIVE'");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMP WITH TIME ZONE");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(50)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reminder_trigger INTEGER");
-
-    // Fix groups table meeting_day column type mismatch (CRITICAL FIX)
-    console.log('🔄 Checking meeting_day column type...');
-    await client.query("ALTER TABLE groups ALTER COLUMN meeting_day TYPE VARCHAR(255) USING meeting_day::varchar");
-    console.log('✅ meeting_day column is VARCHAR');
-
-    // Event Updates
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
-    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
-
-    // Password Reset / Creation fields
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP WITH TIME ZONE");
-    await client.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
-
-    // Company & Billing Info
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_office VARCHAR(100)");
-    // Power Team Members Role
-    await client.query("ALTER TABLE power_team_members ADD COLUMN IF NOT EXISTS role VARCHAR(100)");
-
-    // Professions Table
-    await client.query("ALTER TABLE professions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'APPROVED'");
-
-    // Public Visitors Table Update
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
-    
-    // Invoice columns for Accounting page
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_url VARCHAR(555)");
-    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_issued BOOLEAN DEFAULT FALSE");
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_url VARCHAR(555)");
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_issued BOOLEAN DEFAULT FALSE");
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS professions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        name VARCHAR(255) UNIQUE NOT NULL,
-        category VARCHAR(100),
-        status VARCHAR(20) DEFAULT 'APPROVED',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `);
-
-
-
-
-
-    // Champions Table for Dashboard
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS champions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
-        period_date DATE NOT NULL,
-        metric_type VARCHAR(20) NOT NULL, -- REFERRAL_COUNT, VISITOR_COUNT, REVENUE
-        user_id UUID REFERENCES users(id),
-        value NUMERIC NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `);
-
-    // Champions Table for Dashboard
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS champions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        period_type VARCHAR(20) NOT NULL, -- WEEK, MONTH, TERM, YEAR
-        period_date DATE NOT NULL,
-        metric_type VARCHAR(20) NOT NULL, -- REFERRAL_COUNT, VISITOR_COUNT, REVENUE
-        user_id UUID REFERENCES users(id),
-        value NUMERIC NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `);
-
-    // Email Configuration Table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS email_configurations (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        smtp_host VARCHAR(255) NOT NULL,
-        smtp_port INTEGER NOT NULL,
-        smtp_user VARCHAR(255) NOT NULL,
-        smtp_pass VARCHAR(255) NOT NULL,
-        sender_email VARCHAR(255) NOT NULL,
-        sender_name VARCHAR(255),
-        is_active BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `);
-
-    // Seed Professions if empty
-    const profCount = await client.query("SELECT COUNT(*) FROM professions");
-    if (parseInt(profCount.rows[0].count) === 0) {
-      const professions = [
-        ['Avukat', 'Hukuk'], ['Mali Müşavir', 'Finans'], ['Yeminli Mali Müşavir', 'Finans'],
-        ['Bağımsız Denetçi', 'Finans'], ['Sigorta Acentesi', 'Finans'], ['Gayrimenkul Danışmanı', 'Emlak'],
-        ['Mimar', 'İnşaat'], ['İç Mimar', 'İnşaat'], ['İnşaat Mühendisi', 'İnşaat'],
-        ['Elektrik Mühendisi', 'İnşaat'], ['Harita Mühendisi', 'İnşaat'], ['Peyzaj Mimarı', 'İnşaat'],
-        ['Müteahhit', 'İnşaat'], ['Yapı Denetim', 'İnşaat'], ['Grafik Tasarımcı', 'Medya & İletişim'],
-        ['Web Tasarım & Yazılım', 'Bilişim'], ['Sosyal Medya Uzmanı', 'Medya & İletişim'],
-        ['Dijital Pazarlama Uzmanı', 'Medya & İletişim'], ['Fotoğrafçı', 'Medya & İletişim'],
-        ['Video Prodüksiyon', 'Medya & İletişim'], ['Matbaa & Promosyon', 'Medya & İletişim'],
-        ['Reklam Ajansı', 'Medya & İletişim'], ['Diyetisyen', 'Sağlık'], ['Psikolog', 'Sağlık'],
-        ['Diş Hekimi', 'Sağlık'], ['Fizyoterapist', 'Sağlık'], ['Eczacı', 'Sağlık'],
-        ['Doktor - Genel Cerrahi', 'Sağlık'], ['Doktor - Dahiliye', 'Sağlık'], ['Doktor - KBB', 'Sağlık'],
-        ['Doktor - Göz', 'Sağlık'], ['Güzellik Uzmanı', 'Hizmet'], ['Kuaför', 'Hizmet'],
-        ['Organizasyon Şirketi', 'Hizmet'], ['Turizm Acentesi', 'Hizmet'], ['Otel İşletmecisi', 'Hizmet'],
-        ['Restoran İşletmecisi', 'Hizmet'], ['Kafe İşletmecisi', 'Hizmet'], ['Catering Hizmetleri', 'Hizmet'],
-        ['Temizlik Şirketi', 'Hizmet'], ['Güvenlik Şirketi', 'Hizmet'], ['Lojistik & Nakliye', 'Lojistik'],
-        ['Gümrük Müşaviri', 'Lojistik'], ['Otomotiv Satış', 'Otomotiv'], ['Otomotiv Servis', 'Otomotiv'],
-        ['Filo Kiralama', 'Otomotiv'], ['Makine Mühendisi', 'Sanayi'], ['Endüstri Mühendisi', 'Sanayi'],
-        ['Tekstil Üreticisi', 'Sanayi'], ['Mobilya Üreticisi', 'Sanayi'], ['Gıda Üreticisi', 'Sanayi'],
-        ['Ambalaj Üreticisi', 'Sanayi'], ['Eğitim Danışmanı', 'Eğitim'], ['Dil Okulu', 'Eğitim'],
-        ['Sürücü Kursu', 'Eğitim'], ['Anaokulu / Kreş', 'Eğitim'], ['Özel Okul', 'Eğitim'],
-        ['Koçluk Hizmetleri', 'Eğitim'], ['İK Danışmanlığı', 'Danışmanlık'], ['Yönetim Danışmanlığı', 'Danışmanlık'],
-        ['Marka Patent Vekili', 'Danışmanlık'], ['Yazılım Uzmanı', 'Bilişim'], ['Siber Güvenlik Uzmanı', 'Bilişim'],
-        ['Donanım & Network', 'Bilişim'], ['E-Ticaret Danışmanı', 'Bilişim']
-      ];
-
-      for (const [name, category] of professions) {
-        await client.query("INSERT INTO professions (name, category) VALUES ($1, $2) ON CONFLICT DO NOTHING", [name, category]);
-      }
-      console.log('✅ Professions Seeded');
-    }
-
-    console.log('✅ Schema Migrations Applied');
-  } catch (e) {
-    console.error('Migration Warning:', e.message);
-  } finally {
-    client.release();
-  }
-}).catch(e => console.error('❌ DB Connection Error:', e));
+// Database routing and middleware setup
 
 app.use(cors());
 app.use(express.json());
@@ -1011,6 +867,9 @@ app.post('/api/auth/login', async (req, res) => {
     if (rows.length === 0) return res.status(400).json({ error: 'User not found' });
 
     const user = rows[0];
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'Bu hesap için henüz şifre oluşturulmamış. Lütfen şifremi unuttum bağlantısını kullanınız.' });
+    }
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) return res.status(401).json({ error: 'Invalid password' });
 
@@ -4179,18 +4038,17 @@ if ((process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tr
 }
 
 // Conditional Listen
-// Run Migrations (Blocking)
 (async () => {
   try {
     await runMigrations();
-    console.log('✅ Migrations completed. Starting Server...');
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server running on port ${PORT}`);
-      });
-    }
+    console.log('✅ Migrations completed.');
   } catch (e) {
-    console.error('❌ Migration Failed. Server not started.', e);
-    process.exit(1);
+    console.error('⚠️ Migration Warning (non-fatal):', e.message);
+  }
+
+  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   }
 })();

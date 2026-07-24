@@ -16,6 +16,7 @@ const visitorPaymentSchema = z.object({
   phone: z.string().min(10, 'Geçerli bir telefon numarası giriniz'),
   company: z.string().min(2, 'Şirket adı en az 2 karakter olmalıdır'),
   profession: z.string().min(2, 'Meslek bilgisi gereklidir'),
+  taxOffice: z.string().min(2, 'Vergi dairesi gereklidir'),
   taxNumber: z.string().min(10, 'Vergi numarası en az 10 karakter olmalıdır (şahıs şirketleri için T.C. girilebilir)'),
   address: z.string().min(10, 'Lütfen tam adresinizi giriniz'),
   eventId: z.string().min(1, 'Lütfen katılmak istediğiniz toplantıyı seçiniz'),
@@ -118,6 +119,7 @@ export function VisitorPaymentPage() {
         token: isTokenValid ? token : undefined,
         event_id: data.eventId,
         form_data: {
+          tax_office: data.taxOffice,
           tax_number: data.taxNumber,
           address: data.address,
           payment_status: isTokenValid ? 'FREE' : 'PAID',
@@ -302,39 +304,54 @@ export function VisitorPaymentPage() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Vergi Dairesi</label>
+                  <div className="relative">
+                    <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      {...register('taxOffice')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${errors.taxOffice ? 'border-red-300' : 'border-gray-200'}`}
+                      placeholder="Örn. Kadıköy Vergi Dairesi"
+                    />
+                  </div>
+                  {errors.taxOffice && <p className="mt-1 text-xs text-red-500">{errors.taxOffice.message}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Vergi Numarası / T.C. Kimlik</label>
                   <div className="relative">
                     <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       {...register('taxNumber')}
                       className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${errors.taxNumber ? 'border-red-300' : 'border-gray-200'}`}
-                      placeholder="Vergi Dairesi ve No"
+                      placeholder="Örn. 1234567890"
                     />
                   </div>
                   {errors.taxNumber && <p className="mt-1 text-xs text-red-500">{errors.taxNumber.message}</p>}
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Katılmak İstediğiniz Toplantı / Etkinlik</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    {...register('eventId')}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none appearance-none ${errors.eventId ? 'border-red-300' : 'border-gray-200'}`}
-                  >
-                    <option value="">Katılacağınız Etkinliği Seçiniz</option>
-                    {events.map((e: any) => (
-                      <option key={e.id} value={e.id}>
-                        {e.title} ({new Date(e.start_at).toLocaleDateString('tr-TR')} {e.group_name ? `- ${e.group_name}` : ''})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Katılmak İstediğiniz Toplantı / Etkinlik</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <select
+                      {...register('eventId')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none appearance-none ${errors.eventId ? 'border-red-300' : 'border-gray-200'}`}
+                    >
+                      <option value="">Katılacağınız Etkinliği Seçiniz</option>
+                      {events.map((e: any) => (
+                        <option key={e.id} value={e.id}>
+                          {e.title} ({new Date(e.start_at).toLocaleDateString('tr-TR')} {e.group_name ? `- ${e.group_name}` : ''})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
                   </div>
+                  {errors.eventId && <p className="mt-1 text-xs text-red-500">{errors.eventId.message}</p>}
                 </div>
-                {errors.eventId && <p className="mt-1 text-xs text-red-500">{errors.eventId.message}</p>}
               </div>
 
               <div>

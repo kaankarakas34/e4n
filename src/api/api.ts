@@ -184,6 +184,9 @@ export const api = {
   },
 
   // Events (admin-only)
+  async getPublicEvents() {
+    return await request('/events');
+  },
   async getEvents() {
     return await request('/events?mode=admin');
   },

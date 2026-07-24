@@ -240,6 +240,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
     // Power Teams
     await client.query(`
       CREATE TABLE IF NOT EXISTS power_teams (

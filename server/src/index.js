@@ -169,6 +169,7 @@ pool.connect().then(async (client) => {
 
     // Public Visitors Table Update
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS professions (
@@ -2307,7 +2308,7 @@ app.get('/api/visitor-invite/verify', async (req, res) => {
 
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
-  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, token } = req.body;
+  const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, token, event_id } = req.body;
   try {
     let finalInviterId = inviter_id;
     let finalSource = source || 'web';
@@ -2362,6 +2363,7 @@ app.post('/api/visitors/apply', async (req, res) => {
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
+    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
 
     const finalFormData = {
       ...(form_data || {}),
@@ -2369,8 +2371,8 @@ app.post('/api/visitors/apply', async (req, res) => {
     };
 
     const { rows } = await pool.query(
-      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *',
-      [name, finalEmail, phone, company, profession || 'Ziyaretçi', finalSource, kvkk_accepted || false, finalInviterId || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, finalFormData]
+      'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, event_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *',
+      [name, finalEmail, phone, company, profession || 'Ziyaretçi', finalSource, kvkk_accepted || false, finalInviterId || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, finalFormData, event_id || null]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2380,9 +2382,10 @@ app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
   try {
     const { rows } = await pool.query(`
-      SELECT pv.*, u.name as inviter_name 
+      SELECT pv.*, u.name as inviter_name, e.title as event_title, e.start_at as event_start_at 
       FROM public_visitors pv
       LEFT JOIN users u ON pv.inviter_id = u.id
+      LEFT JOIN events e ON pv.event_id = e.id
       ORDER BY pv.created_at DESC
     `);
     res.json(rows);

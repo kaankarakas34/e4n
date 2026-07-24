@@ -27,6 +27,9 @@ interface PublicVisitor {
     previous_groups?: string;
     form_data?: any;
     source?: string;
+    event_id?: string;
+    event_title?: string;
+    event_start_at?: string;
 }
 
 interface Member {
@@ -51,10 +54,15 @@ export function AdminVisitors() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'visitors' | 'members' | 'education'>('visitors');
     const [groups, setGroups] = useState<any[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState<string>('');
 
     const getFilteredItems = () => {
         if (activeTab === 'visitors') {
             return visitors.filter(v => {
+                if (selectedEventId && v.event_id !== selectedEventId) {
+                    return false;
+                }
                 if (v.why_join && v.why_join.trim() !== '') return true;
                 return (
                     v.source !== 'education_application' && 
@@ -64,7 +72,12 @@ export function AdminVisitors() {
                 );
             });
         } else if (activeTab === 'education') {
-            return visitors.filter(v => v.source === 'education_application');
+            return visitors.filter(v => {
+                if (selectedEventId && v.event_id !== selectedEventId) {
+                    return false;
+                }
+                return v.source === 'education_application';
+            });
         } else {
             return pendingMembers;
         }
@@ -87,14 +100,16 @@ export function AdminVisitors() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [visitorsData, membersData, groupsData] = await Promise.all([
+            const [visitorsData, membersData, groupsData, eventsData] = await Promise.all([
                 api.getPublicVisitors(),
                 api.getMembers(),
-                api.getGroups()
+                api.getGroups(),
+                api.getEvents()
             ]);
 
             setVisitors(visitorsData || []);
             setGroups(groupsData || []);
+            setEvents(eventsData || []);
 
             if (Array.isArray(membersData)) {
                 // Filter only PENDING members for this view
@@ -254,7 +269,7 @@ export function AdminVisitors() {
                 </div>
 
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 pb-4 border-b border-gray-100">
                         <CardTitle>
                             {activeTab === 'visitors' 
                                 ? 'Web Sitesi Ziyaretçi Talepleri' 
@@ -262,6 +277,23 @@ export function AdminVisitors() {
                                     ? 'Eğitim Başvuruları' 
                                     : 'Onay Bekleyen Üyelik Başvuruları'}
                         </CardTitle>
+                        {(activeTab === 'visitors' || activeTab === 'education') && (
+                            <div className="flex items-center space-x-2 w-full md:w-auto">
+                                <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">Etkinlik Filtresi:</label>
+                                <select
+                                    value={selectedEventId}
+                                    onChange={(e) => setSelectedEventId(e.target.value)}
+                                    className="w-full md:w-[260px] h-9 rounded-xl border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                >
+                                    <option value="">Tüm Etkinlikler</option>
+                                    {events.map((e: any) => (
+                                        <option key={e.id} value={e.id}>
+                                            {e.title} ({new Date(e.start_at).toLocaleDateString('tr-TR')})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </CardHeader>
                     <CardContent>
                         {loading ? (
@@ -322,6 +354,11 @@ export function AdminVisitors() {
                                                             {(activeTab === 'visitors' || activeTab === 'education') && item.inviter_name && (
                                                                 <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                                                     <UserPlus className="h-3 w-3 mr-1" /> Ref: {item.inviter_name}
+                                                                </div>
+                                                            )}
+                                                            {(activeTab === 'visitors' || activeTab === 'education') && item.event_title && (
+                                                                <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                                    <Calendar className="h-3 w-3 mr-1" /> Etkinlik: {item.event_title} {item.event_start_at && `(${new Date(item.event_start_at).toLocaleDateString('tr-TR')})`}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -514,6 +551,14 @@ export function AdminVisitors() {
                                             <label className="block text-sm text-slate-500">Çalışma Durumu / Ünvan</label>
                                             <p className="font-medium text-gray-900">{selectedVisitorDetails.profession}</p>
                                         </div>
+                                        {selectedVisitorDetails.event_title && (
+                                            <div className="col-span-2">
+                                                <label className="block text-sm text-slate-500">Katılmak İstediği Toplantı / Etkinlik</label>
+                                                <p className="font-medium text-purple-700 bg-purple-50 px-3 py-1 rounded-md border border-purple-200 mt-1 inline-block">
+                                                    {selectedVisitorDetails.event_title} {selectedVisitorDetails.event_start_at && `(${new Date(selectedVisitorDetails.event_start_at).toLocaleDateString('tr-TR')})`}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
 
@@ -535,6 +580,14 @@ export function AdminVisitors() {
                                         <div><label className="block text-sm text-gray-500">E-posta</label><p className="font-medium text-gray-900">{selectedVisitorDetails.email}</p></div>
                                         <div><label className="block text-sm text-gray-500">Şehir</label><p className="font-medium text-gray-900">{selectedVisitorDetails.form_data?.city || '-'}</p></div>
                                         <div className="col-span-2"><label className="block text-sm text-gray-500">LinkedIn</label><p className="font-medium text-blue-600 break-all">{selectedVisitorDetails.form_data?.linkedin_profile || '-'}</p></div>
+                                        {selectedVisitorDetails.event_title && (
+                                            <div className="col-span-2">
+                                                <label className="block text-sm text-gray-500">Seçilen Toplantı / Etkinlik</label>
+                                                <p className="font-medium text-purple-700 bg-purple-50 px-3 py-1 rounded-md border border-purple-200 mt-1 inline-block">
+                                                    {selectedVisitorDetails.event_title} {selectedVisitorDetails.event_start_at && `(${new Date(selectedVisitorDetails.event_start_at).toLocaleDateString('tr-TR')})`}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
 

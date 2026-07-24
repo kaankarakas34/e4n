@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Check, User, Mail, Phone, Building, Briefcase, FileText, Landmark, MapPin, ShieldAlert, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Check, User, Mail, Phone, Building, Briefcase, FileText, Landmark, MapPin, ShieldAlert, ShieldCheck, ArrowRight, Calendar } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
 import { api } from '../api/api';
@@ -18,6 +18,7 @@ const visitorPaymentSchema = z.object({
   profession: z.string().min(2, 'Meslek bilgisi gereklidir'),
   taxNumber: z.string().min(10, 'Vergi numarası en az 10 karakter olmalıdır (şahıs şirketleri için T.C. girilebilir)'),
   address: z.string().min(10, 'Lütfen tam adresinizi giriniz'),
+  eventId: z.string().min(1, 'Lütfen katılmak istediğiniz toplantıyı seçiniz'),
   kvkk: z.boolean().refine(val => val === true, {
     message: 'KVKK aydınlatma metnini onaylamanız gerekmektedir'
   })
@@ -32,6 +33,8 @@ export function VisitorPaymentPage() {
   const [inviterName, setInviterName] = useState<string>('');
   const [tokenLoading, setTokenLoading] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -41,7 +44,8 @@ export function VisitorPaymentPage() {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<VisitorPaymentFormData>({
     resolver: zodResolver(visitorPaymentSchema),
     defaultValues: {
-      kvkk: false
+      kvkk: false,
+      eventId: ''
     }
   });
 
@@ -52,7 +56,20 @@ export function VisitorPaymentPage() {
       setToken(tokenParam);
       verifyToken(tokenParam);
     }
+    fetchPublicEvents();
   }, []);
+
+  const fetchPublicEvents = async () => {
+    try {
+      setEventsLoading(true);
+      const data = await api.getPublicEvents();
+      setEvents(data || []);
+    } catch (err) {
+      console.error('Etkinlikler yüklenirken hata oluştu:', err);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   const verifyToken = async (t: string) => {
     setTokenLoading(true);
@@ -99,6 +116,7 @@ export function VisitorPaymentPage() {
         kvkk_accepted: true,
         source: isTokenValid ? 'visitor_invite' : 'visitor_payment',
         token: isTokenValid ? token : undefined,
+        event_id: data.eventId,
         form_data: {
           tax_number: data.taxNumber,
           address: data.address,
@@ -295,6 +313,28 @@ export function VisitorPaymentPage() {
                   </div>
                   {errors.taxNumber && <p className="mt-1 text-xs text-red-500">{errors.taxNumber.message}</p>}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Katılmak İstediğiniz Toplantı / Etkinlik</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select
+                    {...register('eventId')}
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none appearance-none ${errors.eventId ? 'border-red-300' : 'border-gray-200'}`}
+                  >
+                    <option value="">Katılacağınız Etkinliği Seçiniz</option>
+                    {events.map((e: any) => (
+                      <option key={e.id} value={e.id}>
+                        {e.title} ({new Date(e.start_at).toLocaleDateString('tr-TR')} {e.group_name ? `- ${e.group_name}` : ''})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+                {errors.eventId && <p className="mt-1 text-xs text-red-500">{errors.eventId.message}</p>}
               </div>
 
               <div>

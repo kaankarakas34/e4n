@@ -15,6 +15,8 @@ export interface User {
   updated_at?: string;
   friends?: string[];
   achievements?: Achievement[];
+  subscription_end_date?: string;
+  subscription_plan?: string;
   // Performance Metrics (stats)
   metric_referrals?: number;
   metric_revenue?: number;
@@ -199,7 +201,7 @@ export interface AuthResponse {
 
 // Membership / Subscription
 export type MembershipPlan = '1_MONTH' | '4_MONTHS' | '6_MONTHS' | '8_MONTHS' | '12_MONTHS';
-export type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'PENDING';
+export type MembershipStatus = 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'PASSIVE';
 
 export interface Membership {
   id: string;

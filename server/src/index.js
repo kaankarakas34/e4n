@@ -1009,9 +1009,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-
-
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color FROM users WHERE id = $1', [req.user.id]);
+    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, subscription_end_date, subscription_plan FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3267,21 +3265,28 @@ cron.schedule('0 9 * * *', async () => {
         `);
 
     const now = new Date();
-    const triggers = [30, 15, 10, 5, 3, 1];
+    const triggers = [3, 1, -1, -3, -5];
 
     for (const user of rows) {
-      const end = new Date(user.subscription_end_date);
-      const diffTime = end - now;
-      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (daysLeft <= 0) continue;
+      const endDate = new Date(user.subscription_end_date);
+      const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const daysLeft = Math.round((endMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
 
       if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
-        await sendNotification(
-          user.id,
-          'Ödeme Hatırlatması',
-          `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı.Lütfen ödemenizi yapınız.`
-        );
+        let title = '';
+        let message = '';
+        
+        if (daysLeft > 0) {
+          title = 'Üyelik Ödeme Hatırlatması';
+          message = `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Hesabınızın kısıtlanmaması için lütfen en kısa sürede dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`;
+        } else {
+          const overdue = Math.abs(daysLeft);
+          title = 'Gecikmiş Üyelik Ödemesi Uyarısı';
+          message = `Sayın ${user.name}, üyeliğinizin süresi dolalı ${overdue} gün olmuştur. Hizmetlerinizin kesilmemesi için lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`;
+        }
+
+        await sendNotification(user.id, title, message);
         await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
       }
     }
@@ -3577,6 +3582,43 @@ app.post('/api/memberships/extend', authenticateToken, async (req, res) => {
     `, [newEnd, newPlan, userId]);
 
     res.json({ success: true, new_end_date: newEnd, plan: newPlan });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Manual Membership Reminder
+app.post('/api/memberships/:id/remind', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const userId = req.params.id;
+  try {
+    const { rows } = await pool.query('SELECT name, email, subscription_end_date FROM users WHERE id = $1', [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    const user = rows[0];
+    const endDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
+    let message = '';
+    let title = 'Üyelik Ödeme Hatırlatması';
+    
+    if (endDate) {
+      const now = new Date();
+      const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const daysLeft = Math.round((endMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
+      
+      if (daysLeft > 0) {
+        message = `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Hesabınızın kısıtlanmaması için lütfen en kısa sürede dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`;
+      } else {
+        const overdue = Math.abs(daysLeft);
+        title = 'Gecikmiş Üyelik Ödemesi Uyarısı';
+        message = `Sayın ${user.name}, üyeliğinizin süresi dolalı ${overdue} gün olmuştur. Hizmetlerinizin kesilmemesi için lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`;
+      }
+    } else {
+      message = `Sayın ${user.name}, üyeliğinizin ödeme dönemi yaklaşmaktadır. Lütfen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`;
+    }
+    
+    await sendNotification(userId, title, message);
+    res.json({ success: true, message: 'Hatırlatma başarıyla gönderildi.' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

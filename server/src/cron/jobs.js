@@ -57,21 +57,28 @@ export const initCronJobs = () => {
           `);
 
             const now = new Date();
-            const triggers = [30, 15, 10, 5, 3, 1];
+            const triggers = [3, 1, -1, -3, -5];
 
             for (const user of rows) {
-                const end = new Date(user.subscription_end_date);
-                const diffTime = end - now;
-                const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (daysLeft <= 0) continue;
+                const endDate = new Date(user.subscription_end_date);
+                const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const daysLeft = Math.round((endMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
 
                 if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
-                    await sendNotification(
-                        user.id,
-                        'Ödeme Hatırlatması',
-                        `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı.Lütfen ödemenizi yapınız.`
-                    );
+                    let title = '';
+                    let message = '';
+                    
+                    if (daysLeft > 0) {
+                        title = 'Üyelik Ödeme Hatırlatması';
+                        message = `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Hesabınızın kısıtlanmaması için lütfen en kısa sürede dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`;
+                    } else {
+                        const overdue = Math.abs(daysLeft);
+                        title = 'Gecikmiş Üyelik Ödemesi Uyarısı';
+                        message = `Sayın ${user.name}, üyeliğinizin süresi dolalı ${overdue} gün olmuştur. Hizmetlerinizin kesilmemesi için lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`;
+                    }
+
+                    await sendNotification(user.id, title, message);
                     await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
                 }
             }

@@ -416,6 +416,9 @@ export const api = {
   async extendMembership(userId: string, months?: number, endDate?: string, planName?: string) {
     return await request('/memberships/extend', { method: 'POST', body: JSON.stringify({ userId, months, endDate, planName }) });
   },
+  async remindMembership(userId: string) {
+    return await request(`/memberships/${userId}/remind`, { method: 'POST' });
+  },
   async createMembership(payload: any) { return await request('/memberships', { method: 'POST', body: JSON.stringify(payload) }); },
   async updateMembership(id: string, payload: any) { return await request(`/memberships/${id}`, { method: 'PUT', body: JSON.stringify(payload) }); },
 

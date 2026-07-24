@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 import { usePerformanceStore } from '../stores/performanceStore';
@@ -20,11 +20,14 @@ import {
   Calendar,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  CreditCard,
+  ArrowRight
 } from 'lucide-react';
 
 export function Dashboard() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const { performance, isLoading, error, fetchPerformance } = usePerformanceStore();
   const [myGroup, setMyGroup] = useState<any>(null);
 
@@ -80,6 +83,61 @@ export function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Subscription Days Left Indicator */}
+        {user.subscription_end_date && (() => {
+          const endDate = new Date(user.subscription_end_date);
+          const now = new Date();
+          // Reset hours to midnight for pure calendar days comparison
+          const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+          const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          
+          const diffTime = endMidnight.getTime() - nowMidnight.getTime();
+          const daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          const isExpired = daysLeft <= 0;
+          const isWarning = daysLeft > 0 && daysLeft <= 3;
+
+          return (
+            <div className={`mb-6 p-4 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-200 ${
+              isExpired 
+                ? 'bg-red-50 border-red-200 text-red-800' 
+                : isWarning 
+                  ? 'bg-amber-50 border-amber-200 text-amber-800 animate-pulse' 
+                  : 'bg-green-50 border-green-200 text-green-800'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${isExpired ? 'bg-red-100' : isWarning ? 'bg-amber-100' : 'bg-green-100'}`}>
+                  <CreditCard className={`h-6 w-6 ${isExpired ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-green-600'}`} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">
+                    {isExpired 
+                      ? 'Üyelik Süreniz Doldu' 
+                      : `Üyeliğinizin Bitmesine ${daysLeft} Gün Kaldı`}
+                  </h3>
+                  <p className="text-sm opacity-90 mt-0.5">
+                    {isExpired 
+                      ? 'Hesabınızın kısıtlanmaması için lütfen ödemenizi gerçekleştiriniz.' 
+                      : `Mevcut üyelik planınız: ${user.subscription_plan ? user.subscription_plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık') : 'Belirtilmemiş'}. Son gün: ${endDate.toLocaleDateString('tr-TR')}`}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/membership')}
+                className={`${
+                  isExpired 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : isWarning 
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                } font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center shadow-sm border-none`}
+              >
+                {isExpired || isWarning ? 'Şimdi Öde / Yenile' : 'Üyelik Bilgileri'}
+                <ArrowRight className="h-4 w-4 ml-1.5" />
+              </Button>
+            </div>
+          );
+        })()}
+
         {error && (
           <Alert variant="error" className="mb-6">
             <AlertTitle>Hata</AlertTitle>

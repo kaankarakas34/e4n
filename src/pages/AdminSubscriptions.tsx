@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useMembershipStore } from '../stores/membershipStore';
-import { Card, CardContent } from '../shared/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
-import { Select } from '../shared/Select';
 import { Modal } from '../shared/Modal';
-import { Search, Mail, Users, CheckCircle, XCircle, Clock, AlertTriangle, CreditCard } from 'lucide-react';
+import { 
+  Search, 
+  Mail, 
+  Users, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  AlertTriangle, 
+  CreditCard, 
+  DollarSign, 
+  Calendar, 
+  RefreshCw, 
+  UserMinus,
+  Edit2
+} from 'lucide-react';
 import { MembershipPlan } from '../types';
 import { api } from '../api/api';
 
@@ -15,41 +28,80 @@ export function AdminSubscriptions() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlan, setFilterPlan] = useState<MembershipPlan | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'PASSIVE' | 'EXPIRING'>('ALL');
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('ALL');
 
   // Modal State
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+
+  // Edit Form Fields
+  const [editPlan, setEditPlan] = useState<string>('1_MONTH');
+  const [editEndDate, setEditEndDate] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<'ACTIVE' | 'PASSIVE'>('ACTIVE');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
+  const now = new Date();
+  const currentMonthName = now.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
   const handleSendReminder = async (m: any) => {
     const name = m.name || m.user?.name || 'Üye';
-    if (!confirm(`${name} isimli kişiye hatırlatma gönderilsin mi?`)) return;
-    alert('Hatırlatma maili gönderildi.');
+    const email = m.email || m.user?.email || '';
+    if (!confirm(`${name} (${email}) isimli üyeye ödeme hatırlatma maili ve bildirimi gönderilecek. Onaylıyor musunuz?`)) return;
+    
+    setSendingReminderId(m.user_id || m.id);
+    try {
+      await api.remindMembership(m.user_id || m.id);
+      alert('Ödeme hatırlatma maili başarıyla gönderildi.');
+    } catch (e) {
+      console.error(e);
+      alert('Hatırlatma gönderilirken bir hata oluştu.');
+    } finally {
+      setSendingReminderId(null);
+    }
   };
 
   const getDaysLeft = (dateStr?: string) => {
     if (!dateStr) return 0;
     const end = new Date(dateStr);
     const now = new Date();
-    const diff = end.getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    // Reset time components for calendar days
+    const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const diff = endMidnight.getTime() - nowMidnight.getTime();
+    return Math.round(diff / (1000 * 60 * 60 * 24));
   };
 
   const isExpired = (m: any) => getDaysLeft(m?.end_date) <= 0;
   const isExpiring = (m: any) => {
     const d = getDaysLeft(m?.end_date);
-    return d > 0 && d <= 30;
+    return d > 0 && d <= 5; // Show warning within 5 days to align with reminder period
   };
 
-  // Stats Calculation
+  // MRR (Monthly Recurring Revenue) Estimator
+  const getMRR = () => {
+    return memberships.reduce((total, m) => {
+      if (isExpired(m) || m.status === 'PASSIVE') return total;
+      if (m.plan === '1_MONTH') return total + 7200;
+      if (m.plan === '6_MONTHS') return total + 6500; // 39000 / 6
+      if (m.plan === '12_MONTHS') return total + 5750; // 69000 / 12
+      return total + 6000; // custom/default plan average
+    }, 0);
+  };
+
   const stats = {
     total: memberships.length,
-    active: memberships.filter(m => !isExpired(m) && (m as any).status !== 'PASSIVE').length,
-    passive: memberships.filter(m => isExpired(m) || (m as any).status === 'PASSIVE').length,
+    active: memberships.filter(m => !isExpired(m) && m.status !== 'PASSIVE').length,
+    passive: memberships.filter(m => isExpired(m) || m.status === 'PASSIVE').length,
     expiring: memberships.filter(m => isExpiring(m)).length,
+    mrr: getMRR(),
   };
 
   const filtered = memberships.filter(m => {
@@ -62,306 +114,429 @@ export function AdminSubscriptions() {
     const planMatch = filterPlan === 'ALL' || m.plan === filterPlan;
 
     let statusMatch = true;
-    if (filterStatus === 'ACTIVE') statusMatch = !isExpired(m) && (m as any).status !== 'PASSIVE';
-    if (filterStatus === 'PASSIVE') statusMatch = isExpired(m) || (m as any).status === 'PASSIVE';
+    if (filterStatus === 'ACTIVE') statusMatch = !isExpired(m) && m.status !== 'PASSIVE';
+    if (filterStatus === 'PASSIVE') statusMatch = isExpired(m) || m.status === 'PASSIVE';
     if (filterStatus === 'EXPIRING') statusMatch = isExpiring(m);
 
-    return nameMatch && planMatch && statusMatch;
+    let monthMatch = true;
+    if (selectedMonthFilter === 'OVERDUE') {
+      monthMatch = getDaysLeft(m.end_date) <= 0;
+    } else if (selectedMonthFilter === 'CURRENT_MONTH') {
+      if (!m.end_date) monthMatch = false;
+      else {
+        const d = new Date(m.end_date);
+        monthMatch = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+    } else if (selectedMonthFilter === 'NEXT_MONTH') {
+      if (!m.end_date) monthMatch = false;
+      else {
+        const d = new Date(m.end_date);
+        const nextM = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        monthMatch = d.getMonth() === nextM.getMonth() && d.getFullYear() === nextM.getFullYear();
+      }
+    }
+
+    return nameMatch && planMatch && statusMatch && monthMatch;
   });
 
-  const handleExtend = async (months: number) => {
+  const openEditModal = (m: any) => {
+    setSelectedMember(m);
+    setEditPlan(m.plan || '1_MONTH');
+    
+    // Format date string to YYYY-MM-DD
+    if (m.end_date) {
+      const date = new Date(m.end_date);
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      setEditEndDate(`${yyyy}-${mm}-${dd}`);
+    } else {
+      setEditEndDate('');
+    }
+    
+    setEditStatus(m.status === 'PASSIVE' || isExpired(m) ? 'PASSIVE' : 'ACTIVE');
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateMembership = async () => {
     if (!selectedMember) return;
-    if (confirm(`${selectedMember.name || 'Üye'} için ${months} ay süre uzatılacak. Onaylıyor musunuz?`)) {
-      try {
-        await api.extendMembership(selectedMember.id || selectedMember.user_id, months);
-        alert('Süre başarıyla uzatıldı.');
-        setIsModalOpen(false);
-        fetchAll();
-      } catch (e) {
-        console.error(e);
-        alert('İşlem sırasında hata oluştu.');
-      }
+    if (!editEndDate) {
+      alert('Lütfen geçerli bir bitiş tarihi seçiniz.');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const targetDate = new Date(editEndDate);
+      targetDate.setHours(23, 59, 59, 999); // Set to end of day
+
+      await api.updateMembership(selectedMember.user_id || selectedMember.id, {
+        plan: editPlan,
+        end_date: targetDate.toISOString(),
+        status: editStatus
+      });
+
+      alert('Abonelik bilgileri başarıyla güncellendi.');
+      setIsModalOpen(false);
+      fetchAll();
+    } catch (e) {
+      console.error(e);
+      alert('Abonelik güncellenirken hata oluştu.');
+    } finally {
+      setUpdating(false);
     }
   };
 
-  if (!user || user.role !== 'ADMIN') return <div className="p-8">Erişim Kısıtlı</div>;
+  if (!user || user.role !== 'ADMIN') return <div className="p-8 text-red-600 font-bold text-center">Erişim Yetkiniz Yok</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Abonelik Listesi</h1>
+    <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Abonelik &amp; Ödeme Takip Paneli</h1>
+            <p className="text-slate-500 mt-1 text-sm">Üyelerin aylık üyelik sürelerini, ödeme tarihlerini ve tahsilatlarını buradan izleyebilir ve yönetebilirsiniz.</p>
+          </div>
+          <Button 
+            onClick={() => fetchAll()} 
+            className="flex items-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            variant="outline"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Yenile
+          </Button>
+        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-white border-l-4 border-l-blue-500">
-            <CardContent className="p-4 flex items-center justify-between">
+        {/* Premium KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <Card className="bg-white border-l-4 border-l-blue-500 shadow-sm">
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Toplam Üye</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Toplam Üye</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">{stats.total}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-500 opacity-20" />
+              <Users className="h-10 w-10 text-blue-500 opacity-20" />
             </CardContent>
           </Card>
-          <Card className="bg-white border-l-4 border-l-green-500">
-            <CardContent className="p-4 flex items-center justify-between">
+
+          <Card className="bg-white border-l-4 border-l-emerald-500 shadow-sm">
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Aktif Abonelik</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aylık Tekrarlayan Gelir (MRR)</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">₺{stats.mrr.toLocaleString('tr-TR')}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500 opacity-20" />
+              <DollarSign className="h-10 w-10 text-emerald-500 opacity-20" />
             </CardContent>
           </Card>
-          <Card className="bg-white border-l-4 border-l-red-500">
-            <CardContent className="p-4 flex items-center justify-between">
+
+          <Card className="bg-white border-l-4 border-l-green-500 shadow-sm">
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pasif / Dolmuş</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.passive}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktif Üyelik</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
               </div>
-              <XCircle className="h-8 w-8 text-red-500 opacity-20" />
+              <CheckCircle className="h-10 w-10 text-green-500 opacity-20" />
             </CardContent>
           </Card>
-          <Card className="bg-white border-l-4 border-l-yellow-500">
-            <CardContent className="p-4 flex items-center justify-between">
+
+          <Card className="bg-white border-l-4 border-l-rose-500 shadow-sm">
+            <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Yaklaşan Ödemeler</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.expiring}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Süresi Dolan / Pasif</p>
+                <p className="text-3xl font-bold text-rose-600 mt-1">{stats.passive}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500 opacity-20" />
+              <XCircle className="h-10 w-10 text-rose-500 opacity-20" />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-l-4 border-l-amber-500 shadow-sm">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ödeme Yaklaşan (≤ 5 Gün)</p>
+                <p className="text-3xl font-bold text-amber-600 mt-1">{stats.expiring}</p>
+              </div>
+              <Clock className="h-10 w-10 text-amber-500 opacity-20" />
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4 flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+        {/* Filter Toolbar */}
+        <Card className="bg-white shadow-sm border border-slate-100">
+          <CardContent className="p-5 flex flex-col md:flex-row gap-4 items-center">
+            
+            {/* Search */}
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="İsim veya E-posta ile ara..."
-                className="pl-10 w-full border rounded-md py-2"
+                placeholder="Üye adı veya e-posta ile ara..."
+                className="pl-10 w-full rounded-xl border border-slate-200 py-2.5 text-sm bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-400"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select value={filterPlan} onChange={(e: any) => setFilterPlan(e.target.value)} className="w-full md:w-48">
-              <option value="ALL">Tüm Paketler</option>
-              <option value="1_MONTH">Aylık</option>
-              <option value="4_MONTHS">4 Aylık (Eski)</option>
-              <option value="6_MONTHS">6 Aylık</option>
-              <option value="8_MONTHS">8 Aylık (Eski)</option>
-              <option value="12_MONTHS">12 Aylık</option>
-            </Select>
-            <Select value={filterStatus} onChange={(e: any) => setFilterStatus(e.target.value as any)} className="w-full md:w-48">
-              <option value="ALL">Tüm Durumlar</option>
-              <option value="ACTIVE">Aktif</option>
-              <option value="PASSIVE">Pasif</option>
-              <option value="EXPIRING">Süresi Yaklaşan</option>
-            </Select>
+
+            {/* Plan filter */}
+            <div className="w-full md:w-56">
+              <select
+                value={filterPlan}
+                onChange={(e: any) => setFilterPlan(e.target.value)}
+                className="w-full h-[42px] rounded-xl border border-slate-200 bg-[#f8fafc] px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Tüm Paketler</option>
+                <option value="1_MONTH">Aylık Paket (7.200 ₺)</option>
+                <option value="6_MONTHS">6 Aylık Paket (39.000 ₺)</option>
+                <option value="12_MONTHS">12 Aylık Paket (69.000 ₺)</option>
+              </select>
+            </div>
+
+            {/* Month Expiry Filter for Monthly Payment Tracking */}
+            <div className="w-full md:w-60">
+              <select
+                value={selectedMonthFilter}
+                onChange={(e: any) => setSelectedMonthFilter(e.target.value)}
+                className="w-full h-[42px] rounded-xl border border-slate-200 bg-[#f8fafc] px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Tüm Dönemler</option>
+                <option value="OVERDUE">Ödemesi Gecikenler (Süresi Bitenler)</option>
+                <option value="CURRENT_MONTH">Bu Ay Ödemesi Olanlar ({currentMonthName})</option>
+                <option value="NEXT_MONTH">Gelecek Ay Ödemesi Olanlar ({nextMonthName})</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={filterStatus}
+                onChange={(e: any) => setFilterStatus(e.target.value as any)}
+                className="w-full h-[42px] rounded-xl border border-slate-200 bg-[#f8fafc] px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Tüm Durumlar</option>
+                <option value="ACTIVE">Aktif Aboneler</option>
+                <option value="PASSIVE">Pasif / Süresi Dolanlar</option>
+                <option value="EXPIRING">Süresi Yaklaşanlar</option>
+              </select>
+            </div>
+
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Üye Bilgisi</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paket</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kalan Süre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filtered.map(m => {
-                const days = getDaysLeft(m.end_date);
-                const expired = isExpired(m);
-                const expiring = isExpiring(m);
+        {/* Subscription Table */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-100 text-sm">
+              <thead className="bg-[#f8fafc]">
+                <tr>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Üye Bilgisi</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Plan / Paket</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Kalan Süre (Bitiş Tarihi)</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Durum</th>
+                  <th className="px-6 py-4 text-right font-semibold text-slate-500 uppercase tracking-wider text-xs">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {filtered.map(m => {
+                  const days = getDaysLeft(m.end_date);
+                  const expired = isExpired(m) || m.status === 'PASSIVE';
+                  const expiring = isExpiring(m);
 
-                const percent = Math.min(Math.max((days / 365) * 100, 0), 100);
-                const barColor = expired ? 'bg-gray-300' : expiring ? 'bg-yellow-500' : 'bg-green-500';
+                  const progressPercent = expired ? 0 : Math.min(Math.max((days / 365) * 100, 0), 100);
+                  const progressBarColor = expiring ? 'bg-amber-500' : 'bg-emerald-500';
 
-                return (
-                  <tr key={m.id || Math.random()} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900">{m.name || m.user?.name || 'Bilinmeyen Üye'}</div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {m.email || m.user?.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
-                        {m.plan ? m.plan.replace('_MONTHS', ' Ay').replace('MANUAL', 'Özel Paketi') : 'VARSAYILAN'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="w-full max-w-xs">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="font-medium text-gray-700">
-                            {days > 0 ? `${days} Gün` : 'Süre Bitti'}
-                          </span>
-                          <span className="text-gray-400">
-                            {m.end_date ? new Date(m.end_date).toLocaleDateString() : '-'}
-                          </span>
+                  return (
+                    <tr key={m.user_id || m.id || Math.random()} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-800 text-[15px]">{m.name || m.user?.name || 'Bilinmeyen Üye'}</div>
+                        <div className="text-slate-400 flex items-center gap-1.5 mt-1 font-medium text-xs">
+                          <Mail className="w-3.5 h-3.5" />
+                          {m.email || m.user?.email}
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${percent}%` }}></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
+                          {m.plan ? m.plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık Paket').replace('MANUAL', 'Özel Tanımlı') : 'Belirtilmemiş'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="w-full max-w-[240px]">
+                          <div className="flex justify-between items-center text-xs mb-1.5">
+                            <span className={`font-bold ${expired ? 'text-rose-600' : expiring ? 'text-amber-600' : 'text-emerald-700'}`}>
+                              {expired ? 'Süresi Doldu' : `${days} Gün Kaldı`}
+                            </span>
+                            <span className="text-slate-400 font-medium">
+                              {m.end_date ? new Date(m.end_date).toLocaleDateString('tr-TR') : '-'}
+                            </span>
+                          </div>
+                          {!expired && (
+                            <div className="w-full bg-slate-100 rounded-full h-2">
+                              <div className={`h-2 rounded-full ${progressBarColor}`} style={{ width: `${progressPercent}%` }}></div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {expired || (m as any).status === 'PASSIVE' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Pasif
-                        </span>
-                      ) : expiring ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Yenileme Gerekli
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Aktif
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedMember(m);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        Yönet
-                      </Button>
+                      </td>
+                      <td className="px-6 py-4">
+                        {expired ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            <XCircle className="w-3.5 h-3.5" />
+                            Süresi Dolan
+                          </span>
+                        ) : expiring ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Ödeme Yaklaştı
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Aktif
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditModal(m)}
+                            className="text-slate-700 hover:bg-slate-100 border-slate-200 hover:text-slate-900 rounded-lg"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" />
+                            Yönet
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSendReminder(m)}
+                            disabled={sendingReminderId === (m.user_id || m.id)}
+                            className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg"
+                          >
+                            <Mail className="w-3.5 h-3.5 mr-1" />
+                            {sendingReminderId === (m.user_id || m.id) ? 'Gönderiliyor...' : 'Uyar'}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center text-slate-400 font-medium">
+                      Filtre kriterlerine uygun hiçbir abonelik kaydı bulunamadı.
                     </td>
                   </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Kayıt bulunamadı.</td></tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </div>
 
-      {/* Management Modal */}
-      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={`Üyelik Yönetimi: ${selectedMember?.name || 'Seçili Üye'}`}>
-        <div className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-500">Mevcut Durum</span>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${isExpired(selectedMember) ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                {isExpired(selectedMember) ? 'PASİF' : 'AKTİF'}
+      {/* Advanced Management Modal */}
+      <Modal 
+        open={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={`Üyelik Yönetimi: ${selectedMember?.name || 'Seçili Üye'}`}
+      >
+        <div className="space-y-6 pt-2">
+          
+          {/* Quick Info Box */}
+          <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl space-y-2.5 text-xs text-slate-600">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Mevcut Durum</span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${isExpired(selectedMember) ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                {isExpired(selectedMember) ? 'SÜRESİ DOLDU' : 'AKTİF'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Son Geçerlilik</span>
-              <span className="font-semibold text-gray-900">
-                {selectedMember?.end_date ? new Date(selectedMember.end_date).toLocaleDateString() : 'Belirtilmemiş'}
+              <span className="font-medium">Güncel Plan</span>
+              <span className="font-semibold text-slate-800">
+                {selectedMember?.plan ? selectedMember.plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık') : 'Belirtilmemiş'}
               </span>
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-sm text-gray-500">Kalan Gün</span>
-              <span className="font-semibold text-indigo-600">
-                {getDaysLeft(selectedMember?.end_date)} Gün
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Son Geçerlilik</span>
+              <span className="font-semibold text-slate-800">
+                {selectedMember?.end_date ? new Date(selectedMember.end_date).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
               </span>
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Paket Seçimi
-            </h4>
-            <div className="grid grid-cols-1 gap-3 mb-4">
-              {[4, 8, 12].map(m => (
-                <button
-                  key={m}
-                  onClick={() => handleExtend(m)}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 hover:border-indigo-500 transition-all group"
-                >
-                  <div className="flex items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 transition-colors ${m === 4 ? 'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : m === 8 ? 'bg-purple-100 text-purple-600 group-hover:bg-purple-600 group-hover:text-white' : 'bg-orange-100 text-orange-600 group-hover:bg-orange-600 group-hover:text-white'}`}>{m}</div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">{m} Aylık Paket</p>
-                      <p className="text-xs text-gray-500">{m === 4 ? 'Standart' : m === 8 ? 'Avantajlı' : 'Tam Yıl'}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-indigo-600 group-hover:text-indigo-700">Seç</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Manual Definition */}
-            <div className="bg-gray-100 p-3 rounded-lg">
-              <h5 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Elle Paket Tanımlama</h5>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Paket Adı</label>
-                  <input
-                    type="text"
-                    placeholder="Örn: Özel Kampanya"
-                    className="w-full text-sm border-gray-300 rounded-md p-1.5 focus:ring-indigo-500 focus:border-indigo-500"
-                    id="manualPlanName"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Bitiş Tarihi</label>
-                  <input
-                    type="date"
-                    className="w-full text-sm border-gray-300 rounded-md p-1.5 focus:ring-indigo-500 focus:border-indigo-500"
-                    id="manualEndDate"
-                  />
-                </div>
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-full mt-3"
-                onClick={async () => {
-                  const dateInput = document.getElementById('manualEndDate') as HTMLInputElement;
-                  const nameInput = document.getElementById('manualPlanName') as HTMLInputElement;
-
-                  if (!dateInput.value) {
-                    alert('Bitiş tarihi seçilmelidir.');
-                    return;
-                  }
-
-                  const name = nameInput.value || 'Özel Tanımlı';
-
-                  if (confirm(`${name} olarak ${new Date(dateInput.value).toLocaleDateString()} tarihine kadar tanımlanacak. Onaylıyor musunuz?`)) {
-                    try {
-                      await api.extendMembership(selectedMember.id || selectedMember.user_id, undefined, dateInput.value, name);
-                      alert('Manuel paket başarıyla tanımlandı.');
-                      setIsModalOpen(false);
-                      fetchAll();
-                    } catch (e) {
-                      console.error(e);
-                      alert('Hata oluştu.');
-                    }
-                  }
-                }}
+          {/* Form Fields */}
+          <div className="space-y-4">
+            
+            {/* Plan Selector */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Paket Seçimi</label>
+              <select
+                value={editPlan}
+                onChange={(e) => setEditPlan(e.target.value)}
+                className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Tanımla ve Kaydet
-              </Button>
+                <option value="1_MONTH">Aylık Paket (7.200 ₺)</option>
+                <option value="6_MONTHS">6 Aylık Paket (39.000 ₺)</option>
+                <option value="12_MONTHS">12 Aylık Paket (69.000 ₺)</option>
+                <option value="MANUAL">Özel Tanımlı</option>
+              </select>
             </div>
+
+            {/* Custom Expiry Date */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Üyelik Bitiş Tarihi</label>
+              <input
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Account Status */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hesap / Üyelik Durumu</label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as any)}
+                className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ACTIVE">Aktif (Sistem Erişimi Var)</option>
+                <option value="PASSIVE">Pasif (Erişim Kısıtlı)</option>
+              </select>
+            </div>
+
           </div>
 
-          <div className="border-t pt-4 flex justify-between">
-            <Button variant="ghost" onClick={() => handleSendReminder(selectedMember)}>
+          {/* Action Buttons */}
+          <div className="border-t border-slate-100 pt-5 flex justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={() => handleSendReminder(selectedMember)}
+              className="text-slate-700 hover:bg-slate-50 border-slate-200"
+              disabled={updating}
+            >
               <Mail className="w-4 h-4 mr-2" />
               Hatırlatma Gönder
             </Button>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>İptal</Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsModalOpen(false)}
+                disabled={updating}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={handleUpdateMembership}
+                disabled={updating}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
+              >
+                {updating ? 'Kaydediliyor...' : 'Güncelle'}
+              </Button>
             </div>
           </div>
+
         </div>
       </Modal>
     </div>

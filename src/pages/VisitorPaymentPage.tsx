@@ -360,8 +360,8 @@ export function VisitorPaymentPage() {
           onClose={() => setPaymentModalOpen(false)}
           planTitle="Ziyaretçi Katılım Bedeli"
           amount={1000}
-          onSuccess={() => {
-            submitRegistration(pendingFormData, { cardName: 'Simulated Card' });
+          onSuccess={(paymentDetails) => {
+            submitRegistration(pendingFormData, paymentDetails);
           }}
         />
       )}

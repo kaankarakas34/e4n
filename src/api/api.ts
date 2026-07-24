@@ -45,6 +45,10 @@ export const api = {
     return await request('/payment/get-token', { method: 'POST', body: JSON.stringify(payload) });
   },
 
+  async payWithSipay(payload: any) {
+    return await request('/payment/pay', { method: 'POST', body: JSON.stringify(payload) });
+  },
+
   async requestRegistration(payload: any) {
     return await request('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
   },

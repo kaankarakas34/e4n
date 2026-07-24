@@ -2104,6 +2104,119 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
   }
 });
 
+/* --- SIPAY PAYMENT ENDPOINT --- */
+
+function generateSipayHash(parts, appSecret) {
+  // Generate IV using SHA1 hash of random value
+  const iv = crypto.createHash('sha1').update(String(Math.random())).digest('hex').slice(0, 16);
+  // Generate password using SHA1 hash of app secret
+  const password = crypto.createHash('sha1').update(appSecret).digest('hex');
+  // Generate salt using SHA1 hash of random value
+  const salt = crypto.createHash('sha1').update(String(Math.random())).digest('hex').slice(0, 4);
+  // Create encryption key using SHA256 hash of password and salt
+  const saltWithPassword = crypto.createHash('sha256')
+      .update(password + salt)
+      .digest('hex')
+      .slice(0, 32);
+  // Encrypt data using AES-256-CBC
+  const cipher = crypto.createCipheriv('aes-256-cbc', saltWithPassword, iv);
+  let encrypted = cipher.update(parts.join('|'), 'binary', 'base64');
+  encrypted += cipher.final('base64');
+  // Bundle components and replace forward slashes with double underscores
+  let msgEncryptedBundle = `${iv}:${salt}:${encrypted}`;
+  msgEncryptedBundle = msgEncryptedBundle.replace(/\//g, '__');
+  return msgEncryptedBundle;
+}
+
+app.post('/api/payment/pay', async (req, res) => {
+  const { cardNumber, cardHolderName, expiryMonth, expiryYear, cvv, total } = req.body;
+  
+  if (!cardNumber || !cardHolderName || !expiryMonth || !expiryYear || !cvv || !total) {
+    return res.status(400).json({ error: 'Eksik kart veya ödeme bilgileri.' });
+  }
+
+  try {
+    // 1. Generate token
+    const tokenResponse = await fetch('https://provisioning.sipay.com.tr/ccpayment/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        app_id: "6d4a7e9374a76c15260fcc75e315b0b9",
+        app_secret: "b46a67571aa1e7ef5641dc3fa6f1712a",
+        app_lang: "tr"
+      })
+    });
+    
+    const tokenData = await tokenResponse.json();
+    if (tokenData.status_code !== 100) {
+      return res.status(400).json({ 
+        error: 'sipay_auth_failed', 
+        message: 'Sipay kimlik doğrulama başarısız oldu: ' + tokenData.status_description 
+      });
+    }
+
+    const sipayToken = tokenData.data.token;
+
+    // 2. Generate Hash Signature
+    const invoice_id = "INV-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    const merchant_key = "$2y$10$HmRgYosneqcwHj.UH7upGuyCZqpQ1ITgSMj9Vvxn.t6f.Vdf2SQFO";
+    const app_secret = "b46a67571aa1e7ef5641dc3fa6f1712a";
+    
+    // Sipay amount format is strictly string float with 2 decimal places in hash (e.g. "1000.00")
+    const formattedTotal = parseFloat(total).toFixed(2);
+    const hashParts = [
+      formattedTotal,
+      "1", // installment
+      "TRY", // currency_code
+      merchant_key,
+      invoice_id
+    ];
+    
+    const hash_key = generateSipayHash(hashParts, app_secret);
+
+    // 3. Make POS Payment
+    const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+    const payResponse = await fetch('https://provisioning.sipay.com.tr/ccpayment/api/paySmart2D', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sipayToken}`
+      },
+      body: JSON.stringify({
+        card_number: cleanCardNumber,
+        cc_no: cleanCardNumber,
+        expiry_month: expiryMonth,
+        expiry_year: expiryYear,
+        cvv: cvv,
+        card_holder_name: cardHolderName,
+        cc_holder_name: cardHolderName,
+        merchant_key: merchant_key,
+        total: parseFloat(total),
+        installment: 1,
+        installments_number: 1,
+        currency_code: 'TRY',
+        invoice_id: invoice_id,
+        hash_key: hash_key
+      })
+    });
+
+    const payData = await payResponse.json();
+    
+    if (payData.status_code === 100) {
+      res.json({ success: true, message: 'Ödeme başarıyla tamamlandı.', data: payData.data });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        error: payData.status_code, 
+        message: payData.status_description || 'Ödeme reddedildi.' 
+      });
+    }
+  } catch (err) {
+    console.error('Sipay POS Error:', err);
+    res.status(500).json({ error: 'system_error', message: err.message });
+  }
+});
+
 /* --- VISITOR INVITATION ENDPOINTS --- */
 
 // Send Visitor Invite (Auth required)

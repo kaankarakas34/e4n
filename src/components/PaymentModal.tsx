@@ -3,17 +3,19 @@ import { Modal } from '../shared/Modal';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { CreditCard, ShieldCheck } from 'lucide-react';
+import { api } from '../api/api';
 
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     planTitle: string;
     amount: number;
-    onSuccess: () => void;
+    onSuccess: (paymentDetails?: any) => void;
 }
 
 export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess }: PaymentModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         cardNumber: '',
         cardName: '',
@@ -42,15 +44,39 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess }: 
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsProcessing(true);
+        setError('');
 
-        // Simulate API call for payment
-        setTimeout(() => {
+        try {
+            const expiryParts = formData.expiryDate.split('/');
+            if (expiryParts.length !== 2) {
+                setError('Geçersiz son kullanma tarihi (AA/YY)');
+                setIsProcessing(false);
+                return;
+            }
+            const [month, year] = expiryParts;
+            const res = await api.payWithSipay({
+                cardNumber: formData.cardNumber.replace(/\s+/g, ''),
+                cardHolderName: formData.cardName,
+                expiryMonth: month,
+                expiryYear: '20' + year,
+                cvv: formData.cvv,
+                total: amount
+            });
+
+            if (res.success) {
+                onSuccess({ cardName: formData.cardName });
+            } else {
+                setError(res.message || 'Ödeme gerçekleştirilemedi.');
+            }
+        } catch (err: any) {
+            console.error('POS Payment Error:', err);
+            setError(err.message || 'Ödeme sırasında bir hata oluştu.');
+        } finally {
             setIsProcessing(false);
-            onSuccess();
-        }, 2000);
+        }
     };
 
     return (
@@ -66,6 +92,12 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess }: 
                         <p className="text-xl font-bold text-indigo-600">₺{amount.toLocaleString()}</p>
                     </div>
                 </div>
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-lg">
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

@@ -16,7 +16,7 @@ async function request(path: string, options?: RequestInit) {
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options?.headers as Record<string, string> || {}),
   };
 
@@ -625,6 +625,17 @@ export const api = {
   },
   async deleteVisitorGroup(id: string) {
     return await request(`/admin/visitors/${id}`, { method: 'DELETE' });
+  },
+  async getAccountingPayments() {
+    return await request('/admin/accounting/payments');
+  },
+  async uploadAccountingInvoice(type: 'VISITOR' | 'MEMBER', id: string, file: File) {
+    const formData = new FormData();
+    formData.append('invoice', file);
+    return await request(`/admin/accounting/${type}/${id}/upload-invoice`, {
+      method: 'POST',
+      body: formData
+    });
   }
 };
 

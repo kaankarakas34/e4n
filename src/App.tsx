@@ -21,6 +21,7 @@ import { AdminCRM } from './pages/AdminCRM';
 import { AdminMembers } from './pages/AdminMembers';
 import { MemberProfile } from './pages/MemberProfile';
 import { AdminSubscriptions } from './pages/AdminSubscriptions';
+import { AdminAccounting } from './pages/AdminAccounting';
 import { AdminGroups } from './pages/AdminGroups';
 import { AdminGroupDetail } from './pages/AdminGroupDetail';
 import { GroupDetail } from './pages/GroupDetail';
@@ -215,6 +216,7 @@ function App() {
               <Route path="/admin/members/new" element={<CreateMember />} />
               <Route path="/admin/members/:id" element={<MemberProfile />} />
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+              <Route path="/admin/accounting" element={<AdminAccounting />} />
               <Route path="/admin/shuffle" element={<AdminShuffle />} />
               <Route path="/admin/groups" element={<AdminGroups />} />
               <Route path="/admin/groups/:id" element={<AdminGroupDetail />} />

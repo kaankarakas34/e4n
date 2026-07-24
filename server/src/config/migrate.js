@@ -241,6 +241,13 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
+    
+    // Invoice columns for Accounting page
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_url VARCHAR(555)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_issued BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_url VARCHAR(555)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_issued BOOLEAN DEFAULT FALSE");
+
     // Power Teams
     await client.query(`
       CREATE TABLE IF NOT EXISTS power_teams (

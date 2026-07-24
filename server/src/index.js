@@ -17,6 +17,8 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import multer from 'multer';
 import { runMigrations } from './config/migrate.js';
 import adminRoutes from './routes/admin.js';
 // import paymentRoutes from './routes/payment.js';
@@ -24,6 +26,24 @@ const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
+
+// Static uploads path serving & multer setup
+const uploadDir = path.resolve('uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadDir));
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
 
 // Connection Configuration for Database (Local Docker or Supabase)
 import pool from './config/db.js';
@@ -74,7 +94,7 @@ app.get('/api/health-check', async (req, res) => {
 
 // Helper to get active transporter dynamically
 // Helper to get active transporter dynamically
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html, attachments = []) => {
   let transporter;
   let sender;
 
@@ -118,7 +138,8 @@ const sendEmail = async (to, subject, html) => {
       from: sender,
       to,
       subject,
-      html
+      html,
+      attachments
     });
     console.log(`📧 Email sent to ${to}`);
     return { success: true };
@@ -170,6 +191,12 @@ pool.connect().then(async (client) => {
     // Public Visitors Table Update
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
     await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
+    
+    // Invoice columns for Accounting page
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_url VARCHAR(555)");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_invoice_issued BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_url VARCHAR(555)");
+    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS invoice_issued BOOLEAN DEFAULT FALSE");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS professions (
@@ -3612,6 +3639,126 @@ app.post('/api/memberships/:id/remind', authenticateToken, async (req, res) => {
     await sendNotification(userId, title, message);
     res.json({ success: true, message: 'Hatırlatma başarıyla gönderildi.' });
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Accounting: Get Payments (Visitors & Members)
+app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    const visitorsQuery = `
+      SELECT 
+        pv.id, 
+        pv.name, 
+        pv.email, 
+        pv.phone, 
+        pv.company, 
+        pv.profession, 
+        pv.created_at, 
+        'VISITOR' as type, 
+        COALESCE((pv.form_data->>'payment_amount')::float, 1000.00) as amount, 
+        pv.invoice_url, 
+        pv.invoice_issued, 
+        pv.form_data->>'tax_number' as tax_number, 
+        pv.form_data->>'address' as billing_address,
+        e.title as event_title
+      FROM public_visitors pv
+      LEFT JOIN events e ON pv.event_id = e.id
+      WHERE pv.kvkk_accepted = true 
+        AND (pv.source = 'visitor_payment' AND pv.form_data->>'payment_status' = 'PAID')
+    `;
+
+    const membersQuery = `
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        u.phone, 
+        u.company, 
+        u.profession, 
+        u.created_at, 
+        'MEMBER' as type, 
+        u.subscription_plan as plan, 
+        u.subscription_invoice_url as invoice_url, 
+        u.subscription_invoice_issued as invoice_issued, 
+        u.tax_number, 
+        u.tax_office, 
+        u.billing_address
+      FROM users u
+      WHERE u.subscription_plan IS NOT NULL 
+        AND u.subscription_end_date IS NOT NULL
+    `;
+
+    const visitors = await pool.query(visitorsQuery);
+    const members = await pool.query(membersQuery);
+
+    const mappedMembers = members.rows.map(m => {
+      let amount = 6000;
+      if (m.plan === '1_MONTH') amount = 7200;
+      else if (m.plan === '6_MONTHS') amount = 39000;
+      else if (m.plan === '12_MONTHS') amount = 69000;
+      return { ...m, amount };
+    });
+
+    const allPayments = [...visitors.rows, ...mappedMembers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    res.json(allPayments);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Accounting: Upload Invoice and Email User
+app.post('/api/admin/accounting/:type/:id/upload-invoice', authenticateToken, upload.single('invoice'), async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { type, id } = req.params;
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Lütfen bir fatura dosyası yükleyiniz.' });
+  }
+
+  try {
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const filePath = req.file.path;
+    let user = null;
+
+    if (type === 'VISITOR') {
+      const { rows } = await pool.query('SELECT name, email FROM public_visitors WHERE id = $1', [id]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Ziyaretçi kaydı bulunamadı.' });
+      user = rows[0];
+      await pool.query('UPDATE public_visitors SET invoice_url = $1, invoice_issued = true WHERE id = $2', [fileUrl, id]);
+    } else if (type === 'MEMBER') {
+      const { rows } = await pool.query('SELECT name, email FROM users WHERE id = $1', [id]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Üye kaydı bulunamadı.' });
+      user = rows[0];
+      await pool.query('UPDATE users SET subscription_invoice_url = $1, subscription_invoice_issued = true WHERE id = $2', [fileUrl, id]);
+    } else {
+      return res.status(400).json({ error: 'Geçersiz kayıt tipi.' });
+    }
+
+    // Send email with attachment
+    const emailHtml = `
+      <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; rounded: 12px;">
+        <h2 style="color: #4f46e5; margin-bottom: 20px;">Faturanız Hazır</h2>
+        <p>Sayın <strong>${user.name}</strong>,</p>
+        <p>Event4Network üzerinden yapmış olduğunuz ödemenize ait faturanız kesilmiştir. Fatura belgeniz bu e-postanın ekinde yer almaktadır.</p>
+        <p>Bizimle iş birliği yaptığınız için teşekkür ederiz.</p>
+        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;" />
+        <p style="font-size: 11px; color: #94a3b8; text-align: center;">Bu e-posta otomatik bir bildirimdir, lütfen cevap vermeyiniz.</p>
+      </div>
+    `;
+
+    const cleanName = user.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+    await sendEmail(user.email, 'Event4Network - Ödeme Faturanız', emailHtml, [
+      {
+        filename: `fatura-${cleanName}-${Date.now()}.pdf`,
+        path: filePath
+      }
+    ]);
+
+    res.json({ success: true, invoice_url: fileUrl });
+  } catch (e) {
+    console.error('Invoice Upload/Email Error:', e);
     res.status(500).json({ error: e.message });
   }
 });

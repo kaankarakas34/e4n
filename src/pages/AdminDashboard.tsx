@@ -18,7 +18,8 @@ import {
   Clock,
   UserPlus,
   Mail,
-  FolderKanban
+  FolderKanban,
+  Landmark
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -174,6 +175,14 @@ export function AdminDashboard() {
               bg="bg-orange-50 hover:bg-orange-100"
               onClick={() => navigate('/admin/subscriptions')}
               description="Üyelik aidat ve sürelerini takip edin."
+            />
+            <QuickActionCard
+              title="Muhasebe &amp; Fatura"
+              icon={Landmark}
+              color="text-emerald-600"
+              bg="bg-emerald-50 hover:bg-emerald-100"
+              onClick={() => navigate('/admin/accounting')}
+              description="Ödemeleri listeleyin ve faturaları yönetin."
             />
             <QuickActionCard
               title="Toplantı Zamanlayıcı"

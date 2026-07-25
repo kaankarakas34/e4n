@@ -12,6 +12,7 @@ export function AdminBlogEditor() {
 
   const [activeTab, setActiveTab] = useState<'general' | 'content' | 'seo' | 'og'>('general');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState<Partial<BlogPost>>({
     title: '',
@@ -37,6 +38,74 @@ export function AdminBlogEditor() {
 
   const [secondaryKeysInput, setSecondaryKeysInput] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+
+  const convertToWebP = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context could not be created'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Canvas toBlob returned null'));
+              }
+            },
+            'image/webp',
+            0.85
+          );
+        };
+        img.onerror = (err) => reject(err);
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const webpBlob = await convertToWebP(file);
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}.webp`;
+
+      const { data, error } = await supabase.storage
+        .from('blog-images')
+        .upload(fileName, webpBlob, {
+          contentType: 'image/webp',
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, featured_image: publicUrl }));
+      alert('Görsel başarıyla yüklenip WebP formatına dönüştürüldü!');
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert('Görsel yüklenirken hata oluştu: ' + (err.message || err));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isNew && id) {
@@ -259,14 +328,45 @@ export function AdminBlogEditor() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Kapak Görseli URL</label>
-                  <input
-                    type="text"
-                    value={formData.featured_image || ''}
-                    onChange={e => setFormData({ ...formData, featured_image: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500"
-                    placeholder="https://..."
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Kapak Görseli (WebP Yükleme)</label>
+                  {formData.featured_image ? (
+                    <div className="relative border border-gray-300 rounded-lg p-2 bg-gray-50 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img 
+                          src={formData.featured_image} 
+                          alt="Thumbnail" 
+                          className="w-12 h-12 rounded object-cover border border-gray-200 flex-shrink-0"
+                        />
+                        <span className="text-xs text-gray-500 truncate">{formData.featured_image.split('/').pop()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, featured_image: '' })}
+                        className="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 bg-red-50 hover:bg-red-100 rounded"
+                      >
+                        Kaldır
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-gray-300 hover:border-red-500 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-1 text-center">
+                        <ImageIcon className="mx-auto h-8 w-8 text-gray-400 group-hover:text-red-500 transition-colors" />
+                        <div className="flex text-sm text-gray-600 justify-center">
+                          <span className="relative rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-red-500">
+                            {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, WEBP (Otomatik WebP'ye dönüştürülür)</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

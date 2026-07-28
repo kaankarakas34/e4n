@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Check, User, Mail, Phone, Building, Briefcase, ArrowRight, Search, X, Globe, Clock, Target, HelpCircle, Award, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Check, User, Users, Mail, Phone, Building, Briefcase, ArrowRight, Search, X, Globe, Clock, Target, HelpCircle, Award, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 
@@ -262,6 +262,31 @@ export function DegerlendirmeBasvurusu() {
       </Helmet>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+        {/* Ücretsiz Topluluk Davet Alanı */}
+        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-200/50 rounded-3xl p-6 sm:p-8 shadow-md mb-8 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold mt-1">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg mb-1">
+                Ücretsiz Topluluklarımıza Katılın!
+              </h3>
+              <p className="text-slate-605 text-xs sm:text-sm leading-relaxed">
+                Etkinliklerimizden anında haberdar olup, birçok kişiyle tanışma şansı yakalayın. WhatsApp gruplarımıza ve sosyal ağlarımıza katılmak için hemen topluluk sayfamızı ziyaret edin.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/topluluklarimiz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-6 h-12 bg-red-600 hover:bg-red-500 text-white font-bold text-sm rounded-xl shadow-md transition-all whitespace-nowrap w-full md:w-auto text-center"
+          >
+            Topluluklarımıza Katılın <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+
         <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
           {/* Header Banner */}
           <div className="bg-gray-950 text-white p-8 sm:p-12 relative overflow-hidden">

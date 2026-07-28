@@ -76,6 +76,7 @@ import { Uyelik } from './pages/Uyelik';
 import { Hakkimizda } from './pages/Hakkimizda';
 import { SSS } from './pages/SSS';
 import { DegerlendirmeBasvurusu } from './pages/DegerlendirmeBasvurusu';
+import { Topluluklarimiz } from './pages/Topluluklarimiz';
 import { ContactPage } from './pages/ContactPage';
 import { KVKK } from './pages/KVKK';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
@@ -170,6 +171,7 @@ function App() {
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/sikca-sorulan-sorular" element={<SSS />} />
                 <Route path="/degerlendirme-basvurusu" element={<DegerlendirmeBasvurusu />} />
+                <Route path="/topluluklarimiz" element={<Topluluklarimiz />} />
                 <Route path="/ziyaretci" element={<VisitorPaymentPage />} />
                 <Route path="/iletisim" element={<ContactPage />} />
                 <Route path="/kvkk" element={<KVKK />} />

@@ -818,6 +818,34 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* 13.75 Topluluklarımıza Katılın Section */}
+      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-red-500/5 blur-3xl"></div>
+          <div className="absolute top-1/2 -left-40 w-80 h-80 rounded-full bg-red-500/5 blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <span className="text-xs font-bold text-red-650 uppercase tracking-widest block mb-4">E4N TOPLULUKLARI</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">
+            Ücretsiz topluluklarımıza katılıp etkinliklerimizden anında haberdar olun!
+          </h2>
+          <p className="text-slate-600 text-base sm:text-lg max-w-3xl mx-auto mb-10 leading-relaxed">
+            Sektörel loncalarımız, WhatsApp duyuru ve genel iş ağı gruplarımız sayesinde iş dünyasındaki birçok profesyonelle tanışma ve kalıcı bağlantılar kurma şansı yakalayın.
+          </p>
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={() => navigate('/topluluklarimiz')}
+              className="text-base font-bold px-10 h-14 bg-red-600 hover:bg-red-500 shadow-xl shadow-red-900/10 transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
+            >
+              Topluluklarımıza Katılın <ArrowRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* 14. Başvuru Çağrısı (Final CTA) */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">

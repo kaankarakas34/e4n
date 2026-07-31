@@ -46,7 +46,7 @@ export function PublicFooter() {
           </div>
         </div>
         <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Event4Network. Tüm hakları saklıdır.</p>
+          <p>&copy; {new Date().getFullYear()} Event4Network. Tüm hakları saklıdır. Haydar Karakaş</p>
         </div>
       </div>
     </footer>

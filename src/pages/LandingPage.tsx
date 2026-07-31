@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '../shared/Button';
@@ -23,6 +24,19 @@ import bizKimizNetwork from '../assets/biz_kimiz_network.png';
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const [showFloater, setShowFloater] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowFloater(true);
+      } else {
+        setShowFloater(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Smooth scroll helper
   const scrollToSection = (id: string) => {
@@ -873,6 +887,33 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Floating CTA Button for Community */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-8 sm:translate-x-0 z-40 transition-all duration-500 transform ${
+          showFloater ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' : 'opacity-0 translate-y-10 scale-95 pointer-events-none'
+        } w-[calc(100%-2.5rem)] sm:w-auto max-w-sm sm:max-w-none`}
+      >
+        <button
+          onClick={() => navigate('/topluluklarimiz')}
+          className="relative w-full flex items-center justify-between sm:justify-start gap-3 px-5 py-4 sm:py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-rose-600 text-white font-bold text-sm sm:text-base shadow-[0_10px_30px_rgba(220,38,38,0.35)] hover:shadow-[0_15px_35px_rgba(220,38,38,0.5)] transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105 active:scale-95 group border border-white/10 overflow-hidden"
+        >
+          {/* Shine background sweep effect on hover */}
+          <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-[-25deg] -translate-x-full group-hover:animate-shine pointer-events-none"></div>
+
+          <div className="flex items-center gap-2.5">
+            {/* Pulse Green Dot Indicator */}
+            <span className="relative flex h-3 w-3 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400 border border-red-600"></span>
+            </span>
+            <Users className="w-5 h-5 text-white/90 group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span className="tracking-wide whitespace-nowrap">Ücretsiz Topluluklarımıza Katılın</span>
+          </div>
+          
+          <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform ml-1 flex-shrink-0" />
+        </button>
+      </div>
     </div>
   );
 }

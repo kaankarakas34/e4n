@@ -19,3 +19,20 @@
 .trae-overlay {
   display: none !important;
 }
+
+/* Premium Floating Button Shine Animation */
+@keyframes shine {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  50% {
+    transform: translateX(200%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-25deg);
+  }
+}
+
+.animate-shine {
+  animation: shine 4s infinite ease-in-out;
+}

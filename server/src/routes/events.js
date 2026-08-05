@@ -9,6 +9,14 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     const { type, group_id, limit, mode } = req.query;
     try {
+        // Automatically transition past published events to COMPLETED
+        await pool.query(`
+          UPDATE events 
+          SET status = 'COMPLETED' 
+          WHERE status = 'PUBLISHED' 
+            AND COALESCE(end_at, start_at) < NOW()
+        `);
+
         let query = `
         SELECT e.*, g.name as group_name 
         FROM events e 

@@ -13,8 +13,8 @@ export function PublicEventsPage() {
   useEffect(() => {
     api.getEvents()
       .then((data: any) => {
-        // Filter only public events
-        const publicEvents = data.filter((e: any) => e.is_public);
+        // Filter only public events that are published
+        const publicEvents = data.filter((e: any) => e.is_public && e.status === 'PUBLISHED');
         // Sort by date close to far
         publicEvents.sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
         setEvents(publicEvents);

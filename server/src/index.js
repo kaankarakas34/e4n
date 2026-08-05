@@ -232,6 +232,24 @@ const calculateChampions = async (periodType, startDate, endDate) => {
 };
 
 // --- CRON JOBS ---
+// Auto-complete past events every 10 minutes
+cron.schedule('*/10 * * * *', async () => {
+  console.log('Running cron to auto-complete past events...');
+  try {
+    const res = await pool.query(`
+      UPDATE events 
+      SET status = 'COMPLETED' 
+      WHERE status = 'PUBLISHED' 
+        AND COALESCE(end_at, start_at) < NOW()
+    `);
+    if (res.rowCount > 0) {
+      console.log(`Auto-completed ${res.rowCount} past events via cron.`);
+    }
+  } catch (e) {
+    console.error('Error in auto-complete past events cron job:', e);
+  }
+});
+
 // Weekly: Sunday 23:59
 cron.schedule('59 23 * * 0', async () => {
   const end = new Date();
@@ -1169,7 +1187,7 @@ app.get('/api/calendar', authenticateToken, async (req, res) => {
       `SELECT e.id, e.start_at, 'meeting' as type, e.title, e.location 
        FROM events e
        LEFT JOIN group_members gm ON e.group_id = gm.group_id AND gm.user_id = $1
-       WHERE e.status = 'PUBLISHED' 
+       WHERE e.status IN ('PUBLISHED', 'COMPLETED') 
        AND (e.is_public = true OR gm.user_id IS NOT NULL)`,
       [userId]
     );
@@ -1740,6 +1758,14 @@ app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
 app.get('/api/events', async (req, res) => {
   const { type, group_id, limit, mode } = req.query;
   try {
+    // Automatically transition past published events to COMPLETED
+    await pool.query(`
+      UPDATE events 
+      SET status = 'COMPLETED' 
+      WHERE status = 'PUBLISHED' 
+        AND COALESCE(end_at, start_at) < NOW()
+    `);
+
     let query = `
       SELECT e.*, g.name as group_name 
       FROM events e 

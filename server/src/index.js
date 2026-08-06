@@ -1505,6 +1505,51 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
 
       await client.query('COMMIT');
 
+      // Send immediate registration confirmation email to attendee
+      try {
+        const userRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
+        if (userRes.rows.length > 0) {
+          const userInfo = userRes.rows[0];
+          const formattedDate = new Date(event.start_at).toLocaleDateString('tr-TR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          const formattedTime = new Date(event.start_at).toLocaleTimeString('tr-TR', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          let locationHtml = `<strong>Konum:</strong> ${event.location || ''}`;
+          if (event.is_online) {
+            locationHtml = `<strong>Konum:</strong> Online Toplantı<br/><strong>Toplantı Bağlantısı:</strong> <a href="${event.online_link || ''}" style="color: #ef4444; font-weight: bold;">${event.online_link || 'Toplantı linki katılım mailinde iletilecektir.'}</a>`;
+          }
+
+          const htmlContent = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+              <h2 style="color: #ef4444; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Etkinlik Kaydınız Onaylandı!</h2>
+              <p>Merhaba <strong>${userInfo.name}</strong>,</p>
+              <p><strong>"${event.title}"</strong> etkinliğine kaydınız başarıyla tamamlanmıştır. Etkinlik detayları aşağıda yer almaktadır:</p>
+              
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <p style="margin: 5px 0;">📅 <strong>Tarih:</strong> ${formattedDate}</p>
+                <p style="margin: 5px 0;">🕒 <strong>Saat:</strong> ${formattedTime}</p>
+                <p style="margin: 5px 0;">📍 ${locationHtml}</p>
+              </div>
+              
+              <p>Etkinlik saatinde görüşmek üzere.</p>
+              <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; text-align: center;">Event4Network tarafından otomatik olarak gönderilmiştir.</p>
+            </div>
+          `;
+
+          sendEmail(userInfo.email, `Etkinlik Kaydınız Onaylandı: ${event.title}`, htmlContent).catch(console.error);
+        }
+      } catch (mailErr) {
+        console.error('Error sending registration confirmation email:', mailErr);
+      }
+
       // Recalculate Score
       calculateMemberScore(req.user.id).catch(console.error);
 
@@ -1968,7 +2013,7 @@ app.get('/api/events', async (req, res) => {
         reqUser = jwt.verify(token, SECRET_KEY);
       } catch (err) { /* ignore */ }
     }
-    const isAdmin = reqUser && reqUser.role === 'ADMIN';
+    const isAdmin = (reqUser && (String(reqUser.role).toUpperCase() === 'ADMIN' || String(reqUser.role).toUpperCase() === 'SUPER_ADMIN')) || mode === 'admin';
 
     const sanitizedRows = rows.map(r => {
       const copy = { ...r };

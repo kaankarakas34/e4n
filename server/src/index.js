@@ -252,45 +252,8 @@ cron.schedule('*/10 * * * *', async () => {
 
 // Helper for event email reminders
 const runEventReminders = async () => {
-  console.log('Running event email reminders check...');
+  console.log('Running event email reminders check (1 hour before)...');
   
-  // 3_days reminder
-  const res3 = await pool.query(`
-    SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
-    FROM attendance a
-    JOIN users u ON a.user_id = u.id
-    JOIN events e ON a.event_id = e.id
-    LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = '3_days'
-    WHERE e.status = 'PUBLISHED'
-      AND e.start_at BETWEEN NOW() + INTERVAL '2 days' AND NOW() + INTERVAL '3 days'
-      AND r.id IS NULL
-  `);
-  
-  // 1_day reminder
-  const res1 = await pool.query(`
-    SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
-    FROM attendance a
-    JOIN users u ON a.user_id = u.id
-    JOIN events e ON a.event_id = e.id
-    LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = '1_day'
-    WHERE e.status = 'PUBLISHED'
-      AND e.start_at BETWEEN NOW() + INTERVAL '12 hours' AND NOW() + INTERVAL '28 hours'
-      AND r.id IS NULL
-  `);
-
-  // today reminder
-  const resToday = await pool.query(`
-    SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
-    FROM attendance a
-    JOIN users u ON a.user_id = u.id
-    JOIN events e ON a.event_id = e.id
-    LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = 'today'
-    WHERE e.status = 'PUBLISHED'
-      AND e.start_at BETWEEN NOW() + INTERVAL '2 hours' AND NOW() + INTERVAL '12 hours'
-      AND DATE(e.start_at) = DATE(NOW())
-      AND r.id IS NULL
-  `);
-
   // 1_hour reminder
   const res1h = await pool.query(`
     SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
@@ -353,21 +316,6 @@ const runEventReminders = async () => {
   };
 
   let count = 0;
-  // Send 3_days reminders
-  for (const row of res3.rows) {
-    await sendReminder(row, '3_days', '3 Gün Kaldı');
-    count++;
-  }
-  // Send 1_day reminders
-  for (const row of res1.rows) {
-    await sendReminder(row, '1_day', '1 Gün Kaldı');
-    count++;
-  }
-  // Send today reminders
-  for (const row of resToday.rows) {
-    await sendReminder(row, 'today', 'Bugün');
-    count++;
-  }
   // Send 1_hour reminders
   for (const row of res1h.rows) {
     await sendReminder(row, '1_hour', '1 Saat Kaldı');

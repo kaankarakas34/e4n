@@ -68,7 +68,7 @@ export function EventDetail() {
             return;
         }
 
-        if (event.price && event.price > 0) {
+        if (event.price && Number(event.price) > 0) {
             setIsPaymentModalOpen(true);
             return;
         }
@@ -316,7 +316,7 @@ export function EventDetail() {
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 planTitle={event?.title || ''}
-                amount={event?.price || 0}
+                amount={Number(event?.price) || 0}
                 onSuccess={handlePaymentSuccess}
             />
         </div>

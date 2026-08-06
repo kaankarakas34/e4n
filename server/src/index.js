@@ -1459,7 +1459,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
         
         let paymentStatus = 'FREE';
         if (event.price > 0) {
-            paymentStatus = 'PENDING';
+            paymentStatus = req.body.payment_status || 'PENDING';
         }
 
         await client.query(`

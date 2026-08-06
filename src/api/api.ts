@@ -202,8 +202,11 @@ export const api = {
   async deleteEvent(id: string) {
     await request(`/events/${id}`, { method: 'DELETE' });
   },
-  async registerForEvent(eventId: string) {
-    return await request(`/events/${eventId}/register`, { method: 'POST' });
+  async registerForEvent(eventId: string, payload?: any) {
+    return await request(`/events/${eventId}/register`, { 
+      method: 'POST', 
+      body: payload ? JSON.stringify(payload) : undefined 
+    });
   },
   async getGroups() {
     return await request('/groups');

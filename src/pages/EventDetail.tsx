@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
 import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video } from 'lucide-react';
+import { PaymentModal } from '../components/PaymentModal';
 
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export function EventDetail() {
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
     const [registered, setRegistered] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -46,9 +48,28 @@ export function EventDetail() {
         }
     }, [event, user]);
 
+    const handlePaymentSuccess = async (paymentDetails?: any) => {
+        setIsPaymentModalOpen(false);
+        setRegistering(true);
+        try {
+            const result = await api.registerForEvent(id!, { payment_status: 'PAID' });
+            setRegistered(true);
+            alert('Ödemeniz başarıyla alındı ve kaydınız tamamlandı! Biletiniz e-posta adresinize gönderilmiştir.');
+        } catch (error: any) {
+            alert('Ödeme başarılı oldu ancak kayıt sırasında bir hata oluştu: ' + (error.error || error.message) + '. Lütfen sistem yöneticisiyle iletişime geçin.');
+        } finally {
+            setRegistering(false);
+        }
+    };
+
     const handleRegister = async () => {
         if (!user) {
             navigate('/auth/login', { state: { from: `/event/${id}` } });
+            return;
+        }
+
+        if (event.price && event.price > 0) {
+            setIsPaymentModalOpen(true);
             return;
         }
 
@@ -60,11 +81,7 @@ export function EventDetail() {
             setRegistered(true);
             
             if (result.ticket_needed) {
-                if (result.price > 0) {
-                    alert('Kayıt talebiniz alındı! Ödemeniz onaylandıktan sonra biletiniz e-posta ile gönderilecektir.');
-                } else {
-                    alert('Kayıt başarılı! Ücretsiz biletiniz e-posta adresinize gönderildi.');
-                }
+                alert('Kayıt başarılı! Ücretsiz biletiniz e-posta adresinize gönderildi.');
             } else {
                 alert('Etkinliğe başarıyla kayıt oldunuz!');
             }
@@ -294,6 +311,14 @@ export function EventDetail() {
                     </div>
                 </div>
             </div>
+
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                planTitle={event?.title || ''}
+                amount={event?.price || 0}
+                onSuccess={handlePaymentSuccess}
+            />
         </div>
     );
 }

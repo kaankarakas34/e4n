@@ -4317,11 +4317,13 @@ if ((process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tr
 
 // Conditional Listen
 (async () => {
-  try {
-    await runMigrations();
-    console.log('✅ Migrations completed.');
-  } catch (e) {
-    console.error('⚠️ Migration Warning (non-fatal):', e.message);
+  if (!process.env.VERCEL) {
+    try {
+      await runMigrations();
+      console.log('✅ Migrations completed.');
+    } catch (e) {
+      console.error('⚠️ Migration Warning (non-fatal):', e.message);
+    }
   }
 
   if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {

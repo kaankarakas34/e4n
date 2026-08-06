@@ -55,12 +55,16 @@ const applicationSchema = z.object({
   // Adım 6: Referans ve Onaylar
   previous_networking_experience: z.string().optional(),
   discovery_source: z.string().optional(),
-  kvkk: z.boolean().refine(val => val === true, {
-    message: 'KVKK onayı zorunludur'
+  kvkk_clarification: z.boolean().refine(val => val === true, {
+    message: 'KVKK Aydınlatma Metni\'ni onaylamanız zorunludur'
+  }),
+  kvkk_consent: z.boolean().refine(val => val === true, {
+    message: 'KVKK Açık Rıza Metni\'ni onaylamanız zorunludur'
   }),
   application_consent: z.boolean().refine(val => val === true, {
     message: 'Başvuru bilgilendirme onayı zorunludur'
-  })
+  }),
+  marketing_consent: z.boolean().optional()
 });
 
 type ApplicationFormData = z.infer<typeof applicationSchema>;
@@ -123,7 +127,7 @@ export function DegerlendirmeBasvurusu() {
     if (currentStep === 0) fieldsToValidate = ['name', 'phone', 'email', 'linkedin_profile', 'city'];
     if (currentStep === 1) fieldsToValidate = ['company', 'title', 'web_linkedin', 'activity_area', 'industry', 'duration'];
     if (currentStep === 2) fieldsToValidate = ['why_join'];
-    if (currentStep === 3) fieldsToValidate = ['kvkk', 'application_consent'];
+    if (currentStep === 3) fieldsToValidate = ['kvkk_clarification', 'kvkk_consent', 'application_consent'];
     
     const isStepValid = await trigger(fieldsToValidate as any);
     if (isStepValid) {
@@ -154,7 +158,7 @@ export function DegerlendirmeBasvurusu() {
         why_join: data.why_join,
         value_add: data.value_add,
         previous_groups: data.previous_networking_experience || 'Hayır',
-        kvkk_accepted: true,
+        kvkk_accepted: data.kvkk_clarification && data.kvkk_consent,
         source: 'on_degerlendirme',
         inviter_id: selectedReferral ? selectedReferral.id : undefined,
         form_data: {
@@ -180,6 +184,9 @@ export function DegerlendirmeBasvurusu() {
           ideal_referral_definition: data.ideal_referral_definition,
           time_commitment: data.time_commitment,
           core_value: data.core_value,
+          kvkk_clarification_accepted: data.kvkk_clarification,
+          kvkk_consent_accepted: data.kvkk_consent,
+          marketing_consent_accepted: !!data.marketing_consent,
           discovery_source: data.discovery_source,
           referral_name: selectedReferral ? selectedReferral.name : undefined
         }
@@ -507,19 +514,35 @@ export function DegerlendirmeBasvurusu() {
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 space-y-4">
+                  {/* KVKK Aydınlatma Metni */}
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <div className="relative flex items-center mt-0.5">
-                      <input type="checkbox" {...register('kvkk')} className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-red-500 checked:bg-red-500" />
+                      <input type="checkbox" {...register('kvkk_clarification')} className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-red-500 checked:bg-red-500" />
                       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
                         <Check size={14} strokeWidth={3} />
                       </div>
                     </div>
-                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
-                      Kişisel verilerimin Event4Network ön değerlendirme süreci kapsamında işlenmesini kabul ediyorum. *
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
+                      <a href="/kvkk" target="_blank" className="font-bold text-red-600 hover:text-red-700 underline mr-1">KVKK Aydınlatma Metni</a>'ni okudum ve anladım. *
                     </span>
                   </label>
-                  {errors.kvkk && <p className="mt-1 text-xs text-red-500 pl-8">{errors.kvkk.message}</p>}
+                  {errors.kvkk_clarification && <p className="mt-1 text-xs text-red-500 pl-8">{errors.kvkk_clarification.message}</p>}
 
+                  {/* KVKK Açık Rıza Metni */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative flex items-center mt-0.5">
+                      <input type="checkbox" {...register('kvkk_consent')} className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-red-500 checked:bg-red-500" />
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
+                      Kişisel verilerimin Event4Network ön değerlendirme süreci kapsamında işlenmesine ve iletişim kurulmasına dair KVKK Açık Rıza Metni'ni onaylıyorum. *
+                    </span>
+                  </label>
+                  {errors.kvkk_consent && <p className="mt-1 text-xs text-red-500 pl-8">{errors.kvkk_consent.message}</p>}
+
+                  {/* Üyelik Garantisi Bilgilendirme */}
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <div className="relative flex items-center mt-0.5">
                       <input type="checkbox" {...register('application_consent')} className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-red-500 checked:bg-red-500" />
@@ -527,11 +550,24 @@ export function DegerlendirmeBasvurusu() {
                         <Check size={14} strokeWidth={3} />
                       </div>
                     </div>
-                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
                       Başvuru formunu doldurmanın üyelik garantisi oluşturmadığını; başvuruların uygunluk ve karşılıklı değer potansiyeli doğrultusunda değerlendirileceğini kabul ediyorum. *
                     </span>
                   </label>
                   {errors.application_consent && <p className="mt-1 text-xs text-red-500 pl-8">{errors.application_consent.message}</p>}
+
+                  {/* Etkinlik ve Duyuru Alım Onayı */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative flex items-center mt-0.5">
+                      <input type="checkbox" {...register('marketing_consent')} className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-red-500 checked:bg-red-500" />
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
+                      Event4Network etkinlikleri, iş fırsatları ve duyurularından e-posta, SMS ve telefon vasıtasıyla haberdar olmak istiyorum.
+                    </span>
+                  </label>
                 </div>
               </div>
             )}

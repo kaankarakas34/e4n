@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isLoading, error, clearError } = useAuthStore();
 
   const {
@@ -32,7 +33,8 @@ export function Login() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email.trim(), data.password.trim());
-      navigate('/dashboard');
+      const from = (location.state as any)?.from || '/dashboard';
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Login failed:', error);
     }

@@ -82,6 +82,13 @@ export function KVKK() {
               <p className="mt-3">
                 Bu haklarınızı kullanmak için taleplerinizi içeren yazılı başvurunuzu <strong>info@event4network.com</strong> e-posta adresimize güvenli elektronik imza veya kayıtlı e-posta adresiniz üzerinden gönderebilirsiniz.
               </p>
+
+              <div id="acik-riza" className="pt-6 border-t border-gray-150 mt-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">6. Açık Rıza Beyanı</h2>
+                <p>
+                  Event4Network ön değerlendirme başvurusu ve üyelik süreçleri kapsamında paylaştığım; kimlik, iletişim, sosyal medya profilleri ve mesleki bilgilerim başta olmak üzere tüm kişisel verilerimin, topluluğun işleyiş standartları, etkinlik organizasyonları ve iletişim faaliyetleri doğrultusunda işlenmesine, güvenli şekilde saklanmasına ve iş ortakları veya diğer topluluk üyeleri ile paylaşılmasına açık rıza gösteriyorum.
+                </p>
+              </div>
             </div>
           </div>
         </div>

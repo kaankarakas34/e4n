@@ -38,7 +38,8 @@ export function PublicFooter() {
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/kullanim-kosullari" className="hover:text-red-600">Kullanım Koşulları</Link></li>
               <li><Link to="/gizlilik-politikasi" className="hover:text-red-600">Gizlilik Politikası</Link></li>
-              <li><Link to="/kvkk" className="hover:text-red-600">KVKK</Link></li>
+              <li><Link to="/kvkk" className="hover:text-red-600">KVKK Aydınlatma Metni</Link></li>
+              <li><Link to="/kvkk#acik-riza" className="hover:text-red-600">KVKK Açık Rıza Metni</Link></li>
               <li><Link to="/on-bilgilendirme-formu" className="hover:text-red-600">Ön Bilgilendirme Formu</Link></li>
               <li><Link to="/mesafeli-satis-sozlesmesi" className="hover:text-red-600">Mesafeli Satış Sözleşmesi</Link></li>
               <li><Link to="/iptal-ve-iade-kosullari" className="hover:text-red-600">İptal ve İade Koşulları</Link></li>

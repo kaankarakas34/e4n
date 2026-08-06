@@ -17,6 +17,8 @@ export function UserEvents() {
     const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
     const [successMap, setSuccessMap] = useState<Record<string, boolean>>({});
 
+    const [filterTab, setFilterTab] = useState<'all' | 'attending'>('all');
+
     useEffect(() => {
         fetchEvents();
     }, [fetchEvents]);
@@ -60,24 +62,56 @@ export function UserEvents() {
         return isPublished && isUpcomingOrOngoing;
     });
 
+    const displayEvents = filterTab === 'all'
+        ? visibleEvents
+        : visibleEvents.filter(e => e.attendees?.some((att: any) => att.id === user?.id));
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">Etkinlikler</h1>
-                    <p className="mt-2 text-gray-600">Katılabileceğiniz güncel etkinlikler ve toplantılar.</p>
+                    <p className="mt-2 text-gray-650">Katılabileceğiniz güncel etkinlikler ve toplantılar.</p>
                 </div>
 
-                {visibleEvents.length === 0 ? (
+                {/* Filter Tabs */}
+                <div className="flex space-x-2 mb-6 border-b border-gray-200 pb-3">
+                    <button
+                        onClick={() => setFilterTab('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            filterTab === 'all'
+                                ? 'bg-red-600 text-white shadow-sm'
+                                : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-250'
+                        }`}
+                    >
+                        Tüm Etkinlikler
+                    </button>
+                    <button
+                        onClick={() => setFilterTab('attending')}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            filterTab === 'attending'
+                                ? 'bg-red-600 text-white shadow-sm'
+                                : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-250'
+                        }`}
+                    >
+                        Katılacağım Etkinlikler ({events.filter(e => e.attendees?.some((att: any) => att.id === user?.id)).length})
+                    </button>
+                </div>
+
+                {displayEvents.length === 0 ? (
                     <Card>
                         <CardContent className="text-center py-12">
                             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500">Şu anda yaklaşan etkinlik bulunmamaktadır.</p>
+                            <p className="text-gray-505">
+                                {filterTab === 'attending' 
+                                    ? 'Kayıt olduğunuz yaklaşan bir etkinlik bulunmamaktadır.' 
+                                    : 'Şu anda yaklaşan etkinlik bulunmamaktadır.'}
+                            </p>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {visibleEvents.map((event) => (
+                        {displayEvents.map((event) => (
                             <Card key={event.id} className="hover:shadow-lg transition-shadow border-t-4 border-t-red-600">
                                 <CardHeader>
                                     <div className="flex justify-between items-start mb-2">

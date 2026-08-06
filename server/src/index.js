@@ -250,6 +250,130 @@ cron.schedule('*/10 * * * *', async () => {
   }
 });
 
+// Event email reminders every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  console.log('Running cron for event email reminders...');
+  try {
+    // 3_days reminder
+    const res3 = await pool.query(`
+      SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id
+      JOIN events e ON a.event_id = e.id
+      LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = '3_days'
+      WHERE e.status = 'PUBLISHED'
+        AND e.start_at BETWEEN NOW() + INTERVAL '2 days' AND NOW() + INTERVAL '3 days'
+        AND r.id IS NULL
+    `);
+    
+    // 1_day reminder
+    const res1 = await pool.query(`
+      SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id
+      JOIN events e ON a.event_id = e.id
+      LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = '1_day'
+      WHERE e.status = 'PUBLISHED'
+        AND e.start_at BETWEEN NOW() + INTERVAL '12 hours' AND NOW() + INTERVAL '28 hours'
+        AND r.id IS NULL
+    `);
+
+    // today reminder
+    const resToday = await pool.query(`
+      SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id
+      JOIN events e ON a.event_id = e.id
+      LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = 'today'
+      WHERE e.status = 'PUBLISHED'
+        AND e.start_at BETWEEN NOW() + INTERVAL '2 hours' AND NOW() + INTERVAL '12 hours'
+        AND DATE(e.start_at) = DATE(NOW())
+        AND r.id IS NULL
+    `);
+
+    // 1_hour reminder
+    const res1h = await pool.query(`
+      SELECT a.user_id, a.event_id, u.email, u.name as user_name, e.title as event_title, e.start_at, e.online_link, e.location, e.is_online
+      FROM attendance a
+      JOIN users u ON a.user_id = u.id
+      JOIN events e ON a.event_id = e.id
+      LEFT JOIN event_reminders_sent r ON r.event_id = e.id AND r.user_id = u.id AND r.reminder_type = '1_hour'
+      WHERE e.status = 'PUBLISHED'
+        AND e.start_at BETWEEN NOW() AND NOW() + INTERVAL '70 minutes'
+        AND r.id IS NULL
+    `);
+
+    const sendReminder = async (row, type, typeLabel) => {
+      try {
+        const formattedDate = new Date(row.start_at).toLocaleDateString('tr-TR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        const formattedTime = new Date(row.start_at).toLocaleTimeString('tr-TR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        let locationHtml = `<strong>Konum:</strong> ${row.location || ''}`;
+        if (row.is_online) {
+          locationHtml = `<strong>Konum:</strong> Online Toplantı<br/><strong>Toplantı Bağlantısı:</strong> <a href="${row.online_link || ''}" style="color: #ef4444; font-weight: bold;">${row.online_link || 'Toplantı linki katılım mailinde iletilecektir.'}</a>`;
+        }
+
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+            <h2 style="color: #ef4444; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Etkinlik Hatırlatması (${typeLabel})</h2>
+            <p>Merhaba <strong>${row.user_name}</strong>,</p>
+            <p>Katılacağınız <strong>"${row.event_title}"</strong> etkinliğine kısa bir süre kaldı! Etkinlik bilgileri aşağıda yer almaktadır:</p>
+            
+            <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+              <p style="margin: 5px 0;">📅 <strong>Tarih:</strong> ${formattedDate}</p>
+              <p style="margin: 5px 0;">🕒 <strong>Saat:</strong> ${formattedTime}</p>
+              <p style="margin: 5px 0;">📍 ${locationHtml}</p>
+            </div>
+            
+            <p>Etkinlik saatinde katılımınızı rica eder, iyi çalışmalar dileriz.</p>
+            <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #9ca3af; text-align: center;">Event4Network tarafından otomatik olarak gönderilmiştir.</p>
+          </div>
+        `;
+
+        await sendEmail(row.email, `Hatırlatma: ${row.event_title} (${typeLabel})`, htmlContent);
+        
+        await pool.query(`
+          INSERT INTO event_reminders_sent (event_id, user_id, reminder_type)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (event_id, user_id, reminder_type) DO NOTHING
+        `, [row.event_id, row.user_id, type]);
+
+      } catch (err) {
+        console.error(`Error sending email to ${row.email} for event ${row.event_id}:`, err);
+      }
+    };
+
+    // Send 3_days reminders
+    for (const row of res3.rows) {
+      await sendReminder(row, '3_days', '3 Gün Kaldı');
+    }
+    // Send 1_day reminders
+    for (const row of res1.rows) {
+      await sendReminder(row, '1_day', '1 Gün Kaldı');
+    }
+    // Send today reminders
+    for (const row of resToday.rows) {
+      await sendReminder(row, 'today', 'Bugün');
+    }
+    // Send 1_hour reminders
+    for (const row of res1h.rows) {
+      await sendReminder(row, '1_hour', '1 Saat Kaldı');
+    }
+
+  } catch (e) {
+    console.error('Error in event email reminders cron job:', e);
+  }
+});
+
 // Weekly: Sunday 23:59
 cron.schedule('59 23 * * 0', async () => {
   const end = new Date();
@@ -1801,7 +1925,27 @@ app.get('/api/events', async (req, res) => {
     }
 
     const { rows } = await pool.query(query, params);
-    res.json(rows);
+    
+    // Auth check for online_link visibility
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    let reqUser = null;
+    if (token) {
+      try {
+        reqUser = jwt.verify(token, SECRET_KEY);
+      } catch (err) { /* ignore */ }
+    }
+    const isAdmin = reqUser && reqUser.role === 'ADMIN';
+
+    const sanitizedRows = rows.map(r => {
+      const copy = { ...r };
+      if (!isAdmin) {
+        delete copy.online_link;
+      }
+      return copy;
+    });
+
+    res.json(sanitizedRows);
   } catch (e) {
     console.error('SERVER ERROR in GET /api/events:', e);
     res.status(500).json({ error: e.message || String(e) });
@@ -1822,6 +1966,21 @@ app.get('/api/events/:id', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
     const event = rows[0];
 
+    // Auth check for online_link visibility
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    let reqUser = null;
+    if (token) {
+      try {
+        reqUser = jwt.verify(token, SECRET_KEY);
+      } catch (err) { /* ignore */ }
+    }
+    const isAdmin = reqUser && reqUser.role === 'ADMIN';
+
+    if (!isAdmin) {
+      delete event.online_link;
+    }
+
     // Participants list
     const attRes = await pool.query(`
       SELECT u.id, u.name, u.avatar, u.profession, a.status 
@@ -1837,12 +1996,12 @@ app.get('/api/events/:id', async (req, res) => {
 
 // Create Event
 app.post('/api/events', authenticateToken, async (req, res) => {
-  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency } = req.body;
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency, online_link } = req.body;
   try {
     const { rows } = await pool.query(
-      `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency)
-       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING * `,
-      [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false, price || 0, currency || 'TRY']
+      `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency, online_link)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING * `,
+      [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false, price || 0, currency || 'TRY', online_link || null]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1851,7 +2010,7 @@ app.post('/api/events', authenticateToken, async (req, res) => {
 // Update Event
 app.put('/api/events/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees, generate_tickets, price, currency } = req.body;
+  const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees, generate_tickets, price, currency, online_link } = req.body;
 
   try {
     const fields = [];
@@ -1875,6 +2034,7 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
     if (generate_tickets !== undefined) { fields.push(`generate_tickets = $${idx++} `); values.push(generate_tickets); }
     if (price !== undefined) { fields.push(`price = $${idx++} `); values.push(price); }
     if (currency !== undefined) { fields.push(`currency = $${idx++} `); values.push(currency); }
+    if (online_link !== undefined) { fields.push(`online_link = $${idx++} `); values.push(online_link); }
 
     if (fields.length === 0) return res.json({ message: 'No changes' });
 

@@ -3,11 +3,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Logo } from '../shared/Logo';
 import { Button } from '../shared/Button';
 import { Menu, X } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 export function PublicHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+
+  const { user } = useAuthStore();
 
   const navLinks = [
     { name: 'E4N Nedir?', path: '/e4n-nedir' },
@@ -34,8 +37,8 @@ export function PublicHeader() {
                 to={link.path}
                 className={`font-medium transition-colors ${
                   location.pathname === link.path
-                    ? 'text-red-600'
-                    : 'text-gray-600 hover:text-red-600'
+                    ? 'text-red-650'
+                    : 'text-gray-600 hover:text-red-650'
                 }`}
               >
                 {link.name}
@@ -44,25 +47,37 @@ export function PublicHeader() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/auth/login')}
-            >
-              Giriş Yap
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
-              className="shadow-md hover:shadow-lg shadow-red-200"
-            >
-              Katıl
-            </Button>
+            {user ? (
+              <Button
+                variant="primary"
+                onClick={() => navigate('/dashboard')}
+                className="shadow-md hover:shadow-lg shadow-red-200"
+              >
+                Panelim
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/auth/login')}
+                >
+                  Giriş Yap
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/degerlendirme-basvurusu')}
+                  className="shadow-md hover:shadow-lg shadow-red-200"
+                >
+                  Katıl
+                </Button>
+              </>
+            )}
           </div>
 
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-505 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -80,34 +95,49 @@ export function PublicHeader() {
               onClick={() => setIsOpen(false)}
               className={`block px-3 py-2 rounded-md text-base font-medium ${
                 location.pathname === link.path
-                  ? 'bg-red-50 text-red-600'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-red-600'
+                  ? 'bg-red-50 text-red-650'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-red-650'
               }`}
             >
               {link.name}
             </Link>
           ))}
           <div className="pt-4 flex flex-col gap-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsOpen(false);
-                navigate('/auth/login');
-              }}
-              className="w-full justify-center"
-            >
-              Giriş Yap
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setIsOpen(false);
-                navigate('/degerlendirme-basvurusu');
-              }}
-              className="w-full justify-center shadow-md shadow-red-200"
-            >
-              Katıl
-            </Button>
+            {user ? (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/dashboard');
+                }}
+                className="w-full justify-center shadow-md shadow-red-200"
+              >
+                Panelim
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/auth/login');
+                  }}
+                  className="w-full justify-center"
+                >
+                  Giriş Yap
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/degerlendirme-basvurusu');
+                  }}
+                  className="w-full justify-center shadow-md shadow-red-200"
+                >
+                  Katıl
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

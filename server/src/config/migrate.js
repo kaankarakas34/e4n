@@ -120,6 +120,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS has_equal_opportunity_badge BOOLEAN DEFAULT FALSE");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS online_link VARCHAR(1000)");
 
     // Professions Table
     await client.query(`
@@ -296,6 +297,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE");
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE");
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+    await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS online_link VARCHAR(1000)");
 
     // Event Tickets Table
     await client.query(`
@@ -306,6 +308,18 @@ export const runMigrations = async () => {
         ticket_number VARCHAR(50) UNIQUE NOT NULL,
         payment_status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, PAID, FREE
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+
+    // Event Reminders Tracking Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS event_reminders_sent (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        reminder_type VARCHAR(20),
+        sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(event_id, user_id, reminder_type)
       )
     `);
 

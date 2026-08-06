@@ -45,6 +45,7 @@ interface EventFormData {
   is_online?: boolean;
   pinned?: boolean;
   generate_tickets?: boolean;
+  online_link?: string;
 }
 
 const CITIES = [
@@ -80,7 +81,8 @@ export function AdminEvents() {
     city: '',
     is_online: false,
     pinned: false,
-    generate_tickets: false
+    generate_tickets: false,
+    online_link: ''
   });
 
   useEffect(() => {
@@ -127,7 +129,8 @@ export function AdminEvents() {
         generate_tickets: formData.generate_tickets,
         status: formData.status,
         price: formData.price,
-        currency: formData.currency
+        currency: formData.currency,
+        online_link: formData.online_link || null
       };
 
       if (editingEvent) {
@@ -161,7 +164,8 @@ export function AdminEvents() {
       city: '',
       is_online: false,
       pinned: false,
-      generate_tickets: false
+      generate_tickets: false,
+      online_link: ''
     });
     setShowForm(false);
     setEditingEvent(null);
@@ -197,7 +201,8 @@ export function AdminEvents() {
       has_equal_opportunity_badge: event.has_equal_opportunity_badge || false,
       city: event.city || '',
       is_online: event.is_online || false,
-      pinned: event.pinned || false
+      pinned: event.pinned || false,
+      online_link: event.online_link || ''
     });
     setEditingEvent(event);
     setShowForm(true);
@@ -400,13 +405,28 @@ export function AdminEvents() {
                     type="checkbox"
                     id="is_online"
                     checked={formData.is_online || false}
-                    onChange={(e) => setFormData({ ...formData, is_online: e.target.checked, location: e.target.checked ? 'Online' : formData.location })}
+                    onChange={(e) => setFormData({ ...formData, is_online: e.target.checked, location: e.target.checked ? 'Online' : formData.location, online_link: e.target.checked ? formData.online_link : '' })}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
                   <label htmlFor="is_online" className="ml-2 block text-sm text-gray-900">
                     Online Etkinlik
                   </label>
                 </div>
+
+                {formData.is_online && (
+                  <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Toplantı Katılım Linki (Zoom, Teams, Google Meet vb.)
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.online_link || ''}
+                      onChange={(e) => setFormData({ ...formData, online_link: e.target.value })}
+                      placeholder="https://zoom.us/j/..."
+                      required={formData.is_online}
+                    />
+                  </div>
+                )}
 
                 <div className="flex items-center">
                   <input

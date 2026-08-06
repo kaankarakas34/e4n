@@ -18,19 +18,33 @@ export function EventDetail() {
         if (id) {
             loadEvent(id);
         }
-    }, [id]);
+    }, [id, user]);
 
     const loadEvent = async (eventId: string) => {
         setLoading(true);
         try {
             const data = await api.getEvent(eventId);
             setEvent(data);
+            if (user && data.attendees?.some((att: any) => att.id === user.id)) {
+                setRegistered(true);
+            } else {
+                setRegistered(false);
+            }
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (event && user) {
+            const isReg = event.attendees?.some((att: any) => att.id === user.id);
+            setRegistered(!!isReg);
+        } else {
+            setRegistered(false);
+        }
+    }, [event, user]);
 
     const handleRegister = async () => {
         if (!user) {

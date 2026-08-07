@@ -360,7 +360,7 @@ function CommunityDashboard({ user }: { user: any }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 
                 {/* Visitor Application Callout Banner */}
-                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-650 via-red-500 to-rose-600 p-8 text-white shadow-xl shadow-red-900/10">
+                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-700 via-red-600 to-rose-600 p-8 text-white shadow-xl shadow-red-900/10">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]"></div>
                     <div className="relative z-10 max-w-3xl space-y-4">
                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-white font-bold text-xs uppercase tracking-wider border border-white/20">

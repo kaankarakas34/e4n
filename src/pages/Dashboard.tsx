@@ -24,7 +24,11 @@ import {
   CreditCard,
   ArrowRight,
   Bell,
-  MapPin
+  MapPin,
+  MessageCircle,
+  Linkedin,
+  Instagram,
+  User
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -353,6 +357,15 @@ function CommunityDashboard({ user }: { user: any }) {
                             <h1 className="text-2xl font-bold text-gray-900">Hoş Geldiniz, {user.name}</h1>
                             <p className="text-sm text-gray-500">{user.profession} • Topluluk Üyesi</p>
                         </div>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => navigate('/profile')}
+                                variant="outline"
+                                className="text-sm font-bold border-slate-350 text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-2 rounded-xl"
+                            >
+                                <User className="w-4 h-4 text-slate-500" /> Profilimi Düzenle
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -388,9 +401,18 @@ function CommunityDashboard({ user }: { user: any }) {
                     {/* Left Column: Upcoming Events */}
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white p-6 rounded-2xl border border-slate-200">
-                            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                                <Calendar className="w-6 h-6 text-red-600" /> Yaklaşan Etkinlikler
-                            </h2>
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                    <Calendar className="w-6 h-6 text-red-600" /> Yaklaşan Etkinlikler
+                                </h2>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => navigate('/events')}
+                                    className="text-xs font-bold border-slate-350 text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 rounded-xl px-4 py-2"
+                                >
+                                    Tüm Etkinlikleri Gör <ArrowRight className="w-3.5 h-3.5" />
+                                </Button>
+                            </div>
                             {eventsLoading ? (
                                 <div className="text-center py-12 text-slate-500">Etkinlikler yükleniyor...</div>
                             ) : events.length === 0 ? (
@@ -468,6 +490,86 @@ function CommunityDashboard({ user }: { user: any }) {
                                     ))}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Topluluk Kanalları */}
+                        <div className="bg-white p-6 rounded-2xl border border-slate-200">
+                            <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                <Users className="w-6 h-6 text-emerald-600" /> Topluluk Bağlantıları
+                            </h2>
+                            <p className="text-xs text-slate-500 leading-relaxed mb-6">
+                                Etkinliklerimizden anında haberdar olmak ve diğer üyelerle iletişimde kalmak için ücretsiz kanallarımıza katılın.
+                            </p>
+                            
+                            <div className="space-y-3.5">
+                              {[
+                                {
+                                  name: "Duyurular Grubu",
+                                  desc: "Etkinlik duyuruları ve önemli gelişmeler",
+                                  url: "https://chat.whatsapp.com/GTlmZQUrjT402yi5swGQ5c",
+                                  icon: MessageCircle,
+                                  color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+                                  actionText: "Gruba Katıl"
+                                },
+                                {
+                                  name: "Genel İş Ağı Grubu",
+                                  desc: "Tüm sektörlerden genel iletişim & iş ağı",
+                                  url: "https://chat.whatsapp.com/DeBaBEYP0D89O1HxD6vgCK",
+                                  icon: MessageCircle,
+                                  color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+                                  actionText: "Gruba Katıl"
+                                },
+                                {
+                                  name: "E4N LinkedIn Grubu",
+                                  desc: "İş dünyasındaki bağlantılarınızı güçlendirin",
+                                  url: "https://www.linkedin.com/groups/33110020/",
+                                  icon: Linkedin,
+                                  color: "bg-blue-50 text-blue-600 border-blue-100",
+                                  actionText: "Gruba Katıl"
+                                },
+                                {
+                                  name: "Instagram Sayfası",
+                                  desc: "Etkinlik özetleri ve görsel paylaşımlar",
+                                  url: "https://www.instagram.com/event4network/",
+                                  icon: Instagram,
+                                  color: "bg-rose-50 text-rose-600 border-rose-100",
+                                  actionText: "Takip Et"
+                                }
+                              ].map((item, idx) => {
+                                const IconComponent = item.icon;
+                                return (
+                                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${item.color}`}>
+                                        <IconComponent className="w-4 h-4" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
+                                        <p className="text-[10px] text-slate-500 mt-0.5">{item.desc}</p>
+                                      </div>
+                                    </div>
+                                    <a
+                                      href={item.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 hover:border-slate-400 px-3 py-1.5 rounded-lg transition-colors shadow-sm shrink-0"
+                                    >
+                                      {item.actionText}
+                                    </a>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="mt-6 pt-5 border-t border-slate-100">
+                              <Button
+                                onClick={() => navigate('/topluluklarimiz')}
+                                variant="outline"
+                                className="w-full text-xs font-bold py-2.5 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-50 flex justify-center items-center gap-1.5"
+                              >
+                                Tüm Sektörel Loncaları Gör <ArrowRight className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

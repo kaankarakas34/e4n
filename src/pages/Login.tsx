@@ -58,7 +58,7 @@ export function Login() {
             </p>
           </div>
           <div className="flex items-center gap-4 text-sm font-medium text-gray-300">
-            <span>© 2024 Event 4 Network</span>
+            <span>© 2026 Event 4 Network</span>
             <span className="h-1 w-1 rounded-full bg-gray-500"></span>
             <span>Tüm hakları saklıdır.</span>
           </div>
@@ -180,8 +180,7 @@ export function Login() {
                 </div>
                 <Button
                   onClick={() => navigate('/degerlendirme-basvurusu')}
-                  variant="outline"
-                  className="w-full text-xs font-bold py-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50"
+                  className="w-full text-xs font-bold py-2 rounded-lg border border-red-200 text-red-600 bg-white hover:bg-white hover:text-red-600"
                 >
                   Ziyaretçi Ol
                 </Button>
@@ -197,8 +196,7 @@ export function Login() {
                 </div>
                 <Button
                   onClick={() => navigate('/auth/register-community')}
-                  variant="primary"
-                  className="w-full text-xs font-bold py-2 rounded-lg bg-red-650 hover:bg-red-500 border-none text-white shadow-sm"
+                  className="w-full text-xs font-bold py-2 rounded-lg bg-red-600 hover:bg-red-600 border-none text-white shadow-sm"
                 >
                   Topluluk Üyesi Ol
                 </Button>

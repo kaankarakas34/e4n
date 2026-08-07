@@ -62,13 +62,15 @@ export function Register({ isCommunity = false }: RegisterProps) {
           ...formData,
           role: 'COMMUNITY_MEMBER'
         });
+        alert('Kayıt işleminiz başarıyla oluşturulmuştur. Şimdi giriş yapabilirsiniz.');
+        navigate('/auth/login');
       } else {
         await api.requestRegistration({ ...formData, token });
+        setSubmitted(true);
       }
-      setSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
-      alert('Kayıt işlemi başarısız. Lütfen tekrar deneyin.');
+      alert(error?.message || 'Kayıt işlemi başarısız. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }

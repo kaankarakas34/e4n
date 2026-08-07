@@ -17,6 +17,14 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS performance_color VARCHAR(10) DEFAULT 'GREY'");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT");
 
+    // Update role check constraint
+    await client.query("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+    await client.query(`
+      ALTER TABLE users 
+      ADD CONSTRAINT users_role_check 
+      CHECK (role IN ('MEMBER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN', 'COMMUNITY_MEMBER'))
+    `);
+
     // Core Tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS groups (

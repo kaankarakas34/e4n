@@ -8,7 +8,7 @@ export interface User {
   phone: string;
   performance_score: number;
   performance_color: 'GREEN' | 'YELLOW' | 'RED' | 'GREY';
-  role: 'MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN';
+  role: 'MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN' | 'COMMUNITY_MEMBER';
   status?: 'ACTIVE' | 'PASSIVE' | 'PENDING';
   group_title?: string;
   created_at: string;
@@ -48,7 +48,7 @@ export interface Document {
   uploaded_by: string;
   created_at: string;
   uploader?: User;
-  allowed_roles?: ('MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN')[];
+  allowed_roles?: ('MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN' | 'COMMUNITY_MEMBER')[];
 }
 
 export interface Chapter {
@@ -274,7 +274,7 @@ export interface Course {
   lessons?: Lesson[];
   enrolled_students?: number;
   average_rating?: number;
-  allowed_roles?: ('MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN')[];
+  allowed_roles?: ('MEMBER' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'SECRETARY_TREASURER' | 'ADMIN' | 'COMMUNITY_MEMBER')[];
 }
 
 export interface Lesson {

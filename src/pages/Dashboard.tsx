@@ -22,8 +22,11 @@ import {
   AlertTriangle,
   CheckCircle,
   CreditCard,
-  ArrowRight
+  ArrowRight,
+  Bell,
+  MapPin
 } from 'lucide-react';
+import { useNotificationStore } from '../stores/notificationStore';
 
 export function Dashboard() {
   const { user } = useAuthStore();
@@ -32,7 +35,7 @@ export function Dashboard() {
   const [myGroup, setMyGroup] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && user.role !== 'COMMUNITY_MEMBER') {
       fetchPerformance(user.id);
       api.getUserGroups(user.id).then(async groups => {
         if (groups && groups.length > 0) {
@@ -56,6 +59,10 @@ export function Dashboard() {
         </Alert>
       </div>
     );
+  }
+
+  if (user.role === 'COMMUNITY_MEMBER') {
+    return <CommunityDashboard user={user} />;
   }
 
   return (
@@ -309,4 +316,163 @@ export function Dashboard() {
       </div>
     </div>
   );
+}
+
+function CommunityDashboard({ user }: { user: any }) {
+    const navigate = useNavigate();
+    const [events, setEvents] = useState<any[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const { notifications, fetchNotifications, markAsRead } = useNotificationStore();
+
+    useEffect(() => {
+        setEventsLoading(true);
+        api.getEvents().then(data => {
+            const now = new Date();
+            const upcoming = (data || [])
+                .filter((e: any) => e.status === 'PUBLISHED' && new Date(e.start_at) >= now)
+                .sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+            setEvents(upcoming);
+            setEventsLoading(false);
+        }).catch(err => {
+            console.error(err);
+            setEventsLoading(false);
+        });
+
+        if (user?.id) {
+            fetchNotifications(user.id);
+        }
+    }, [user]);
+
+    return (
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+            {/* Header Banner */}
+            <div className="bg-white shadow-sm border-b">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Hoş Geldiniz, {user.name}</h1>
+                            <p className="text-sm text-gray-500">{user.profession} • Topluluk Üyesi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                
+                {/* Visitor Application Callout Banner */}
+                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-650 via-red-500 to-rose-600 p-8 text-white shadow-xl shadow-red-900/10">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]"></div>
+                    <div className="relative z-10 max-w-3xl space-y-4">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-white font-bold text-xs uppercase tracking-wider border border-white/20">
+                            🤝 E4N Üyeliğine Geçiş Yapın
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+                            Platformumuza Ziyaretçi Olarak Katılmak İster misiniz?
+                        </h2>
+                        <p className="text-white/90 text-sm sm:text-base leading-relaxed">
+                            Event4Network platformunda tam üyelik statüsüne geçiş yapmak, haftalık sektörel loncalarımıza ve B2B iş geliştirme gruplarımıza dahil olmak için ziyaretçi değerlendirme formunu doldurarak başvuruda bulunabilirsiniz.
+                        </p>
+                        <div className="pt-2">
+                            <Button
+                                size="lg"
+                                onClick={() => navigate('/degerlendirme-basvurusu')}
+                                className="bg-white text-red-600 hover:bg-slate-50 font-bold px-8 h-12 rounded-2xl shadow-lg shadow-black/10 transform active:scale-95 transition-all flex items-center gap-2 border-none"
+                            >
+                                Ziyaretçi Olmak İstiyorum <ArrowRight className="w-5 h-5 text-red-600 animate-pulse" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Upcoming Events */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white p-6 rounded-2xl border border-slate-200">
+                            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <Calendar className="w-6 h-6 text-red-600" /> Yaklaşan Etkinlikler
+                            </h2>
+                            {eventsLoading ? (
+                                <div className="text-center py-12 text-slate-500">Etkinlikler yükleniyor...</div>
+                            ) : events.length === 0 ? (
+                                <div className="text-center py-12 text-slate-500 italic">Yaklaşan etkinlik bulunmuyor.</div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {events.map(event => (
+                                        <div key={event.id} className="border border-slate-200 rounded-2xl p-5 hover:border-red-500 hover:shadow-lg transition-all flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className="bg-red-50 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full border border-red-100">
+                                                        {event.event_type === 'NETWORKING' ? 'Network' : 'Etkinlik'}
+                                                    </span>
+                                                    {event.city && (
+                                                        <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-100">
+                                                            {event.city}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h3 className="font-bold text-slate-950 text-base mb-2 line-clamp-2 min-h-[48px]">{event.title}</h3>
+                                                <div className="space-y-1.5 text-xs text-slate-500 mb-6">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock className="w-4 h-4 text-slate-400" />
+                                                        <span>{new Date(event.start_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MapPin className="w-4 h-4 text-slate-400" />
+                                                        <span>{event.is_online ? 'Online Toplantı' : event.location}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => navigate(`/event/${event.id}`)}
+                                                className="w-full text-xs font-bold py-2.5 rounded-xl"
+                                            >
+                                                Detayları Gör & Kaydol
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Column: Notifications */}
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-2xl border border-slate-200">
+                            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <Bell className="w-6 h-6 text-indigo-600" /> Bildirimler
+                            </h2>
+                            {notifications.length === 0 ? (
+                                <div className="text-center py-12 text-slate-400 italic">Bildirim bulunmuyor.</div>
+                            ) : (
+                                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                                    {notifications.slice(0, 10).map((n: any) => (
+                                        <div 
+                                            key={n.id} 
+                                            onClick={() => !n.is_read && markAsRead(n.id)}
+                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                                                n.is_read 
+                                                    ? 'bg-slate-50 border-slate-200 text-slate-600' 
+                                                    : 'bg-indigo-50/50 border-indigo-150 text-slate-800 font-medium'
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-start gap-2">
+                                                <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">{n.title}</h4>
+                                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse"></span>}
+                                            </div>
+                                            <p className="text-xs mt-1 leading-relaxed">{n.message}</p>
+                                            <span className="text-[10px] text-slate-400 block mt-2">
+                                                {new Date(n.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
 }

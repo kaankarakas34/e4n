@@ -17,7 +17,8 @@ import {
   Target,
   Sparkles,
   Award,
-  AlertCircle
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import bizKimizNetwork from '../assets/biz_kimiz_network.png';
@@ -839,22 +840,82 @@ export function LandingPage() {
           <div className="absolute top-1/2 -left-40 w-80 h-80 rounded-full bg-red-500/5 blur-3xl"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <span className="text-xs font-bold text-red-650 uppercase tracking-widest block mb-4">E4N TOPLULUKLARI</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">
-            Ücretsiz topluluklarımıza katılıp etkinliklerimizden anında haberdar olun!
-          </h2>
-          <p className="text-slate-600 text-base sm:text-lg max-w-3xl mx-auto mb-10 leading-relaxed">
-            Sektörel loncalarımız, WhatsApp duyuru ve genel iş ağı gruplarımız sayesinde iş dünyasındaki birçok profesyonelle tanışma ve kalıcı bağlantılar kurma şansı yakalayın.
-          </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold text-red-650 uppercase tracking-widest block mb-4">E4N TOPLULUKLARI</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">
+              Ücretsiz Topluluklarımıza Katılın
+            </h2>
+            <p className="text-slate-650 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
+              Sektörel loncalarımız, WhatsApp duyuru ve genel iş ağı gruplarımız sayesinde iş dünyasındaki birçok profesyonelle tanışma ve kalıcı bağlantılar kurma şansı yakalayın.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              {
+                name: "Duyurular Grubu",
+                url: "https://chat.whatsapp.com/GTlmZQUrjT402yi5swGQ5c",
+                description: "Etkinliklerimizden, duyurularımızdan ve önemli gelişmelerden anında haberdar olun.",
+                badge: "Önemli"
+              },
+              {
+                name: "Genel İş Ağı Grubu",
+                url: "https://chat.whatsapp.com/DeBaBEYP0D89O1HxD6vgCK",
+                description: "Tüm sektörlerden profesyonellerin yer aldığı genel iş ağı topluluğumuz."
+              },
+              {
+                name: "Girişimcilik Loncası",
+                url: "https://chat.whatsapp.com/FMovNudN2AyBYpoiW4VmtD",
+                description: "Girişimciler, start-up kurucuları ve yatırımcılar için iş geliştirme alanı."
+              },
+              {
+                name: "Yazılım ve Yapay Zeka Loncası",
+                url: "https://chat.whatsapp.com/BqUKVSoC6zL91ml0rh9Lxk",
+                description: "Yazılım şirketi kurucuları, CTO'lar ve yapay zeka alanında çalışan uzmanlar.",
+                badge: "Popüler"
+              }
+            ].map((item, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/5 transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center group-hover:bg-red-650 group-hover:text-white transition-all duration-300">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
+                    {item.badge && (
+                      <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-red-200">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-slate-900 mb-2 group-hover:text-red-650 transition-colors text-base">
+                    {item.name}
+                  </h3>
+                  <p className="text-slate-500 text-xs leading-relaxed mb-6">
+                    {item.description}
+                  </p>
+                </div>
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide shadow-md transition-all"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Gruba Katıl
+                </a>
+              </div>
+            ))}
+          </div>
+
           <div className="flex justify-center">
             <Button
               size="lg"
-              variant="primary"
+              variant="outline"
               onClick={() => navigate('/topluluklarimiz')}
-              className="text-base font-bold px-10 h-14 bg-red-600 hover:bg-red-500 shadow-xl shadow-red-900/10 transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
+              className="text-sm font-bold px-10 h-12 border-slate-350 text-slate-700 hover:bg-slate-50 flex items-center gap-2 rounded-xl"
             >
-              Topluluklarımıza Katılın <ArrowRight className="w-5 h-5" />
+              Tüm Loncaları ve Kanalları Gör <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
         </div>

@@ -190,9 +190,12 @@ export function Login() {
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 mb-1">Ücretsiz topluluk üyesi ol</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                  <p className="text-xs text-slate-500 leading-relaxed mb-1">
                     Etkinliklerimize katıl ve haberdar ol.
                   </p>
+                  <span className="text-[10px] text-red-600 font-bold block mb-4">
+                    * Ücretsiz topluluk üyeliği, kulüp üyeliği değildir.
+                  </span>
                 </div>
                 <Button
                   onClick={() => navigate('/auth/register-community')}

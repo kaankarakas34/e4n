@@ -208,6 +208,11 @@ export function Register({ isCommunity = false }: RegisterProps) {
                 ? 'Ücretsiz topluluk üyesi olarak etkinliklerimize katılabilir ve tüm duyurulardan haberdar olabilirsiniz.' 
                 : 'Formu doldurarak üyelik talebinizi iletebilirsiniz. Başvurunuz incelendikten sonra size dönüş yapılacaktır.'}
             </p>
+            {isCommunity && (
+              <div className="mt-3 text-center text-xs text-red-700 font-bold bg-red-50 p-2.5 rounded-xl border border-red-100">
+                ⚠️ Önemli Not: Ücretsiz topluluk üyeliği, İş İnsanları Kulübü üyeliği değildir.
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">

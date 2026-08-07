@@ -829,6 +829,9 @@ export function LandingPage() {
             <p className="text-slate-650 text-sm sm:text-base">
               E4N’e katılım doğrudan bir kayıt sistemiyle değil, başvuru ve değerlendirme süreciyle ilerler.
             </p>
+            <div className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">
+              ⚠️ Önemli: Ücretsiz topluluk üyeliği, İş İnsanları Kulübü üyeliği değildir.
+            </div>
           </div>
 
           <div className="relative">

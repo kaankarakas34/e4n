@@ -2,6 +2,7 @@ import React from 'react';
 
 interface TextAreaProps {
   label?: string;
+  name?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
@@ -14,6 +15,7 @@ interface TextAreaProps {
 
 export function TextArea({
   label,
+  name,
   value,
   onChange,
   placeholder,
@@ -32,6 +34,7 @@ export function TextArea({
         </label>
       )}
       <textarea
+        name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}

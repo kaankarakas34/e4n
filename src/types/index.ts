@@ -17,6 +17,11 @@ export interface User {
   achievements?: Achievement[];
   subscription_end_date?: string;
   subscription_plan?: string;
+  company?: string;
+  tax_number?: string;
+  tax_office?: string;
+  billing_address?: string;
+  city?: string;
   // Performance Metrics (stats)
   metric_referrals?: number;
   metric_revenue?: number;

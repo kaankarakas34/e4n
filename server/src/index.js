@@ -671,18 +671,10 @@ app.put('/api/users/me', authenticateToken, async (req, res) => {
       if (city) { updates.push(`city = $${idx++}`); values.push(city); }
       if (profession) { updates.push(`profession = $${idx++}`); values.push(profession); }
 
-      // Company Info Restricted: Can only set if currently empty
-      const isCompanyInfoEmpty = !currentUser.company && !currentUser.tax_number;
-
-      if (isCompanyInfoEmpty) {
-        if (company) { updates.push(`company = $${idx++}`); values.push(company); }
-        if (tax_number) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
-        if (tax_office) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
-        if (billing_address) { updates.push(`billing_address = $${idx++}`); values.push(billing_address); }
-      } else {
-        // If trying to change restricted fields, ignore them or throw error?
-        // User request: "sadece admin değiştirebilir". We will just ignore them if passed.
-      }
+      if (company !== undefined) { updates.push(`company = $${idx++}`); values.push(company); }
+      if (tax_number !== undefined) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
+      if (tax_office !== undefined) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
+      if (billing_address !== undefined) { updates.push(`billing_address = $${idx++}`); values.push(billing_address); }
 
       if (updates.length > 0) {
         await client.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, [...values, id]);
@@ -923,7 +915,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, subscription_end_date, subscription_plan FROM users WHERE id = $1', [req.user.id]);
+    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });

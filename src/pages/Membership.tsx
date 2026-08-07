@@ -181,6 +181,7 @@ export function MembershipPage() {
                     planTitle={selectedPlan.title}
                     amount={selectedPlan.price}
                     onSuccess={handlePaymentSuccess}
+                    isMembership={true}
                 />
             )}
         </div>

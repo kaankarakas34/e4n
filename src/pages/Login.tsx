@@ -67,7 +67,7 @@ export function Login() {
 
       {/* Right Side - Login Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-white">
-        <div className="mx-auto w-full max-w-sm lg:w-96">
+        <div className="mx-auto w-full max-w-md lg:w-[480px]">
           <div className="mb-10">
             <Logo className="h-12 w-auto text-red-600" />
             <h2 className="mt-8 text-3xl font-bold tracking-tight text-gray-900">
@@ -164,25 +164,45 @@ export function Login() {
             </Button>
           </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+          <div className="mt-8 pt-8 border-t border-gray-100">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center mb-6">
+              Kayıt ve Katılım Seçenekleri
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Option 1: Visitor Application */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-1">İş insanları kulübüne ziyaretçi olmak istiyorum</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                    Üye olabilmeniz için ilk olarak ziyaretçi olmalısınız.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/degerlendirme-basvurusu')}
+                  variant="outline"
+                  className="w-full text-xs font-bold py-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  Ziyaretçi Ol
+                </Button>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Henüz hesabınız yok mu?
-                </span>
-              </div>
-            </div>
 
-            <div className="mt-6 text-center">
-              <Link
-                to="/degerlendirme-basvurusu"
-                className="font-medium text-red-600 hover:text-red-500 hover:underline inline-flex items-center"
-              >
-                Ziyaretçi Başvuru Formunu Doldurun
-              </Link>
+              {/* Option 2: Community Membership */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-1">Ücretsiz topluluk üyesi ol</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                    Etkinliklerimize katıl ve haberdar ol.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/auth/register-community')}
+                  variant="primary"
+                  className="w-full text-xs font-bold py-2 rounded-lg bg-red-650 hover:bg-red-500 border-none text-white shadow-sm"
+                >
+                  Topluluk Üyesi Ol
+                </Button>
+              </div>
             </div>
           </div>
 

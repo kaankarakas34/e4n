@@ -144,6 +144,10 @@ function App() {
                 element={!user ? <Register /> : <Navigate to="/dashboard" replace />}
               />
               <Route
+                path="/auth/register-community"
+                element={!user ? <Register isCommunity={true} /> : <Navigate to="/dashboard" replace />}
+              />
+              <Route
                 path="/auth/forgot-password"
                 element={!user ? <ForgotPassword /> : <Navigate to="/dashboard" replace />}
               />

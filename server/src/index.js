@@ -540,17 +540,20 @@ function authenticateToken(req, res, next) {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent, token } = req.body;
+    const { name, email, password, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent, token, role, company, linkedin_profile, position } = req.body;
+    const isCommunity = role === 'COMMUNITY_MEMBER';
 
     // Validate invite token if public registration is closed
-    if (!token) {
-      return res.status(403).json({ error: 'Üyelik sadece davetiye ile mümkündür.' });
-    }
+    if (!isCommunity) {
+      if (!token) {
+        return res.status(403).json({ error: 'Üyelik sadece davetiye ile mümkündür.' });
+      }
 
-    try {
-      jwt.verify(token, SECRET_KEY);
-    } catch (e) {
-      return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş davetiye.' });
+      try {
+        jwt.verify(token, SECRET_KEY);
+      } catch (e) {
+        return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş davetiye.' });
+      }
     }
 
     // Check existing
@@ -575,9 +578,24 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO users (email, password_hash, name, profession, phone, company, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 'PENDING') RETURNING id, email, name, role`,
-      [email, passwordHash, name, profession, phone, req.body.company || '', kvkkConsent || false, marketingConsent || false, explicitConsent || false]
+      `INSERT INTO users (email, password_hash, name, profession, phone, company, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status, role, linkedin_profile, position, city) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14) RETURNING id, email, name, role`,
+      [
+        email, 
+        passwordHash, 
+        name, 
+        profession, 
+        phone, 
+        company || '', 
+        kvkkConsent || false, 
+        marketingConsent || false, 
+        explicitConsent || false,
+        isCommunity ? 'ACTIVE' : 'PENDING',
+        isCommunity ? 'COMMUNITY_MEMBER' : 'MEMBER',
+        linkedin_profile || '',
+        position || '',
+        city || ''
+      ]
     );
     res.status(201).json(rows[0]);
   } catch (e) {
@@ -1996,6 +2014,9 @@ app.get('/api/admin/members', authenticateToken, async (req, res) => {
               u.profession, 
               u.role, 
               u.created_at,
+              u.company,
+              u.linkedin_profile,
+              u.position,
               COALESCE(u.performance_score, 0) as performance_score, 
               COALESCE(u.performance_color, 'GREY') as performance_color,
               COALESCE(u.account_status, 'PENDING') as status, 

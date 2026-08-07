@@ -39,6 +39,9 @@ interface Member {
   profession_status?: 'APPROVED' | 'PENDING' | 'REJECTED';
   profession_id?: string;
   profession_category?: string;
+  linkedin_profile?: string;
+  position?: string;
+  marketing_consent?: boolean;
 }
 
 interface Group {
@@ -56,6 +59,7 @@ export function AdminMembers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState<'MEMBERS' | 'COMMUNITY_MEMBERS'>('MEMBERS');
 
   // Move Modal State
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -73,7 +77,7 @@ export function AdminMembers() {
 
   useEffect(() => {
     filterMembers();
-  }, [members, searchTerm, filterRole, filterStatus]);
+  }, [members, searchTerm, filterRole, filterStatus, activeTab]);
 
   const fetchData = async () => {
     try {
@@ -103,6 +107,15 @@ export function AdminMembers() {
   const filterMembers = () => {
     let filtered = members;
 
+    if (activeTab === 'MEMBERS') {
+      filtered = filtered.filter(member => member.role !== 'COMMUNITY_MEMBER');
+      if (filterRole !== 'ALL') {
+        filtered = filtered.filter(member => member.role === filterRole);
+      }
+    } else {
+      filtered = filtered.filter(member => member.role === 'COMMUNITY_MEMBER');
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(member =>
         member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,10 +123,6 @@ export function AdminMembers() {
         member.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.profession?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (filterRole !== 'ALL') {
-      filtered = filtered.filter(member => member.role === filterRole);
     }
 
     if (filterStatus !== 'ALL') {
@@ -310,6 +319,30 @@ export function AdminMembers() {
             <CardTitle>Üye Listesi ({filteredMembers.length})</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Tab Selector */}
+            <div className="flex space-x-2 mb-6 border-b border-gray-200 pb-3">
+              <button
+                onClick={() => setActiveTab('MEMBERS')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === 'MEMBERS'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-250'
+                }`}
+              >
+                Aktif & Bekleyen Üyeler ({members.filter(m => m.role !== 'COMMUNITY_MEMBER').length})
+              </button>
+              <button
+                onClick={() => setActiveTab('COMMUNITY_MEMBERS')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === 'COMMUNITY_MEMBERS'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-250'
+                }`}
+              >
+                Topluluk Üyeleri ({members.filter(m => m.role === 'COMMUNITY_MEMBER').length})
+              </button>
+            </div>
+
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
@@ -320,7 +353,7 @@ export function AdminMembers() {
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Henüz üye bulunmuyor.</p>
               </div>
-            ) : (
+            ) : activeTab === 'MEMBERS' ? (
               <div className="overflow-x-auto min-h-[400px]">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -413,6 +446,94 @@ export function AdminMembers() {
                                 <CheckCircle className="h-3 w-3 mr-1" /> {member.profession_status === 'PENDING' ? 'Tümü Onayla' : 'Onayla'}
                               </Button>
                             )}
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteMember(member.id)} className="flex items-center">
+                              <Trash2 className="h-3 w-3 mr-1" /> Sil
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto min-h-[400px]">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topluluk Üyesi</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firma & Meslek</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesyonel Detaylar</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İletişim & İl</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İzinler</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredMembers.map((member) => (
+                      <tr key={member.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                <span className="text-red-650 font-medium">
+                                  {member.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{member.full_name}</div>
+                              <div className="text-sm text-gray-500">{member.email}</div>
+                              <div className="text-xs text-gray-400">Katılım: {new Date(member.created_at).toLocaleDateString('tr-TR')}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{member.profession || '-'}</div>
+                          <div className="text-sm text-gray-550">{member.company || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{member.position || '-'}</div>
+                          {member.linkedin_profile ? (
+                            <a
+                              href={member.linkedin_profile.startsWith('http') ? member.linkedin_profile : `https://${member.linkedin_profile}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline font-semibold"
+                            >
+                              LinkedIn Profili ↗
+                            </a>
+                          ) : (
+                            <span className="text-xs text-gray-450">LinkedIn Belirtilmemiş</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            {member.phone && <div className="flex items-center text-sm text-gray-550"><Phone className="h-3 w-3 mr-1" />{member.phone}</div>}
+                            {member.city && <div className="flex items-center text-sm text-gray-555"><MapPin className="h-3 w-3 mr-1" />{member.city}</div>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col space-y-1">
+                            <Badge className="bg-green-50 text-green-700 border border-green-100 text-[10px] w-fit font-bold">KVKK Onaylı</Badge>
+                            {member.marketing_consent ? (
+                              <Badge className="bg-blue-50 text-blue-700 border border-blue-100 text-[10px] w-fit font-bold">Pazarlama İzinli</Badge>
+                            ) : (
+                              <Badge className="bg-gray-50 text-gray-500 border border-gray-100 text-[10px] w-fit font-bold">Pazarlama İzni Yok</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-2">
+                            <select
+                              value={member.role}
+                              onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                              className="text-xs border border-gray-300 rounded px-2 py-1 max-w-[140px]"
+                            >
+                              <option value="COMMUNITY_MEMBER">Topluluk Üyesi</option>
+                              <option value="MEMBER">Üye</option>
+                              <option value="ADMIN">Admin</option>
+                            </select>
                             <Button size="sm" variant="destructive" onClick={() => handleDeleteMember(member.id)} className="flex items-center">
                               <Trash2 className="h-3 w-3 mr-1" /> Sil
                             </Button>

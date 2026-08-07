@@ -7,7 +7,11 @@ import { api } from '../api/api';
 import { LegalModal, LegalTexts } from '../shared/LegalModals';
 import { ProfessionSelect } from '../components/ProfessionSelect';
 
-export function Register() {
+interface RegisterProps {
+  isCommunity?: boolean;
+}
+
+export function Register({ isCommunity = false }: RegisterProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -28,7 +32,10 @@ export function Register() {
     billingAddress: '',
     kvkkConsent: false,
     marketingConsent: false,
-    explicitConsent: false
+    explicitConsent: false,
+    linkedin_profile: '',
+    position: '',
+    city: ''
   });
 
   const openModal = (type: 'membership' | 'clarification' | 'explicit') => {
@@ -41,9 +48,23 @@ export function Register() {
       alert('Şifreler eşleşmiyor!');
       return;
     }
+    
+    // KVKK and Explicit Consent must be accepted
+    if (!formData.kvkkConsent || !formData.explicitConsent) {
+      alert('Devam etmek için Aydınlatma ve Açık Rıza metinlerini onaylamalısınız.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.requestRegistration({ ...formData, token });
+      if (isCommunity) {
+        await api.requestRegistration({
+          ...formData,
+          role: 'COMMUNITY_MEMBER'
+        });
+      } else {
+        await api.requestRegistration({ ...formData, token });
+      }
       setSubmitted(true);
     } catch (error) {
       console.error('Registration error:', error);
@@ -127,13 +148,16 @@ export function Register() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <CardTitle className="text-xl font-bold text-gray-900 mb-2">Başvurunuz Alındı</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900 mb-2">
+              {isCommunity ? 'Kayıt Başarılı!' : 'Başvurunuz Alındı'}
+            </CardTitle>
             <p className="text-gray-600 mb-6">
-              Üyelik başvurunuz başarıyla alınmıştır. Yöneticilerimiz bilgilerinizi kontrol ettikten sonra üyeliğinizi onaylayacaktır.
-              Onay sonrası e-posta ile bilgilendirileceksiniz.
+              {isCommunity 
+                ? 'Topluluk üyeliğiniz başarıyla oluşturulmuştur. Hemen giriş yapabilirsiniz.' 
+                : 'Üyelik başvurunuz başarıyla alınmıştır. Yöneticilerimiz bilgilerinizi kontrol ettikten sonra üyeliğinizi onaylayacaktır. Onay sonrası e-posta ile bilgilendirileceksiniz.'}
             </p>
-            <Button onClick={() => navigate('/')} variant="outline" className="w-full">
-              Ana Sayfaya Dön
+            <Button onClick={() => navigate('/auth/login')} variant="primary" className="w-full">
+              Giriş Yap
             </Button>
           </Card>
         </div>
@@ -141,7 +165,7 @@ export function Register() {
     );
   }
 
-  if (!token) {
+  if (!token && !isCommunity) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-full max-w-md px-4 py-8">
@@ -176,9 +200,13 @@ export function Register() {
       <div className="w-full max-w-2xl px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold text-red-600">Üyelik Başvuru Formu</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold text-red-600">
+              {isCommunity ? 'Topluluk Üye Kayıt Formu' : 'Üyelik Başvuru Formu'}
+            </CardTitle>
             <p className="text-center text-sm text-gray-500 mt-2">
-              Formu doldurarak üyelik talebinizi iletebilirsiniz. Başvurunuz incelendikten sonra size dönüş yapılacaktır.
+              {isCommunity 
+                ? 'Ücretsiz topluluk üyesi olarak etkinliklerimize katılabilir ve tüm duyurulardan haberdar olabilirsiniz.' 
+                : 'Formu doldurarak üyelik talebinizi iletebilirsiniz. Başvurunuz incelendikten sonra size dönüş yapılacaktır.'}
             </p>
           </CardHeader>
           <CardContent>
@@ -191,19 +219,44 @@ export function Register() {
                     <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
                     <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
                     <Input required data-name="phone" placeholder="05xx xxx xx xx" type="tel" value={formData.phone} onChange={handleChange} />
+                    <Input required data-name="city" placeholder="Bulunduğunuz İl" value={formData.city} onChange={handleChange} />
                   </div>
                 </div>
 
                 {/* Right Column: Professional Info */}
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900 border-b pb-2">Şirket & Meslek Bilgileri</h3>
+                  <h3 className="font-medium text-gray-900 border-b pb-2">Meslek & Şirket Bilgileri</h3>
                   <div className="space-y-3">
-                    <Input required data-name="company" placeholder="Şirket İsmi" value={formData.company} onChange={handleChange} />
                     <ProfessionSelect
                       value={formData.profession}
                       onChange={(val) => setFormData(prev => ({ ...prev, profession: val }))}
                       className="border-red-200 focus:border-red-500"
                     />
+                    
+                    <Input 
+                      data-name="company" 
+                      placeholder={isCommunity ? "Şirket İsmi (İsteğe bağlı)" : "Şirket İsmi"} 
+                      required={!isCommunity}
+                      value={formData.company} 
+                      onChange={handleChange} 
+                    />
+
+                    {isCommunity && (
+                      <>
+                        <Input 
+                          data-name="linkedin_profile" 
+                          placeholder="LinkedIn Profil Linki (İsteğe bağlı)" 
+                          value={formData.linkedin_profile} 
+                          onChange={handleChange} 
+                        />
+                        <Input 
+                          data-name="position" 
+                          placeholder="Pozisyon / Ünvan (İsteğe bağlı - Beyaz yaka ise)" 
+                          value={formData.position} 
+                          onChange={handleChange} 
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -235,6 +288,7 @@ export function Register() {
                 <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
+                    required
                     id="explicit-consent"
                     className="mt-1 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                     onChange={(e) => setFormData(prev => ({ ...prev, explicitConsent: e.target.checked }))}
@@ -259,7 +313,7 @@ export function Register() {
 
               <div className="pt-4">
                 <Button disabled={loading} variant="primary" className="w-full h-12 text-lg shadow-lg shadow-red-200">
-                  {loading ? 'İşleniyor...' : 'Başvuruyu Gönder'}
+                  {loading ? 'İşleniyor...' : isCommunity ? 'Topluluk Üyesi Olarak Katıl' : 'Başvuruyu Gönder'}
                 </Button>
               </div>
 

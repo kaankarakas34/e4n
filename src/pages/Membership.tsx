@@ -63,18 +63,21 @@ export function MembershipPage() {
         setPaymentModalOpen(true);
     };
 
-    const handlePaymentSuccess = async () => {
+    const handlePaymentSuccess = async (paymentDetails?: any) => {
         if (!selectedPlan || !user) return;
+
+        const paidAmount = paymentDetails?.finalAmount || selectedPlan.price;
 
         setLoading(true);
         try {
             if (currentMembership?.id) {
-                await renew(currentMembership.id, selectedPlan.plan);
+                await renew(currentMembership.id, selectedPlan.plan, paidAmount);
             } else {
                 await useMembershipStore.getState().create({
                     user_id: user.id!,
                     plan: selectedPlan.plan,
                     start_date: new Date().toISOString(),
+                    payment_amount: paidAmount
                 });
                 await useMembershipStore.getState().fetchAll(); // refresh state
             }

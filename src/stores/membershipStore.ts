@@ -8,9 +8,9 @@ interface MembershipStore {
   loading: boolean;
   error: string | null;
   fetchAll: () => Promise<void>;
-  create: (payload: Omit<Membership, 'id' | 'status' | 'end_date' | 'last_renewal_date'> & { status?: MembershipStatus; end_date?: string }) => Promise<void>;
-  update: (id: string, data: Partial<Membership>) => Promise<void>;
-  renew: (id: string, plan?: MembershipPlan) => Promise<void>;
+  create: (payload: Omit<Membership, 'id' | 'status' | 'end_date' | 'last_renewal_date'> & { status?: MembershipStatus; end_date?: string; payment_amount?: number }) => Promise<void>;
+  update: (id: string, data: Partial<Membership> & { payment_amount?: number }) => Promise<void>;
+  renew: (id: string, plan?: MembershipPlan, price?: number) => Promise<void>;
   expire: (id: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useMembershipStore = create<MembershipStore>()(
         }
       },
 
-      renew: async (id, plan) => {
+      renew: async (id, plan, price) => {
         const item = get().items.find(i => i.id === id);
         if (!item) return;
 
@@ -91,6 +91,7 @@ export const useMembershipStore = create<MembershipStore>()(
           start_date: (item.status !== 'ACTIVE' || effectiveStart === now) ? now.toISOString() : item.start_date,
           end_date: newEnd.toISOString(),
           last_renewal_date: now.toISOString(),
+          payment_amount: price
         });
       },
 

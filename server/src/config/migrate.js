@@ -113,6 +113,7 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_office VARCHAR(100)");
     await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_address TEXT");
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_membership_payment_amount DECIMAL(10, 2)");
 
     // Events
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(100)");

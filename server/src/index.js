@@ -3459,7 +3459,7 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
 
 // Create Membership (Start Subscription)
 app.post('/api/memberships', authenticateToken, async (req, res) => {
-  const { user_id, plan, start_date } = req.body;
+  const { user_id, plan, start_date, payment_amount } = req.body;
 
   // Calculate end date based on plan
   const start = start_date ? new Date(start_date) : new Date();
@@ -3476,10 +3476,11 @@ app.post('/api/memberships', authenticateToken, async (req, res) => {
       SET subscription_plan = $1, 
           subscription_end_date = $2, 
           account_status = 'ACTIVE',
-          last_reminder_trigger = NULL
+          last_reminder_trigger = NULL,
+          last_membership_payment_amount = COALESCE($4, last_membership_payment_amount)
       WHERE id = $3
       RETURNING id, name, email, subscription_plan, subscription_end_date, account_status
-    `, [plan, end.toISOString(), user_id]);
+    `, [plan, end.toISOString(), user_id, payment_amount]);
 
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
@@ -3506,7 +3507,7 @@ app.post('/api/memberships', authenticateToken, async (req, res) => {
 app.put('/api/memberships/:id', authenticateToken, async (req, res) => {
   // :id is the membership_id, which we mapped to user_id
   const userId = req.params.id;
-  const { plan, end_date, status } = req.body;
+  const { plan, end_date, status, payment_amount } = req.body;
 
   try {
     const fields = [];
@@ -3516,6 +3517,7 @@ app.put('/api/memberships/:id', authenticateToken, async (req, res) => {
     if (plan) { fields.push(`subscription_plan = $${idx++}`); values.push(plan); }
     if (end_date) { fields.push(`subscription_end_date = $${idx++}`); values.push(end_date); }
     if (status) { fields.push(`account_status = $${idx++}`); values.push(status); }
+    if (payment_amount !== undefined) { fields.push(`last_membership_payment_amount = $${idx++}`); values.push(payment_amount); }
 
     if (fields.length > 0) {
       values.push(userId);
@@ -3666,7 +3668,8 @@ app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) =>
         u.subscription_invoice_issued as invoice_issued, 
         u.tax_number, 
         u.tax_office, 
-        u.billing_address
+        u.billing_address,
+        u.last_membership_payment_amount as last_amount
       FROM users u
       WHERE u.subscription_plan IS NOT NULL 
         AND u.subscription_end_date IS NOT NULL
@@ -3676,10 +3679,12 @@ app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) =>
     const members = await pool.query(membersQuery);
 
     const mappedMembers = members.rows.map(m => {
-      let amount = 6000;
-      if (m.plan === '1_MONTH') amount = 7200;
-      else if (m.plan === '6_MONTHS') amount = 39000;
-      else if (m.plan === '12_MONTHS') amount = 69000;
+      let amount = m.last_amount ? parseFloat(m.last_amount) : 6000;
+      if (!m.last_amount) {
+        if (m.plan === '1_MONTH') amount = 7200;
+        else if (m.plan === '6_MONTHS') amount = 39000;
+        else if (m.plan === '12_MONTHS') amount = 69000;
+      }
       return { ...m, amount };
     });
 

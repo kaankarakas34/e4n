@@ -320,6 +320,10 @@ export const api = {
     try { return await request(`/events/${meetingId}/attendance`); } catch { return []; }
   },
 
+  async removeEventParticipant(eventId: string, userId: string) {
+    return await request(`/admin/events/${eventId}/attendance/${userId}`, { method: 'DELETE' });
+  },
+
   async updateMember(id: string, payload: any) {
     return await request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
   },

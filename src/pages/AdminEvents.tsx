@@ -64,6 +64,7 @@ export function AdminEvents() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
   const [viewingEventTitle, setViewingEventTitle] = useState('');
+  const [viewingEventId, setViewingEventId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -230,6 +231,7 @@ export function AdminEvents() {
 
   const handleViewParticipants = async (event: any) => {
     try {
+      setViewingEventId(event.id);
       setViewingEventTitle(event.title);
       // Backend route exists at /events/:id/attendance
       const data = await api.getMeetingAttendance(event.id);
@@ -238,6 +240,24 @@ export function AdminEvents() {
     } catch (error) {
       console.error('Katılımcılar yüklenirken hata:', error);
       alert('Katılımcı listesi yüklenemedi.');
+    }
+  };
+
+  const handleRemoveParticipant = async (userId: string) => {
+    if (!viewingEventId) return;
+    if (!window.confirm('Bu katılımcıyı etkinlikten çıkarmak istediğinize emin misiniz?')) return;
+    
+    try {
+      await api.removeEventParticipant(viewingEventId, userId);
+      // Refresh the participant list
+      const data = await api.getMeetingAttendance(viewingEventId);
+      setParticipants(data);
+      // Also fetch events list to refresh user count on dashboard
+      fetchEvents();
+      alert('Katılımcı etkinlikten başarıyla çıkarıldı.');
+    } catch (error) {
+      console.error('Katılımcı silinirken hata:', error);
+      alert('Katılımcı çıkarılamadı.');
     }
   };
 
@@ -737,16 +757,40 @@ export function AdminEvents() {
                     <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold overflow-hidden border border-indigo-200">
-                          {p.avatar ? <img src={p.avatar} alt={p.name || ''} className="w-full h-full object-cover" /> : (p.name || '?').charAt(0)}
+                          {p.avatar ? (
+                            <img src={p.avatar} alt={p.name || p.user_name || ''} className="w-full h-full object-cover" />
+                          ) : (
+                            (p.name || p.user_name || p.member_name || '?').charAt(0)
+                          )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900 text-sm">{p.name || 'İsimsiz Üye'}</div>
-                          <div className="text-xs text-gray-500">{p.profession || 'Meslek Belirtilmemiş'}</div>
+                          <div className="font-medium text-gray-900 text-sm">
+                            {p.name || p.user_name || p.member_name || 'İsimsiz Üye'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {p.profession || 'Meslek Belirtilmemiş'}
+                            {(p.email || p.phone) && (
+                              <span className="block text-[10px] text-gray-400 mt-0.5 font-mono">
+                                {p.email} {p.phone ? `• ${p.phone}` : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <Badge className={p.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                        {p.status === 'PRESENT' ? 'Kaydoldu' : p.status}
-                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={p.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          {p.status === 'PRESENT' ? 'Kaydoldu' : p.status}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleRemoveParticipant(p.user_id)}
+                          className="h-7 px-2 text-xs flex items-center gap-1 rounded-lg"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Kaldır
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

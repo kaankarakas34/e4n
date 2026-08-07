@@ -1549,7 +1549,7 @@ app.get('/api/user/visitors', authenticateToken, async (req, res) => {
 app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT a.*, u.name as user_name, u.profession
+      SELECT a.*, u.name, u.name as user_name, u.email, u.phone, u.avatar, u.profession, u.name as member_name
       FROM attendance a
       JOIN users u ON a.user_id = u.id
       WHERE a.event_id = $1
@@ -1557,6 +1557,24 @@ app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
     `, [req.params.id]);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/events/:eventId/attendance/:userId', authenticateToken, async (req, res) => {
+  const { eventId, userId } = req.params;
+  
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
+  }
+
+  try {
+    await pool.query(
+      'DELETE FROM attendance WHERE event_id = $1 AND user_id = $2',
+      [eventId, userId]
+    );
+    res.json({ success: true, message: 'Katılımcı etkinlikten başarıyla çıkarıldı.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // 3. Friend Requests
@@ -2920,7 +2938,7 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
 app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT a.*, u.name, u.avatar, u.profession, u.name as member_name 
+      `SELECT a.*, u.name, u.avatar, u.profession, u.name as member_name, u.email, u.phone 
        FROM attendance a 
        JOIN users u ON a.user_id = u.id 
        WHERE a.event_id = $1`,

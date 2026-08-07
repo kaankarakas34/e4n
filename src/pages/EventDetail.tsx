@@ -181,40 +181,7 @@ export function EventDetail() {
                                 {event.description}
                             </p>
 
-                            <div className="mt-8 pt-8 border-t border-gray-100">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Katılımcılar ({event.attendees?.length || 0})</h3>
-                                {!user ? (
-                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200/50 text-center">
-                                        <p className="text-gray-650 text-sm mb-3">Katılımcı listesini görmek için lütfen giriş yapın.</p>
-                                        <Button
-                                            size="sm"
-                                            onClick={() => navigate('/auth/login', { state: { from: `/event/${id}` } })}
-                                        >
-                                            Giriş Yap
-                                        </Button>
-                                    </div>
-                                ) : event.attendees && event.attendees.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {event.attendees.map((attendee: any) => (
-                                            <div key={attendee.id} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
-                                                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                                                    {attendee.avatar ? (
-                                                        <img src={attendee.avatar} alt={attendee.name} className="h-full w-full rounded-full object-cover" />
-                                                    ) : (
-                                                        <span>{attendee.name.charAt(0)}</span>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-gray-900">{attendee.name}</p>
-                                                    <p className="text-xs text-gray-500">{attendee.profession || 'Üye'}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-500 italic">Henüz katılımcı bulunmamaktadır.</p>
-                                )}
-                            </div>
+
                         </div>
 
                         {/* Location Section */}

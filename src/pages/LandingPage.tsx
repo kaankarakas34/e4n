@@ -18,7 +18,9 @@ import {
   Sparkles,
   Award,
   AlertCircle,
-  MessageCircle
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import processMeeting from '../assets/process-meeting.png';
 import bizKimizNetwork from '../assets/biz_kimiz_network.png';
@@ -26,6 +28,58 @@ import bizKimizNetwork from '../assets/biz_kimiz_network.png';
 export function LandingPage() {
   const navigate = useNavigate();
   const [showFloater, setShowFloater] = useState(false);
+  const [guildIndex, setGuildIndex] = useState(0);
+
+  const carouselGuilds = [
+    {
+      name: "Girişimcilik Loncası",
+      url: "https://chat.whatsapp.com/FMovNudN2AyBYpoiW4VmtD",
+      description: "Girişimciler, start-up kurucuları ve yatırımcılar için ortak iş geliştirme ve fikir alışverişi alanı.",
+      tag: "Girişimcilik"
+    },
+    {
+      name: "Yazılım ve Yapay Zeka Loncası",
+      url: "https://chat.whatsapp.com/BqUKVSoC6zL91ml0rh9Lxk",
+      description: "Yazılım şirketi sahipleri, CTO'lar ve yapay zeka alanında faaliyet gösteren teknoloji üreticileri.",
+      tag: "Teknoloji"
+    },
+    {
+      name: "Üretim Sanayi İhracat Loncası",
+      url: "https://chat.whatsapp.com/KCpg9gk5AFk7oNkLRkI0eo",
+      description: "Sanayiciler, yerli üreticiler ve ihracat odaklı iş geliştirme hedefi olan profesyoneller.",
+      tag: "Sanayi & İhracat"
+    },
+    {
+      name: "Pazarlama Medya ve İletişim Loncası",
+      url: "https://chat.whatsapp.com/I8UWdo9VXUmHABcHNAKs8S",
+      description: "Reklam, pazarlama, sosyal medya yönetimi, PR ve yaratıcı tasarım ajansı yöneticileri.",
+      tag: "Pazarlama & Medya"
+    },
+    {
+      name: "Hukuk Mali ve Kurumsal Hizmetler Loncası",
+      url: "https://chat.whatsapp.com/DcIXluAZmgTE9p2MfiSnfj",
+      description: "Hukuki danışmanlık, mali müşavirlik, kurumsal eğitim ve insan kaynakları uzmanları.",
+      tag: "Hukuk & Finans"
+    },
+    {
+      name: "Sağlık ve Medikal Loncası",
+      url: "https://chat.whatsapp.com/LU4Ebh7aBvUJ4Ww5vMpsG2",
+      description: "Sağlık turizmi acenteleri, klinik yöneticileri, medikal ürün üreticileri ve distribütörler.",
+      tag: "Sağlık & Medikal"
+    },
+    {
+      name: "E-Ticaret ve E-İhracat Loncası",
+      url: "https://chat.whatsapp.com/CH0MKdmSnCaCTzSMjuzfos",
+      description: "E-ticaret marka sahipleri, pazar yeri satıcıları, kargo, lojistik ve ödeme sistemleri sağlayıcıları.",
+      tag: "E-Ticaret"
+    },
+    {
+      name: "Yapı ve Gayrimenkul Loncası",
+      url: "https://chat.whatsapp.com/H3rqf63KLKBDQeCvZBe7eg",
+      description: "Müteahhitler, mimarlar, gayrimenkul yatırım danışmanları ve yapı sektörü tedarikçileri.",
+      tag: "Yapı & Emlak"
+    }
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -674,33 +728,90 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 12. Lonca Mantığı */}
+      {/* 12. Lonca Mantığı (Sektörel Kümelenme) */}
       <section className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
             <div className="mb-12 lg:mb-0">
-              <span className="text-xs font-bold text-red-600 uppercase tracking-widest">TAMAMLAYICI BİRLİKTELİK</span>
+              <span className="text-xs font-bold text-red-650 uppercase tracking-widest font-mono">TAMAMLAYICI BİRLİKTELİK</span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
-                Lonca Mantığı (Sektörel Kümelenme)
+                Lonca Topluluklarımıza Katılın
               </h2>
-              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mb-6">
-                E4N içinde zamanla aynı müşteri kitlesine hizmet eden ama birbirinin doğrudan rakibi olmayan uzmanlar arasında daha odaklı iş birlikleri gelişebilir.
+              <p className="text-slate-650 text-base sm:text-lg leading-relaxed mb-6 font-medium text-slate-800">
+                Aynı sektörden iş insanlarının buluştuğu veya hedefiniz olan sektörden insanlarla tanışmak için lonca topluluklarımıza katılın.
               </p>
-              <p className="text-slate-650 text-base sm:text-lg leading-relaxed">
-                Bu yapı, tamamlayıcı hizmet veren kişilerin birlikte daha güçlü fırsatlar üretmesini sağlar. Rekabet yerine kollektif iş geliştirme gücü esastır.
+              <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                E4N içinde zamanla aynı müşteri kitlesine hizmet eden ama birbirinin doğrudan rakibi olmayan uzmanlar arasında daha odaklı iş birlikleri gelişebilir. Bu yapı, tamamlayıcı hizmet veren kişilerin birlikte daha güçlü fırsatlar üretmesini sağlar. Rekabet yerine kollektif iş geliştirme gücü esastır.
               </p>
+              <Button
+                onClick={() => navigate('/topluluklarimiz')}
+                className="text-xs font-bold px-6 h-10 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-2 rounded-xl"
+              >
+                Tüm Toplulukları Gör <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
 
-            <div className="bg-slate-950 text-white rounded-3xl p-8 border border-white/10 shadow-xl">
-              <div className="flex gap-3 items-center mb-4 text-red-400">
-                <Sparkles className="w-6 h-6" />
-                <span className="font-bold">Örnek Lonca Ekosistemi</span>
+            {/* Guilds Carousel */}
+            <div className="bg-slate-950 text-white rounded-3xl p-8 border border-white/10 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[350px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-950/20 via-transparent to-transparent pointer-events-none"></div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-6 relative z-10">
+                  <div className="flex gap-2 items-center text-emerald-400 font-bold text-sm">
+                    <MessageCircle className="w-5 h-5 text-emerald-400" />
+                    <span>Aktif WhatsApp Loncaları</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setGuildIndex(prev => (prev === 0 ? carouselGuilds.length - 1 : prev - 1))}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setGuildIndex(prev => (prev === carouselGuilds.length - 1 ? 0 : prev + 1))}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="min-h-[140px] relative z-10">
+                  <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/20 uppercase tracking-wider">
+                    {carouselGuilds[guildIndex].tag || "Sektörel Lonca"}
+                  </span>
+                  <h3 className="text-xl font-bold mt-2 text-white mb-2">
+                    {carouselGuilds[guildIndex].name}
+                  </h3>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                    {carouselGuilds[guildIndex].description}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-slate-300 leading-relaxed mb-6">
-                Bir sağlık turizmi markasına hizmet veren; dijital pazarlama uzmanı, CRM danışmanı, çağrı merkezi çözüm sağlayıcısı, teşvik danışmanı ve video prodüksiyon firması aynı hedef kitleye farklı açılardan değer sunabilir.
-              </p>
-              <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-xs text-slate-400 italic">
-                * Bu mantık, E4N içinde doğal olarak oluşabilecek en güçlü iş geliştirme alanlarından biridir.
+
+              <div className="relative z-10 flex flex-col sm:flex-row gap-4 justify-between items-center border-t border-white/5 pt-6 mt-4">
+                {/* Dots indicator */}
+                <div className="flex space-x-1.5">
+                  {carouselGuilds.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setGuildIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        idx === guildIndex ? 'bg-emerald-500 w-4' : 'bg-white/20'
+                      }`}
+                    ></button>
+                  ))}
+                </div>
+                <a
+                  href={carouselGuilds[guildIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-emerald-950/20 transition-all transform active:scale-95"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Gruba Katıl
+                </a>
               </div>
             </div>
           </div>
@@ -833,93 +944,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 13.75 Topluluklarımıza Katılın Section */}
-      <section className="py-24 bg-slate-50 border-t border-b border-slate-200/50 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-red-500/5 blur-3xl"></div>
-          <div className="absolute top-1/2 -left-40 w-80 h-80 rounded-full bg-red-500/5 blur-3xl"></div>
-        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold text-red-650 uppercase tracking-widest block mb-4">E4N TOPLULUKLARI</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">
-              Ücretsiz Topluluklarımıza Katılın
-            </h2>
-            <p className="text-slate-650 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
-              Sektörel loncalarımız, WhatsApp duyuru ve genel iş ağı gruplarımız sayesinde iş dünyasındaki birçok profesyonelle tanışma ve kalıcı bağlantılar kurma şansı yakalayın.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {[
-              {
-                name: "Duyurular Grubu",
-                url: "https://chat.whatsapp.com/GTlmZQUrjT402yi5swGQ5c",
-                description: "Etkinliklerimizden, duyurularımızdan ve önemli gelişmelerden anında haberdar olun.",
-                badge: "Önemli"
-              },
-              {
-                name: "Genel İş Ağı Grubu",
-                url: "https://chat.whatsapp.com/DeBaBEYP0D89O1HxD6vgCK",
-                description: "Tüm sektörlerden profesyonellerin yer aldığı genel iş ağı topluluğumuz."
-              },
-              {
-                name: "Girişimcilik Loncası",
-                url: "https://chat.whatsapp.com/FMovNudN2AyBYpoiW4VmtD",
-                description: "Girişimciler, start-up kurucuları ve yatırımcılar için iş geliştirme alanı."
-              },
-              {
-                name: "Yazılım ve Yapay Zeka Loncası",
-                url: "https://chat.whatsapp.com/BqUKVSoC6zL91ml0rh9Lxk",
-                description: "Yazılım şirketi kurucuları, CTO'lar ve yapay zeka alanında çalışan uzmanlar.",
-                badge: "Popüler"
-              }
-            ].map((item, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/5 transition-all duration-300 flex flex-col justify-between group">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center group-hover:bg-red-650 group-hover:text-white transition-all duration-300">
-                      <MessageCircle className="w-5 h-5" />
-                    </div>
-                    {item.badge && (
-                      <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-red-200">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-2 group-hover:text-red-650 transition-colors text-base">
-                    {item.name}
-                  </h3>
-                  <p className="text-slate-500 text-xs leading-relaxed mb-6">
-                    {item.description}
-                  </p>
-                </div>
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide shadow-md transition-all"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Gruba Katıl
-                </a>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/topluluklarimiz')}
-              className="text-sm font-bold px-10 h-12 border-slate-350 text-slate-700 hover:bg-slate-50 flex items-center gap-2 rounded-xl"
-            >
-              Tüm Loncaları ve Kanalları Gör <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* 14. Başvuru Çağrısı (Final CTA) */}
       <section className="py-24 bg-slate-950 text-white relative overflow-hidden">

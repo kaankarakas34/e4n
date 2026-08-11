@@ -368,13 +368,18 @@ export function VisitorPaymentPage() {
         </div>
       </main>
 
-      {/* Secure Payment Modal */}
       {isPaymentModalOpen && pendingFormData && (
         <PaymentModal
           isOpen={isPaymentModalOpen}
           onClose={() => setPaymentModalOpen(false)}
           planTitle="Ziyaretçi Katılım Bedeli"
           amount={1000}
+          initialBillingData={{
+            company: pendingFormData.company,
+            tax_number: pendingFormData.taxNumber,
+            tax_office: pendingFormData.taxOffice,
+            billing_address: pendingFormData.address
+          }}
           onSuccess={(paymentDetails) => {
             submitRegistration(pendingFormData, paymentDetails);
           }}

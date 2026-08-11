@@ -14,9 +14,15 @@ interface PaymentModalProps {
     amount: number;
     onSuccess: (paymentDetails?: any) => void;
     isMembership?: boolean;
+    initialBillingData?: {
+        company?: string;
+        tax_number?: string;
+        tax_office?: string;
+        billing_address?: string;
+    };
 }
 
-export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, isMembership = false }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, isMembership = false, initialBillingData }: PaymentModalProps) {
     const { user, updateUser } = useAuthStore();
     const [step, setStep] = useState<1 | 2>(1);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -43,14 +49,14 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
         cvv: ''
     });
 
-    // Pre-populate billing data from user store when modal opens
+    // Pre-populate billing data from user store or initial billing data when modal opens
     useEffect(() => {
         if (isOpen) {
             setBillingData({
-                company: user?.company || '',
-                tax_number: user?.tax_number || '',
-                tax_office: user?.tax_office || '',
-                billing_address: user?.billing_address || ''
+                company: initialBillingData?.company || user?.company || '',
+                tax_number: initialBillingData?.tax_number || user?.tax_number || '',
+                tax_office: initialBillingData?.tax_office || user?.tax_office || '',
+                billing_address: initialBillingData?.billing_address || user?.billing_address || ''
             });
             setFinalAmount(amount);
             setPromoCode('');
@@ -64,7 +70,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 cvv: ''
             });
         }
-    }, [isOpen, user, amount]);
+    }, [isOpen, user, amount, initialBillingData]);
 
     const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -115,10 +121,12 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
         setIsProcessing(true);
         try {
-            // Save billing details to database profile
-            await api.updateMe(billingData);
-            // Update auth state locally
-            updateUser(billingData);
+            // Save billing details to database profile if user is logged in
+            if (user) {
+                await api.updateMe(billingData);
+                // Update auth state locally
+                updateUser(billingData);
+            }
             setStep(2);
             setError('');
         } catch (err: any) {

@@ -64,7 +64,11 @@ export function VisitorPaymentPage() {
     try {
       setEventsLoading(true);
       const data = await api.getPublicEvents();
-      setEvents(data || []);
+      const validEvents = (data || []).filter((e: any) => e.title && e.title.trim() !== '');
+      setEvents(validEvents);
+      if (validEvents.length > 0) {
+        setValue('eventId', validEvents[0].id);
+      }
     } catch (err) {
       console.error('Etkinlikler yüklenirken hata oluştu:', err);
     } finally {
@@ -339,10 +343,9 @@ export function VisitorPaymentPage() {
                       {...register('eventId')}
                       className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none appearance-none ${errors.eventId ? 'border-red-300' : 'border-gray-200'}`}
                     >
-                      <option value="">Katılacağınız Etkinliği Seçiniz</option>
                       {events.map((e: any) => (
                         <option key={e.id} value={e.id}>
-                          {e.title} ({new Date(e.start_at).toLocaleDateString('tr-TR')} {e.group_name ? `- ${e.group_name}` : ''})
+                          {e.title?.trim()} ({new Date(e.start_at).toLocaleDateString('tr-TR')}{e.group_name ? ` - ${e.group_name.trim()}` : ''})
                         </option>
                       ))}
                     </select>

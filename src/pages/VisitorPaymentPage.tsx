@@ -378,7 +378,9 @@ export function VisitorPaymentPage() {
             company: pendingFormData.company,
             tax_number: pendingFormData.taxNumber,
             tax_office: pendingFormData.taxOffice,
-            billing_address: pendingFormData.address
+            billing_address: pendingFormData.address,
+            email: pendingFormData.email,
+            phone: pendingFormData.phone
           }}
           onSuccess={(paymentDetails) => {
             submitRegistration(pendingFormData, paymentDetails);

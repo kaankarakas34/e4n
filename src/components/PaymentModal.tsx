@@ -19,6 +19,8 @@ interface PaymentModalProps {
         tax_number?: string;
         tax_office?: string;
         billing_address?: string;
+        email?: string;
+        phone?: string;
     };
 }
 
@@ -156,7 +158,13 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 expiryMonth: month,
                 expiryYear: '20' + year,
                 cvv: cardData.cvv,
-                total: finalAmount
+                total: finalAmount,
+                email: initialBillingData?.email || user?.email || '',
+                phone: initialBillingData?.phone || user?.phone || '',
+                company: billingData.company,
+                address: billingData.billing_address,
+                tax_number: billingData.tax_number,
+                tax_office: billingData.tax_office
             });
 
             if (res.success) {

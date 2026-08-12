@@ -2176,7 +2176,20 @@ function generateSipayHash(parts, appSecret) {
 }
 
 app.post('/api/payment/pay', async (req, res) => {
-  const { cardNumber, cardHolderName, expiryMonth, expiryYear, cvv, total } = req.body;
+  const { 
+    cardNumber, 
+    cardHolderName, 
+    expiryMonth, 
+    expiryYear, 
+    cvv, 
+    total,
+    email,
+    phone,
+    company,
+    address,
+    tax_number,
+    tax_office
+  } = req.body;
   
   if (!cardNumber || !cardHolderName || !expiryMonth || !expiryYear || !cvv || !total) {
     return res.status(400).json({ error: 'Eksik kart veya ödeme bilgileri.' });
@@ -2225,6 +2238,15 @@ app.post('/api/payment/pay', async (req, res) => {
     
     const hash_key = generateSipayHash(hashParts, sipayAppSecret);
 
+    // Get client IP
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+
+    // Normalize billing info
+    const finalEmail = email || 'info@event4network.com';
+    const finalPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '5555555555';
+    const finalAddress = address || 'Istanbul, Turkiye';
+    const finalCompany = company || 'Bireysel';
+
     // 3. Make POS Payment
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
     const payResponse = await fetch(`${sipayApiUrl}/api/paySmart2D`, {
@@ -2247,7 +2269,40 @@ app.post('/api/payment/pay', async (req, res) => {
         installments_number: 1,
         currency_code: 'TRY',
         invoice_id: invoice_id,
-        hash_key: hash_key
+        hash_key: hash_key,
+        ip: clientIp,
+        customer_ip: clientIp,
+        email: finalEmail,
+        phone: finalPhone,
+        bill_email: finalEmail,
+        bill_phone: finalPhone,
+        bill_address1: finalAddress,
+        bill_address2: '',
+        bill_city: 'Istanbul',
+        bill_postcode: '34000',
+        bill_state: 'Istanbul',
+        address: finalAddress,
+        invoice: JSON.stringify({
+          invoice_id: invoice_id,
+          bill_address1: finalAddress,
+          bill_address2: '',
+          bill_city: 'Istanbul',
+          bill_postcode: '34000',
+          bill_state: 'Istanbul',
+          bill_email: finalEmail,
+          bill_phone: finalPhone,
+          company_name: finalCompany,
+          tax_number: tax_number || '',
+          tax_office: tax_office || ''
+        }),
+        items: [
+          {
+            name: "E4N Katilim Bedeli",
+            price: formattedTotal,
+            quantity: 1,
+            description: "E4N Katilim Bedeli"
+          }
+        ]
       })
     });
 

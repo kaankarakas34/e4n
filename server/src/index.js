@@ -2265,8 +2265,9 @@ app.post('/api/payment/pay', async (req, res) => {
 
     // Setup return URLs
     const clientOrigin = req.headers.origin || 'https://www.event4network.com';
-    const returnUrl = `${req.protocol}://${req.get('host')}/api/payment/sipay-callback/success?frontend_url=${encodeURIComponent(clientOrigin)}`;
-    const cancelUrl = `${req.protocol}://${req.get('host')}/api/payment/sipay-callback/fail?frontend_url=${encodeURIComponent(clientOrigin)}`;
+    const protocol = req.headers['x-forwarded-proto'] || (req.get('host').includes('localhost') || req.get('host').includes('127.0.0.1') ? req.protocol : 'https');
+    const returnUrl = `${protocol}://${req.get('host')}/api/payment/sipay-callback/success?frontend_url=${encodeURIComponent(clientOrigin)}`;
+    const cancelUrl = `${protocol}://${req.get('host')}/api/payment/sipay-callback/fail?frontend_url=${encodeURIComponent(clientOrigin)}`;
 
     // 3. Make 3D POS Payment Request
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
@@ -2598,6 +2599,39 @@ app.post('/api/payment/sipay-callback/fail', async (req, res) => {
     }
   }
 
+  res.send(`
+    <html>
+    <body>
+      <script>
+        if (window.opener) {
+          window.opener.postMessage({ status: 'fail', message: "${errorMsg.replace(/"/g, '\\"')}" }, "*");
+        }
+        window.close();
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// Fallback GET route handlers for Sipay Callbacks (to prevent Nginx 404/Cannot GET errors if a redirect converts POST to GET)
+app.get('/api/payment/sipay-callback/success', (req, res) => {
+  const invoice_id = req.query.invoice_id || '';
+  res.send(`
+    <html>
+    <body>
+      <script>
+        if (window.opener) {
+          window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id.replace(/"/g, '\\"')}" }, "*");
+        }
+        window.close();
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/api/payment/sipay-callback/fail', (req, res) => {
+  const errorMsg = req.query.status_description || 'Ödeme banka tarafından reddedildi.';
   res.send(`
     <html>
     <body>

@@ -120,15 +120,15 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
         e.preventDefault();
         setError('');
         
-        if (!billingData.company.trim()) return setError('Lütfen Şirket / Kurum Unvanı alanını doldurun.');
-        if (!billingData.tax_office.trim()) return setError('Lütfen Vergi Dairesi alanını doldurun.');
-        if (!billingData.tax_number.trim()) return setError('Lütfen Vergi Numarası alanını doldurun.');
-        if (!billingData.billing_address.trim()) return setError('Lütfen Fatura Adresi alanını doldurun.');
+        if (!(billingData?.company || '').trim()) return setError('Lütfen Şirket / Kurum Unvanı alanını doldurun.');
+        if (!(billingData?.tax_office || '').trim()) return setError('Lütfen Vergi Dairesi alanını doldurun.');
+        if (!(billingData?.tax_number || '').trim()) return setError('Lütfen Vergi Numarası alanını doldurun.');
+        if (!(billingData?.billing_address || '').trim()) return setError('Lütfen Fatura Adresi alanını doldurun.');
 
         setIsProcessing(true);
         try {
-            // Save billing details to database profile if user is logged in
-            if (user) {
+            // Save billing details to database profile if user is logged in and not registering a visitor
+            if (user && action?.type !== 'visitor_registration') {
                 await api.updateMe(billingData);
                 // Update auth state locally
                 updateUser(billingData);

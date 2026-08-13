@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../shared/Modal';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
@@ -55,9 +55,11 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
         cvv: ''
     });
 
+    const wasOpen = useRef(false);
+
     // Pre-populate billing data from user store or initial billing data when modal opens
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !wasOpen.current) {
             setBillingData({
                 company: initialBillingData?.company || user?.company || '',
                 tax_number: initialBillingData?.tax_number || user?.tax_number || '',
@@ -76,6 +78,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 cvv: ''
             });
         }
+        wasOpen.current = isOpen;
     }, [isOpen, user, amount, initialBillingData]);
 
     const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

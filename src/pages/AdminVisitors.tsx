@@ -414,7 +414,7 @@ export function AdminVisitors() {
                                                         <div className="flex space-x-2">
                                                             {item.status !== 'CONVERTED' ? (
                                                                 <>
-                                                                    {(activeTab === 'visitors' || activeTab === 'registrations') && (
+                                                                    {activeTab === 'visitors' && (
                                                                         <Button size="sm" onClick={() => {
                                                                             setSelectedVisitorForGroup(item);
                                                                             setIsGroupModalOpen(true);

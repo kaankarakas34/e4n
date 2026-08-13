@@ -285,6 +285,13 @@ export function EventDetail() {
                 planTitle={event?.title || ''}
                 amount={Number(event?.price) || 0}
                 onSuccess={handlePaymentSuccess}
+                action={{
+                    type: 'event_registration',
+                    data: {
+                        event_id: id,
+                        user_id: user?.id
+                    }
+                }}
             />
         </div>
     );

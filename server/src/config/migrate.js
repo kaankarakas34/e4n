@@ -298,6 +298,8 @@ export const runMigrations = async () => {
     await client.query("ALTER TABLE referrals ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'");
     await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS plan_id VARCHAR(50)");
     await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
+    await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS action_type VARCHAR(50)");
+    await client.query("ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS action_data JSONB");
 
     // Event Table Enhancements
     await client.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PUBLISHED'");

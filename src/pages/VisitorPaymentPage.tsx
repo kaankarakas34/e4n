@@ -385,6 +385,23 @@ export function VisitorPaymentPage() {
           onSuccess={(paymentDetails) => {
             submitRegistration(pendingFormData, paymentDetails);
           }}
+          action={{
+            type: 'visitor_registration',
+            data: {
+              name: pendingFormData.name,
+              email: pendingFormData.email,
+              phone: pendingFormData.phone,
+              company: pendingFormData.company,
+              profession: pendingFormData.profession,
+              kvkk_accepted: true,
+              source: 'visitor_payment',
+              form_data: {
+                tax_office: pendingFormData.taxOffice,
+                tax_number: pendingFormData.taxNumber,
+                address: pendingFormData.address
+              }
+            }
+          }}
         />
       )}
     </div>

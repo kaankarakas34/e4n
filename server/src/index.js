@@ -1307,7 +1307,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
       const attCheck = await client.query('SELECT * FROM attendance WHERE event_id = $1 AND user_id = $2', [eventId, req.user.id]);
       if (attCheck.rows.length > 0) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Already registered' });
+        return res.json({ success: true, message: 'Already registered' });
       }
 
       // 3. Equal Opportunity Check
@@ -2188,7 +2188,8 @@ app.post('/api/payment/pay', async (req, res) => {
     company,
     address,
     tax_number,
-    tax_office
+    tax_office,
+    action
   } = req.body;
   
   if (!cardNumber || !cardHolderName || !expiryMonth || !expiryYear || !cvv || !total) {
@@ -2247,80 +2248,368 @@ app.post('/api/payment/pay', async (req, res) => {
     const finalAddress = address || 'Istanbul, Turkiye';
     const finalCompany = company || 'Bireysel';
 
-    // 3. Make POS Payment
+    // Split name and surname for paySmart3D parameters
+    const nameParts = cardHolderName.trim().split(/\s+/);
+    const surname = nameParts.length > 1 ? nameParts.pop() : 'User';
+    const name = nameParts.join(' ') || 'Sipay';
+
+    // Save pending transaction to database
+    // Get user id if authenticated (req.user exists)
+    const userId = req.user?.id || null;
+    const planId = action?.type === 'membership' ? action.data.plan : null;
+
+    await pool.query(`
+      INSERT INTO payment_transactions (merchant_oid, user_id, plan_id, amount, status, action_type, action_data)
+      VALUES ($1, $2, $3, $4, 'PENDING', $5, $6)
+    `, [invoice_id, userId, planId, parseFloat(total), action?.type || null, action ? JSON.stringify(action.data) : null]);
+
+    // Setup return URLs
+    const clientOrigin = req.headers.origin || 'https://www.event4network.com';
+    const returnUrl = `${req.protocol}://${req.get('host')}/api/payment/sipay-callback/success?frontend_url=${encodeURIComponent(clientOrigin)}`;
+    const cancelUrl = `${req.protocol}://${req.get('host')}/api/payment/sipay-callback/fail?frontend_url=${encodeURIComponent(clientOrigin)}`;
+
+    // 3. Make 3D POS Payment Request
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
-    const payResponse = await fetch(`${sipayApiUrl}/api/paySmart2D`, {
+    const payResponse = await fetch(`${sipayApiUrl}/api/paySmart3D`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${sipayToken}`
       },
       body: JSON.stringify({
-        card_number: cleanCardNumber,
+        cc_holder_name: cardHolderName,
         cc_no: cleanCardNumber,
         expiry_month: expiryMonth,
         expiry_year: expiryYear,
         cvv: cvv,
-        card_holder_name: cardHolderName,
-        cc_holder_name: cardHolderName,
-        merchant_key: sipayMerchantKey,
-        total: parseFloat(total),
-        installment: 1,
-        installments_number: 1,
         currency_code: 'TRY',
+        installments_number: 1,
         invoice_id: invoice_id,
-        hash_key: hash_key,
-        ip: clientIp,
-        customer_ip: clientIp,
-        email: finalEmail,
-        phone: finalPhone,
-        bill_email: finalEmail,
-        bill_phone: finalPhone,
-        bill_address1: finalAddress,
-        bill_address2: '',
-        bill_city: 'Istanbul',
-        bill_postcode: '34000',
-        bill_state: 'Istanbul',
-        address: finalAddress,
-        invoice: JSON.stringify({
-          invoice_id: invoice_id,
-          bill_address1: finalAddress,
-          bill_address2: '',
-          bill_city: 'Istanbul',
-          bill_postcode: '34000',
-          bill_state: 'Istanbul',
-          bill_email: finalEmail,
-          bill_phone: finalPhone,
-          company_name: finalCompany,
-          tax_number: tax_number || '',
-          tax_office: tax_office || ''
-        }),
-        items: [
+        invoice_description: action?.type ? `E4N ${action.type}` : 'E4N Odeme',
+        name: name,
+        surname: surname,
+        total: parseFloat(total),
+        merchant_key: sipayMerchantKey,
+        items: JSON.stringify([
           {
-            name: "E4N Katilim Bedeli",
+            name: action?.type ? `E4N ${action.type}` : "E4N Odeme",
             price: formattedTotal,
             quantity: 1,
-            description: "E4N Katilim Bedeli"
+            description: action?.type ? `E4N ${action.type}` : "E4N Odeme"
           }
-        ]
+        ]),
+        cancel_url: cancelUrl,
+        return_url: returnUrl,
+        hash_key: hash_key,
+        bill_address1: finalAddress,
+        bill_phone: finalPhone,
+        bill_email: finalEmail,
+        ip: clientIp,
+        response_method: 'POST',
+        app_lang: 'tr',
+        // Optional parameters required by schema (we pass empty strings to be safe)
+        recurring_payment_interval: '',
+        recurring_web_hook_key: '',
+        maturity_period: '',
+        payment_frequency: ''
       })
     });
 
-    const payData = await payResponse.json();
-    
-    if (payData.status_code === 100) {
-      res.json({ success: true, message: 'Ödeme başarıyla tamamlandı.', data: payData.data });
-    } else {
-      res.status(400).json({ 
+    const contentType = payResponse.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const payData = await payResponse.json();
+      return res.status(400).json({ 
         success: false, 
         error: payData.status_code, 
-        message: payData.status_description || 'Ödeme reddedildi.' 
+        message: payData.status_description || 'Ödeme başlatılamadı.' 
       });
+    } else {
+      const payDataHTML = await payResponse.text();
+      // Sipay paySmart3D returns an HTML self-submitting form page
+      return res.json({ success: true, is3D: true, html: payDataHTML });
     }
   } catch (err) {
-    console.error('Sipay POS Error:', err);
+    console.error('Sipay 3D POS Error:', err);
     res.status(500).json({ error: 'system_error', message: err.message });
   }
+});
+
+// Sipay Success Callback
+app.post('/api/payment/sipay-callback/success', async (req, res) => {
+  const { invoice_id, payment_status, status_code } = req.body;
+  const frontendUrl = req.query.frontend_url || 'https://www.event4network.com';
+
+  console.log(`💳 Sipay Success Callback triggered for Invoice ID: ${invoice_id}`, req.body);
+
+  if (!invoice_id) {
+    return res.send(`
+      <html>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({ status: 'fail', message: 'Invoice ID eksik.' }, "*");
+          }
+          window.close();
+        </script>
+      </body>
+      </html>
+    `);
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Fetch transaction details
+    const txRes = await client.query('SELECT * FROM payment_transactions WHERE merchant_oid = $1', [invoice_id]);
+    if (txRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      console.error(`Transaction not found: ${invoice_id}`);
+      return res.send(`
+        <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ status: 'fail', message: 'İşlem kaydı bulunamadı.' }, "*");
+            }
+            window.close();
+          </script>
+        </body>
+        </html>
+      `);
+    }
+
+    const tx = txRes.rows[0];
+
+    // If transaction is already processed successfully, don't re-run actions
+    if (tx.status === 'SUCCESS' || tx.status === 'PAID') {
+      await client.query('COMMIT');
+      return res.send(`
+        <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id}" }, "*");
+            }
+            window.close();
+          </script>
+        </body>
+        </html>
+      `);
+    }
+
+    // 2. Update transaction status
+    await client.query(
+      "UPDATE payment_transactions SET status = 'SUCCESS', updated_at = NOW() WHERE merchant_oid = $1",
+      [invoice_id]
+    );
+
+    // 3. Process the action
+    const actionType = tx.action_type;
+    const actionData = tx.action_data || {};
+
+    if (actionType === 'membership') {
+      const { user_id, plan, amount } = actionData;
+      const start = new Date();
+      const end = new Date(start);
+
+      if (plan === '12_MONTHS') end.setMonth(end.getMonth() + 12);
+      else if (plan === '8_MONTHS') end.setMonth(end.getMonth() + 8);
+      else if (plan === '6_MONTHS') end.setMonth(end.getMonth() + 6);
+      else if (plan === '1_MONTH') end.setMonth(end.getMonth() + 1);
+      else end.setMonth(end.getMonth() + 4); // Default 4
+
+      await client.query(`
+        UPDATE users 
+        SET subscription_plan = $1, 
+            subscription_end_date = $2, 
+            account_status = 'ACTIVE',
+            last_reminder_trigger = NULL,
+            last_membership_payment_amount = $4
+        WHERE id = $3
+      `, [plan, end.toISOString(), user_id, amount]);
+
+      console.log(`✅ Membership activated for user ${user_id}, plan: ${plan}`);
+
+    } else if (actionType === 'event_registration') {
+      const { event_id, user_id } = actionData;
+
+      // Check if already registered
+      const attCheck = await client.query('SELECT 1 FROM attendance WHERE event_id = $1 AND user_id = $2', [event_id, user_id]);
+      if (attCheck.rows.length === 0) {
+        // Register (Insert Attendance)
+        await client.query(`
+          INSERT INTO attendance(event_id, user_id, status)
+          VALUES($1, $2, 'PRESENT')
+        `, [event_id, user_id]);
+
+        // Get Event Details
+        const eventRes = await client.query('SELECT * FROM events WHERE id = $1', [event_id]);
+        if (eventRes.rows.length > 0) {
+          const event = eventRes.rows[0];
+          // Generate Ticket if enabled
+          if (event.generate_tickets) {
+            const ticketNumber = `E4N-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+            await client.query(`
+              INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status)
+              VALUES($1, $2, $3, 'PAID')
+            `, [event_id, user_id, ticketNumber]);
+          }
+
+          // Send confirmation email
+          try {
+            const userRes = await client.query('SELECT name, email FROM users WHERE id = $1', [user_id]);
+            if (userRes.rows.length > 0) {
+              const userInfo = userRes.rows[0];
+              const formattedDate = new Date(event.start_at).toLocaleDateString('tr-TR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              });
+              const formattedTime = new Date(event.start_at).toLocaleTimeString('tr-TR', {
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+
+              let locationHtml = `<strong>Konum:</strong> ${event.location || ''}`;
+              if (event.is_online) {
+                locationHtml = `<strong>Konum:</strong> Online Toplantı<br/><strong>Toplantı Bağlantısı:</strong> <a href="${event.online_link || ''}" style="color: #ef4444; font-weight: bold;">${event.online_link || 'Toplantı linki katılım mailinde iletilecektir.'}</a>`;
+              }
+
+              const htmlContent = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+                  <h2 style="color: #ef4444; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Etkinlik Kaydınız Onaylandı!</h2>
+                  <p>Merhaba <strong>${userInfo.name}</strong>,</p>
+                  <p><strong>"${event.title}"</strong> etkinliğine kaydınız başarıyla tamamlanmıştır. Etkinlik detayları aşağıda yer almaktadır:</p>
+                  
+                  <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                    <p style="margin: 5px 0;">📅 <strong>Tarih:</strong> ${formattedDate}</p>
+                    <p style="margin: 5px 0;">🕒 <strong>Saat:</strong> ${formattedTime}</p>
+                    <p style="margin: 5px 0;">📍 ${locationHtml}</p>
+                  </div>
+                  
+                  <p>Etkinlik saatinde görüşmek üzere.</p>
+                  <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 20px 0;" />
+                  <p style="font-size: 12px; color: #9ca3af; text-align: center;">Event4Network tarafından otomatik olarak gönderilmiştir.</p>
+                </div>
+              `;
+
+              await sendEmail(userInfo.email, `Etkinlik Kaydınız Onaylandı: ${event.title}`, htmlContent);
+            }
+          } catch (mailErr) {
+            console.error('Error sending registration confirmation email:', mailErr);
+          }
+        }
+      }
+      
+      console.log(`✅ Event registration completed for user ${user_id}, event: ${event_id}`);
+
+    } else if (actionType === 'visitor_registration') {
+      const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, event_id } = actionData;
+
+      const finalEmail = email ? email.trim().toLowerCase() : '';
+      
+      // Check duplicate row to prevent duplicates
+      const checkExist = await client.query(
+        'SELECT 1 FROM public_visitors WHERE LOWER(email) = $1 AND event_id = $2',
+        [finalEmail, event_id || null]
+      );
+
+      if (checkExist.rows.length === 0) {
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS title VARCHAR(255)");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS web_linkedin VARCHAR(255)");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS activity_area VARCHAR(255)");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS duration VARCHAR(100)");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS target_customer TEXT");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS why_join TEXT");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
+        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
+
+        const finalFormData = {
+          ...(form_data || {}),
+          payment_status: 'PAID',
+          payment_amount: tx.amount,
+          payment_date: new Date().toISOString()
+        };
+
+        await client.query(
+          'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, event_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
+          [name, finalEmail, phone, company, profession || 'Ziyaretçi', source || 'visitor_payment', kvkk_accepted || false, inviter_id || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, finalFormData, event_id || null]
+        );
+      }
+
+      console.log(`✅ Visitor registration completed for ${name} (${finalEmail})`);
+    }
+
+    await client.query('COMMIT');
+    
+    res.send(`
+      <html>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id}" }, "*");
+          }
+          window.close();
+        </script>
+      </body>
+      </html>
+    `);
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error completing payment action:', err);
+    res.send(`
+      <html>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({ status: 'fail', message: 'Ödeme başarılı oldu fakat veritabanı kaydı güncellenemedi.' }, "*");
+          }
+          window.close();
+        </script>
+      </body>
+      </html>
+    `);
+  } finally {
+    client.release();
+  }
+});
+
+// Sipay Fail Callback
+app.post('/api/payment/sipay-callback/fail', async (req, res) => {
+  const { invoice_id, status_description } = req.body;
+  const errorMsg = status_description || 'Ödeme banka tarafından reddedildi.';
+
+  console.log(`❌ Sipay Fail Callback triggered for Invoice ID: ${invoice_id}. Reason: ${errorMsg}`);
+
+  if (invoice_id) {
+    try {
+      await pool.query(
+        "UPDATE payment_transactions SET status = 'FAILED', updated_at = NOW() WHERE merchant_oid = $1",
+        [invoice_id]
+      );
+    } catch (dbErr) {
+      console.error('Error updating transaction status to FAILED:', dbErr);
+    }
+  }
+
+  res.send(`
+    <html>
+    <body>
+      <script>
+        if (window.opener) {
+          window.opener.postMessage({ status: 'fail', message: "${errorMsg.replace(/"/g, '\\"')}" }, "*");
+        }
+        window.close();
+      </script>
+    </body>
+    </html>
+  `);
 });
 
 /* --- VISITOR INVITATION ENDPOINTS --- */
@@ -2452,6 +2741,16 @@ app.post('/api/visitors/apply', async (req, res) => {
         error: 'blocked_rejection',
         message: `Başvurunuz Daha Önce Değerlendirilmiştir\n\nBu kişi veya şirket adına daha önce yapılan başvuru, E4N üyelik kriterleri kapsamında değerlendirilmiş ve uygun bulunmamıştır.\n\nAynı kişi veya şirket adına yeniden yapılacak başvurular değerlendirmeye alınmayacaktır.\n\nAnlayışınız için teşekkür ederiz.` 
       });
+    }
+
+    if (event_id) {
+      const checkExist = await pool.query(
+        `SELECT * FROM public_visitors WHERE LOWER(email) = $1 AND event_id = $2`,
+        [normalizedEmail, event_id]
+      );
+      if (checkExist.rows.length > 0) {
+        return res.status(201).json(checkExist.rows[0]);
+      }
     }
     // Lazy migration
     await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");

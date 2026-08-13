@@ -185,6 +185,14 @@ export function MembershipPage() {
                     amount={selectedPlan.price}
                     onSuccess={handlePaymentSuccess}
                     isMembership={true}
+                    action={{
+                        type: 'membership',
+                        data: {
+                            user_id: user?.id,
+                            plan: selectedPlan.plan,
+                            amount: selectedPlan.price
+                        }
+                    }}
                 />
             )}
         </div>

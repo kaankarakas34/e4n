@@ -22,9 +22,13 @@ interface PaymentModalProps {
         email?: string;
         phone?: string;
     };
+    action: {
+        type: 'membership' | 'event_registration' | 'visitor_registration';
+        data: any;
+    };
 }
 
-export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, isMembership = false, initialBillingData }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, isMembership = false, initialBillingData, action }: PaymentModalProps) {
     const { user, updateUser } = useAuthStore();
     const [step, setStep] = useState<1 | 2>(1);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -164,18 +168,45 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 company: billingData.company,
                 address: billingData.billing_address,
                 tax_number: billingData.tax_number,
-                tax_office: billingData.tax_office
+                tax_office: billingData.tax_office,
+                action: action
             });
 
-            if (res.success) {
+            if (res.success && res.is3D) {
+                // Open a popup for 3D Secure Verification
+                const popup = window.open('', 'Sipay3DPayment', 'width=600,height=700,status=yes,resizable=yes,scrollbars=yes');
+                if (popup) {
+                    popup.document.write(res.html);
+                    popup.document.close();
+                } else {
+                    setError('3D Secure doğrulama penceresi engellendi. Lütfen tarayıcınızın popup engelleyicisini kaldırıp tekrar deneyin.');
+                    setIsProcessing(false);
+                    return;
+                }
+
+                // Listen for verification result from the popup window
+                const handleMessage = (event: MessageEvent) => {
+                    if (event.data && (event.data.status === 'success' || event.data.status === 'fail')) {
+                        window.removeEventListener('message', handleMessage);
+                        if (event.data.status === 'success') {
+                            onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId: event.data.invoice_id });
+                        } else {
+                            setError(event.data.message || 'Ödeme banka tarafından reddedildi.');
+                            setIsProcessing(false);
+                        }
+                    }
+                };
+
+                window.addEventListener('message', handleMessage);
+            } else if (res.success) {
                 onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied });
             } else {
                 setError(res.message || 'Ödeme gerçekleştirilemedi.');
+                setIsProcessing(false);
             }
         } catch (err: any) {
             console.error('POS Payment Error:', err);
             setError(err.message || 'Ödeme sırasında bir hata oluştu.');
-        } finally {
             setIsProcessing(false);
         }
     };

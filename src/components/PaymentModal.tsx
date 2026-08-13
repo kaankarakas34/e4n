@@ -127,17 +127,17 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
         setIsProcessing(true);
         try {
-            // Save billing details to database profile if user is logged in and not registering a visitor
+            // Save billing details to database profile asynchronously if user is logged in and not registering a visitor
             if (user && action?.type !== 'visitor_registration') {
-                await api.updateMe(billingData);
-                // Update auth state locally
-                updateUser(billingData);
+                api.updateMe(billingData)
+                    .then(() => updateUser(billingData))
+                    .catch(err => console.error('Non-blocking billing profile update failed:', err));
             }
             setStep(2);
             setError('');
         } catch (err: any) {
-            console.error('Error saving billing details:', err);
-            setError(err.error || err.message || 'Fatura bilgileri güncellenirken hata oluştu.');
+            console.error('Error in billing form transition:', err);
+            setError(err.error || err.message || 'Bir hata oluştu.');
         } finally {
             setIsProcessing(false);
         }

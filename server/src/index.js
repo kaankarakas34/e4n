@@ -4122,6 +4122,35 @@ app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) =>
   }
 });
 
+// Accounting: Delete Payment Record (Admin)
+app.delete('/api/admin/accounting/payments/:type/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { type, id } = req.params;
+
+  try {
+    if (type === 'VISITOR') {
+      await pool.query('DELETE FROM public_visitors WHERE id = $1', [id]);
+      res.json({ success: true, message: 'Ziyaretçi ödeme kaydı başarıyla silindi.' });
+    } else if (type === 'MEMBER') {
+      await pool.query(`
+        UPDATE users 
+        SET subscription_plan = NULL, 
+            subscription_end_date = NULL, 
+            account_status = 'PENDING',
+            last_membership_payment_amount = NULL,
+            subscription_invoice_url = NULL,
+            subscription_invoice_issued = false
+        WHERE id = $1
+      `, [id]);
+      res.json({ success: true, message: 'Üye ödeme kaydı başarıyla silindi.' });
+    } else {
+      res.status(400).json({ error: 'Geçersiz ödeme türü.' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Accounting: Upload Invoice and Email User
 app.post('/api/admin/accounting/:type/:id/upload-invoice', authenticateToken, upload.single('invoice'), async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);

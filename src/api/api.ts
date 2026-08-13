@@ -636,6 +636,9 @@ export const api = {
   async getAccountingPayments() {
     return await request('/admin/accounting/payments');
   },
+  async deleteAccountingPayment(type: 'VISITOR' | 'MEMBER', id: string) {
+    return await request(`/admin/accounting/payments/${type}/${id}`, { method: 'DELETE' });
+  },
   async uploadAccountingInvoice(type: 'VISITOR' | 'MEMBER', id: string, file: File) {
     const formData = new FormData();
     formData.append('invoice', file);

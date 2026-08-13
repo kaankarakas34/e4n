@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Phone,
   MapPin,
-  Landmark
+  Landmark,
+  Trash2
 } from 'lucide-react';
 
 interface PaymentRecord {
@@ -107,6 +108,20 @@ export function AdminAccounting() {
     } finally {
       setUploadingId(null);
       setUploadTarget(null);
+    }
+  };
+
+  const handleDeletePayment = async (record: PaymentRecord) => {
+    const confirmDelete = window.confirm(`${record.name} isimli kişiye ait bu ödeme kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`);
+    if (!confirmDelete) return;
+
+    try {
+      await api.deleteAccountingPayment(record.type, record.id);
+      alert('Kayıt başarıyla silindi.');
+      fetchPayments(); // Refresh list
+    } catch (err: any) {
+      console.error('Kayıt silinirken hata oluştu:', err);
+      alert(err.error || err.message || 'Kayıt silinirken bir hata oluştu.');
     }
   };
 
@@ -359,6 +374,16 @@ export function AdminAccounting() {
                                 {uploadingId === p.id ? 'Gönderiliyor...' : 'Fatura Yükle'}
                               </Button>
                             )}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeletePayment(p)}
+                              className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 border-rose-200 hover:border-rose-300 rounded-lg text-xs py-1.5 px-2 flex items-center justify-center"
+                              title="Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </td>
                       </tr>

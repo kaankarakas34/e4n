@@ -508,10 +508,10 @@ export function LandingPage() {
                 E4N kendi üyelerinin dışarıdaki görünürlüğünü de desteklemek için bu ücretsiz toplulukları sık sık değerlendirir, kendi üyelerinin seminerler, webinarlar ve çeşitli paneller vermesini sağlayarak bu etkinliklerin duyurularını da bu loncalardan yapar.
               </p>
               <Button
-                onClick={() => navigate('/topluluklarimiz')}
+                onClick={() => navigate('/auth/register-community')}
                 className="text-xs font-bold px-6 h-10 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-2 rounded-xl"
               >
-                Tüm Toplulukları Gör <ArrowRight className="w-4 h-4" />
+                Topluluklarımıza Katılın <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
 
@@ -567,15 +567,13 @@ export function LandingPage() {
                     ></button>
                   ))}
                 </div>
-                <a
-                  href={carouselGuilds[guildIndex].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => navigate('/auth/register-community')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-emerald-950/20 transition-all transform active:scale-95"
                 >
                   <MessageCircle className="w-5 h-5" />
                   Gruba Katıl
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -617,7 +615,7 @@ export function LandingPage() {
         } w-[calc(100%-2.5rem)] sm:w-auto max-w-sm sm:max-w-none`}
       >
         <button
-          onClick={() => navigate('/topluluklarimiz')}
+          onClick={() => navigate('/auth/register-community')}
           className="relative w-full flex items-center justify-between sm:justify-start gap-3 px-5 py-4 sm:py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-rose-600 text-white font-bold text-sm sm:text-base shadow-[0_10px_30px_rgba(220,38,38,0.35)] hover:shadow-[0_15px_35px_rgba(220,38,38,0.5)] transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105 active:scale-95 group border border-white/10 overflow-hidden"
         >
           {/* Shine background sweep effect on hover */}
@@ -630,7 +628,7 @@ export function LandingPage() {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400 border border-red-600"></span>
             </span>
             <Users className="w-5 h-5 text-white/90 group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="tracking-wide whitespace-nowrap">Ücretsiz Topluluklarımıza Katılın</span>
+            <span className="tracking-wide whitespace-nowrap">Topluluklarımıza Katılın</span>
           </div>
           
           <ArrowRight className="w-5 h-5 text-white/80 group-hover:translate-x-1 transition-transform ml-1 flex-shrink-0" />

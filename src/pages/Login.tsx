@@ -169,23 +169,7 @@ export function Login() {
               Kayıt ve Katılım Seçenekleri
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Option 1: Visitor Application */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-1">İş insanları kulübüne ziyaretçi olmak istiyorum</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                    Üye olabilmeniz için ilk olarak ziyaretçi olmalısınız.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => navigate('/degerlendirme-basvurusu')}
-                  className="w-full text-xs font-bold py-2 rounded-lg border border-red-200 text-red-600 bg-white hover:bg-white hover:text-red-600"
-                >
-                  Ziyaretçi Ol
-                </Button>
-              </div>
-
+            <div className="max-w-md mx-auto">
               {/* Option 2: Community Membership */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
                 <div>

@@ -81,7 +81,7 @@ export function E4NNedir() {
                   <h2 className="text-2xl font-extrabold text-slate-900">Biz Kimiz?</h2>
                 </div>
                 <p className="text-slate-800 text-base leading-relaxed mb-6 font-semibold">
-                  Event4Network; iş insanlarını, şirket sahiplerini, kurucu ortakları, girişimcileri, C-Level yöneticileri ve karar verici profesyonelleri bir araya getiren seçici bir network platformu ve iş kulübüdür.
+                  Event4Network, iş dünyasının liderlerini, girişimcilerini ve karar vericilerini aynı çatı altında buluşturan seçkin bir network platformu ve iş kulübüdür.
                 </p>
                 <p className="text-slate-655 text-sm leading-relaxed mb-6">
                   Amacımız yalnızca insanların tanışmasını veya birbirlerine satış yapmasını sağlamak değildir. E4N’de temel hedef; üyelerin birbirini tanıdığı, uzmanlığına güvendiği ve zaman içerisinde birbirine iş, bilgi, bağlantı ve fırsat yönlendirebildiği kalıcı ilişkiler oluşturmaktır.

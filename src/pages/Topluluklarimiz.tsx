@@ -1,5 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 import { 
   Megaphone, 
   Network, 
@@ -27,6 +29,9 @@ interface CommunityItem {
 }
 
 export function Topluluklarimiz() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
   const generalCommunities: CommunityItem[] = [
     {
       name: "Duyurular Grubu",
@@ -144,158 +149,197 @@ export function Topluluklarimiz() {
         </div>
       </section>
 
-      {/* Main Content Area */}
+            {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10">
-        
-        {/* Category 1: Genel Gruplar */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-              <Users className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900">Genel İletişim & Duyuru Kanalları</h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {generalCommunities.map((item, idx) => (
-              <div 
-                key={idx} 
-                className="bg-white p-8 rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
-                      <item.icon className="w-6 h-6" />
-                    </div>
-                    {item.badge && (
-                      <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-red-650 transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="text-slate-650 text-sm leading-relaxed mb-8">
-                    {item.description}
-                  </p>
-                </div>
-                
-                <a 
-                  href={item.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm tracking-wide shadow-md shadow-emerald-950/10 hover:shadow-lg transition-all"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  WhatsApp Grubuna Katıl
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </a>
+        {!user ? (
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-xl shadow-slate-100 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl"></div>
+              
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8" />
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Category 2: Sektörel Loncalar */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900">Sektörel Loncalar (WhatsApp)</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {guilds.map((item, idx) => (
-              <div 
-                key={idx} 
-                className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-5">
-                    <div className="w-10 h-10 bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
-                      <item.icon className="w-5 h-5" />
-                    </div>
-                    {item.badge && (
-                      <span className="bg-red-50 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-red-100">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-red-650 transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="text-slate-500 text-xs leading-relaxed mb-6">
-                    {item.description}
-                  </p>
-                </div>
-                
-                <a 
-                  href={item.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl border border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white font-bold text-xs tracking-wide transition-all"
+              <span className="text-xs font-mono font-bold text-red-650 uppercase tracking-widest block mb-3">
+                E4N TOPLULUK GİRİŞ KAPISI
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
+                Ücretsiz Topluluk Profili Oluşturun
+              </h2>
+              
+              <p className="text-slate-650 text-base leading-relaxed mb-8 max-w-xl mx-auto">
+                Event4Network, kapalı ve seçici bir iş dünyası kulübüdür. Loncalara katılarak ağımızdaki seçkin iş insanlarını takip etmek, deneyimlerini izlemek ve dışarıya açık etkinliklerimizi takip etmek için ücretsiz Topluluk Profili oluşturun.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button
+                  onClick={() => navigate('/auth/register-community')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl bg-red-600 hover:bg-red-550 text-white font-bold text-sm tracking-wide shadow-lg shadow-red-200 transition-all transform active:scale-95"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  Katıl
-                </a>
+                  Topluluk Profili Oluştur
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => navigate('/auth/login')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm tracking-wide transition-all transform active:scale-95"
+                >
+                  Giriş Yap
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Category 3: Sosyal Medya */}
-        <div>
-          <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-              <Linkedin className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Sosyal Medya Kanallarımız</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {socialMedia.map((item, idx) => {
-              const isLinkedin = item.name.includes("LinkedIn");
-              const buttonColorClass = isLinkedin 
-                ? "bg-[#0a66c2] hover:bg-[#004182]" 
-                : "bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90";
-              const buttonText = isLinkedin 
-                ? (item.name.includes("Grubu") ? "LinkedIn Grubuna Katıl" : "LinkedIn'de Takip Et")
-                : "Instagram'da Takip Et";
-
-              return (
-                <div 
-                  key={idx} 
-                  className="bg-white p-8 rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-6">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${isLinkedin ? 'bg-[#0a66c2]' : 'bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045]'}`}>
-                        <item.icon className="w-6 h-6" />
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">
-                      {item.name}
-                    </h3>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-8">
-                      {item.description}
-                    </p>
-                  </div>
-                  
-                  <a 
-                    href={item.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-2xl text-white font-bold text-sm tracking-wide shadow-md transition-all ${buttonColorClass}`}
+        ) : (
+          <>
+            {/* Category 1: Genel Gruplar */}
+            <div className="mb-16">
+              <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
+                <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Genel İletişim & Duyuru Kanalları</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-8">
+                {generalCommunities.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="bg-white p-8 rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
                   >
-                    <item.icon className="w-5 h-5" />
-                    {buttonText}
-                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                    <div>
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-300">
+                          <item.icon className="w-6 h-6" />
+                        </div>
+                        {item.badge && (
+                          <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full border border-red-200">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-red-650 transition-colors">
+                        {item.name}
+                      </h3>
+                      <p className="text-slate-655 text-sm leading-relaxed mb-8">
+                        {item.description}
+                      </p>
+                    </div>
+                    
+                    <a 
+                      href={item.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm tracking-wide shadow-md shadow-emerald-950/10 hover:shadow-lg transition-all"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      WhatsApp Grubuna Katıl
+                      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
 
+            {/* Category 2: Sektörel Loncalar */}
+            <div className="mb-16">
+              <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
+                <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Sektörel Loncalar (WhatsApp)</h2>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {guilds.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-5">
+                        <div className="w-10 h-10 bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center group-hover:bg-red-650 group-hover:text-white transition-all duration-300">
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        {item.badge && (
+                          <span className="bg-red-50 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-red-100">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900 mb-2 group-hover:text-red-655 transition-colors">
+                        {item.name}
+                      </h3>
+                      <p className="text-slate-500 text-xs leading-relaxed mb-6">
+                        {item.description}
+                      </p>
+                    </div>
+                    
+                    <a 
+                      href={item.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl border border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white font-bold text-xs tracking-wide transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Katıl
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category 3: Sosyal Medya */}
+            <div>
+              <div className="flex items-center gap-3 mb-8 pb-3 border-b border-slate-200">
+                <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                  <Linkedin className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Sosyal Medya Kanallarımız</h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-8">
+                {socialMedia.map((item, idx) => {
+                  const isLinkedin = item.name.includes("LinkedIn");
+                  const buttonColorClass = isLinkedin 
+                    ? "bg-[#0a66c2] hover:bg-[#004182]" 
+                    : "bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90";
+                  const buttonText = isLinkedin 
+                    ? (item.name.includes("Grubu") ? "LinkedIn Grubuna Katıl" : "LinkedIn'de Takip Et")
+                    : "Instagram'da Takip Et";
+
+                  return (
+                    <div 
+                      key={idx} 
+                      className="bg-white p-8 rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-6">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${isLinkedin ? 'bg-[#0a66c2]' : 'bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045]'}`}>
+                            <item.icon className="w-6 h-6" />
+                          </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-3">
+                          {item.name}
+                        </h3>
+                        <p className="text-slate-655 text-sm leading-relaxed mb-8">
+                          {item.description}
+                        </p>
+                      </div>
+                      
+                      <a 
+                        href={item.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-2xl text-white font-bold text-sm tracking-wide shadow-md transition-all ${buttonColorClass}`}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        {buttonText}
+                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+</div>
   );
 }

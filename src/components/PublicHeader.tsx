@@ -18,7 +18,6 @@ export function PublicHeader() {
     { name: 'Üyelik', path: '/uyelik' },
     { name: 'Eğitim', path: '/egitim' },
     { name: 'Etkinlikler', path: '/etkinlikler' },
-    { name: 'Rehber', path: '/blog' },
     { name: 'Hakkımızda', path: '/hakkimizda' }
   ];
 

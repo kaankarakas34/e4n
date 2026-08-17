@@ -27,7 +27,6 @@ export function PublicFooter() {
           <div>
             <h4 className="font-bold text-gray-900 mb-4">Kaynaklar</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link to="/blog" className="hover:text-red-600">Rehber</Link></li>
               <li><Link to="/sikca-sorulan-sorular" className="hover:text-red-600">Sıkça Sorulan Sorular</Link></li>
               <li><Link to="/hakkimizda" className="hover:text-red-600">Hakkımızda</Link></li>
               <li><Link to="/iletisim" className="hover:text-red-600">İletişim</Link></li>

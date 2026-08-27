@@ -5,7 +5,7 @@ import { BlogPost } from '../types';
 import { Calendar, User, ArrowRight, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 
 export function BlogListPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -38,11 +38,11 @@ export function BlogListPage() {
 
   return (
     <div className="bg-white min-h-screen pb-24">
-      <Helmet>
-        <title>Rehber | Event4Network</title>
-        <meta name="description" content="Event4Network Rehber. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler." />
-        <link rel="canonical" href="https://www.event4network.com/blog" />
-      </Helmet>
+      <SEO
+        title="Rehber | Event4Network"
+        description="Event4Network Rehber. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler."
+        canonical="https://www.event4network.com/blog"
+      />
 
       {/* Hero Section */}
       <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">

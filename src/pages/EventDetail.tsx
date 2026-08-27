@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
@@ -130,8 +131,44 @@ export function EventDetail() {
         );
     }
 
+    const eventSchema = event ? {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": event.title,
+        "description": event.description || event.title,
+        "startDate": event.start_at,
+        "endDate": event.end_at || event.start_at,
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": event.is_online ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
+        "location": event.is_online
+            ? {
+                "@type": "VirtualLocation",
+                "url": event.location && event.location.startsWith('http') ? event.location : "https://www.event4network.com"
+            }
+            : {
+                "@type": "Place",
+                "name": event.location || "Event4Network Etkinlik Alanı",
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": event.city || "İstanbul",
+                    "addressCountry": "TR"
+                }
+            },
+        "organizer": {
+            "@type": "Organization",
+            "name": "Event4Network",
+            "url": "https://www.event4network.com"
+        }
+    } : undefined;
+
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
+            <SEO
+                title={`${event.title} | Event4Network Etkinlik`}
+                description={event.description ? event.description.slice(0, 150) : event.title}
+                canonical={`https://www.event4network.com/event/${id}`}
+                schema={eventSchema}
+            />
             {/* Hero Section */}
             <div className="relative h-64 md:h-96 bg-gray-900 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30 z-10"></div>

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import {
@@ -21,11 +20,11 @@ export function Uyelik() {
 
   return (
     <div className="bg-white min-h-screen pt-20">
-      <Helmet>
-        <title>Üyelik Süreci ve Kriterleri | Event4Network</title>
-        <meta name="description" content="E4N’de amaç çok kişi almak değil, doğru insanları doğru zeminde buluşturmaktır. Değerlendirme adımlarını ve üyelik şartlarını detaylarıyla öğrenin." />
-        <link rel="canonical" href="https://www.event4network.com/uyelik" />
-      </Helmet>
+      <SEO
+        title="Üyelik Süreci ve Kriterleri | Event4Network"
+        description="E4N’de amaç çok kişi almak değil, doğru insanları doğru zeminde buluşturmaktır. Değerlendirme adımlarını ve üyelik şartlarını detaylarıyla öğrenin."
+        canonical="https://www.event4network.com/uyelik"
+      />
 
       {/* 1. Hero Section */}
       <section className="relative py-20 sm:py-28 bg-slate-950 text-white overflow-hidden">

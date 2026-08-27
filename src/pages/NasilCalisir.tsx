@@ -1,5 +1,4 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import {
@@ -69,11 +68,11 @@ export function NasilCalisir() {
 
   return (
     <div className="bg-white min-h-screen pt-20">
-      <Helmet>
-        <title>Nasıl Çalışır? | Event4Network Seçici Networking</title>
-        <meta name="description" content="Event4Network networking modelinin işleyişi. Değerlendirme süreci, toplantı periyotları, birebir görüşmeler ve güvene dayalı iş yönlendirme sistemini keşfedin." />
-        <link rel="canonical" href="https://www.event4network.com/nasil-calisir" />
-      </Helmet>
+      <SEO
+        title="Nasıl Çalışır? | Event4Network Seçici Networking"
+        description="Event4Network networking modelinin işleyişi. Değerlendirme süreci, toplantı periyotları, birebir görüşmeler ve güvene dayalı iş yönlendirme sistemini keşfedin."
+        canonical="https://www.event4network.com/nasil-calisir"
+      />
 
       {/* Hero Section */}
       <section className="relative py-20 sm:py-28 bg-slate-950 text-white overflow-hidden">

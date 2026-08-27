@@ -1,5 +1,4 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import {
@@ -20,11 +19,11 @@ export function E4NNedir() {
 
   return (
     <div className="bg-white min-h-screen pt-20">
-      <Helmet>
-        <title>E4N Nedir? | Event4Network Seçici Networking Ekosistemi</title>
-        <meta name="description" content="E4N, iş insanlarının düzenli temas, güven ve karşılıklı katkı üzerinden daha güçlü iş ilişkileri kurmasını sağlayan seçici bir networking platformudur." />
-        <link rel="canonical" href="https://www.event4network.com/e4n-nedir" />
-      </Helmet>
+      <SEO
+        title="E4N Nedir? | Event4Network Seçici Networking Ekosistemi"
+        description="E4N, iş insanlarının düzenli temas, güven ve karşılıklı katkı üzerinden daha güçlü iş ilişkileri kurmasını sağlayan seçici bir networking platformudur."
+        canonical="https://www.event4network.com/e4n-nedir"
+      />
 
       {/* 1. Hero Section */}
       <section className="relative py-20 sm:py-28 bg-slate-950 text-white overflow-hidden">

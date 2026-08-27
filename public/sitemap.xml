@@ -2,42 +2,97 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.event4network.com/</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>1.00</priority>
   </url>
   <url>
-    <loc>https://www.event4network.com/on-bilgilendirme-formu</loc>
-    <lastmod>2026-05-17</lastmod>
+    <loc>https://www.event4network.com/e4n-nedir</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/nasil-calisir</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/uyelik</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/degerlendirme-basvurusu</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/etkinlikler</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/egitim</loc>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://www.event4network.com/blog</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.80</priority>
   </url>
   <url>
+    <loc>https://www.event4network.com/topluluklarimiz</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/hakkimizda</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/sikca-sorulan-sorular</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/iletisim</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/kvkk</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://www.event4network.com/on-bilgilendirme-formu</loc>
+    <lastmod>2026-08-27</lastmod>
+    <priority>0.50</priority>
+  </url>
+  <url>
     <loc>https://www.event4network.com/kullanim-kosullari</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.50</priority>
   </url>
   <url>
     <loc>https://www.event4network.com/gizlilik-politikasi</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.50</priority>
   </url>
   <url>
     <loc>https://www.event4network.com/cerez-politikasi</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.50</priority>
   </url>
   <url>
     <loc>https://www.event4network.com/mesafeli-satis-sozlesmesi</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.50</priority>
   </url>
   <url>
     <loc>https://www.event4network.com/iptal-ve-iade-kosullari</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <priority>0.50</priority>
   </url>
 </urlset>

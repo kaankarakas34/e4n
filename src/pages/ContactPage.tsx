@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,11 +41,11 @@ export function ContactPage() {
 
   return (
     <div className="bg-white">
-      <Helmet>
-        <title>İletişim | Event4Network</title>
-        <meta name="description" content="Event4Network iletişim kanalları. Adres, telefon, e-posta, sosyal medya adreslerimiz ve mesaj gönderim formu." />
-        <link rel="canonical" href="https://www.event4network.com/iletisim" />
-      </Helmet>
+      <SEO
+        title="İletişim | Event4Network"
+        description="Event4Network iletişim kanalları. Adres, telefon, e-posta, sosyal medya adreslerimiz ve mesaj gönderim formu."
+        canonical="https://www.event4network.com/iletisim"
+      />
 
       {/* Hero Section */}
       <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">

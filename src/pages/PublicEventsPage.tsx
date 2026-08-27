@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
 import { Calendar, MapPin, Clock, ArrowRight, Star, Sparkles, Image as ImageIcon } from 'lucide-react';
@@ -25,11 +25,11 @@ export function PublicEventsPage() {
 
   return (
     <div className="bg-white">
-      <Helmet>
-        <title>Etkinlikler | Event4Network</title>
-        <meta name="description" content="Event4Network üye buluşmaları, fiziksel networking etkinlikleri, özel davetler ve yaklaşan etkinlik takvimini inceleyin." />
-        <link rel="canonical" href="https://www.event4network.com/etkinlikler" />
-      </Helmet>
+      <SEO
+        title="Etkinlikler | Event4Network"
+        description="Event4Network üye buluşmaları, fiziksel networking etkinlikleri, özel davetler ve yaklaşan etkinlik takvimini inceleyin."
+        canonical="https://www.event4network.com/etkinlikler"
+      />
 
       {/* Hero Section */}
       <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">

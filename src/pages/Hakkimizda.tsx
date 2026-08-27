@@ -1,5 +1,4 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import { ArrowRight, Shield, Target, Award, CheckCircle, Handshake, Landmark } from 'lucide-react';
@@ -9,11 +8,23 @@ export function Hakkimizda() {
 
   return (
     <div className="bg-white">
-      <Helmet>
-        <title>Hakkımızda | Event4Network</title>
-        <meta name="description" content="Event4Network vizyonu, misyonu, kuruluş fikri ve değerleri. Seçici networking, güven ve referans kültürü üzerine inşa edilmiş bir iş ağı." />
-        <link rel="canonical" href="https://www.event4network.com/hakkimizda" />
-      </Helmet>
+      <SEO
+        title="Hakkımızda | Event4Network"
+        description="Event4Network vizyonu, misyonu, kuruluş fikri ve değerleri. Seçici networking, güven ve referans kültürü üzerine inşa edilmiş bir iş ağı."
+        canonical="https://www.event4network.com/hakkimizda"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "Event4Network",
+            "alternateName": "E4N",
+            "url": "https://www.event4network.com",
+            "logo": "https://www.event4network.com/e4n-logo.png",
+            "description": "Event4Network vizyonu, misyonu, kuruluş fikri ve değerleri. Seçici networking, güven ve referans kültürü üzerine inşa edilmiş bir iş ağı."
+          }
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">

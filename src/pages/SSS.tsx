@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import { Search, ChevronDown, HelpCircle, ArrowRight } from 'lucide-react';
@@ -78,11 +78,23 @@ export function SSS() {
 
   return (
     <div className="bg-white">
-      <Helmet>
-        <title>Sıkça Sorulan Sorular | Event4Network</title>
-        <meta name="description" content="Event4Network hakkında merak edilen sorular; üyelik süreci, meslek koltuğu sistemi, toplantı disiplini ve nitelikli iş yönlendirmeleri." />
-        <link rel="canonical" href="https://www.event4network.com/sikca-sorulan-sorular" />
-      </Helmet>
+      <SEO
+        title="Sıkça Sorulan Sorular | Event4Network"
+        description="Event4Network hakkında merak edilen sorular; üyelik süreci, meslek koltuğu sistemi, toplantı disiplini ve nitelikli iş yönlendirmeleri."
+        canonical="https://www.event4network.com/sikca-sorulan-sorular"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": sssItems.map(item => ({
+            "@type": "Question",
+            "name": item.q,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": item.a
+            }
+          }))
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">

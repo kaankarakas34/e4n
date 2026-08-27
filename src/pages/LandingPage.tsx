@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '../components/SEO';
 import { Button } from '../shared/Button';
 import {
   ArrowRight,
@@ -103,12 +103,12 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-red-500 selection:text-white">
-      <Helmet>
-        <title>Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking</title>
-        <meta name="description" content="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı seçici bir iş ağı içinde bir araya getirerek kalıcı iş ilişkileri oluşturur." />
-        <meta name="keywords" content="seçici networking, iş ağı, referansla iş geliştirme, şirket sahipleri, kurucu ortaklar, B2B networking, kalıcı iş ilişkileri, event4network" />
-        <link rel="canonical" href="https://www.event4network.com/" />
-      </Helmet>
+      <SEO
+        title="Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking"
+        description="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+        canonical="https://www.event4network.com/"
+        ogImage="https://www.event4network.com/biz_kimiz_network.png"
+      />
 
       {/* 1. Hero Alanı */}
       <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 bg-slate-950 text-white overflow-hidden">
@@ -205,7 +205,7 @@ export function LandingPage() {
                   ✓
                 </div>
                 <div>
-                  <h4 className="font-bold text-red-950 text-sm mb-1">E4N’nin Temel Yaklaşımı</h4>
+                  <h3 className="font-bold text-red-950 text-sm mb-1">E4N’nin Temel Yaklaşımı</h3>
                   <p className="text-red-900/90 text-sm font-semibold">Kalıcı iş ilişkileri için seçici networking.</p>
                 </div>
               </div>
@@ -260,7 +260,7 @@ export function LandingPage() {
                 <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
                   <Users className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-slate-900 mb-2">Nitelikli Topluluk</h4>
+                <h3 className="font-bold text-slate-900 mb-2">Nitelikli Topluluk</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Sadece iş profili ve değer katma hedefleri onaylanmış elit yöneticiler yer alır.
                 </p>
@@ -270,7 +270,7 @@ export function LandingPage() {
                 <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
                   <Handshake className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-slate-900 mb-2">Güven Odaklı Buluşma</h4>
+                <h3 className="font-bold text-slate-900 mb-2">Güven Odaklı Buluşma</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Tek seferlik kartvizit alışverişi yerine birbirini gerçekten tanıma esastır.
                 </p>
@@ -280,7 +280,7 @@ export function LandingPage() {
                 <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
                   <Target className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-slate-900 mb-2">Stratejik Ağ Paylaşımı</h4>
+                <h3 className="font-bold text-slate-900 mb-2">Stratejik Ağ Paylaşımı</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Kişisel veya kurumsal bağlantı listeleri üzerinden bilinçli yönlendirmeler yapılır.
                 </p>
@@ -290,7 +290,7 @@ export function LandingPage() {
                 <div className="w-12 h-12 bg-red-50 text-red-600 flex items-center justify-center rounded-xl mb-4">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-slate-900 mb-2">Süreç Verimliliği</h4>
+                <h3 className="font-bold text-slate-900 mb-2">Süreç Verimliliği</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Toplantı ve 1-on-1 sistemleri sayesinde minimum zaman kaybı, maksimum iş hacmi.
                 </p>
@@ -337,7 +337,7 @@ export function LandingPage() {
                   <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-600 mb-4">
                     <XCircle className="w-5 h-5" />
                   </div>
-                  <h4 className="font-bold text-slate-900 mb-3">{item.title}</h4>
+                  <h3 className="font-bold text-slate-900 mb-3">{item.title}</h3>
                   <p className="text-xs text-slate-550 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
@@ -444,7 +444,7 @@ export function LandingPage() {
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-red-950 text-lg mb-2">E4N'e Uygun Profil Felsefesi</h4>
+              <h3 className="font-bold text-red-950 text-lg mb-2">E4N'e Uygun Profil Felsefesi</h3>
               <p className="text-sm text-red-900/90 leading-relaxed">
                 E4N’e katılan kişiler yalnızca networkten fayda sağlamayı değil, aynı zamanda sahip oldukları deneyim, bilgi ve bağlantılarla bu yapıya katkıda bulunmayı da önemsemelidir. Karşılıklı değer yaratma anlayışıyla hareket eden üyeler, E4N kültürünün ve güçlü bir iş ekosisteminin temelini oluşturur.
               </p>
@@ -471,7 +471,7 @@ export function LandingPage() {
             </div>
 
             <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-8">
-              <h4 className="font-bold text-slate-900 mb-4">Görüşme Çıktıları Nelerdir?</h4>
+              <h3 className="font-bold text-slate-900 mb-4">Görüşme Çıktıları Nelerdir?</h3>
               <ul className="space-y-4">
                 {[
                   "İş modelinin ve güçlü yönlerin net anlaşılması",

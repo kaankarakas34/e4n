@@ -317,6 +317,18 @@ async function main() {
   if (adminStatsAsMember.status !== 403 || adminStats.status !== 200) {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
+  const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const adminRouteChecks = {};
+  for (const path of ['email-config', 'stats/charts', 'stats/groups', 'stats/geo']) {
+    const memberResponse = await fetch(`${base}/api/admin/${path}`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+    const adminResponse = await fetch(`${base}/api/admin/${path}`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+    const adminBody = await adminResponse.json();
+    if (memberResponse.status !== 403 || adminResponse.status !== 200
+      || (path !== 'stats/charts' && !Array.isArray(adminBody))) {
+      throw new Error(`Admin ${path} route baseline changed: MEMBER ${memberResponse.status}, ADMIN ${adminResponse.status}`);
+    }
+    adminRouteChecks[path] = { member: memberResponse.status, admin: adminResponse.status };
+  }
   const attendanceList = await fetch(`${base}/api/events/${futureEventId}/attendance`, {
     headers: authHeaders, signal: AbortSignal.timeout(10_000),
   });
@@ -455,6 +467,7 @@ async function main() {
     userGroupsOtherId: { status: userGroupsOtherId.status, count: userGroupsOtherIdBody.length },
     adminStatsAsMember: adminStatsAsMember.status,
     adminStatsAsAdmin: adminStats.status,
+    adminRouteChecks,
     attendanceList: attendanceList.status,
     attendanceHasUserNameAlias: Object.hasOwn(attendanceRows[0], 'user_name'),
     reportStats: { status: reportStats.status, visitorConversionRate: reportStatsBody.visitorConversionRate },

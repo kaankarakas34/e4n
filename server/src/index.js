@@ -2946,16 +2946,6 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 
 
 // --- NOTIFICATIONS ---
-app.get('/api/notifications', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      "SELECT id, user_id, title, message, type, read, created_at FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50",
-      [req.user.id]
-    );
-    res.json(rows);
-  } catch (e) { console.error('Get Notifications Error:', e); res.status(500).json({ error: e.message }); }
-});
-
 app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -3007,71 +2997,6 @@ app.get('/api/lms/exams', authenticateToken, async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM exams ORDER BY created_at DESC');
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// --- EMAIL CONFIGURATION ENDPOINTS ---
-
-app.get('/api/admin/email-config', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    const { rows } = await pool.query('SELECT * FROM email_configurations ORDER BY created_at DESC');
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/admin/email-config', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active } = req.body;
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    if (is_active) {
-      await client.query('UPDATE email_configurations SET is_active = FALSE');
-    }
-
-    const { rows } = await client.query(
-      `INSERT INTO email_configurations (smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active || false]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(rows[0]);
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
-
-app.post('/api/admin/email-config/test', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { email } = req.body; // active config is used
-  try {
-    const result = await sendEmail(email, 'Test Email from Event4Network', '<p>This is a test email to verify SMTP settings.</p>');
-    if (result.success) res.json({ success: true });
-    else res.status(500).json({ error: result.error || 'Failed to send test email. Check server logs.' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.put('/api/admin/email-config/:id/activate', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('UPDATE email_configurations SET is_active = FALSE');
-    await client.query('UPDATE email_configurations SET is_active = TRUE WHERE id = $1', [req.params.id]);
-    await client.query('COMMIT');
-    res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
 });
 
 // --- SYSTEM SETTINGS (Email Templates etc) ---
@@ -3148,14 +3073,6 @@ app.delete('/api/admin/visitors/:id', authenticateToken, async (req, res) => {
     }
 
     await pool.query('DELETE FROM visitors WHERE id = $1', [id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.delete('/api/admin/email-config/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    await pool.query('DELETE FROM email_configurations WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3309,19 +3226,6 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
        LEFT JOIN users u ON v.inviter_id = u.id 
        WHERE v.group_id = $1 
        ORDER BY v.visited_at DESC`,
-      [req.params.id]
-    );
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT a.*, u.name, u.avatar, u.profession, u.name as member_name, u.email, u.phone 
-       FROM attendance a 
-       JOIN users u ON a.user_id = u.id 
-       WHERE a.event_id = $1`,
       [req.params.id]
     );
     res.json(rows);
@@ -4203,117 +4107,6 @@ app.get('/api/lms/courses', authenticateToken, async (req, res) => {
   try { const { rows } = await pool.query('SELECT * FROM courses WHERE status=$1', ['ACTIVE']); res.json(rows); } catch (e) { res.status(500).json({ error: e.message }) }
 });
 
-/* --- ADMIN REPORTS ENDPOINTS --- */
-
-// Dashboard Stats
-app.get('/api/admin/stats/dashboard', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    const totalGroups = (await pool.query("SELECT COUNT(*) FROM groups WHERE status = 'ACTIVE'")).rows[0].count;
-    const totalPowerTeams = (await pool.query("SELECT COUNT(*) FROM power_teams WHERE status = 'ACTIVE'")).rows[0].count;
-    const totalMembers = (await pool.query("SELECT COUNT(*) FROM users WHERE role != 'ADMIN'")).rows[0].count;
-
-    // Revenue
-    const revenueRes = await pool.query("SELECT SUM(amount) as total, SUM(CASE WHEN type='INTERNAL' THEN amount ELSE 0 END) as internal, SUM(CASE WHEN type='EXTERNAL' THEN amount ELSE 0 END) as external FROM referrals WHERE status='SUCCESSFUL'");
-    const totalRevenue = revenueRes.rows[0].total || 0;
-    const internalRevenue = revenueRes.rows[0].internal || 0;
-    const externalRevenue = revenueRes.rows[0].external || 0;
-
-    // Activities
-    const totalOneToOnes = (await pool.query("SELECT COUNT(*) FROM one_to_ones WHERE status = 'COMPLETED'")).rows[0].count;
-    const totalVisitors = (await pool.query("SELECT COUNT(*) FROM visitors")).rows[0].count;
-    const totalEvents = (await pool.query("SELECT COUNT(*) FROM events")).rows[0].count;
-
-    // Visitor Conversion
-    const convertedVisitors = (await pool.query("SELECT COUNT(*) FROM visitors WHERE status = 'JOINED'")).rows[0].count;
-    const visitorConversionRate = parseInt(totalVisitors) > 0 ? (parseInt(convertedVisitors) / parseInt(totalVisitors)) * 100 : 0;
-
-    // Lost Members (Churn in last 30 days - Simplified as just inactive for now or removed)
-    // We don't have a status='LEFT' column yet explicitly, tracking via subscription or group_members status='INACTIVE'
-    // Assuming 'INACTIVE' in group_members represents churn from a group
-    const lostMembers = (await pool.query("SELECT COUNT(DISTINCT user_id) FROM group_members WHERE status = 'INACTIVE'")).rows[0].count;
-
-    res.json({
-      totalGroups: parseInt(totalGroups),
-      totalPowerTeams: parseInt(totalPowerTeams),
-      totalMembers: parseInt(totalMembers),
-      totalRevenue: parseFloat(totalRevenue),
-      internalRevenue: parseFloat(internalRevenue),
-      externalRevenue: parseFloat(externalRevenue),
-      totalOneToOnes: parseInt(totalOneToOnes),
-      totalVisitors: parseInt(totalVisitors),
-      visitorConversionRate: parseFloat(visitorConversionRate.toFixed(1)),
-      totalEvents: parseInt(totalEvents),
-      lostMembers: parseInt(lostMembers)
-    });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Charts Data (Monthly Trends)
-app.get('/api/admin/stats/charts', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    // Revenue Trend (Last 6 months)
-    const revenueTrend = await pool.query(`
-            SELECT TO_CHAR(updated_at, 'Mon') as name, SUM(amount) as value 
-            FROM referrals 
-            WHERE status = 'SUCCESSFUL' AND updated_at > NOW() - INTERVAL '6 months'
-            GROUP BY TO_CHAR(updated_at, 'Mon'), DATE_TRUNC('month', updated_at) 
-            ORDER BY DATE_TRUNC('month', updated_at)
-  `);
-
-    // Member Growth (Approximation based on created_at)
-    const memberGrowth = await pool.query(`
-            SELECT TO_CHAR(created_at, 'Mon') as name, COUNT(*) as value
-            FROM users
-            WHERE role != 'ADMIN' AND created_at > NOW() - INTERVAL '6 months'
-            GROUP BY TO_CHAR(created_at, 'Mon'), DATE_TRUNC('month', created_at)
-            ORDER BY DATE_TRUNC('month', created_at)
-  `);
-
-    // Visitor Trend
-    const visitorTrend = await pool.query(`
-            SELECT TO_CHAR(visited_at, 'Mon') as name, COUNT(*) as value
-            FROM visitors
-            WHERE visited_at > NOW() - INTERVAL '6 months'
-            GROUP BY TO_CHAR(visited_at, 'Mon'), DATE_TRUNC('month', visited_at)
-            ORDER BY DATE_TRUNC('month', visited_at)
-  `);
-
-    res.json({
-      revenue: revenueTrend.rows,
-      growth: memberGrowth.rows,
-      visitors: visitorTrend.rows
-    });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Group Performance Stats
-app.get('/api/admin/stats/groups', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    const query = `
-SELECT
-g.id, g.name,
-  COUNT(DISTINCT gm.user_id) as member_count,
-  COALESCE(SUM(r.amount), 0) as revenue,
-  COUNT(DISTINCT v.id) as visitor_count,
-  COUNT(DISTINCT o.id) as one_to_one_count
-            FROM groups g
-            LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'ACTIVE'
-            LEFT JOIN referrals r ON r.giver_id = gm.user_id AND r.status = 'SUCCESSFUL'
-            LEFT JOIN visitors v ON v.group_id = g.id
-            LEFT JOIN users u ON u.id = gm.user_id
-            LEFT JOIN one_to_ones o ON(o.requester_id = u.id OR o.partner_id = u.id)
-            WHERE g.status = 'ACTIVE'
-            GROUP BY g.id, g.name
-            ORDER BY revenue DESC
-  `;
-    const { rows } = await pool.query(query);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 // Substitutes Endpoint
 app.get('/api/groups/:id/substitutes', authenticateToken, async (req, res) => {
   try {
@@ -4333,23 +4126,6 @@ a.id,
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
-// City / Geo Distribution
-app.get('/api/admin/stats/geo', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    const { rows } = await pool.query(`
-            SELECT city as name, COUNT(*) as value 
-            FROM users 
-            WHERE role != 'ADMIN' AND city IS NOT NULL 
-            GROUP BY city 
-            ORDER BY value DESC 
-            LIMIT 10
-  `);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 
 // --- SUBSCRIPTION & PAYMENT HELPERS ---
 

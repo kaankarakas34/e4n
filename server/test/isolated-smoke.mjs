@@ -96,6 +96,27 @@ async function main() {
     `);
     writeFileSync(process.env.E4N_SOURCE_SCHEMA_OUTPUT, JSON.stringify(rows, null, 2));
   }
+  if (process.env.E4N_SOURCE_SCHEMA_OBJECTS_OUTPUT) {
+    const { rows } = await pool.query(`
+      SELECT 'constraint' AS kind, cls.relname AS table_name, con.conname AS object_name,
+             pg_get_constraintdef(con.oid, true) AS definition
+      FROM pg_constraint con
+      JOIN pg_class cls ON cls.oid = con.conrelid
+      JOIN pg_namespace ns ON ns.oid = cls.relnamespace
+      WHERE ns.nspname = 'public' AND cls.relname <> 'schema_migrations'
+      UNION ALL
+      SELECT 'index', tablename, indexname, indexdef
+      FROM pg_indexes WHERE schemaname = 'public' AND tablename <> 'schema_migrations'
+      UNION ALL
+      SELECT 'trigger', cls.relname, trig.tgname, pg_get_triggerdef(trig.oid, true)
+      FROM pg_trigger trig
+      JOIN pg_class cls ON cls.oid = trig.tgrelid
+      JOIN pg_namespace ns ON ns.oid = cls.relnamespace
+      WHERE ns.nspname = 'public' AND cls.relname <> 'schema_migrations' AND NOT trig.tgisinternal
+      ORDER BY kind, table_name, object_name
+    `);
+    writeFileSync(process.env.E4N_SOURCE_SCHEMA_OBJECTS_OUTPUT, JSON.stringify(rows, null, 2));
+  }
   const recordedVersions = (await pool.query('SELECT version, checksum FROM schema_migrations')).rows;
   let checksumGuard = false;
   await pool.query("UPDATE schema_migrations SET checksum = 'tampered' WHERE version = '0003_legacy_tables'");
@@ -120,6 +141,7 @@ async function main() {
 
   const userId = randomUUID();
   const otherUserId = randomUUID();
+  const adminUserId = randomUUID();
   const groupId = randomUUID();
   const fixturePasswordHash = await bcrypt.hash('fixture-password', 10);
   await pool.query(
@@ -132,6 +154,11 @@ async function main() {
     `INSERT INTO users (id, email, password_hash, name, profession, role)
      VALUES ($1, 'other-fixture@example.invalid', 'not-a-real-password', 'Other Fixture', 'Other Profession', 'MEMBER')`,
     [otherUserId],
+  );
+  await pool.query(
+    `INSERT INTO users (id, email, password_hash, name, profession, role)
+     VALUES ($1, 'admin-fixture@example.invalid', $2, 'Fixture Admin', 'Fixture Profession', 'ADMIN')`,
+    [adminUserId, fixturePasswordHash],
   );
   await pool.query(
     `INSERT INTO events (title, start_at, end_at, created_by, group_id, type)
@@ -204,6 +231,21 @@ async function main() {
   const loginBody = await login.json();
   if (login.status !== 200 || !loginBody.token) throw new Error(`Fixture login failed: ${login.status}`);
   const authHeaders = { Authorization: `Bearer ${loginBody.token}` };
+  const adminLogin = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'admin-fixture@example.invalid', password: 'fixture-password' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const adminLoginBody = await adminLogin.json();
+  if (adminLogin.status !== 200 || !adminLoginBody.token) throw new Error(`Fixture admin login failed: ${adminLogin.status}`);
+  const adminMembersAsMember = await fetch(`${base}/api/admin/members`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const adminMembers = await fetch(`${base}/api/admin/members`, {
+    headers: { Authorization: `Bearer ${adminLoginBody.token}` }, signal: AbortSignal.timeout(10_000),
+  });
+  const adminMemberRows = await adminMembers.json();
+  if (adminMembersAsMember.status !== 403 || adminMembers.status !== 200 || !Array.isArray(adminMemberRows)) {
+    throw new Error(`Admin member route baseline changed: MEMBER ${adminMembersAsMember.status}, ADMIN ${adminMembers.status}`);
+  }
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
@@ -227,6 +269,7 @@ async function main() {
   const readOne = await fetch(`${base}/api/notifications/${ownNotifications[0].id}/read`, {
     method: 'PUT', headers: authHeaders, signal: AbortSignal.timeout(10_000),
   });
+  const readOneBody = await readOne.json();
   const afterReadOne = (await pool.query('SELECT id, read FROM notifications WHERE user_id = $1 ORDER BY id', [userId])).rows;
   const readAll = await fetch(`${base}/api/notifications/read-all`, {
     method: 'PUT', headers: authHeaders, signal: AbortSignal.timeout(10_000),
@@ -318,6 +361,10 @@ async function main() {
     localCompatibilityShim: null,
     apiHealth: health.status,
     fixtureLogin: login.status,
+    fixtureAdminLogin: adminLogin.status,
+    adminMembersAsMember: adminMembersAsMember.status,
+    adminMembersAsAdmin: adminMembers.status,
+    adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),
     publicEventList: events.status,
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,
@@ -325,6 +372,7 @@ async function main() {
     notificationList: notificationList.status,
     ownNotificationCount: listedNotifications.length,
     readOne: readOne.status,
+    readOneReturnsSuccessOnly: readOneBody.success === true && !Object.hasOwn(readOneBody, 'id'),
     readAll: readAll.status,
     otherUserNotificationUnchanged: !otherRead,
     notificationMigrationVariants: notificationVariants,

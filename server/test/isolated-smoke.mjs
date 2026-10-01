@@ -4,13 +4,14 @@ import { once } from 'node:events';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const container = `e4n-isolated-${randomUUID().slice(0, 8)}`;
 const dbName = 'e4n_isolated_test';
 const dbUser = 'e4n_isolated_test';
 const dbPassword = 'local_fixture_only';
+const serveForDevice = process.argv.includes('--serve');
 let appServer;
 let pool;
 let containerStarted = false;
@@ -120,10 +121,11 @@ async function main() {
   const userId = randomUUID();
   const otherUserId = randomUUID();
   const groupId = randomUUID();
+  const fixturePasswordHash = await bcrypt.hash('fixture-password', 10);
   await pool.query(
     `INSERT INTO users (id, email, password_hash, name, profession, role)
-     VALUES ($1, 'fixture@example.invalid', 'not-a-real-password', 'Fixture Member', 'Fixture Profession', 'MEMBER')`,
-    [userId],
+     VALUES ($1, 'fixture@example.invalid', $2, 'Fixture Member', 'Fixture Profession', 'MEMBER')`,
+    [userId, fixturePasswordHash],
   );
   await pool.query(`INSERT INTO groups (id, name, status) VALUES ($1, 'Fixture Group', 'ACTIVE')`, [groupId]);
   await pool.query(
@@ -191,11 +193,17 @@ async function main() {
   }
 
   const { default: app } = await import('../src/index.js');
-  appServer = app.listen(0, '127.0.0.1');
+  appServer = app.listen(serveForDevice ? 4000 : 0, '127.0.0.1');
   await once(appServer, 'listening');
   const base = `http://127.0.0.1:${appServer.address().port}`;
-  const token = jwt.sign({ id: userId, role: 'MEMBER' }, process.env.JWT_SECRET);
-  const authHeaders = { Authorization: `Bearer ${token}` };
+  const login = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'fixture@example.invalid', password: 'fixture-password' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const loginBody = await login.json();
+  if (login.status !== 200 || !loginBody.token) throw new Error(`Fixture login failed: ${login.status}`);
+  const authHeaders = { Authorization: `Bearer ${loginBody.token}` };
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
@@ -309,6 +317,7 @@ async function main() {
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,
+    fixtureLogin: login.status,
     publicEventList: events.status,
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,
@@ -323,6 +332,13 @@ async function main() {
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));
+  if (serveForDevice) {
+    console.log('Isolated fixture API listening on http://127.0.0.1:4000/api; stop with Ctrl+C.');
+    await new Promise(resolve => {
+      process.once('SIGINT', resolve);
+      process.once('SIGTERM', resolve);
+    });
+  }
 }
 
 let exitCode = 0;

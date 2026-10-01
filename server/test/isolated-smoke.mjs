@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -55,14 +54,6 @@ async function main() {
   const port = Number(portOutput.match(/127\.0\.0\.1:(\d+)/)?.[1]);
   if (!Number.isInteger(port) || port <= 0) throw new Error('Could not determine isolated loopback port');
 
-  const sourceSql = readFileSync(path.join(serverDir, 'init.sql'), 'utf8');
-  const seedMarker = '-- SEED DATA (Örnek Veriler)';
-  if (!sourceSql.includes(seedMarker)) throw new Error('init.sql seed boundary was not found');
-  const initSql = sourceSql.split(seedMarker)[0];
-  docker(['exec', '-i', container, 'psql', '-v', 'ON_ERROR_STOP=1', '-U', dbUser, '-d', dbName], {
-    input: initSql, timeout: 60_000,
-  });
-
   // Override every database setting before loading application modules. Never use a .env file here.
   delete process.env.DATABASE_URL;
   delete process.env.POSTGRES_URL;
@@ -78,16 +69,41 @@ async function main() {
 
   ({ default: pool } = await import('../src/config/db.js'));
   const { runMigrations } = await import('../src/config/migrate.js');
-  await runMigrations();
-  await runMigrations(); // Reapplying the existing schema setup must remain safe.
+  const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
+  const firstMigration = await applyVersionedSchema();
+  const secondMigration = await applyVersionedSchema();
+  if (firstMigration.applied.length !== 3 || secondMigration.applied.length !== 0) {
+    throw new Error('Versioned schema setup did not apply exactly once');
+  }
 
   const tableResult = await pool.query(`
     SELECT COUNT(*)::int AS count FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> 'schema_migrations'
   `);
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
-  if (tableCount < 30) throw new Error(`Repository schema bootstrap is incomplete: ${tableCount} tables`);
+  if (tableCount !== 34) throw new Error(`Repository schema bootstrap expected 34 tables, found ${tableCount}`);
+  const recordedVersions = (await pool.query('SELECT version, checksum FROM schema_migrations')).rows;
+  let checksumGuard = false;
+  await pool.query("UPDATE schema_migrations SET checksum = 'tampered' WHERE version = '0003_legacy_tables'");
+  try { await applyVersionedSchema(); }
+  catch (error) { checksumGuard = error.message.includes('checksum changed'); }
+  finally {
+    const original = recordedVersions.find(row => row.version === '0003_legacy_tables');
+    await pool.query('UPDATE schema_migrations SET checksum = $1 WHERE version = $2', [original.checksum, original.version]);
+  }
+  if (!checksumGuard) throw new Error('Versioned schema accepted changed migration source');
+
+  let existingSchemaGuard = false;
+  await pool.query('DELETE FROM schema_migrations');
+  try { await applyVersionedSchema(); }
+  catch (error) { existingSchemaGuard = error.message.includes('reviewed baseline adoption'); }
+  finally {
+    for (const row of recordedVersions) {
+      await pool.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)', [row.version, row.checksum]);
+    }
+  }
+  if (!existingSchemaGuard) throw new Error('Versioned schema accepted an unreviewed existing database');
 
   const userId = randomUUID();
   const groupId = randomUUID();
@@ -196,7 +212,10 @@ async function main() {
     postgresImage: 'postgres:17',
     postgresVersion,
     sourceTables: tableCount,
-    migrationRuns: 2,
+    versionedMigrations: firstMigration.applied,
+    repeatAppliedVersions: secondMigration.applied.length,
+    checksumGuard,
+    existingSchemaGuard,
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,

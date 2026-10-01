@@ -1,7 +1,7 @@
 import pool from './db.js';
 
-export const runMigrations = async () => {
-  const client = await pool.connect();
+export const runMigrations = async (existingClient = null) => {
+  const client = existingClient || await pool.connect();
   try {
     console.log('🔄 Checking Database Schema...');
 
@@ -388,6 +388,6 @@ export const runMigrations = async () => {
     console.error('❌ Migration Error:', e);
     throw e;
   } finally {
-    client.release();
+    if (!existingClient) client.release();
   }
 };

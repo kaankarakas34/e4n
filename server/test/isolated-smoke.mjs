@@ -89,7 +89,7 @@ async function main() {
   if (tableCount !== 34) throw new Error(`Repository schema bootstrap expected 34 tables, found ${tableCount}`);
   if (process.env.E4N_SOURCE_SCHEMA_OUTPUT) {
     const { rows } = await pool.query(`
-      SELECT table_name, column_name, data_type, is_nullable
+      SELECT table_name, column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name <> 'schema_migrations'
       ORDER BY table_name, ordinal_position

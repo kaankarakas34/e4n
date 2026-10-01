@@ -16,7 +16,7 @@ const legacySql = readFileSync(path.join(serverDir, 'migrations/0003_legacy_tabl
 const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notifications_contract.sql'), 'utf8');
 
 function checksum(source) {
-  return createHash('sha256').update(source).digest('hex');
+  return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
 }
 
 const versions = [
@@ -29,6 +29,7 @@ const versions = [
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.
 // This is only a known legacy Docker starting point, not the live Supabase schema.
 const legacyInitCatalogChecksum = 'd7a001bc5a1dbb9361108c811ae610f8266da31a5e84fdc0530949f8ae616f09';
+const legacyInitSourceChecksum = 'e0946a07494ee6bbce09bfc0d7c5bb934d0937b1db7d7b902d1b5090ced9c947';
 
 // Rehearsal only. Live Supabase requires a separately reviewed migration path.
 export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = false } = {}) {
@@ -53,6 +54,9 @@ export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = fa
       `);
       if (rows[0].count !== 0) {
         if (!adoptLegacyInit) throw new Error('Existing unversioned schema requires reviewed baseline adoption');
+        if (versions[0].checksum !== legacyInitSourceChecksum) {
+          throw new Error('init.sql changed since the legacy adoption baseline was reviewed');
+        }
         const catalog = await readPublicSchemaCatalog(client);
         if (checksum(JSON.stringify(catalog)) !== legacyInitCatalogChecksum) {
           throw new Error('Existing schema does not match the known init.sql baseline');

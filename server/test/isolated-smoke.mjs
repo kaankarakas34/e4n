@@ -219,6 +219,16 @@ async function main() {
     throw new Error(`Status constraint baseline changed: ${JSON.stringify(statusResults)}`);
   }
 
+  await pool.query(
+    "INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'ACTIVE')",
+    [otherUserId, groupId],
+  );
+  const futureEventId = (await pool.query("SELECT id FROM events WHERE title = 'Future Fixture Event'")).rows[0].id;
+  await pool.query(
+    "INSERT INTO attendance (event_id, user_id, status) VALUES ($1, $2, 'PRESENT'), ($1, $3, 'PRESENT')",
+    [futureEventId, userId, otherUserId],
+  );
+
   const { default: app } = await import('../src/index.js');
   appServer = app.listen(serveForDevice ? 4000 : 0, '127.0.0.1');
   await once(appServer, 'listening');
@@ -246,6 +256,32 @@ async function main() {
   if (adminMembersAsMember.status !== 403 || adminMembers.status !== 200 || !Array.isArray(adminMemberRows)) {
     throw new Error(`Admin member route baseline changed: MEMBER ${adminMembersAsMember.status}, ADMIN ${adminMembers.status}`);
   }
+  const userGroupsWithoutId = await fetch(`${base}/api/user/groups`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const userGroupsWithoutIdBody = await userGroupsWithoutId.json();
+  const userGroupsOtherId = await fetch(`${base}/api/user/groups?userId=${otherUserId}`, {
+    headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const userGroupsOtherIdBody = await userGroupsOtherId.json();
+  const adminStatsAsMember = await fetch(`${base}/api/admin/stats/dashboard`, {
+    headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const adminStats = await fetch(`${base}/api/admin/stats/dashboard`, {
+    headers: { Authorization: `Bearer ${adminLoginBody.token}` }, signal: AbortSignal.timeout(10_000),
+  });
+  if (adminStatsAsMember.status !== 403 || adminStats.status !== 200) {
+    throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
+  }
+  const attendanceList = await fetch(`${base}/api/events/${futureEventId}/attendance`, {
+    headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const attendanceRows = await attendanceList.json();
+  if (attendanceList.status !== 200 || attendanceRows.length !== 2) {
+    throw new Error(`Event attendance route baseline changed: ${attendanceList.status}`);
+  }
+  const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const reportStatsBody = await reportStats.json();
+  const reportCharts = await fetch(`${base}/api/reports/charts`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const reportChartsBody = await reportCharts.json();
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
@@ -365,6 +401,14 @@ async function main() {
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),
+    userGroupsWithoutId: { status: userGroupsWithoutId.status, count: userGroupsWithoutIdBody.length },
+    userGroupsOtherId: { status: userGroupsOtherId.status, count: userGroupsOtherIdBody.length },
+    adminStatsAsMember: adminStatsAsMember.status,
+    adminStatsAsAdmin: adminStats.status,
+    attendanceList: attendanceList.status,
+    attendanceHasUserNameAlias: Object.hasOwn(attendanceRows[0], 'user_name'),
+    reportStats: { status: reportStats.status, visitorConversionRate: reportStatsBody.visitorConversionRate },
+    reportCharts: { status: reportCharts.status, revenuePoints: reportChartsBody.revenue?.length },
     publicEventList: events.status,
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,

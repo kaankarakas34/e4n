@@ -78,24 +78,8 @@ async function main() {
 
   ({ default: pool } = await import('../src/config/db.js'));
   const { runMigrations } = await import('../src/config/migrate.js');
-  const migrationErrors = [];
-  const originalConsoleError = console.error;
-  console.error = (...args) => {
-    if (args[0] === '❌ Migration Error:') migrationErrors.push(args[1]?.code || 'unknown');
-    else originalConsoleError(...args);
-  };
-  try {
-    await runMigrations();
-    // init.sql lacks groups.meeting_day, while migrate.js alters it before adding it.
-    // This local-only shim keeps the smoke environment usable while P09 addresses the source mismatch.
-    if (migrationErrors.at(-1) === '42703') {
-      await pool.query('ALTER TABLE groups ADD COLUMN IF NOT EXISTS meeting_day VARCHAR(255)');
-      await runMigrations();
-    }
-  } finally {
-    console.error = originalConsoleError;
-  }
-  if (migrationErrors.length > 1) throw new Error(`Runtime migration still fails after local shim: ${migrationErrors.at(-1)}`);
+  await runMigrations();
+  await runMigrations(); // Reapplying the existing schema setup must remain safe.
 
   const tableResult = await pool.query(`
     SELECT COUNT(*)::int AS count FROM information_schema.tables
@@ -165,13 +149,28 @@ async function main() {
       || eventRows.find(row => row.title === 'Draft Fixture Event')?.status !== 'DRAFT') {
     throw new Error('GET /api/events changed fixture event statuses');
   }
+  let migrationFailureCode = null;
+  await pool.query('ALTER TABLE users RENAME TO users_temporarily_hidden');
+  const originalConsoleError = console.error;
+  try {
+    console.error = (...args) => {
+      if (args[0] !== '❌ Migration Error:') originalConsoleError(...args);
+    };
+    try { await runMigrations(); }
+    catch (error) { migrationFailureCode = error.code; }
+  } finally {
+    console.error = originalConsoleError;
+    await pool.query('ALTER TABLE users_temporarily_hidden RENAME TO users');
+  }
+  if (migrationFailureCode !== '42P01') throw new Error('Migration error was not propagated to its caller');
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
     postgresVersion,
     sourceTables: tableCount,
-    unmodifiedMigrationError: migrationErrors[0] || null,
-    localCompatibilityShim: migrationErrors.length > 0 ? 'groups.meeting_day' : null,
+    migrationRuns: 2,
+    migrationFailureCode,
+    localCompatibilityShim: null,
     apiHealth: health.status,
     publicEventList: events.status,
     publicEventCount: publicEvents.length,

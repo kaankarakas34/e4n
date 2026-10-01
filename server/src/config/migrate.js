@@ -39,6 +39,7 @@ export const runMigrations = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
+    await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS meeting_day VARCHAR(255)");
     await client.query("ALTER TABLE groups ALTER COLUMN meeting_day TYPE VARCHAR(255) USING meeting_day::varchar");
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS visitor_email_subject TEXT");
     await client.query("ALTER TABLE groups ADD COLUMN IF NOT EXISTS visitor_email_template TEXT");
@@ -385,6 +386,7 @@ export const runMigrations = async () => {
     console.log('✅ Database Schema Synced');
   } catch (e) {
     console.error('❌ Migration Error:', e);
+    throw e;
   } finally {
     client.release();
   }

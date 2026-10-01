@@ -10,7 +10,7 @@ const initSource = readFileSync(path.join(serverDir, 'init.sql'), 'utf8');
 const seedMarker = '-- SEED DATA (Örnek Veriler)';
 if (!initSource.includes(seedMarker)) throw new Error('init.sql seed boundary was not found');
 const initSql = initSource.split(seedMarker)[0];
-const runtimeSource = readFileSync(path.join(serverDir, 'src/config/migrate.js'), 'utf8');
+const runtimeSource = readFileSync(path.join(serverDir, 'migrations/0002_runtime_extensions.js'), 'utf8');
 const legacySql = readFileSync(path.join(serverDir, 'migrations/0003_legacy_tables.sql'), 'utf8');
 const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notifications_contract.sql'), 'utf8');
 

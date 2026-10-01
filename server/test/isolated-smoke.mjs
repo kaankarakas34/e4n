@@ -5,6 +5,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
+import pg from 'pg';
+import { readPublicSchemaCatalog } from '../src/config/schema-catalog.js';
 
 const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const container = `e4n-isolated-${randomUUID().slice(0, 8)}`;
@@ -117,6 +119,50 @@ async function main() {
     `);
     writeFileSync(process.env.E4N_SOURCE_SCHEMA_OBJECTS_OUTPUT, JSON.stringify(rows, null, 2));
   }
+  await pool.query('CREATE DATABASE e4n_legacy_probe');
+  const legacyPool = new pg.Pool({
+    host: '127.0.0.1', port, user: dbUser, password: dbPassword, database: 'e4n_legacy_probe',
+  });
+  let legacyAdoption;
+  let legacyRepeat;
+  let legacyDriftGuard = false;
+  let legacyRowsPreserved = false;
+  try {
+    const initSource = readFileSync(path.join(serverDir, 'init.sql'), 'utf8');
+    await legacyPool.query(initSource.split('-- SEED DATA (Örnek Veriler)')[0]);
+    const client = await legacyPool.connect();
+    try {
+      const catalog = await readPublicSchemaCatalog(client);
+      if (process.env.E4N_INIT_MANIFEST_OUTPUT) {
+        writeFileSync(process.env.E4N_INIT_MANIFEST_OUTPUT, JSON.stringify(catalog, null, 2));
+      }
+    } finally { client.release(); }
+    const legacyUserId = randomUUID();
+    await legacyPool.query(
+      "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'legacy-fixture@example.invalid', 'Legacy Fixture', 'Legacy Profession', 'fixture-only')",
+      [legacyUserId],
+    );
+    await legacyPool.query('ALTER TABLE groups ADD COLUMN drift_probe TEXT');
+    try { await applyVersionedSchema({ dbPool: legacyPool, adoptLegacyInit: true }); }
+    catch (error) { legacyDriftGuard = error.message.includes('does not match the known init.sql baseline'); }
+    const ledgerAfterRejectedAdoption = await legacyPool.query("SELECT to_regclass('public.schema_migrations') AS ledger");
+    if (!legacyDriftGuard || ledgerAfterRejectedAdoption.rows[0].ledger !== null) {
+      throw new Error('Legacy adoption accepted drift or left a partial migration ledger');
+    }
+    await legacyPool.query('ALTER TABLE groups DROP COLUMN drift_probe');
+    legacyAdoption = await applyVersionedSchema({ dbPool: legacyPool, adoptLegacyInit: true });
+    legacyRepeat = await applyVersionedSchema({ dbPool: legacyPool });
+    const legacyTableCount = await legacyPool.query(`
+      SELECT COUNT(*)::int AS count FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> 'schema_migrations'
+    `);
+    const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
+    legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 3
+        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 34 || !legacyRowsPreserved) {
+      throw new Error('Known init.sql database did not upgrade safely');
+    }
+  } finally { await legacyPool.end(); }
   const recordedVersions = (await pool.query('SELECT version, checksum FROM schema_migrations')).rows;
   let checksumGuard = false;
   await pool.query("UPDATE schema_migrations SET checksum = 'tampered' WHERE version = '0003_legacy_tables'");
@@ -393,6 +439,10 @@ async function main() {
     repeatAppliedVersions: secondMigration.applied.length,
     checksumGuard,
     existingSchemaGuard,
+    legacyDriftGuard,
+    legacyAdoption: legacyAdoption?.applied,
+    legacyRepeatAppliedVersions: legacyRepeat?.applied.length,
+    legacyRowsPreserved,
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,

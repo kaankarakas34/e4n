@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pool from './db.js';
 import { runMigrations } from './migrate.js';
+import { readPublicSchemaCatalog } from './schema-catalog.js';
 
 const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const initSource = readFileSync(path.join(serverDir, 'init.sql'), 'utf8');
@@ -25,9 +26,13 @@ const versions = [
   { version: '0004_notifications_contract', checksum: checksum(notificationSql), apply: client => client.query(notificationSql) },
 ];
 
-// Rehearsal only: existing unversioned databases need a separately reviewed baseline adoption.
-export async function applyVersionedSchema() {
-  const client = await pool.connect();
+// Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.
+// This is only a known legacy Docker starting point, not the live Supabase schema.
+const legacyInitCatalogChecksum = 'd7a001bc5a1dbb9361108c811ae610f8266da31a5e84fdc0530949f8ae616f09';
+
+// Rehearsal only. Live Supabase requires a separately reviewed migration path.
+export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = false } = {}) {
+  const client = await dbPool.connect();
   try {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock(4020, 1)');
@@ -40,13 +45,22 @@ export async function applyVersionedSchema() {
     `);
     const { rows: appliedRows } = await client.query('SELECT version, checksum FROM schema_migrations');
     const appliedByVersion = new Map(appliedRows.map(row => [row.version, row.checksum]));
+    let adoptedLegacyInit = false;
     if (appliedRows.length === 0) {
       const { rows } = await client.query(`
         SELECT COUNT(*)::int AS count FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> 'schema_migrations'
       `);
       if (rows[0].count !== 0) {
-        throw new Error('Existing unversioned schema requires reviewed baseline adoption');
+        if (!adoptLegacyInit) throw new Error('Existing unversioned schema requires reviewed baseline adoption');
+        const catalog = await readPublicSchemaCatalog(client);
+        if (checksum(JSON.stringify(catalog)) !== legacyInitCatalogChecksum) {
+          throw new Error('Existing schema does not match the known init.sql baseline');
+        }
+        await client.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)',
+          [versions[0].version, versions[0].checksum]);
+        appliedByVersion.set(versions[0].version, versions[0].checksum);
+        adoptedLegacyInit = true;
       }
     }
     for (const version of appliedByVersion.keys()) {
@@ -70,7 +84,7 @@ export async function applyVersionedSchema() {
       newlyApplied.push(item.version);
     }
     await client.query('COMMIT');
-    return { applied: newlyApplied, totalVersions: versions.length };
+    return { applied: newlyApplied, adoptedLegacyInit, totalVersions: versions.length };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

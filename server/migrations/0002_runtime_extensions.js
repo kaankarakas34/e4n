@@ -20,8 +20,8 @@ export const runMigrations = async (existingClient = null) => {
     // Update role check constraint
     await client.query("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
     await client.query(`
-      ALTER TABLE users 
-      ADD CONSTRAINT users_role_check 
+      ALTER TABLE users
+      ADD CONSTRAINT users_role_check
       CHECK (role IN ('MEMBER', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'ADMIN', 'COMMUNITY_MEMBER'))
     `);
 
@@ -212,7 +212,7 @@ export const runMigrations = async (existingClient = null) => {
       CREATE TABLE IF NOT EXISTS notifications (
          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
          user_id UUID REFERENCES users(id),
-         type VARCHAR(50), 
+         type VARCHAR(50),
          content TEXT,
          is_read BOOLEAN DEFAULT FALSE,
          created_at TIMESTAMP DEFAULT NOW()

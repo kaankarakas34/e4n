@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "migrate": "node migrate_supabase.js"
+    "migrate": "node migrate_supabase.js",
+    "test:isolated": "node test/isolated-smoke.mjs"
   },
   "dependencies": {
     "@types/express": "^5.0.6",

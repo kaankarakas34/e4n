@@ -3430,40 +3430,6 @@ VALUES($1, $2, 'ACTIVE', NOW())
   }
 });
 
-// Move Member to Group
-app.post('/api/admin/move-member', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { userId, groupId } = req.body;
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Deactivate current active group
-    await client.query(`
-      UPDATE group_members 
-      SET status = 'INACTIVE' 
-      WHERE user_id = $1 AND status = 'ACTIVE'
-  `, [userId]);
-
-    // Insert new active group (or update if exists)
-    await client.query(`
-        INSERT INTO group_members(group_id, user_id, status, joined_at)
-        VALUES($1, $2, 'ACTIVE', NOW())
-        ON CONFLICT (group_id, user_id) 
-        DO UPDATE SET status = 'ACTIVE', joined_at = NOW()
-      `, [groupId, userId]);
-
-    await client.query('COMMIT');
-    res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
-
 // Delete Member (Cascading)
 app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);

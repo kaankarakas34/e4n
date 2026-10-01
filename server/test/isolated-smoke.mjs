@@ -127,6 +127,34 @@ async function main() {
   } finally {
     client.release();
   }
+  const statusResults = { groupInactive: inactiveSqlState };
+  const statusClient = await pool.connect();
+  try {
+    await statusClient.query('BEGIN');
+    await statusClient.query('INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, $3)', [userId, groupId, 'ACTIVE']);
+    try { await statusClient.query("UPDATE group_members SET status = 'REJECTED' WHERE user_id = $1", [userId]); }
+    catch (error) { statusResults.groupRejected = error.code; }
+    await statusClient.query('ROLLBACK');
+
+    await statusClient.query('BEGIN');
+    const powerTeamId = randomUUID();
+    await statusClient.query("INSERT INTO power_teams (id, name, status) VALUES ($1, 'Fixture Power Team', 'ACTIVE')", [powerTeamId]);
+    await statusClient.query('INSERT INTO power_team_members (user_id, power_team_id, status) VALUES ($1, $2, $3)', [userId, powerTeamId, 'ACTIVE']);
+    try { await statusClient.query("UPDATE power_team_members SET status = 'REJECTED' WHERE user_id = $1", [userId]); }
+    catch (error) { statusResults.powerTeamRejected = error.code; }
+    await statusClient.query('ROLLBACK');
+
+    await statusClient.query('BEGIN');
+    await statusClient.query("INSERT INTO visitors (inviter_id, name, visited_at) VALUES ($1, 'Fixture Visitor', NOW())", [userId]);
+    try { await statusClient.query("UPDATE visitors SET status = 'CONVERTED' WHERE inviter_id = $1", [userId]); }
+    catch (error) { statusResults.visitorConverted = error.code; }
+    await statusClient.query('ROLLBACK');
+  } finally {
+    statusClient.release();
+  }
+  if (Object.values(statusResults).some(code => code !== '23514')) {
+    throw new Error(`Status constraint baseline changed: ${JSON.stringify(statusResults)}`);
+  }
 
   const { default: app } = await import('../src/index.js');
   appServer = app.listen(0, '127.0.0.1');
@@ -176,7 +204,7 @@ async function main() {
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,
     adminEventCount: allEvents.length,
-    inactiveStatusSqlState: inactiveSqlState,
+    statusConstraintSqlStates: statusResults,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

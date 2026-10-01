@@ -1829,18 +1829,10 @@ app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Events: default to upcoming + recent past (2 weeks)
+// Events: public list shows published events that have not ended.
 app.get('/api/events', async (req, res) => {
   const { type, group_id, limit, mode } = req.query;
   try {
-    // Automatically transition past published events to COMPLETED
-    await pool.query(`
-      UPDATE events 
-      SET status = 'COMPLETED' 
-      WHERE status = 'PUBLISHED' 
-        AND COALESCE(end_at, start_at) < NOW()
-    `);
-
     let query = `
       SELECT e.*, g.name as group_name 
       FROM events e 
@@ -1866,8 +1858,8 @@ app.get('/api/events', async (req, res) => {
       query += ' ORDER BY e.start_at DESC';
     } else {
       // Public view
-      query += " AND status = 'PUBLISHED' AND (end_at > NOW() OR start_at > NOW() - INTERVAL '14 days')";
-      query += ' ORDER BY pinned DESC NULLS LAST, start_at ASC';
+      query += " AND e.status = 'PUBLISHED' AND COALESCE(e.end_at, e.start_at) >= NOW()";
+      query += ' ORDER BY e.pinned DESC NULLS LAST, e.start_at ASC';
     }
 
     if (limit) {

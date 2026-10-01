@@ -115,7 +115,17 @@ async function main() {
   await pool.query(`INSERT INTO groups (id, name, status) VALUES ($1, 'Fixture Group', 'ACTIVE')`, [groupId]);
   await pool.query(
     `INSERT INTO events (title, start_at, end_at, created_by, group_id, type)
-     VALUES ('Fixture Event', NOW() + INTERVAL '1 day', NOW() + INTERVAL '1 day 1 hour', $1, $2, 'meeting')`,
+     VALUES ('Future Fixture Event', NOW() + INTERVAL '1 day', NOW() + INTERVAL '1 day 1 hour', $1, $2, 'meeting')`,
+    [userId, groupId],
+  );
+  await pool.query(
+    `INSERT INTO events (title, start_at, end_at, created_by, group_id, type, status)
+     VALUES ('Past Fixture Event', NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours', $1, $2, 'meeting', 'PUBLISHED')`,
+    [userId, groupId],
+  );
+  await pool.query(
+    `INSERT INTO events (title, start_at, end_at, created_by, group_id, type, status)
+     VALUES ('Draft Fixture Event', NOW() + INTERVAL '2 days', NOW() + INTERVAL '2 days 1 hour', $1, $2, 'meeting', 'DRAFT')`,
     [userId, groupId],
   );
 
@@ -140,22 +150,21 @@ async function main() {
   const base = `http://127.0.0.1:${appServer.address().port}`;
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
-  let eventErrorCode = null;
-  const beforeEventError = console.error;
-  let events;
-  try {
-    console.error = (...args) => {
-      if (args[0] === 'SERVER ERROR in GET /api/events:') eventErrorCode = args[1]?.code || 'unknown';
-      else beforeEventError(...args);
-    };
-    events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
-  } finally {
-    console.error = beforeEventError;
-  }
-  const eventCount = (await pool.query('SELECT COUNT(*)::int AS count FROM events')).rows[0].count;
+  const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
+  const publicEvents = await events.json();
+  const adminEvents = await fetch(`${base}/api/events?mode=admin`, { signal: AbortSignal.timeout(10_000) });
+  const allEvents = await adminEvents.json();
+  const eventRows = (await pool.query('SELECT title, status FROM events ORDER BY title')).rows;
 
   if (health.status !== 200 || healthBody.dbAttempt !== 'success') throw new Error('Isolated API health check failed');
-  if (eventCount !== 1) throw new Error('Fixture event count changed unexpectedly');
+  if (events.status !== 200 || publicEvents.length !== 1 || publicEvents[0].title !== 'Future Fixture Event') {
+    throw new Error(`Public event list did not filter as expected: ${events.status}`);
+  }
+  if (adminEvents.status !== 200 || allEvents.length !== 3) throw new Error('Admin event list did not return all fixtures');
+  if (eventRows.length !== 3 || eventRows.find(row => row.title === 'Past Fixture Event')?.status !== 'PUBLISHED'
+      || eventRows.find(row => row.title === 'Draft Fixture Event')?.status !== 'DRAFT') {
+    throw new Error('GET /api/events changed fixture event statuses');
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -164,10 +173,13 @@ async function main() {
     unmodifiedMigrationError: migrationErrors[0] || null,
     localCompatibilityShim: migrationErrors.length > 0 ? 'groups.meeting_day' : null,
     apiHealth: health.status,
-    eventListBaseline: events.status,
-    eventErrorCode,
+    publicEventList: events.status,
+    publicEventCount: publicEvents.length,
+    adminEventList: adminEvents.status,
+    adminEventCount: allEvents.length,
     inactiveStatusSqlState: inactiveSqlState,
-    fixtureEventsAfterGet: eventCount,
+    fixtureEventsAfterGet: eventRows.length,
+    eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));
 }
 

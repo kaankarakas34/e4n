@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import jwt from 'jsonwebtoken';
 
 const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const container = `e4n-isolated-${randomUUID().slice(0, 8)}`;
@@ -67,13 +68,14 @@ async function main() {
   process.env.DB_NAME = dbName;
   process.env.NODE_ENV = 'test';
   process.env.VERCEL = '1'; // Prevent automatic migrations and network listening on module import.
+  process.env.JWT_SECRET = 'isolated_fixture_signing_key';
 
   ({ default: pool } = await import('../src/config/db.js'));
   const { runMigrations } = await import('../src/config/migrate.js');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 3 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 4 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
 
@@ -116,6 +118,7 @@ async function main() {
   if (!existingSchemaGuard) throw new Error('Versioned schema accepted an unreviewed existing database');
 
   const userId = randomUUID();
+  const otherUserId = randomUUID();
   const groupId = randomUUID();
   await pool.query(
     `INSERT INTO users (id, email, password_hash, name, profession, role)
@@ -123,6 +126,11 @@ async function main() {
     [userId],
   );
   await pool.query(`INSERT INTO groups (id, name, status) VALUES ($1, 'Fixture Group', 'ACTIVE')`, [groupId]);
+  await pool.query(
+    `INSERT INTO users (id, email, password_hash, name, profession, role)
+     VALUES ($1, 'other-fixture@example.invalid', 'not-a-real-password', 'Other Fixture', 'Other Profession', 'MEMBER')`,
+    [otherUserId],
+  );
   await pool.query(
     `INSERT INTO events (title, start_at, end_at, created_by, group_id, type)
      VALUES ('Future Fixture Event', NOW() + INTERVAL '1 day', NOW() + INTERVAL '1 day 1 hour', $1, $2, 'meeting')`,
@@ -186,6 +194,8 @@ async function main() {
   appServer = app.listen(0, '127.0.0.1');
   await once(appServer, 'listening');
   const base = `http://127.0.0.1:${appServer.address().port}`;
+  const token = jwt.sign({ id: userId, role: 'MEMBER' }, process.env.JWT_SECRET);
+  const authHeaders = { Authorization: `Bearer ${token}` };
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
@@ -193,6 +203,28 @@ async function main() {
   const adminEvents = await fetch(`${base}/api/events?mode=admin`, { signal: AbortSignal.timeout(10_000) });
   const allEvents = await adminEvents.json();
   const eventRows = (await pool.query('SELECT title, status FROM events ORDER BY title')).rows;
+
+  const { rows: ownNotifications } = await pool.query(
+    `INSERT INTO notifications (user_id, type, title, message, read)
+     VALUES ($1, 'SYSTEM', 'First fixture', 'First message', FALSE),
+            ($1, 'SYSTEM', 'Second fixture', 'Second message', FALSE)
+     RETURNING id`, [userId],
+  );
+  const { rows: otherNotifications } = await pool.query(
+    `INSERT INTO notifications (user_id, type, title, message, read)
+     VALUES ($1, 'SYSTEM', 'Other fixture', 'Other message', FALSE) RETURNING id`, [otherUserId],
+  );
+  const notificationList = await fetch(`${base}/api/notifications`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const listedNotifications = await notificationList.json();
+  const readOne = await fetch(`${base}/api/notifications/${ownNotifications[0].id}/read`, {
+    method: 'PUT', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const afterReadOne = (await pool.query('SELECT id, read FROM notifications WHERE user_id = $1 ORDER BY id', [userId])).rows;
+  const readAll = await fetch(`${base}/api/notifications/read-all`, {
+    method: 'PUT', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const afterReadAll = (await pool.query('SELECT id, read FROM notifications WHERE user_id = $1', [userId])).rows;
+  const otherRead = (await pool.query('SELECT read FROM notifications WHERE id = $1', [otherNotifications[0].id])).rows[0].read;
 
   if (health.status !== 200 || healthBody.dbAttempt !== 'success') throw new Error('Isolated API health check failed');
   if (events.status !== 200 || publicEvents.length !== 1 || publicEvents[0].title !== 'Future Fixture Event') {
@@ -202,6 +234,16 @@ async function main() {
   if (eventRows.length !== 3 || eventRows.find(row => row.title === 'Past Fixture Event')?.status !== 'PUBLISHED'
       || eventRows.find(row => row.title === 'Draft Fixture Event')?.status !== 'DRAFT') {
     throw new Error('GET /api/events changed fixture event statuses');
+  }
+  if (notificationList.status !== 200 || listedNotifications.length !== 2
+      || listedNotifications.some(row => !row.title || !row.message || row.read !== false || 'content' in row || 'is_read' in row)) {
+    throw new Error('Notification list did not return the canonical contract');
+  }
+  if (readOne.status !== 200 || afterReadOne.filter(row => row.read).length !== 1) {
+    throw new Error('Single notification read failed');
+  }
+  if (readAll.status !== 200 || afterReadAll.some(row => !row.read) || otherRead) {
+    throw new Error('Bulk notification read crossed user boundaries or left unread rows');
   }
   let migrationFailureCode = null;
   await pool.query('ALTER TABLE users RENAME TO users_temporarily_hidden');
@@ -217,6 +259,44 @@ async function main() {
     await pool.query('ALTER TABLE users_temporarily_hidden RENAME TO users');
   }
   if (migrationFailureCode !== '42P01') throw new Error('Migration error was not propagated to its caller');
+  const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notifications_contract.sql'), 'utf8');
+  const variantClient = await pool.connect();
+  const notificationVariants = {};
+  try {
+    await variantClient.query('BEGIN');
+    await variantClient.query('DROP TABLE notifications');
+    await variantClient.query(`
+      CREATE TABLE notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(), type VARCHAR(50), content TEXT,
+        is_read BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await variantClient.query("INSERT INTO notifications (type, content, is_read) VALUES ('SYSTEM', 'Legacy fixture message', TRUE)");
+    await variantClient.query(notificationSql);
+    const oldRow = (await variantClient.query('SELECT title, message, read FROM notifications')).rows[0];
+    notificationVariants.legacy = oldRow.title === 'Bildirim' && oldRow.message === 'Legacy fixture message' && oldRow.read === true;
+    await variantClient.query('ROLLBACK');
+
+    await variantClient.query('BEGIN');
+    await variantClient.query('DROP TABLE notifications');
+    await variantClient.query(`
+      CREATE TABLE notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(), title TEXT NOT NULL, message TEXT NOT NULL,
+        type TEXT NOT NULL, read BOOLEAN DEFAULT FALSE, created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+    await variantClient.query("INSERT INTO notifications (title, message, type, read) VALUES ('Live fixture', 'Live message', 'SYSTEM', TRUE)");
+    await variantClient.query(notificationSql);
+    const liveRow = (await variantClient.query('SELECT title, message, read FROM notifications')).rows[0];
+    notificationVariants.liveShape = liveRow.title === 'Live fixture' && liveRow.message === 'Live message' && liveRow.read === true;
+    await variantClient.query('ROLLBACK');
+  } finally {
+    await variantClient.query('ROLLBACK');
+    variantClient.release();
+  }
+  if (!notificationVariants.legacy || !notificationVariants.liveShape) {
+    throw new Error(`Notification migration variant failed: ${JSON.stringify(notificationVariants)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -233,6 +313,12 @@ async function main() {
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,
     adminEventCount: allEvents.length,
+    notificationList: notificationList.status,
+    ownNotificationCount: listedNotifications.length,
+    readOne: readOne.status,
+    readAll: readAll.status,
+    otherUserNotificationUnchanged: !otherRead,
+    notificationMigrationVariants: notificationVariants,
     statusConstraintSqlStates: statusResults,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),

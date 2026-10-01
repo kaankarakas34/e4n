@@ -93,8 +93,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             const members = await pool.query("SELECT user_id FROM group_members WHERE group_id = $1 AND status = 'ACTIVE'", [req.params.id]);
             for (let member of members.rows) {
                 await pool.query(
-                    "INSERT INTO notifications (user_id, type, content) VALUES ($1, $2, $3)",
-                    [member.user_id, 'SYSTEM', 'Grubunuzun toplantı tarihleri güncellendi. Lütfen panelden kontrol ediniz.']
+                    "INSERT INTO notifications (user_id, type, title, message, read) VALUES ($1, $2, $3, $4, false)",
+                    [member.user_id, 'SYSTEM', 'Grup toplantısı güncellendi', 'Grubunuzun toplantı tarihleri güncellendi. Lütfen panelden kontrol ediniz.']
                 );
             }
         }

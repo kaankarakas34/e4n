@@ -305,18 +305,19 @@ function NotificationBell() {
               {notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${!n.is_read ? 'bg-blue-50' : ''}`}
+                  className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${!n.read ? 'bg-blue-50' : ''}`}
                   onClick={() => {
                     markAsRead(n.id);
                     setIsOpen(false);
                     if (n.type === 'FRIEND_REQUEST' || n.type === 'FRIEND_ACCEPTED') {
-                      navigate(`/profile/${n.type === 'FRIEND_REQUEST' ? n.content.split(' ')[0] : ''}`); // Basic navigation, ideally link to profile
+                      navigate(`/profile/${n.type === 'FRIEND_REQUEST' ? n.message.split(' ')[0] : ''}`); // Basic navigation, ideally link to profile
                     } else if (n.type === 'MESSAGE') {
                       navigate('/messages');
                     }
                   }}
                 >
-                  <p className="text-sm text-gray-900">{n.content}</p>
+                  <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                  <p className="text-sm text-gray-900">{n.message}</p>
                   <p className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleDateString()}</p>
                 </div>
               ))}

@@ -413,7 +413,7 @@ const calculateMemberScore = async (userId) => {
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+      'SELECT id, user_id, title, message, type, read, created_at FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
       [req.user.id]
     );
     res.json(rows);
@@ -422,7 +422,7 @@ app.get('/api/notifications', authenticateToken, async (req, res) => {
 
 app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
-    await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    await pool.query('UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -2949,7 +2949,7 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50",
+      "SELECT id, user_id, title, message, type, read, created_at FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50",
       [req.user.id]
     );
     res.json(rows);
@@ -2959,7 +2959,7 @@ app.get('/api/notifications', authenticateToken, async (req, res) => {
 app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      "UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2 RETURNING *",
+      "UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2 RETURNING id, user_id, title, message, type, read, created_at",
       [req.params.id, req.user.id]
     );
     res.json(rows[0]);
@@ -2968,7 +2968,7 @@ app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
 
 app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
   try {
-    await pool.query("UPDATE notifications SET is_read = TRUE WHERE user_id = $1", [req.user.id]);
+    await pool.query("UPDATE notifications SET read = TRUE WHERE user_id = $1", [req.user.id]);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3657,8 +3657,8 @@ const sendNotification = async (userId, title, message) => {
   try {
     // 1. Insert In-App Notification
     await pool.query(
-      `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
-      [userId, `${title}: ${message} `]
+      `INSERT INTO notifications(user_id, type, title, message, read) VALUES($1, 'SYSTEM', $2, $3, false)`,
+      [userId, title, message]
     );
 
     // 2. Fetch User Email & Send

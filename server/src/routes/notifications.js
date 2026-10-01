@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT * FROM notifications 
+            `SELECT id, user_id, title, message, type, read, created_at FROM notifications
        WHERE user_id = $1 
        ORDER BY created_at DESC LIMIT 50`,
             [req.user.id]
@@ -24,7 +24,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.put('/:id/read', authenticateToken, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2 RETURNING *`,
+            `UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2 RETURNING id, user_id, title, message, type, read, created_at`,
             [req.params.id, req.user.id]
         );
         res.json(rows[0]);
@@ -35,7 +35,7 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
 router.put('/read-all', authenticateToken, async (req, res) => {
     try {
         await pool.query(
-            `UPDATE notifications SET is_read = TRUE WHERE user_id = $1`,
+            `UPDATE notifications SET read = TRUE WHERE user_id = $1`,
             [req.user.id]
         );
         res.json({ success: true });

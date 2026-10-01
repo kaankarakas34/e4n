@@ -7,8 +7,8 @@ export const sendNotification = async (userId, title, message) => {
     try {
         // 1. Insert In-App Notification
         await pool.query(
-            `INSERT INTO notifications(user_id, type, content, is_read) VALUES($1, 'SYSTEM', $2, false)`,
-            [userId, `${title}: ${message} `]
+            `INSERT INTO notifications(user_id, type, title, message, read) VALUES($1, 'SYSTEM', $2, $3, false)`,
+            [userId, title, message]
         );
 
         // 2. Fetch User Email & Send

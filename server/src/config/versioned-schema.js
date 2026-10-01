@@ -12,6 +12,7 @@ if (!initSource.includes(seedMarker)) throw new Error('init.sql seed boundary wa
 const initSql = initSource.split(seedMarker)[0];
 const runtimeSource = readFileSync(path.join(serverDir, 'src/config/migrate.js'), 'utf8');
 const legacySql = readFileSync(path.join(serverDir, 'migrations/0003_legacy_tables.sql'), 'utf8');
+const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notifications_contract.sql'), 'utf8');
 
 function checksum(source) {
   return createHash('sha256').update(source).digest('hex');
@@ -21,6 +22,7 @@ const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
   { version: '0003_legacy_tables', checksum: checksum(legacySql), apply: client => client.query(legacySql) },
+  { version: '0004_notifications_contract', checksum: checksum(notificationSql), apply: client => client.query(notificationSql) },
 ];
 
 // Rehearsal only: existing unversioned databases need a separately reviewed baseline adoption.

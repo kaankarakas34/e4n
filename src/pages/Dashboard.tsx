@@ -468,19 +468,19 @@ function CommunityDashboard({ user }: { user: any }) {
                                 <div className="text-center py-12 text-slate-400 italic">Bildirim bulunmuyor.</div>
                             ) : (
                                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                                    {notifications.slice(0, 10).map((n: any) => (
+                                    {notifications.slice(0, 10).map((n) => (
                                         <div 
                                             key={n.id} 
-                                            onClick={() => !n.is_read && markAsRead(n.id)}
+                                            onClick={() => !n.read && markAsRead(n.id)}
                                             className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                                                n.is_read 
+                                                n.read
                                                     ? 'bg-slate-50 border-slate-200 text-slate-600' 
                                                     : 'bg-indigo-50/50 border-indigo-150 text-slate-800 font-medium'
                                             }`}
                                         >
                                             <div className="flex justify-between items-start gap-2">
                                                 <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">{n.title}</h4>
-                                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse"></span>}
+                                                {!n.read && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse"></span>}
                                             </div>
                                             <p className="text-xs mt-1 leading-relaxed">{n.message}</p>
                                             <span className="text-[10px] text-slate-400 block mt-2">

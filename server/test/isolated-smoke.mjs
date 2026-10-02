@@ -674,6 +674,7 @@ async function main() {
     body: JSON.stringify({ subject: 'Mobile support fixture', message: 'Fixture message' }),
     signal: AbortSignal.timeout(10_000),
   });
+  const mobileSupportBody = await mobileSupportCreate.json();
   const supportCountAfterMobile = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
   const webTicketCreate = await fetch(`${base}/api/tickets`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
@@ -683,13 +684,36 @@ async function main() {
   const webTicketBody = await webTicketCreate.json();
   const supportCountAfterWeb = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
   const mobileAdminSupportList = await fetch(`${base}/api/support`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const mobileAdminSupportRows = await mobileAdminSupportList.json();
   const webAdminTicketList = await fetch(`${base}/api/tickets`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
   const webAdminTicketRows = await webAdminTicketList.json();
-  if (mobileSupportCreate.status !== 404 || supportCountAfterMobile !== supportCountBefore
-      || webTicketCreate.status !== 201 || supportCountAfterWeb !== supportCountBefore + 1
-      || mobileAdminSupportList.status !== 404 || webAdminTicketList.status !== 200
+  if (mobileSupportCreate.status !== 201 || supportCountAfterMobile !== supportCountBefore + 1
+      || mobileSupportBody.user_id !== userId
+      || webTicketCreate.status !== 201 || supportCountAfterWeb !== supportCountBefore + 2
+      || mobileAdminSupportList.status !== 200 || webAdminTicketList.status !== 200
+      || !mobileAdminSupportRows.some(row => row.id === mobileSupportBody.id)
       || !webAdminTicketRows.some(row => row.id === webTicketBody.id)) {
     throw new Error('Web/mobile support path and persistence baseline changed');
+  }
+  const memberSupportStatus = await fetch(`${base}/api/support/${mobileSupportBody.id}/status`, {
+    method: 'PUT', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'CLOSED' }),
+  });
+  const statusAfterMemberSupport = (await pool.query('SELECT status FROM tickets WHERE id = $1', [mobileSupportBody.id])).rows[0].status;
+  const adminSupportStatus = await fetch(`${base}/api/support/${mobileSupportBody.id}/status`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'CLOSED' }),
+  });
+  const statusAfterAdminSupport = (await pool.query('SELECT status FROM tickets WHERE id = $1', [mobileSupportBody.id])).rows[0].status;
+  const unauthenticatedSupport = await fetch(`${base}/api/support`);
+  const privateSupportId = randomUUID();
+  await pool.query("INSERT INTO tickets (id, user_id, subject, status) VALUES ($1, $2, 'Private fixture', 'OPEN')", [privateSupportId, adminUserId]);
+  const memberSupportList = await fetch(`${base}/api/support`, { headers: authHeaders });
+  const memberSupportRows = await memberSupportList.json();
+  if (memberSupportStatus.status !== 403 || statusAfterMemberSupport !== 'OPEN'
+      || adminSupportStatus.status !== 200 || statusAfterAdminSupport !== 'CLOSED'
+      || unauthenticatedSupport.status !== 401 || memberSupportList.status !== 200
+      || memberSupportRows.some(row => row.id === privateSupportId)
+      || memberSupportRows.some(row => row.user_id !== userId)) {
+    throw new Error('Mobile support aliases must preserve member/admin/data boundaries');
   }
   const adminRouteChecks = {};
   for (const path of ['email-config', 'stats/charts', 'stats/groups', 'stats/geo']) {

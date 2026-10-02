@@ -3934,7 +3934,7 @@ const calculateFixedTermEndDate = (startDate, monthsToAdd) => {
 // Get Tickets
 // User: Gets only their tickets
 // Admin: Gets ALL tickets
-app.get('/api/tickets', authenticateToken, async (req, res) => {
+app.get(['/api/tickets', '/api/support'], authenticateToken, async (req, res) => {
   try {
     let query = `
         SELECT t.*, u.name as user_name, u.email as user_email,
@@ -3958,7 +3958,7 @@ app.get('/api/tickets', authenticateToken, async (req, res) => {
 });
 
 // Create Ticket
-app.post('/api/tickets', authenticateToken, async (req, res) => {
+app.post(['/api/tickets', '/api/support'], authenticateToken, async (req, res) => {
   const { subject, message } = req.body;
   const client = await pool.connect();
   try {
@@ -4063,7 +4063,7 @@ app.post('/api/tickets/:id/messages', authenticateToken, async (req, res) => {
 });
 
 // Update Status (Close/Reopen)
-app.put('/api/tickets/:id/status', authenticateToken, async (req, res) => {
+app.put(['/api/tickets/:id/status', '/api/support/:id/status'], authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   const { status } = req.body;
   try {

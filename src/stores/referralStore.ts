@@ -14,69 +14,10 @@ interface ReferralStore {
   deleteReferral: (id: string) => Promise<void>;
 }
 
-const mockReferrals: Referral[] = [
-  {
-    id: '1',
-    giver_id: 'user1',
-    receiver_id: 'user2',
-    type: 'INTERNAL',
-    temperature: 'HOT',
-    status: 'SUCCESSFUL',
-    description: 'Vergi danışmanlığı hizmeti yönlendirmesi',
-    amount: 5000,
-    created_at: '2024-11-28',
-    updated_at: '2024-11-28',
-    receiver_name: 'Ahmet Yılmaz',
-    profession: 'Mali Müşavir',
-  },
-  {
-    id: '2',
-    giver_id: 'user1',
-    receiver_id: 'user3',
-    type: 'EXTERNAL',
-    temperature: 'WARM',
-    status: 'PENDING',
-    description: 'Logo tasarımı projesi',
-    amount: 2500,
-    created_at: '2024-11-27',
-    updated_at: '2024-11-27',
-    receiver_name: 'Ayşe Kaya',
-    profession: 'Grafik Tasarımcı',
-  },
-  {
-    id: '3',
-    giver_id: 'user1',
-    receiver_id: 'user4',
-    type: 'INTERNAL',
-    temperature: 'COLD',
-    status: 'UNSUCCESSFUL',
-    description: 'Bina projesi danışmanlığı',
-    amount: 0,
-    created_at: '2024-11-26',
-    updated_at: '2024-11-26',
-    receiver_name: 'Mehmet Öz',
-    profession: 'İnşaat Mühendisi',
-  },
-  {
-    id: '4',
-    giver_id: 'user2',
-    receiver_id: 'user1',
-    type: 'INTERNAL',
-    temperature: 'WARM',
-    status: 'PENDING',
-    description: 'Web sitesi yenileme projesi için destek',
-    amount: 15000,
-    created_at: '2024-11-25',
-    updated_at: '2024-11-25',
-    receiver_name: 'Murat (Ben)',
-    profession: 'Yazılım',
-  },
-];
-
 export const useReferralStore = create<ReferralStore>()(
   persist(
     (set, get) => ({
-      referrals: mockReferrals,
+      referrals: [],
       loading: false,
       error: null,
 
@@ -110,23 +51,8 @@ export const useReferralStore = create<ReferralStore>()(
           }));
           return referral as Referral;
         } catch (error) {
-          // Fallback to mock when API fails
-          const newReferral: Referral = {
-            id: Date.now().toString(),
-            giver_id: userId,
-            receiver_id: data.receiverId || '',
-            type: data.type,
-            temperature: data.temperature,
-            status: 'PENDING',
-            description: data.description,
-            amount: data.amount,
-            created_at: new Date().toISOString().split('T')[0],
-            updated_at: new Date().toISOString().split('T')[0],
-            receiver_name: data.receiver,
-            profession: data.profession,
-          };
-          set(state => ({ referrals: [newReferral, ...state.referrals], loading: false }));
-          return newReferral;
+          set({ error: 'Yönlendirme kaydedilemedi. Lütfen tekrar deneyin.', loading: false });
+          throw error;
         }
       },
 
@@ -185,6 +111,10 @@ export const useReferralStore = create<ReferralStore>()(
     }),
     {
       name: 'referral-store',
+      version: 1,
+      // Older caches can contain demo rows or failed requests reported as saved.
+      // Refill the cache from the API instead of treating those rows as records.
+      migrate: () => ({ referrals: [] }),
       partialize: (state) => ({
         referrals: state.referrals
       }),

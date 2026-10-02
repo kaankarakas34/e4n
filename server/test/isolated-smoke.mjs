@@ -871,6 +871,16 @@ async function main() {
   }
   const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const reportStatsBody = await reportStats.json();
+  const adminDashboardStats = await fetch(`${base}/api/reports/stats`, { headers: adminHeaders });
+  const adminDashboardStatsBody = await adminDashboardStats.json();
+  const dashboardCounts = (await pool.query(`SELECT
+    (SELECT COUNT(*)::int FROM users) AS users,
+    (SELECT COUNT(*)::int FROM groups) AS groups,
+    (SELECT COUNT(*)::int FROM events) AS events`)).rows[0];
+  if (adminDashboardStats.status !== 200 || adminDashboardStatsBody.totalMembers !== dashboardCounts.users
+      || adminDashboardStatsBody.totalGroups !== dashboardCounts.groups || adminDashboardStatsBody.totalEvents !== dashboardCounts.events) {
+    throw new Error('Mobile admin dashboard summary does not match database record counts');
+  }
   if (reportStats.status !== 200 || reportStatsBody.totalRevenue !== null
       || reportStatsBody.internalRevenue !== null || reportStatsBody.externalRevenue !== null
       || reportStatsBody.lostMembers !== null || reportStatsBody.visitorConversionRate !== null) {

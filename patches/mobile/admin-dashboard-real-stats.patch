@@ -1,0 +1,87 @@
+diff --git a/app/admin/index.tsx b/app/admin/index.tsx
+index 7e09eaf..020711c 100644
+--- a/app/admin/index.tsx
++++ b/app/admin/index.tsx
+@@ -1,9 +1,10 @@
+-import React from 'react';
++import React, { useEffect, useState } from 'react';
+ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+ import { Ionicons } from '@expo/vector-icons';
+ import { SafeAreaView } from 'react-native-safe-area-context';
+ import { useRouter } from 'expo-router';
+ import { useAuth } from '@/hooks/use-auth';
++import { apiClient } from '@/utils/api-client';
+ 
+ const { width } = Dimensions.get('window');
+ const COLUMN_WIDTH = (width - 48) / 2;
+@@ -25,7 +26,33 @@ const ADMIN_FEATURES = [
+ 
+ export default function AdminDashboard() {
+     const router = useRouter();
+-    const { logout } = useAuth();
++    const { logout, user } = useAuth();
++    const [stats, setStats] = useState<any>(null);
++    const [statsLoading, setStatsLoading] = useState(true);
++    const [statsError, setStatsError] = useState<string | null>(null);
++
++    const loadStats = async () => {
++        if (user?.role !== 'ADMIN') return;
++        setStatsLoading(true);
++        setStatsError(null);
++        try {
++            const data = await apiClient.get<any>('/reports/stats');
++            if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid stats response');
++            setStats(data);
++        } catch {
++            setStatsError('Özet verileri yüklenemedi.');
++        } finally {
++            setStatsLoading(false);
++        }
++    };
++    useEffect(() => { loadStats(); }, [user?.id, user?.role]);
++    const count = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 'Veri yok';
++
++    if (user?.role !== 'ADMIN') return (
++        <SafeAreaView style={styles.container}>
++            <Text accessibilityRole="alert">Admin paneli için yönetici yetkisi gerekiyor.</Text>
++        </SafeAreaView>
++    );
+ 
+     return (
+         <SafeAreaView style={styles.container}>
+@@ -46,20 +73,27 @@ export default function AdminDashboard() {
+ 
+             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                 {/* Quick Stats Summary (Mini) */}
+-                <View style={styles.statsRow}>
++                {statsLoading ? <Text accessibilityRole="progressbar">Özet yükleniyor…</Text> : statsError ? (
++                    <View accessibilityRole="alert">
++                        <Text>{statsError}</Text>
++                        <TouchableOpacity accessibilityRole="button" onPress={() => loadStats()}>
++                            <Text>Tekrar dene</Text>
++                        </TouchableOpacity>
++                    </View>
++                ) : <View style={styles.statsRow}>
+                     <View style={[styles.statBox, { backgroundColor: '#f0f9ff' }]}>
+-                        <Text style={styles.statLabel}>Üye</Text>
+-                        <Text style={styles.statNumber}>54</Text>
++                        <Text style={styles.statLabel}>Kullanıcı Kaydı</Text>
++                        <Text style={styles.statNumber}>{count(stats?.totalMembers)}</Text>
+                     </View>
+                     <View style={[styles.statBox, { backgroundColor: '#f0fdf4' }]}>
+-                        <Text style={styles.statLabel}>Grup</Text>
+-                        <Text style={styles.statNumber}>1</Text>
++                        <Text style={styles.statLabel}>Grup Kaydı</Text>
++                        <Text style={styles.statNumber}>{count(stats?.totalGroups)}</Text>
+                     </View>
+                     <View style={[styles.statBox, { backgroundColor: '#fdf2f8' }]}>
+-                        <Text style={styles.statLabel}>Etkinlik</Text>
+-                        <Text style={styles.statNumber}>2</Text>
++                        <Text style={styles.statLabel}>Etkinlik Kaydı</Text>
++                        <Text style={styles.statNumber}>{count(stats?.totalEvents)}</Text>
+                     </View>
+-                </View>
++                </View>}
+ 
+                 <Text style={styles.sectionTitle}>Hızlı İşlemler</Text>
+ 

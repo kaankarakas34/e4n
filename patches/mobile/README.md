@@ -1,5 +1,7 @@
 # Mobile changes awaiting repository integration
 
+`admin-dashboard-real-stats.patch` replaces the local dashboard's static 54/1/2 with existing `/reports/stats` record counts, loading/error/retry and unavailable values. Already applied locally; reverse-check passed. Mobile TypeScript before/after and `node test/mobile-admin-dashboard.mjs <admin/index.tsx-path>` passed. Client ADMIN guard is covered, but the existing reports API still allows authenticated MEMBER requests; its role policy remains an open audit item. No production integration or device acceptance is implied.
+
 `admin-professions-load-error.patch` records only the local admin profession screen change. Already applied locally: failed or malformed loads show a persistent alert/retry; stale rows and false empty messages are hidden, true empty remains. Mobile TypeScript before/after and `node test/mobile-professions.mjs <professions.tsx-path>` passed. Reverse-check verified this patch against the local source. Production repository integration and device verification remain open; the mobile repository still has no remote and existing unrelated changes are preserved.
 
 `admin-applications-load-error.patch` records only the change to the existing mobile admin applications screen. It has already been applied to the local mobile source. Do not apply it there again.

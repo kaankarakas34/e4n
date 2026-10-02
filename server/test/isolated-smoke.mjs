@@ -78,7 +78,7 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 4 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 5 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
 
@@ -158,7 +158,7 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 3
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 4
         || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 34 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
@@ -195,6 +195,18 @@ async function main() {
      VALUES ($1, 'fixture@example.invalid', $2, 'Fixture Member', 'Fixture Profession', 'MEMBER')`,
     [userId, fixturePasswordHash],
   );
+  const inviterFk = await pool.query(`
+    SELECT COUNT(*)::int AS count FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_attribute attr ON attr.attrelid = rel.oid AND attr.attnum = ANY(con.conkey)
+    WHERE rel.relname = 'public_visitors' AND con.contype = 'f' AND attr.attname = 'inviter_id'
+  `);
+  if (inviterFk.rows[0].count !== 1) throw new Error('Versioned public visitor inviter FK is missing');
+  const invitedVisitor = await pool.query(
+    `INSERT INTO public_visitors (name, inviter_id) VALUES ('Invited Fixture', $1)
+     RETURNING inviter_id`, [userId],
+  );
+  if (invitedVisitor.rows[0].inviter_id !== userId) throw new Error('Public visitor inviter was not persisted');
   await pool.query(`INSERT INTO groups (id, name, status) VALUES ($1, 'Fixture Group', 'ACTIVE')`, [groupId]);
   await pool.query(
     `INSERT INTO users (id, email, password_hash, name, profession, role)
@@ -455,6 +467,7 @@ async function main() {
     legacyAdoption: legacyAdoption?.applied,
     legacyRepeatAppliedVersions: legacyRepeat?.applied.length,
     legacyRowsPreserved,
+    publicVisitorInviterFk: inviterFk.rows[0].count === 1,
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,
@@ -501,7 +514,7 @@ try {
   await main();
 } catch (error) {
   exitCode = 1;
-  console.error(`Isolated smoke failed: ${error.message}`);
+  console.error(`Isolated smoke failed: ${error.stack || error.message}`);
 } finally {
   if (appServer) await new Promise(resolve => appServer.close(resolve));
   if (pool) await pool.end();

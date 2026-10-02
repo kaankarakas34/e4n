@@ -14,6 +14,7 @@ const initSql = initSource.split(seedMarker)[0];
 const runtimeSource = readFileSync(path.join(serverDir, 'migrations/0002_runtime_extensions.js'), 'utf8');
 const legacySql = readFileSync(path.join(serverDir, 'migrations/0003_legacy_tables.sql'), 'utf8');
 const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notifications_contract.sql'), 'utf8');
+const publicVisitorInviterSql = readFileSync(path.join(serverDir, 'migrations/0005_public_visitor_inviter.sql'), 'utf8');
 
 function checksum(source) {
   return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
@@ -24,6 +25,7 @@ const versions = [
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
   { version: '0003_legacy_tables', checksum: checksum(legacySql), apply: client => client.query(legacySql) },
   { version: '0004_notifications_contract', checksum: checksum(notificationSql), apply: client => client.query(notificationSql) },
+  { version: '0005_public_visitor_inviter', checksum: checksum(publicVisitorInviterSql), apply: client => client.query(publicVisitorInviterSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

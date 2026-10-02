@@ -467,7 +467,7 @@ app.get('/api/reports/attendance-stats', authenticateToken, async (req, res) => 
 
 app.get('/api/reports/stats', authenticateToken, async (req, res) => {
   try {
-    // Mocking some aggregations for now using real table counts
+    // Existing table counts; metrics without a defined source remain unavailable.
     const memberCount = (await pool.query('SELECT count(*) FROM users')).rows[0].count;
     const groupCount = (await pool.query('SELECT count(*) FROM groups')).rows[0].count;
     const ptCount = (await pool.query('SELECT count(*) FROM power_teams')).rows[0].count;
@@ -475,27 +475,27 @@ app.get('/api/reports/stats', authenticateToken, async (req, res) => {
     const visitorCount = (await pool.query('SELECT count(*) FROM visitors')).rows[0].count;
     const oneToOneCount = (await pool.query('SELECT count(*) FROM one_to_ones')).rows[0].count;
 
-    // Revenue (Realized Revenue + Membership Fees mock)
-    // Check if revenue_entries table exists and sum 'amount'
-    let totalRevenue = 0;
+    let totalRevenue = null;
     try {
-      // We can check if table exists or just try catch
-      const revRes = await pool.query('SELECT SUM(amount) as total FROM revenue_entries'); // Updated table name assumption or keep consistent if table exists
+      const revRes = await pool.query('SELECT SUM(amount) as total FROM revenue_entries');
       totalRevenue = parseFloat(revRes.rows[0].total || 0);
-    } catch { }
+    } catch (error) {
+      // An absent legacy source is unavailable; other query failures are errors.
+      if (error.code !== '42P01') throw error;
+    }
 
     res.json({
-      totalRevenue: totalRevenue, // e.g. 5425000
-      internalRevenue: totalRevenue * 0.7, // Mock breakdown
-      externalRevenue: totalRevenue * 0.3,
+      totalRevenue,
+      internalRevenue: null,
+      externalRevenue: null,
       totalMembers: parseInt(memberCount),
-      lostMembers: 0, // Need to track inactive
+      lostMembers: null,
       totalGroups: parseInt(groupCount),
       totalPowerTeams: parseInt(ptCount),
       totalEvents: parseInt(eventCount),
       totalVisitors: parseInt(visitorCount),
       totalOneToOnes: parseInt(oneToOneCount),
-      visitorConversionRate: 20 // Mock
+      visitorConversionRate: null,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

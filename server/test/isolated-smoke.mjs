@@ -701,6 +701,28 @@ async function main() {
   }
   const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const reportStatsBody = await reportStats.json();
+  if (reportStats.status !== 200 || reportStatsBody.totalRevenue !== null
+      || reportStatsBody.internalRevenue !== null || reportStatsBody.externalRevenue !== null
+      || reportStatsBody.lostMembers !== null || reportStatsBody.visitorConversionRate !== null) {
+    throw new Error('Unavailable stats must not contain fabricated or zero metrics');
+  }
+  // Disposable fixture source only: absent -> empty -> sum -> broken query.
+  await pool.query('CREATE TABLE revenue_entries (amount NUMERIC)');
+  const emptyRevenueReport = await fetch(`${base}/api/reports/stats`, { headers: authHeaders });
+  const emptyRevenueBody = await emptyRevenueReport.json();
+  await pool.query('INSERT INTO revenue_entries (amount) VALUES (100), (25)');
+  const summedRevenueReport = await fetch(`${base}/api/reports/stats`, { headers: authHeaders });
+  const summedRevenueBody = await summedRevenueReport.json();
+  await pool.query('ALTER TABLE revenue_entries DROP COLUMN amount');
+  const brokenRevenueReport = await fetch(`${base}/api/reports/stats`, { headers: authHeaders });
+  await pool.query('DROP TABLE revenue_entries');
+  const unauthenticatedStats = await fetch(`${base}/api/reports/stats`);
+  if (emptyRevenueReport.status !== 200 || emptyRevenueBody.totalRevenue !== 0
+      || summedRevenueReport.status !== 200 || summedRevenueBody.totalRevenue !== 125
+      || summedRevenueBody.internalRevenue !== null || summedRevenueBody.externalRevenue !== null
+      || brokenRevenueReport.status !== 500 || unauthenticatedStats.status !== 401) {
+    throw new Error('Revenue source empty/sum/query failure/auth contract changed');
+  }
   const reportCharts = await fetch(`${base}/api/reports/charts`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const reportChartsBody = await reportCharts.json();
   const unauthenticatedCharts = await fetch(`${base}/api/reports/charts`, { signal: AbortSignal.timeout(10_000) });

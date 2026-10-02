@@ -18,7 +18,7 @@ globalThis.reportHooks = {
 globalThis.reportApi = {
   getAdminStats: async () => {
     if (shouldFail) throw new Error('Fixture unavailable');
-    return { totalRevenue: 0, totalMembers: 0 };
+    return { totalRevenue: 0, totalMembers: 0, visitorConversionRate: 0 };
   },
   getAdminCharts: async () => ({ revenue: [], growth: [] }),
   getAdminGroupStats: async () => [],
@@ -74,4 +74,16 @@ await flush();
 tree = render();
 assert.equal(nodes(tree).filter(node => node.props?.children === 'Veri yok').length, 3);
 assert.ok(!nodes(tree).some(node => node.type === 'ResponsiveContainer'));
+globalThis.reportApi.getAdminStats = async () => ({
+  totalRevenue: null, totalMembers: 3, internalRevenue: null, externalRevenue: null,
+  lostMembers: null, visitorConversionRate: null,
+});
+retry.props.onClick();
+await flush();
+tree = render();
+assert.equal(nodes(tree).find(node => node.props?.title === 'Toplam Ciro').props.value, 'Veri yok');
+assert.equal(nodes(tree).find(node => node.props?.title === 'Toplam Ciro').props.subvalue, 'Ciro kırılımı için veri yok');
+assert.equal(nodes(tree).find(node => node.props?.title === 'Toplam Üye').props.value, 3);
+assert.equal(nodes(tree).find(node => node.props?.title === 'Toplam Üye').props.subvalue, 'Kayıp üye verisi yok');
+assert.equal(nodes(tree).filter(node => node.props?.children === 'Veri yok').length, 4);
 console.log('AdminReports: failed load shows alert without KPI; retry restores real zero; unavailable average is labeled.');

@@ -9,7 +9,7 @@ async (page) => {
       return route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
     }
     const data = {
-      '/api/reports/stats': { totalRevenue: 0, totalMembers: 0 },
+      '/api/reports/stats': { totalRevenue: 0, totalMembers: 0, visitorConversionRate: 0 },
       '/api/reports/charts': { revenue: [], growth: [], availability: { revenue: false, growth: false } },
       '/api/groups': [],
       '/api/reports/traffic-lights': [],

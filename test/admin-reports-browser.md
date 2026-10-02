@@ -11,6 +11,7 @@ Use Playwright CLI with a separate session:
 5. `playwright-cli -s=e4n-report run-code --filename test/admin-reports-browser-verify.cjs`
 6. Snapshot and click **Trafik Işıkları**, then **Katılım Raporu**; confirm their tables.
 7. Return to **Genel Bakış**, resize to 390 × 844 and repeat the verification. Repeat at 1280 × 900.
+   Run `playwright-cli -s=e4n-report run-code --filename test/admin-reports-browser-unavailable.cjs` to verify unknown revenue/breakdown/loss/conversion are labeled rather than displayed as zero.
 8. `playwright-cli -s=e4n-report close`; stop the local Vite process.
 
 The fixture intercepts all nonlocal requests. API responses are synthetic: the first stats read is 503, the retry returns zero revenue. Other origins and unknown API paths are blocked. The synthetic token is checked by the fixture; it is not a real authentication or authorization test. The harness mounts the actual report component and CSS but does not test application routing/login or backend/database correctness.

@@ -84,15 +84,17 @@ export default function AdminReports() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KPICard
                     title="Toplam Ciro"
-                    value={`₺${(stats.totalRevenue || 0).toLocaleString()}`}
-                    subvalue={`₺${(stats.internalRevenue || 0).toLocaleString()} İç / ₺${(stats.externalRevenue || 0).toLocaleString()} Dış`}
+                    value={stats.totalRevenue == null ? 'Veri yok' : `₺${stats.totalRevenue.toLocaleString()}`}
+                    subvalue={stats.internalRevenue == null || stats.externalRevenue == null
+                        ? 'Ciro kırılımı için veri yok'
+                        : `₺${stats.internalRevenue.toLocaleString()} İç / ₺${stats.externalRevenue.toLocaleString()} Dış`}
                     icon={DollarSign}
                     color="green"
                 />
                 <KPICard
                     title="Toplam Üye"
                     value={stats.totalMembers || 0}
-                    subvalue={`${stats.lostMembers || 0} Kayıp (Son 30 Gün)`}
+                    subvalue={stats.lostMembers == null ? 'Kayıp üye verisi yok' : `${stats.lostMembers} Kayıp (Son 30 Gün)`}
                     icon={Users}
                     color="indigo"
                 />
@@ -164,7 +166,7 @@ export default function AdminReports() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-500">Ziyaretçi Dönüşüm Oranı</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">%{stats.visitorConversionRate || 0}</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.visitorConversionRate == null ? 'Veri yok' : `%${stats.visitorConversionRate}`}</h3>
                             <p className="text-xs text-green-600 mt-1 font-medium">Hedef: %20</p>
                         </div>
                         <div className="p-3 bg-blue-100 rounded-full">

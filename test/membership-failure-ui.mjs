@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+const states = [];
+let cursor = 0, effect, fail = true;
+const fixture = { id: 'fixture', user_id: 'fixture', name: 'Fixture User', plan: '1_MONTH', status: 'ACTIVE', end_date: '2099-01-01T00:00:00Z' };
+const membership = { items: [fixture], fetchAll: async () => {},
+  create: async () => { if (fail) throw new Error('Fixture create failure'); },
+  renew: async () => { if (fail) throw new Error('Fixture renew failure'); },
+  expire: async () => { if (fail) throw new Error('Fixture expire failure'); },
+};
+globalThis.failureMembership = Object.assign(() => membership, { getState: () => membership });
+globalThis.failureHooks = {
+  useState(initial) { const i = cursor++; if (!(i in states)) states[i] = initial; return [states[i], value => { states[i] = value; }]; },
+  useEffect(callback) { effect ??= callback; },
+};
+const alerts = [];
+globalThis.alert = text => alerts.push(text);
+async function load(path, exportName) {
+  let compiled = ts.transpileModule(readFileSync(new URL(path, import.meta.url), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText;
+  compiled = compiled.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_, names) =>
+    `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.failureHooks;`);
+  compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
+    if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
+    if (module === 'react') return `const {${names}} = globalThis.failureHooks;`;
+    if (module === '../stores/authStore') return 'const useAuthStore = () => ({ user: { id: "fixture", role: "ADMIN" } });';
+    if (module === '../stores/membershipStore') return 'const useMembershipStore = globalThis.failureMembership;';
+    if (module === '../api/api') return 'const api = { getUserById: async () => ({ id: "fixture", name: "Fixture User", role: "MEMBER" }) };';
+    if (module === 'react-router-dom') return 'const useParams = () => ({ id: "fixture" });';
+    return names.split(',').map(name => `const ${name.trim()} = '${name.trim()}';`).join('\n');
+  });
+  return (await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`))[exportName];
+}
+const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === 'object' ? [tree, ...nodes(tree.props?.children)] : [];
+const flush = () => new Promise(resolve => setImmediate(resolve));
+const MembershipPage = await load('../src/pages/Membership.tsx', 'MembershipPage');
+const renderPayment = () => { cursor = 0; return MembershipPage(); };
+const originalError = console.error;
+console.error = () => {};
+try {
+  for (const items of [[fixture], []]) {
+    states.length = 0; membership.items = items; alerts.length = 0;
+    const planButton = nodes(renderPayment()).find(node => node.type === 'Button' && node.props?.onClick?.toString().includes('handleSelectPlan'));
+    assert.ok(planButton);
+    await planButton.props.onClick();
+    const modal = nodes(renderPayment()).find(node => node.type === 'PaymentModal');
+    assert.ok(modal);
+    await modal.props.onSuccess({ finalAmount: 125 });
+    assert.deepEqual(alerts, ['Üyelik güncellenemedi. Ödeme durumunuzu kontrol edin.']);
+  }
+  const MemberProfile = await load('../src/pages/MemberProfile.tsx', 'MemberProfile');
+  const renderProfile = () => { cursor = 0; return MemberProfile(); };
+  for (const items of [[fixture], []]) {
+    states.length = 0; effect = undefined; membership.items = items; alerts.length = 0;
+    renderProfile(); effect(); await flush();
+    const open = nodes(renderProfile()).find(node => node.type === 'Button' && node.props?.onClick?.toString().includes('setShowSubscriptionModal'));
+    assert.ok(open);
+    open.props.onClick();
+    const confirm = nodes(renderProfile()).find(node => node.props?.children === 'Onayla ve Başlat');
+    assert.ok(confirm);
+    await confirm.props.onClick(); await flush();
+    assert.deepEqual(alerts, ['Hata oluştu.']);
+  }
+  states.length = 0; effect = undefined; membership.items = [fixture]; alerts.length = 0;
+  renderProfile(); effect(); await flush();
+  await nodes(renderProfile()).find(node => node.props?.children === 'İptal Et').props.onClick();
+  assert.deepEqual(alerts, ['Abonelik iptal edilemedi.']);
+  console.log('Membership UI: create/renew failures never show payment or profile success; expire failure is caught. No payment provider/mail/network calls.');
+} finally { console.error = originalError; }

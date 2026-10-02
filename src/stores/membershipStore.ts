@@ -44,9 +44,11 @@ export const useMembershipStore = create<MembershipStore>()(
         set({ loading: true, error: null });
         try {
           const created = await api.createMembership(payload);
+          if (!created || typeof created.id !== 'string' || !created.id) throw new Error('Invalid membership create response');
           set(state => ({ items: [created, ...state.items], loading: false }));
         } catch (e) {
           set({ error: 'Abonelik oluşturulurken hata oluştu', loading: false });
+          throw e;
         }
       },
 
@@ -54,15 +56,21 @@ export const useMembershipStore = create<MembershipStore>()(
         set({ loading: true, error: null });
         try {
           const updated = await api.updateMembership(id, data);
+          if (!updated || updated.id !== id) throw new Error('Invalid membership update response');
           set(state => ({ items: state.items.map(i => i.id === id ? updated : i), loading: false }));
         } catch (e) {
           set({ error: 'Abonelik güncellenirken hata oluştu', loading: false });
+          throw e;
         }
       },
 
       renew: async (id, plan, price) => {
         const item = get().items.find(i => i.id === id);
-        if (!item) return;
+        if (!item) {
+          const error = new Error('Abonelik kaydı bulunamadı');
+          set({ error: error.message, loading: false });
+          throw error;
+        }
 
         const nextPlan = plan || item.plan;
         const now = new Date();

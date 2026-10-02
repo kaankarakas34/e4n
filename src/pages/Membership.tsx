@@ -84,7 +84,7 @@ export function MembershipPage() {
             alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
         } catch (error) {
             console.error('Payment error:', error);
-            alert('Ödeme sırasında bir hata oluştu.');
+            alert('Üyelik güncellenemedi. Ödeme durumunuzu kontrol edin.');
         } finally {
             setLoading(false);
             setSelectedPlan(null);

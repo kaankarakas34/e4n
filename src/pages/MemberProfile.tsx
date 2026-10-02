@@ -341,7 +341,7 @@ export function MemberProfile() {
                   </div>
                   <div className="pt-4 border-t space-y-2">
                     <Button className="w-full" size="sm" onClick={() => setShowSubscriptionModal(true)}>Yenile / Uzat</Button>
-                    <Button variant="outline" className="w-full" size="sm" onClick={() => expire(membership.id)}>İptal Et</Button>
+                    <Button variant="outline" className="w-full" size="sm" onClick={() => expire(membership.id).catch(() => alert('Abonelik iptal edilemedi.'))}>İptal Et</Button>
                   </div>
                 </div>
               ) : (

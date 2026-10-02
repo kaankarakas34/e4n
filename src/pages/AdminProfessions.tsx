@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../shared/Card';
 import { Button } from '../shared/Button';
@@ -11,6 +11,8 @@ export function AdminProfessions() {
     const [professions, setProfessions] = useState<any[]>([]);
     const [pendingProfessions, setPendingProfessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const loadVersion = useRef(0);
     const [activeTab, setActiveTab] = useState<'approved' | 'pending'>('approved');
 
     // Search state for approved list
@@ -26,38 +28,26 @@ export function AdminProfessions() {
 
     useEffect(() => {
         fetchData();
+        return () => { loadVersion.current += 1; };
     }, [search, activeTab]);
 
     const fetchData = async () => {
+        const version = ++loadVersion.current;
         setLoading(true);
+        setLoadError(null);
         try {
-            if (activeTab === 'approved') {
-                // Fetch approved
-                // Note: Our API returns everything if ADMIN and no status param? 
-                // Actually my API logic was: if no status param, and ADMIN, return ALL.
-                // So let's be specific.
-                const data = await api.getProfessions(search);
-                // We might need to filter client side if API doesn't support strict status param in getProfessions wrapper?
-                // api.ts getProfessions only takes query. I should probably add status support to api.ts or just filter here.
-                // Let's filter client side for now to avoid changing api.ts signature if not needed, 
-                // BUT api.ts getProfessions just does request(/professions?q=...).
-                // If I can pass url params manually...
-                // Let's just fetch all and filter client side for simplicity given the small scale, 
-                // OR better, update api.ts. I'll filter client side for now as I can't easily change api.ts signature without breaking other calls.
-
-                // Wait, if I am admin, I get ALL. 
-                setProfessions(data.filter((p: any) => p.status === 'APPROVED' || !p.status));
-                setPendingProfessions(data.filter((p: any) => p.status === 'PENDING'));
-            } else {
-                // Just refresh same data
-                const data = await api.getProfessions('');
-                setProfessions(data.filter((p: any) => p.status === 'APPROVED' || !p.status));
-                setPendingProfessions(data.filter((p: any) => p.status === 'PENDING'));
-            }
+            const data = await api.getProfessions(activeTab === 'approved' ? search : '');
+            if (!Array.isArray(data)) throw new Error('Invalid profession list response');
+            if (version !== loadVersion.current) return;
+            setProfessions(data.filter((p: any) => p.status === 'APPROVED' || !p.status));
+            setPendingProfessions(data.filter((p: any) => p.status === 'PENDING'));
         } catch (error) {
-            console.error(error);
+            if (version === loadVersion.current) {
+                console.error(error);
+                setLoadError('Meslekler yüklenemedi. Tekrar deneyin.');
+            }
         } finally {
-            setLoading(false);
+            if (version === loadVersion.current) setLoading(false);
         }
     };
 
@@ -131,9 +121,17 @@ export function AdminProfessions() {
                             }`}
                         onClick={() => setActiveTab('pending')}
                     >
-                        Talepler ({pendingProfessions.length})
+                        Talepler ({loading || loadError ? '—' : pendingProfessions.length})
                     </button>
                 </div>
+
+                {loading && <div role="status">Meslekler yükleniyor…</div>}
+                {loadError && (
+                    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+                        <p>{loadError}</p>
+                        <Button variant="outline" onClick={() => fetchData()}>Tekrar dene</Button>
+                    </div>
+                )}
 
                 {activeTab === 'approved' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -144,6 +142,7 @@ export function AdminProfessions() {
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    <fieldset disabled={loading || !!loadError} className="space-y-4">
                                     <div>
                                         <label className="text-sm font-medium">Meslek Adı</label>
                                         <Input
@@ -172,6 +171,7 @@ export function AdminProfessions() {
                                             }}>İptal</Button>
                                         )}
                                     </div>
+                                    </fieldset>
                                 </form>
                             </CardContent>
                         </Card>
@@ -190,7 +190,7 @@ export function AdminProfessions() {
                                     />
                                 </div>
 
-                                <div className="max-h-[500px] overflow-y-auto space-y-2">
+                                {!loading && !loadError && <div className="max-h-[500px] overflow-y-auto space-y-2">
                                     {professions.map(prof => (
                                         <div key={prof.id} className="flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow-sm">
                                             <div>
@@ -208,13 +208,13 @@ export function AdminProfessions() {
                                         </div>
                                     ))}
                                     {professions.length === 0 && <div className="text-center text-gray-500 py-4">Sonuç yok</div>}
-                                </div>
+                                </div>}
                             </CardContent>
                         </Card>
                     </div>
                 )}
 
-                {activeTab === 'pending' && (
+                {!loading && !loadError && activeTab === 'pending' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Bekleyen Meslek Talepleri</CardTitle>

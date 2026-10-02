@@ -857,13 +857,18 @@ app.post('/api/professions', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/professions/:id', async (req, res) => {
+app.put('/api/professions/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, category, status } = req.body;
+  if (status != null && (typeof status !== 'string' || !status.trim() || status.length > 20)) {
+    return res.status(400).json({ error: 'Geçersiz meslek durumu.' });
+  }
   try {
-    const { name, category } = req.body;
     const { rows } = await pool.query(
-      "UPDATE professions SET name = $1, category = $2 WHERE id = $3 RETURNING *",
-      [name, category, req.params.id]
+      "UPDATE professions SET name = $1, category = $2, status = COALESCE($3, status) WHERE id = $4 RETURNING *",
+      [name, category, status, req.params.id]
     );
+    if (rows.length === 0) return res.status(404).json({ error: 'Meslek bulunamadı.' });
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

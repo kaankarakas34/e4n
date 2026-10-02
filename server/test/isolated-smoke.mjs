@@ -515,6 +515,38 @@ async function main() {
     throw new Error(`No-company community registration baseline changed: ${JSON.stringify({ status: noCompanyCommunityRegistration.status, body: noCompanyCommunityBody, rows: communityWithoutCompany })}`);
   }
   const pendingApplicantId = randomUUID();
+  const approvalProfessionId = randomUUID();
+  await pool.query("INSERT INTO professions (id, name, category, status) VALUES ($1, 'Approval Profession Fixture', 'Fixture', 'PENDING')", [approvalProfessionId]);
+  const professionApprovalPayload = { name: 'Approval Profession Fixture', category: 'Fixture', status: 'APPROVED' };
+  const professionApprovalUrl = `${base}/api/professions/${approvalProfessionId}`;
+  const publicProfessionApproval = await fetch(professionApprovalUrl, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(professionApprovalPayload),
+  });
+  const memberProfessionApproval = await fetch(professionApprovalUrl, {
+    method: 'PUT', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify(professionApprovalPayload),
+  });
+  const professionAfterDenied = (await pool.query('SELECT status FROM professions WHERE id = $1', [approvalProfessionId])).rows[0].status;
+  const adminProfessionApproval = await fetch(professionApprovalUrl, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify(professionApprovalPayload),
+  });
+  const approvedProfession = await adminProfessionApproval.json();
+  const adminProfessionEdit = await fetch(professionApprovalUrl, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ name: 'Approval Profession Fixture', category: 'Updated Fixture' }),
+  });
+  const editedProfession = await adminProfessionEdit.json();
+  const invalidProfessionStatus = await fetch(professionApprovalUrl, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ ...professionApprovalPayload, status: 42 }),
+  });
+  const missingProfessionEdit = await fetch(`${base}/api/professions/${randomUUID()}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify(professionApprovalPayload),
+  });
+  const professionAfterApproval = (await pool.query('SELECT status FROM professions WHERE id = $1', [approvalProfessionId])).rows[0].status;
+  if (publicProfessionApproval.status !== 401 || memberProfessionApproval.status !== 403 || professionAfterDenied !== 'PENDING'
+      || adminProfessionApproval.status !== 200 || approvedProfession.status !== 'APPROVED'
+      || adminProfessionEdit.status !== 200 || editedProfession.status !== 'APPROVED' || editedProfession.category !== 'Updated Fixture'
+      || invalidProfessionStatus.status !== 400 || missingProfessionEdit.status !== 404 || professionAfterApproval !== 'APPROVED') {
+    throw new Error('Profession approval persistence or role boundary changed');
+  }
   await pool.query(
     "INSERT INTO users (id, email, name, profession, password_hash, account_status) VALUES ($1, 'pending-applicant@example.invalid', 'Pending Applicant', 'Fixture', 'not-a-real-password', 'PENDING')",
     [pendingApplicantId],

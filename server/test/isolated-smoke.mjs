@@ -439,6 +439,19 @@ async function main() {
       || membershipGateBaseline.pendingGroupJoin !== 403 || membershipGateBaseline.pendingPowerTeamJoin !== 403) {
     throw new Error(`Membership gate baseline changed: ${JSON.stringify(membershipGateBaseline)}`);
   }
+  const approvePowerTeamJoin = await fetch(`${base}/api/power-teams/${powerTeamId}/members/${userId}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'ACTIVE' }), signal: AbortSignal.timeout(10_000),
+  });
+  const approvedPowerTeamMembership = (await pool.query(
+    'SELECT status, role FROM power_team_members WHERE power_team_id = $1 AND user_id = $2', [powerTeamId, userId],
+  )).rows;
+  const openPowerTeamBaseline = { join: activePowerTeamJoin.status, approved: approvePowerTeamJoin.status,
+    membershipRows: approvedPowerTeamMembership.length, status: approvedPowerTeamMembership[0]?.status,
+    role: approvedPowerTeamMembership[0]?.role };
+  if (openPowerTeamBaseline.approved !== 200 || openPowerTeamBaseline.membershipRows !== 1
+      || openPowerTeamBaseline.status !== 'ACTIVE' || openPowerTeamBaseline.role !== 'MEMBER') {
+    throw new Error(`Open power team baseline changed: ${JSON.stringify(openPowerTeamBaseline)}`);
+  }
   const paymentOid = `fixture-${randomUUID()}`;
   await pool.query(
     "INSERT INTO payment_transactions (merchant_oid, user_id, plan_id, amount, status, action_type, action_data) VALUES ($1, NULL, '1_MONTH', 100, 'PENDING', 'membership', $2)",
@@ -865,6 +878,7 @@ async function main() {
     statusConstraintSqlStates: statusResults,
     statusHttpBaseline,
     membershipGateBaseline,
+    openPowerTeamBaseline,
     paymentCallbackBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),

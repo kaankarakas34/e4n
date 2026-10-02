@@ -870,6 +870,31 @@ async function main() {
     throw new Error('Common event registration repeat/missing/auth baseline changed');
   }
   const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const linkedHistoryOid = `history-linked-${randomUUID()}`;
+  const unlinkedHistoryOid = `history-unlinked-${randomUUID()}`;
+  await pool.query(`INSERT INTO payment_transactions (merchant_oid, user_id, amount, status, action_type, action_data)
+    VALUES ($1, $2, 0, 'SUCCESS', 'membership', '{"private":"not-for-list"}'),
+      ($3, NULL, NULL, 'PENDING', 'membership', $4)`,
+    [linkedHistoryOid, userId, unlinkedHistoryOid, JSON.stringify({ user_id: userId })]);
+  const paymentHistoryBefore = (await pool.query('SELECT * FROM payment_transactions ORDER BY merchant_oid')).rows;
+  const adminPaymentHistory = await fetch(`${base}/api/payments/history`, { headers: adminHeaders });
+  const paymentHistoryRows = await adminPaymentHistory.json();
+  const memberPaymentHistory = await fetch(`${base}/api/payments/history`, { headers: authHeaders });
+  const publicPaymentHistory = await fetch(`${base}/api/payments/history`);
+  const linkedHistoryRow = paymentHistoryRows.find(row => row.id === linkedHistoryOid);
+  const unlinkedHistoryRow = paymentHistoryRows.find(row => row.id === unlinkedHistoryOid);
+  const historyUserName = (await pool.query('SELECT name FROM users WHERE id = $1', [userId])).rows[0].name;
+  const paymentHistoryAfter = (await pool.query('SELECT * FROM payment_transactions ORDER BY merchant_oid')).rows;
+  if (adminPaymentHistory.status !== 200 || memberPaymentHistory.status !== 403 || publicPaymentHistory.status !== 401
+      || paymentHistoryRows.length !== paymentHistoryBefore.length
+      || linkedHistoryRow?.amount !== 0 || linkedHistoryRow?.status !== 'SUCCESS' || linkedHistoryRow?.member?.id !== userId
+      || linkedHistoryRow?.member?.full_name !== historyUserName || !linkedHistoryRow?.created_at
+      || unlinkedHistoryRow?.amount !== null || unlinkedHistoryRow?.member !== null || unlinkedHistoryRow?.user_id !== null
+      || unlinkedHistoryRow?.status !== 'PENDING' || paymentHistoryRows.some(row => Object.hasOwn(row, 'action_data'))
+      || JSON.stringify(paymentHistoryBefore) !== JSON.stringify(paymentHistoryAfter)) {
+    throw new Error('Payment history recorded ownership, read-only or admin role contract changed');
+  }
+  await pool.query('DELETE FROM payment_transactions WHERE merchant_oid = ANY($1::text[])', [[linkedHistoryOid, unlinkedHistoryOid]]);
   const reportStatsBody = await reportStats.json();
   const adminDashboardStats = await fetch(`${base}/api/reports/stats`, { headers: adminHeaders });
   const adminDashboardStatsBody = await adminDashboardStats.json();

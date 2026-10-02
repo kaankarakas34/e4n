@@ -3708,6 +3708,24 @@ app.post('/api/memberships/:id/remind', authenticateToken, async (req, res) => {
   }
 });
 
+// Read recorded transactions without deriving ownership or membership rights.
+app.get('/api/payments/history', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  try {
+    const { rows } = await pool.query(`
+      SELECT pt.merchant_oid AS id, pt.merchant_oid, pt.user_id, pt.plan_id,
+        pt.amount::float8 AS amount, pt.status, pt.created_at, pt.updated_at,
+        pt.action_type,
+        CASE WHEN u.id IS NULL THEN NULL
+          ELSE json_build_object('id', u.id, 'full_name', u.name) END AS member
+      FROM payment_transactions pt
+      LEFT JOIN users u ON u.id = pt.user_id
+      ORDER BY pt.created_at DESC, pt.merchant_oid ASC
+    `);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Accounting: Get Payments (Visitors & Members)
 app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);

@@ -831,16 +831,20 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
 
 // Professions
 // Professions
-app.get('/api/professions', async (req, res) => {
+app.get('/api/professions', (req, res, next) => {
+  if (req.headers.authorization) return authenticateToken(req, res, next);
+  next();
+}, async (req, res) => {
   const { q } = req.query;
+  const isAdmin = req.user?.role === 'ADMIN';
   try {
-    let query = 'SELECT id, name, category FROM professions';
+    let query = `SELECT id, name, category${isAdmin ? ', status' : ''} FROM professions`;
     let params = [];
     if (q) {
       query += ' WHERE name ILIKE $1';
       params.push(`%${q}%`);
     }
-    query += ' ORDER BY name ASC LIMIT 50';
+    query += ` ORDER BY name ASC${isAdmin ? '' : ' LIMIT 50'}`;
     const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }

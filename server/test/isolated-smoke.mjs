@@ -518,6 +518,30 @@ async function main() {
   const approvalProfessionId = randomUUID();
   await pool.query("INSERT INTO professions (id, name, category, status) VALUES ($1, 'Approval Profession Fixture', 'Fixture', 'PENDING')", [approvalProfessionId]);
   const professionApprovalPayload = { name: 'Approval Profession Fixture', category: 'Fixture', status: 'APPROVED' };
+  const professionListFixtures = await pool.query(`
+    INSERT INTO professions (name, category, status)
+    SELECT 'AAA Profession Fixture ' || LPAD(n::text, 2, '0'), 'Fixture', 'APPROVED'
+    FROM generate_series(1, 51) AS n RETURNING id
+  `);
+  const professionDbCount = (await pool.query('SELECT COUNT(*)::int AS count FROM professions')).rows[0].count;
+  const adminProfessionList = await fetch(`${base}/api/professions`, { headers: adminHeaders });
+  const adminProfessionRows = await adminProfessionList.json();
+  const publicProfessionList = await fetch(`${base}/api/professions`);
+  const publicProfessionRows = await publicProfessionList.json();
+  const memberProfessionList = await fetch(`${base}/api/professions`, { headers: authHeaders });
+  const memberProfessionRows = await memberProfessionList.json();
+  const searchedProfessionList = await fetch(`${base}/api/professions?q=Approval%20Profession%20Fixture`, { headers: adminHeaders });
+  const searchedProfessionRows = await searchedProfessionList.json();
+  const invalidProfessionToken = await fetch(`${base}/api/professions`, { headers: { Authorization: 'Bearer invalid' } });
+  if (adminProfessionList.status !== 200 || adminProfessionRows.length !== professionDbCount
+      || !adminProfessionRows.some(row => row.id === approvalProfessionId && row.status === 'PENDING')
+      || publicProfessionList.status !== 200 || publicProfessionRows.length !== 50 || publicProfessionRows.some(row => Object.hasOwn(row, 'status'))
+      || memberProfessionList.status !== 200 || memberProfessionRows.length !== 50 || memberProfessionRows.some(row => Object.hasOwn(row, 'status'))
+      || searchedProfessionList.status !== 200 || searchedProfessionRows.length !== 1 || searchedProfessionRows[0].id !== approvalProfessionId
+      || invalidProfessionToken.status !== 403) {
+    throw new Error('Profession admin list completeness or status boundary changed');
+  }
+  await pool.query('DELETE FROM professions WHERE id = ANY($1::uuid[])', [professionListFixtures.rows.map(row => row.id)]);
   const professionApprovalUrl = `${base}/api/professions/${approvalProfessionId}`;
   const publicProfessionApproval = await fetch(professionApprovalUrl, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(professionApprovalPayload),

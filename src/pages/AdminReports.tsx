@@ -179,7 +179,7 @@ export default function AdminReports() {
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-500">Ortalama Başarı Puanı</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">78.5</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">Veri yok</h3>
                         </div>
                         <div className="p-3 bg-yellow-100 rounded-full">
                             <Target className="w-6 h-6 text-yellow-600" />

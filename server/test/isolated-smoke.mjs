@@ -447,6 +447,29 @@ async function main() {
   if (memberTickets.status !== 200 || !Array.isArray(await memberTickets.json())) {
     throw new Error(`Ticket list failed without import-time DDL: ${memberTickets.status}`);
   }
+  const supportCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
+  const mobileSupportCreate = await fetch(`${base}/api/support`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject: 'Mobile support fixture', message: 'Fixture message' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const supportCountAfterMobile = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
+  const webTicketCreate = await fetch(`${base}/api/tickets`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subject: 'Web ticket fixture', message: 'Fixture message' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const webTicketBody = await webTicketCreate.json();
+  const supportCountAfterWeb = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
+  const mobileAdminSupportList = await fetch(`${base}/api/support`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const webAdminTicketList = await fetch(`${base}/api/tickets`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const webAdminTicketRows = await webAdminTicketList.json();
+  if (mobileSupportCreate.status !== 404 || supportCountAfterMobile !== supportCountBefore
+      || webTicketCreate.status !== 201 || supportCountAfterWeb !== supportCountBefore + 1
+      || mobileAdminSupportList.status !== 404 || webAdminTicketList.status !== 200
+      || !webAdminTicketRows.some(row => row.id === webTicketBody.id)) {
+    throw new Error('Web/mobile support path and persistence baseline changed');
+  }
   const adminRouteChecks = {};
   for (const path of ['email-config', 'stats/charts', 'stats/groups', 'stats/geo']) {
     const memberResponse = await fetch(`${base}/api/admin/${path}`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
@@ -590,6 +613,9 @@ async function main() {
     visitorApplyWithoutDdl: visitorApply.status,
     visitorStatusWithoutDdl: visitorStatus.status,
     ticketListWithoutDdl: memberTickets.status,
+    supportPathParity: { mobileCreate: mobileSupportCreate.status, mobileRowsAdded: supportCountAfterMobile - supportCountBefore,
+      webCreate: webTicketCreate.status, webRowsAdded: supportCountAfterWeb - supportCountAfterMobile,
+      mobileAdminList: mobileAdminSupportList.status, webAdminList: webAdminTicketList.status },
     manualMigrationEndpoint: manualMigration.status,
     migrationFailureCode,
     localCompatibilityShim: null,

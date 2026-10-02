@@ -1998,40 +1998,6 @@ app.delete('/api/events/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/members', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(`
-            SELECT 
-              u.id, 
-              u.name, 
-              u.email, 
-              u.phone, 
-              u.city, 
-              u.profession, 
-              u.role, 
-              u.created_at,
-              u.company,
-              u.linkedin_profile,
-              u.position,
-              COALESCE(u.performance_score, 0) as performance_score, 
-              COALESCE(u.performance_color, 'GREY') as performance_color,
-              COALESCE(u.account_status, 'PENDING') as status, 
-              g.name as group_name, 
-              'ACTIVE' as profession_status, 
-              NULL as profession_id, 
-              NULL as profession_category
-            FROM users u
-            LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
-            LEFT JOIN groups g ON gm.group_id = g.id
-            ORDER BY u.created_at DESC
-        `);
-    res.json(rows.map(r => ({ ...r, full_name: r.name })));
-  } catch (e) {
-    console.error('Admin Members Error:', e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
 app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
   console.log(`[DELETE MEMBER REQUEST] ID: ${req.params.id} | Initiated by: ${req.user?.email} (${req.user?.role})`);
 
@@ -2898,16 +2864,6 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 
 
 // --- NOTIFICATIONS ---
-app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      "UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2 RETURNING id, user_id, title, message, type, read, created_at",
-      [req.params.id, req.user.id]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
   try {
     await pool.query("UPDATE notifications SET read = TRUE WHERE user_id = $1", [req.user.id]);

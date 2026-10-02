@@ -520,6 +520,13 @@ async function main() {
     [pendingApplicantId],
   );
   const pendingApplicantDbCount = (await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE id = $1 AND account_status = 'PENDING'", [pendingApplicantId])).rows[0].count;
+  const directoryFixtures = await pool.query(`
+    INSERT INTO users (id, email, name, profession, account_status)
+    SELECT gen_random_uuid(), 'directory-' || n || '@example.invalid',
+      'AAA Directory Fixture ' || LPAD(n::text, 2, '0'), 'Directory Fixture', 'ACTIVE'
+    FROM generate_series(1, 51) AS n RETURNING id
+  `);
+  const adminDirectoryDbCount = (await pool.query('SELECT COUNT(*)::int AS count FROM users')).rows[0].count;
   const mobileAdminUserList = await fetch(`${base}/api/users`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
   const mobileAdminUserRows = await mobileAdminUserList.json();
   const mobileAdminPendingRows = mobileAdminUserRows.filter(row => row.status === 'PENDING' || row.account_status === 'PENDING');
@@ -532,18 +539,24 @@ async function main() {
   const adminVisitorApplicationRows = await adminVisitorApplications.json();
   const memberApplicantList = await fetch(`${base}/api/users`, { headers: authHeaders });
   const memberApplicantRows = await memberApplicantList.json();
+  const filteredAdminDirectory = await fetch(`${base}/api/users?name=AAA%20Directory%20Fixture`, { headers: adminHeaders });
+  const filteredAdminDirectoryRows = await filteredAdminDirectory.json();
   const memberVisitorApplications = await fetch(`${base}/api/public-visitors`, { headers: authHeaders });
   const unauthenticatedVisitorApplications = await fetch(`${base}/api/public-visitors`);
   if (pendingApplicantDbCount !== 1 || mobileAdminUserList.status !== 200 || !pendingApplicantResponse
       || pendingApplicantResponse.account_status !== 'PENDING'
       || !mobileAdminPendingRows.some(row => row.id === pendingApplicantId)
+      || mobileAdminUserRows.length !== adminDirectoryDbCount
+      || filteredAdminDirectory.status !== 200 || filteredAdminDirectoryRows.length !== 51
       || mobileVisitorApplications.status !== 200 || adminVisitorApplications.status !== 200
       || JSON.stringify(mobileVisitorApplicationRows) !== JSON.stringify(adminVisitorApplicationRows)
       || !mobileVisitorApplicationRows.some(row => row.id === mobileVisitorApplicantId)
       || memberApplicantList.status !== 200 || memberApplicantRows.some(row => Object.hasOwn(row, 'account_status'))
+      || memberApplicantRows.length !== 50
       || memberVisitorApplications.status !== 403 || unauthenticatedVisitorApplications.status !== 401) {
     throw new Error('Mobile admin applications field contract baseline changed');
   }
+  await pool.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [directoryFixtures.rows.map(row => row.id)]);
   const referralCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
   const mobileReferral = await fetch(`${base}/api/referrals`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },

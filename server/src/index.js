@@ -1658,7 +1658,9 @@ app.get('/api/users', authenticateToken, async (req, res) => {
       paramCount++;
     }
 
-    query += ' ORDER BY name ASC LIMIT 50';
+    query += ' ORDER BY name ASC';
+    // Admin application screens filter this collection by account status.
+    if (req.user.role !== 'ADMIN') query += ' LIMIT 50';
     const { rows } = await pool.query(query, params);
 
     // Add full_name alias for frontend compatibility if needed, though frontend uses 'name' mostly

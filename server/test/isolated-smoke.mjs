@@ -448,6 +448,29 @@ async function main() {
     throw new Error(`Ticket list failed without import-time DDL: ${memberTickets.status}`);
   }
   const supportCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM tickets')).rows[0].count;
+  const activityCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM one_to_ones')).rows[0].count;
+  const mobileActivityList = await fetch(`${base}/api/activities`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const mobileActivityCreate = await fetch(`${base}/api/activities`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id_2: otherUserId, status: 'TAMAMLANDI', notes: 'Mobile meeting fixture' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const activityCountAfterMobile = (await pool.query('SELECT COUNT(*)::int AS count FROM one_to_ones')).rows[0].count;
+  const webOneToOneCreate = await fetch(`${base}/api/one-to-ones`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partnerId: otherUserId, meetingDate: new Date().toISOString(), notes: 'Web meeting fixture' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const webOneToOneBody = await webOneToOneCreate.json();
+  const activityCountAfterWeb = (await pool.query('SELECT COUNT(*)::int AS count FROM one_to_ones')).rows[0].count;
+  const webOneToOneList = await fetch(`${base}/api/one-to-ones`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const webOneToOneRows = await webOneToOneList.json();
+  if (mobileActivityList.status !== 404 || mobileActivityCreate.status !== 404
+      || activityCountAfterMobile !== activityCountBefore || webOneToOneCreate.status !== 201
+      || activityCountAfterWeb !== activityCountBefore + 1 || webOneToOneList.status !== 200
+      || !webOneToOneRows.some(row => row.id === webOneToOneBody.id)) {
+    throw new Error('Web/mobile one-to-one activity contract baseline changed');
+  }
   const mobileSupportCreate = await fetch(`${base}/api/support`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ subject: 'Mobile support fixture', message: 'Fixture message' }),
@@ -616,6 +639,9 @@ async function main() {
     supportPathParity: { mobileCreate: mobileSupportCreate.status, mobileRowsAdded: supportCountAfterMobile - supportCountBefore,
       webCreate: webTicketCreate.status, webRowsAdded: supportCountAfterWeb - supportCountAfterMobile,
       mobileAdminList: mobileAdminSupportList.status, webAdminList: webAdminTicketList.status },
+    activityPathParity: { mobileList: mobileActivityList.status, mobileCreate: mobileActivityCreate.status,
+      mobileRowsAdded: activityCountAfterMobile - activityCountBefore, webCreate: webOneToOneCreate.status,
+      webRowsAdded: activityCountAfterWeb - activityCountAfterMobile, webList: webOneToOneList.status },
     manualMigrationEndpoint: manualMigration.status,
     migrationFailureCode,
     localCompatibilityShim: null,

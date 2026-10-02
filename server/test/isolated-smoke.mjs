@@ -358,6 +358,49 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const jsonAdminHeaders = { ...adminHeaders, 'Content-Type': 'application/json' };
+  const rejectedGroup = await fetch(`${base}/api/groups/${groupId}/members/${otherUserId}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'REJECTED' }), signal: AbortSignal.timeout(10_000),
+  });
+  const groupStatusAfterReject = (await pool.query('SELECT status FROM group_members WHERE group_id = $1 AND user_id = $2', [groupId, otherUserId])).rows[0]?.status;
+  const powerTeamId = randomUUID();
+  await pool.query("INSERT INTO power_teams (id, name, status) VALUES ($1, 'HTTP Fixture Power Team', 'ACTIVE')", [powerTeamId]);
+  await pool.query("INSERT INTO power_team_members (user_id, power_team_id, status) VALUES ($1, $2, 'REQUESTED')", [otherUserId, powerTeamId]);
+  const rejectedPowerTeam = await fetch(`${base}/api/power-teams/${powerTeamId}/members/${otherUserId}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'REJECTED' }), signal: AbortSignal.timeout(10_000),
+  });
+  const powerTeamStatusAfterReject = (await pool.query('SELECT status FROM power_team_members WHERE power_team_id = $1 AND user_id = $2', [powerTeamId, otherUserId])).rows[0]?.status;
+  const targetGroupId = randomUUID();
+  await pool.query("INSERT INTO groups (id, name, status) VALUES ($1, 'Move Target Fixture', 'ACTIVE')", [targetGroupId]);
+  const movedMember = await fetch(`${base}/api/admin/move-member`, {
+    method: 'POST', headers: jsonAdminHeaders, body: JSON.stringify({ userId: otherUserId, groupId: targetGroupId }), signal: AbortSignal.timeout(10_000),
+  });
+  const moveStatuses = (await pool.query('SELECT group_id, status FROM group_members WHERE user_id = $1', [otherUserId])).rows;
+  const conversionVisitorId = randomUUID();
+  const conversionEmail = 'status-convert-fixture@example.invalid';
+  await pool.query("INSERT INTO visitors (id, inviter_id, name, email, visited_at, status) VALUES ($1, $2, 'Convert Fixture', $3, NOW(), 'ATTENDED')", [conversionVisitorId, userId, conversionEmail]);
+  const convertAsMember = await fetch(`${base}/api/visitors/${conversionVisitorId}/convert`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const convertedVisitor = await fetch(`${base}/api/visitors/${conversionVisitorId}/convert`, {
+    method: 'POST', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const conversionStatusAfter = (await pool.query('SELECT status FROM visitors WHERE id = $1', [conversionVisitorId])).rows[0]?.status;
+  const conversionUserCount = (await pool.query('SELECT COUNT(*)::int AS count FROM users WHERE email = $1', [conversionEmail])).rows[0].count;
+  const statusHttpBaseline = { groupReject: rejectedGroup.status, groupStatusAfterReject,
+    powerTeamReject: rejectedPowerTeam.status, powerTeamStatusAfterReject,
+    moveMember: movedMember.status, sourceStatusAfterMove: moveStatuses.find(row => row.group_id === groupId)?.status,
+    targetRowsAfterMove: moveStatuses.filter(row => row.group_id === targetGroupId).length,
+    visitorConvertAsMember: convertAsMember.status, visitorConvertAsAdmin: convertedVisitor.status,
+    visitorStatusAfterConvert: conversionStatusAfter, conversionUsersAdded: conversionUserCount };
+  if (statusHttpBaseline.groupReject !== 500 || statusHttpBaseline.groupStatusAfterReject !== 'ACTIVE'
+      || statusHttpBaseline.powerTeamReject !== 500 || statusHttpBaseline.powerTeamStatusAfterReject !== 'REQUESTED'
+      || statusHttpBaseline.moveMember !== 500 || statusHttpBaseline.sourceStatusAfterMove !== 'ACTIVE'
+      || statusHttpBaseline.targetRowsAfterMove !== 0 || statusHttpBaseline.visitorConvertAsMember !== 403
+      || statusHttpBaseline.visitorConvertAsAdmin !== 500 || statusHttpBaseline.visitorStatusAfterConvert !== 'ATTENDED'
+      || statusHttpBaseline.conversionUsersAdded !== 0) {
+    throw new Error(`Status HTTP baseline changed: ${JSON.stringify(statusHttpBaseline)}`);
+  }
   const noInviteRegistration = await fetch(`${base}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: 'No Invite Fixture', email: 'no-invite@example.invalid', password: 'fixture-password', profession: 'Fixture', role: 'MEMBER' }),
@@ -726,6 +769,7 @@ async function main() {
     otherUserNotificationUnchanged: !otherRead,
     notificationMigrationVariants: notificationVariants,
     statusConstraintSqlStates: statusResults,
+    statusHttpBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

@@ -439,6 +439,42 @@ async function main() {
       || membershipGateBaseline.pendingGroupJoin !== 403 || membershipGateBaseline.pendingPowerTeamJoin !== 403) {
     throw new Error(`Membership gate baseline changed: ${JSON.stringify(membershipGateBaseline)}`);
   }
+  const paymentOid = `fixture-${randomUUID()}`;
+  await pool.query(
+    "INSERT INTO payment_transactions (merchant_oid, user_id, plan_id, amount, status, action_type, action_data) VALUES ($1, NULL, '1_MONTH', 100, 'PENDING', 'membership', $2)",
+    [paymentOid, JSON.stringify({ user_id: userId, plan: '1_MONTH', amount: 100 })],
+  );
+  const callbackUrl = `${base}/api/payment/sipay-callback`;
+  const callbackHeaders = { 'Content-Type': 'application/json' };
+  const firstPaymentSuccess = await fetch(`${callbackUrl}/success`, {
+    method: 'POST', headers: callbackHeaders, body: JSON.stringify({ invoice_id: paymentOid }), signal: AbortSignal.timeout(10_000),
+  });
+  const paymentAfterFirst = (await pool.query('SELECT status, user_id FROM payment_transactions WHERE merchant_oid = $1', [paymentOid])).rows[0];
+  const userAfterFirst = (await pool.query('SELECT account_status, subscription_plan, subscription_end_date FROM users WHERE id = $1', [userId])).rows[0];
+  const repeatedPaymentSuccess = await fetch(`${callbackUrl}/success`, {
+    method: 'POST', headers: callbackHeaders, body: JSON.stringify({ invoice_id: paymentOid }), signal: AbortSignal.timeout(10_000),
+  });
+  const userAfterRepeat = (await pool.query('SELECT subscription_end_date FROM users WHERE id = $1', [userId])).rows[0];
+  const latePaymentFailure = await fetch(`${callbackUrl}/fail`, {
+    method: 'POST', headers: callbackHeaders, body: JSON.stringify({ invoice_id: paymentOid, status_description: 'Fixture late failure' }), signal: AbortSignal.timeout(10_000),
+  });
+  const paymentAfterLateFail = (await pool.query('SELECT status, user_id FROM payment_transactions WHERE merchant_oid = $1', [paymentOid])).rows[0];
+  const userAfterLateFail = (await pool.query('SELECT account_status, subscription_end_date FROM users WHERE id = $1', [userId])).rows[0];
+  const paymentCallbackBaseline = { firstSuccess: firstPaymentSuccess.status, repeatedSuccess: repeatedPaymentSuccess.status,
+    lateFail: latePaymentFailure.status, transactionUserMissing: paymentAfterFirst.user_id === null,
+    transactionAfterFirst: paymentAfterFirst.status, membershipPlanAfterFirst: userAfterFirst.subscription_plan,
+    membershipEndWritten: Boolean(userAfterFirst.subscription_end_date),
+    repeatChangedEnd: userAfterRepeat.subscription_end_date?.getTime() !== userAfterFirst.subscription_end_date?.getTime(),
+    transactionAfterLateFail: paymentAfterLateFail.status, userAfterLateFail: userAfterLateFail.account_status,
+    membershipEndAfterLateFail: Boolean(userAfterLateFail.subscription_end_date) };
+  if (paymentCallbackBaseline.firstSuccess !== 200 || paymentCallbackBaseline.repeatedSuccess !== 200
+      || paymentCallbackBaseline.lateFail !== 200 || !paymentCallbackBaseline.transactionUserMissing
+      || paymentCallbackBaseline.transactionAfterFirst !== 'SUCCESS' || paymentCallbackBaseline.membershipPlanAfterFirst !== '1_MONTH'
+      || !paymentCallbackBaseline.membershipEndWritten || paymentCallbackBaseline.repeatChangedEnd
+      || paymentCallbackBaseline.transactionAfterLateFail !== 'FAILED' || paymentCallbackBaseline.userAfterLateFail !== 'ACTIVE'
+      || !paymentCallbackBaseline.membershipEndAfterLateFail) {
+    throw new Error(`Payment callback baseline changed: ${JSON.stringify(paymentCallbackBaseline)}`);
+  }
   const noInviteRegistration = await fetch(`${base}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: 'No Invite Fixture', email: 'no-invite@example.invalid', password: 'fixture-password', profession: 'Fixture', role: 'MEMBER' }),
@@ -829,6 +865,7 @@ async function main() {
     statusConstraintSqlStates: statusResults,
     statusHttpBaseline,
     membershipGateBaseline,
+    paymentCallbackBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

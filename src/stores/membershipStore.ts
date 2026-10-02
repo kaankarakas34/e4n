@@ -25,9 +25,10 @@ export const useMembershipStore = create<MembershipStore>()(
         set({ loading: true, error: null });
         try {
           const data = await api.getMemberships();
+          if (!Array.isArray(data)) throw new Error('Invalid membership list response');
           // Auto-calculate expirations
           const now = new Date();
-          const items = (data || []).map(item => {
+          const items = data.map(item => {
             if (item.status === 'ACTIVE' && new Date(item.end_date) < now) {
               return { ...item, status: 'EXPIRED' as MembershipStatus };
             }

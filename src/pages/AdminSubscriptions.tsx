@@ -24,7 +24,8 @@ import { api } from '../api/api';
 
 export function AdminSubscriptions() {
   const { user } = useAuthStore();
-  const { items: memberships, fetchAll } = useMembershipStore();
+  const { items: memberships, fetchAll, loading, error } = useMembershipStore();
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlan, setFilterPlan] = useState<MembershipPlan | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'PASSIVE' | 'EXPIRING'>('ALL');
@@ -42,7 +43,7 @@ export function AdminSubscriptions() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    fetchAll();
+    fetchAll().finally(() => setHasLoaded(true));
   }, [fetchAll]);
 
   const now = new Date();
@@ -85,23 +86,11 @@ export function AdminSubscriptions() {
     return d > 0 && d <= 5; // Show warning within 5 days to align with reminder period
   };
 
-  // MRR (Monthly Recurring Revenue) Estimator
-  const getMRR = () => {
-    return memberships.reduce((total, m) => {
-      if (isExpired(m) || m.status === 'PASSIVE') return total;
-      if (m.plan === '1_MONTH') return total + 7200;
-      if (m.plan === '6_MONTHS') return total + 6500; // 39000 / 6
-      if (m.plan === '12_MONTHS') return total + 5750; // 69000 / 12
-      return total + 6000; // custom/default plan average
-    }, 0);
-  };
-
   const stats = {
     total: memberships.length,
     active: memberships.filter(m => !isExpired(m) && m.status !== 'PASSIVE').length,
     passive: memberships.filter(m => isExpired(m) || m.status === 'PASSIVE').length,
     expiring: memberships.filter(m => isExpiring(m)).length,
-    mrr: getMRR(),
   };
 
   const filtered = memberships.filter(m => {
@@ -188,6 +177,13 @@ export function AdminSubscriptions() {
   };
 
   if (!user || user.role !== 'ADMIN') return <div className="p-8 text-red-600 font-bold text-center">Erişim Yetkiniz Yok</div>;
+  if (!hasLoaded || loading) return <div role="status" className="p-8">Abonelikler yükleniyor…</div>;
+  if (error) return (
+    <div role="alert" className="p-8 text-red-700">
+      <p>{error}</p>
+      <Button variant="outline" onClick={() => fetchAll()}>Tekrar dene</Button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
@@ -225,7 +221,8 @@ export function AdminSubscriptions() {
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Aylık Tekrarlayan Gelir (MRR)</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-1">₺{stats.mrr.toLocaleString('tr-TR')}</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">Veri yok</p>
+                <p className="text-xs text-slate-500 mt-1">Gelir hesabı için doğrulanmış veri bulunmuyor.</p>
               </div>
               <DollarSign className="h-10 w-10 text-emerald-500 opacity-20" />
             </CardContent>

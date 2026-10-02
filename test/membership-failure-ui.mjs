@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 const states = [];
-let cursor = 0, effect, fail = true;
+let cursor = 0, effect, fail = true, readFail = false, fetchCalls = 0, role = 'ADMIN';
 const fixture = { id: 'fixture', user_id: 'fixture', name: 'Fixture User', plan: '1_MONTH', status: 'ACTIVE', end_date: '2099-01-01T00:00:00Z' };
-const membership = { items: [fixture], fetchAll: async () => {},
+const membership = { items: [fixture], error: null, fetchAll: async () => { fetchCalls++; membership.error = readFail ? 'Fixture read failure' : null; },
   create: async () => { if (fail) throw new Error('Fixture create failure'); },
   renew: async () => { if (fail) throw new Error('Fixture renew failure'); },
   expire: async () => { if (fail) throw new Error('Fixture expire failure'); },
 };
 globalThis.failureMembership = Object.assign(() => membership, { getState: () => membership });
+globalThis.failureAuth = () => ({ user: { id: 'fixture', role } });
 globalThis.failureHooks = {
   useState(initial) { const i = cursor++; if (!(i in states)) states[i] = initial; return [states[i], value => { states[i] = value; }]; },
   useEffect(callback) { effect ??= callback; },
@@ -25,7 +26,7 @@ async function load(path, exportName) {
   compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
     if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
     if (module === 'react') return `const {${names}} = globalThis.failureHooks;`;
-    if (module === '../stores/authStore') return 'const useAuthStore = () => ({ user: { id: "fixture", role: "ADMIN" } });';
+    if (module === '../stores/authStore') return 'const useAuthStore = globalThis.failureAuth;';
     if (module === '../stores/membershipStore') return 'const useMembershipStore = globalThis.failureMembership;';
     if (module === '../api/api') return 'const api = { getUserById: async () => ({ id: "fixture", name: "Fixture User", role: "MEMBER" }) };';
     if (module === 'react-router-dom') return 'const useParams = () => ({ id: "fixture" });';
@@ -67,5 +68,31 @@ try {
   renderProfile(); effect(); await flush();
   await nodes(renderProfile()).find(node => node.props?.children === 'İptal Et').props.onClick();
   assert.deepEqual(alerts, ['Abonelik iptal edilemedi.']);
+  // A failed refresh must not make a persisted subscription look verified or empty.
+  states.length = 0; effect = undefined; membership.items = [fixture]; readFail = true;
+  assert.equal(nodes(renderProfile()).some(node => node.props?.children === 'İptal Et'), false);
+  effect(); await flush();
+  let profileNodes = nodes(renderProfile());
+  assert.ok(profileNodes.some(node => node.props?.role === 'alert'));
+  assert.equal(profileNodes.some(node => node.props?.children === 'İptal Et'), false);
+  assert.equal(profileNodes.some(node => node.props?.children === 'Aktif abonelik yok'), false);
+  readFail = false;
+  await profileNodes.find(node => node.props?.children === 'Tekrar dene').props.onClick();
+  assert.ok(nodes(renderProfile()).some(node => node.props?.children === 'İptal Et'));
+  // Non-admin profiles neither request the admin collection nor expose cached controls.
+  for (role of ['MEMBER', 'PRESIDENT']) {
+    states.length = 0; effect = undefined; membership.items = [fixture];
+    const before = fetchCalls;
+    renderProfile(); effect(); await flush();
+    profileNodes = nodes(renderProfile());
+    assert.equal(fetchCalls, before);
+    assert.ok(profileNodes.some(node => node.props?.children === 'Abonelik yönetimi için yönetici yetkisi gerekiyor.'));
+    assert.equal(profileNodes.some(node => node.props?.children === 'İptal Et'), false);
+    assert.equal(profileNodes.some(node => node.type === 'Button' && node.props?.onClick?.toString().includes('setShowSubscriptionModal')), false);
+  }
+  role = 'ADMIN'; states.length = 0; effect = undefined; membership.items = [];
+  renderProfile(); effect(); await flush();
+  assert.ok(nodes(renderProfile()).some(node => node.type === 'Button' && node.props?.onClick?.toString().includes('setShowSubscriptionModal')));
   console.log('Membership UI: create/renew failures never show payment or profile success; expire failure is caught. No payment provider/mail/network calls.');
+  console.log('Profile subscription read: failed refresh hides cached controls; retry restores them; MEMBER/PRESIDENT skip admin collection; successful empty response permits admin creation.');
 } finally { console.error = originalError; }

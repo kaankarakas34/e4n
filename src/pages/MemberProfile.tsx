@@ -14,8 +14,10 @@ export function MemberProfile() {
   const { id } = useParams();
   const { items, fetchAll, renew, expire, create } = useMembershipStore();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [membershipReady, setMembershipReady] = useState(false);
+  const [membershipError, setMembershipError] = useState<string | null>(null);
 
   const { user: currentUser } = useAuthStore();
   const isMe = currentUser?.id === user?.id;
@@ -34,17 +36,23 @@ export function MemberProfile() {
 
   useEffect(() => {
     loadUser();
-  }, [id, fetchAll]);
+  }, [id, fetchAll, currentUser?.id, currentUser?.role]);
 
   const loadUser = async () => {
     setLoading(true); setError(null);
+    setMembershipReady(false); setMembershipError(null);
     try {
       if (id) {
         const u = await api.getUserById(id);
         setUser(u);
         setEditForm(u);
       }
-      await fetchAll();
+      if (isAdmin) {
+        await fetchAll();
+        const fetchError = useMembershipStore.getState().error;
+        if (fetchError) setMembershipError(fetchError);
+        else setMembershipReady(true);
+      }
     } catch (e) {
       setError('Üye bilgileri yüklenemedi');
     } finally {
@@ -52,7 +60,7 @@ export function MemberProfile() {
     }
   };
 
-  const membership = items.find(m => m.user_id === id);
+  const membership = membershipReady && isAdmin ? items.find(m => m.user_id === id) : undefined;
 
   const ensureMembership = async (plan: string) => {
     let validPlan: MembershipPlan = '1_MONTH';
@@ -62,7 +70,7 @@ export function MemberProfile() {
     if (plan === '8_MONTHS') validPlan = '8_MONTHS';
     if (plan === '1_MONTH' || plan === 'MONTHLY') validPlan = '1_MONTH';
 
-    if (!id || !user) return;
+    if (!id || !user || !isAdmin || !membershipReady || membershipError) return;
     try {
       if (!membership) {
         await create({ user_id: id, plan: validPlan, start_date: new Date().toISOString(), status: 'PENDING' });
@@ -323,7 +331,12 @@ export function MemberProfile() {
           <Card>
             <CardHeader><CardTitle>Abonelik Durumu</CardTitle></CardHeader>
             <CardContent>
-              {membership ? (
+              {!isAdmin ? <p>Abonelik yönetimi için yönetici yetkisi gerekiyor.</p> : membershipError ? (
+                <div role="alert">
+                  <p>{membershipError}</p>
+                  <Button onClick={() => loadUser()}>Tekrar dene</Button>
+                </div>
+              ) : !membershipReady ? <p role="status">Abonelikler yükleniyor…</p> : membership ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">Durum</span>
@@ -356,7 +369,7 @@ export function MemberProfile() {
       </div>
 
       {/* Subscription Selection Modal */}
-      {showSubscriptionModal && (
+      {showSubscriptionModal && isAdmin && membershipReady && !membershipError && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Abonelik Süresi Seçin</h3>

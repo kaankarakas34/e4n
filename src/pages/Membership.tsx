@@ -1,19 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useMembershipStore } from '../stores/membershipStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
-import { Badge } from '../shared/Badge';
 import { Check, Shield, Zap } from 'lucide-react';
 import { MembershipPlan } from '../types';
 import { PaymentModal } from '../components/PaymentModal';
+import { api } from '../api/api';
 
 export function MembershipPage() {
     const { user } = useAuthStore();
     const { items, renew } = useMembershipStore();
 
     // Find current user's membership
-    const currentMembership = items.find(m => m.user_id === user?.id);
+    const cachedMembershipForUpdate = items.find(m => m.user_id === user?.id);
+    const [record, setRecord] = useState<{ id: string; subscription_plan?: string | null; subscription_end_date?: string | null } | null>(null);
+    const [readState, setReadState] = useState<{ userId?: string; loading: boolean; error: string | null }>({ loading: true, error: null });
+    const [retry, setRetry] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+        const userId = user?.id;
+        setRecord(null);
+        setReadState({ userId, loading: true, error: null });
+        if (!userId) return () => { cancelled = true; };
+        api.getMe().then(data => {
+            if (cancelled) return;
+            if (!data || data.id !== userId ||
+                (data.subscription_plan != null && typeof data.subscription_plan !== 'string') ||
+                (data.subscription_end_date != null && typeof data.subscription_end_date !== 'string')) {
+                throw new Error('Invalid own profile response');
+            }
+            setRecord({ id: data.id, subscription_plan: data.subscription_plan, subscription_end_date: data.subscription_end_date });
+            setReadState({ userId, loading: false, error: null });
+        }).catch(() => {
+            if (cancelled) return;
+            setRecord(null);
+            setReadState({ userId, loading: false, error: 'Üyelik bilgileri yüklenemedi.' });
+        });
+        return () => { cancelled = true; };
+    }, [user?.id, retry]);
+
+    const readReady = readState.userId === user?.id && !readState.loading;
+    const ownRecord = readReady && !readState.error && record?.id === user?.id ? record : null;
+    const endDate = ownRecord?.subscription_end_date ? new Date(ownRecord.subscription_end_date) : null;
 
     const [selectedPlan, setSelectedPlan] = useState<{ plan: MembershipPlan, price: number, title: string } | null>(null);
     const [loading, setLoading] = useState(false);
@@ -48,7 +78,7 @@ export function MembershipPage() {
     ];
 
     const formatPlanName = (plan?: string) => {
-        if (!plan) return 'Varsayılan';
+        if (!plan) return 'Veri yok';
         if (plan === '1_MONTH') return 'Aylık Paket';
         if (plan === '6_MONTHS') return '6 Aylık Paket';
         if (plan === '12_MONTHS') return '12 Aylık Paket';
@@ -70,8 +100,8 @@ export function MembershipPage() {
 
         setLoading(true);
         try {
-            if (currentMembership?.id) {
-                await renew(currentMembership.id, selectedPlan.plan, paidAmount);
+            if (cachedMembershipForUpdate?.id) {
+                await renew(cachedMembershipForUpdate.id, selectedPlan.plan, paidAmount);
             } else {
                 await useMembershipStore.getState().create({
                     user_id: user.id!,
@@ -81,6 +111,7 @@ export function MembershipPage() {
                 });
                 await useMembershipStore.getState().fetchAll(); // refresh state
             }
+            setRetry(value => value + 1);
             alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
         } catch (error) {
             console.error('Payment error:', error);
@@ -107,30 +138,35 @@ export function MembershipPage() {
                 </div>
 
                 {/* Current Status */}
-                {currentMembership && (
+                <div className="mb-12" aria-live="polite">
+                    {!readReady ? <p role="status">Üyelik bilgileri yükleniyor…</p> : readState.error ? (
+                        <div role="alert">
+                            <p>{readState.error}</p>
+                            <Button onClick={() => setRetry(value => value + 1)}>Tekrar dene</Button>
+                        </div>
+                    ) : ownRecord && (
                     <div className="mb-12 bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl mx-auto">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                             <Shield className="h-5 w-5 mr-2 text-indigo-600" />
-                            Mevcut Üyelik Durumu
+                            Kayıtlı Üyelik Bilgileri
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
                                 <span className="block text-gray-500">Plan</span>
-                                <span className="font-semibold text-gray-900">{formatPlanName(currentMembership.plan)}</span>
+                                <span className="font-semibold text-gray-900">{formatPlanName(ownRecord.subscription_plan)}</span>
                             </div>
                             <div>
                                 <span className="block text-gray-500">Durum</span>
-                                <Badge className={currentMembership.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                    {currentMembership.status === 'ACTIVE' ? 'Aktif' : currentMembership.status === 'EXPIRED' ? 'Süresi Doldu' : currentMembership.status}
-                                </Badge>
+                                <span>Veri yok</span>
                             </div>
                             <div>
                                 <span className="block text-gray-500">Bitiş Tarihi</span>
-                                <span className="font-semibold text-gray-900">{new Date(currentMembership.end_date).toLocaleDateString('tr-TR')}</span>
+                                <span className="font-semibold text-gray-900">{endDate && !Number.isNaN(endDate.getTime()) ? endDate.toLocaleDateString('tr-TR') : 'Veri yok'}</span>
                             </div>
                         </div>
                     </div>
                 )}
+                </div>
 
                 {/* Pricing Cards */}
                 <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">

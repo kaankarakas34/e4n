@@ -966,6 +966,28 @@ async function main() {
       || monthlyScoreBaseline.hasMonth || monthlyScoreBaseline.hasSource || monthlyScoreBaseline.hasRuleVersion) {
     throw new Error(`Monthly score baseline changed: ${JSON.stringify(monthlyScoreBaseline)}`);
   }
+  await pool.query("UPDATE users SET role = 'PRESIDENT' WHERE id = $1", [otherUserId]);
+  const groupRowsBeforeShuffle = (await pool.query("SELECT COUNT(*)::int AS count FROM group_members WHERE status = 'ACTIVE'")).rows[0].count;
+  const shuffleMember = await fetch(`${base}/api/shuffle/save`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignments: {} }), signal: AbortSignal.timeout(10_000),
+  });
+  const shuffleAdmin = await fetch(`${base}/api/shuffle/save`, {
+    method: 'POST', headers: jsonAdminHeaders, body: JSON.stringify({ assignments: {} }), signal: AbortSignal.timeout(10_000),
+  });
+  const groupRowsAfterShuffle = (await pool.query("SELECT COUNT(*)::int AS count FROM group_members WHERE status = 'ACTIVE'")).rows[0].count;
+  const presidentRoleAfterShuffle = (await pool.query('SELECT role FROM users WHERE id = $1', [otherUserId])).rows[0].role;
+  const missingShuffleNotify = await fetch(`${base}/api/shuffle/notify`, {
+    method: 'POST', headers: jsonAdminHeaders, body: JSON.stringify({ items: {} }), signal: AbortSignal.timeout(10_000),
+  });
+  const shuffleApplyBaseline = { memberStatus: shuffleMember.status, adminStatus: shuffleAdmin.status,
+    activeBefore: groupRowsBeforeShuffle, activeAfter: groupRowsAfterShuffle,
+    presidentRoleAfter: presidentRoleAfterShuffle, notifyStatus: missingShuffleNotify.status };
+  if (shuffleApplyBaseline.memberStatus !== 403 || shuffleApplyBaseline.adminStatus !== 500
+      || shuffleApplyBaseline.activeBefore !== shuffleApplyBaseline.activeAfter
+      || shuffleApplyBaseline.presidentRoleAfter !== 'PRESIDENT' || shuffleApplyBaseline.notifyStatus !== 404) {
+    throw new Error(`Shuffle apply baseline changed: ${JSON.stringify(shuffleApplyBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -1047,6 +1069,7 @@ async function main() {
     placementHistoryBaseline,
     scoreHistoryBaseline,
     monthlyScoreBaseline,
+    shuffleApplyBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

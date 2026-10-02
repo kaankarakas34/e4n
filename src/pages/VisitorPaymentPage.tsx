@@ -36,6 +36,7 @@ export function VisitorPaymentPage() {
 
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<VisitorPaymentFormData | null>(null);
 
@@ -121,6 +122,19 @@ export function VisitorPaymentPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (paymentNotice) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <Helmet><title>Ödeme Bildirimi | Event4Network</title></Helmet>
+        <div role="status" className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Ödeme bildirimi alındı</h2>
+          <p className="text-gray-600 mb-8">Başvurunuzun ve ödemenizin sonucu henüz bu ekranda doğrulanmadı. Tekrar ödeme yapmadan işlem durumunuzu sistem yöneticisiyle kontrol edin.</p>
+          <Button variant="primary" onClick={() => navigate('/')} className="w-full">Ana Sayfaya Dön</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (
@@ -382,8 +396,12 @@ export function VisitorPaymentPage() {
             email: pendingFormData.email,
             phone: pendingFormData.phone
           }}
-          onSuccess={(paymentDetails) => {
-            submitRegistration(pendingFormData, paymentDetails);
+          onSuccess={() => {
+            // The server payment action inserts the visitor record. The popup
+            // notification is not authority to submit another PAID application.
+            setPaymentModalOpen(false);
+            setPendingFormData(null);
+            setPaymentNotice(true);
           }}
           action={{
             type: 'visitor_registration',

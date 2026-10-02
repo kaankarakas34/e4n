@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { useAuthStore } from '../stores/authStore';
@@ -16,17 +16,28 @@ export function EventDetail() {
     const [registering, setRegistering] = useState(false);
     const [registered, setRegistered] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const loadSequence = useRef(0);
 
     useEffect(() => {
         if (id) {
             loadEvent(id);
         }
+        return () => { loadSequence.current++; };
     }, [id, user]);
 
     const loadEvent = async (eventId: string) => {
+        const sequence = ++loadSequence.current;
         setLoading(true);
+        setLoadError(null);
+        setEvent(null);
+        setRegistered(false);
         try {
             const data = await api.getEvent(eventId);
+            if (sequence !== loadSequence.current) return;
+            if (!data || data.id !== eventId || (data.attendees != null && !Array.isArray(data.attendees))) {
+                throw new Error('Invalid event response');
+            }
             setEvent(data);
             if (user && data.attendees?.some((att: any) => att.id === user.id)) {
                 setRegistered(true);
@@ -34,9 +45,9 @@ export function EventDetail() {
                 setRegistered(false);
             }
         } catch (e) {
-            console.error(e);
+            if (sequence === loadSequence.current) setLoadError('Etkinlik bilgileri yüklenemedi.');
         } finally {
-            setLoading(false);
+            if (sequence === loadSequence.current) setLoading(false);
         }
     };
 
@@ -49,15 +60,14 @@ export function EventDetail() {
         }
     }, [event, user]);
 
-    const handlePaymentSuccess = async (paymentDetails?: any) => {
+    const handlePaymentSuccess = async () => {
+        if (!id || !user) return;
         setIsPaymentModalOpen(false);
         setRegistering(true);
+        alert('Ödeme bildirimi alındı. Güncel etkinlik kaydınızı kontrol edin.');
         try {
-            const result = await api.registerForEvent(id!, { payment_status: 'PAID' });
-            setRegistered(true);
-            alert('Ödemeniz başarıyla alındı ve kaydınız tamamlandı! Biletiniz e-posta adresinize gönderilmiştir.');
-        } catch (error: any) {
-            alert('Ödeme başarılı oldu ancak kayıt sırasında bir hata oluştu: ' + (error.error || error.message) + '. Lütfen sistem yöneticisiyle iletişime geçin.');
+            // The recorded payment action is applied by the server callback.
+            await loadEvent(id);
         } finally {
             setRegistering(false);
         }
@@ -96,7 +106,16 @@ export function EventDetail() {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                <div role="status" aria-label="Etkinlik yükleniyor" className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div role="alert" className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                <p>{loadError}</p>
+                <Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button>
             </div>
         );
     }

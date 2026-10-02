@@ -432,6 +432,22 @@ async function main() {
   if (memberDelete.status !== 403 || adminDelete.status !== 200 || deletedUserCount.rows[0].count !== 0) {
     throw new Error(`First admin delete handler changed: MEMBER ${memberDelete.status}, ADMIN ${adminDelete.status}`);
   }
+  const invitedMemberId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'invited-member@example.invalid', 'Invited Member', 'Fixture', 'not-a-real-password')",
+    [invitedMemberId],
+  );
+  const publicVisitorForDelete = await pool.query(
+    "INSERT INTO public_visitors (name, inviter_id) VALUES ('Member Delete Visitor Fixture', $1) RETURNING id", [invitedMemberId],
+  );
+  const invitedMemberDelete = await fetch(`${base}/api/admin/members/${invitedMemberId}`, {
+    method: 'DELETE', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const invitedMemberAfter = (await pool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [invitedMemberId])).rows[0].count;
+  const publicVisitorAfter = (await pool.query('SELECT COUNT(*)::int AS count FROM public_visitors WHERE id = $1 AND inviter_id = $2', [publicVisitorForDelete.rows[0].id, invitedMemberId])).rows[0].count;
+  if (invitedMemberDelete.status !== 500 || invitedMemberAfter !== 1 || publicVisitorAfter !== 1) {
+    throw new Error('Member delete public visitor FK rollback baseline changed');
+  }
   const manualMigration = await fetch(`${base}/api/admin/run-migrations`, {
     method: 'POST', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
   });
@@ -685,6 +701,7 @@ async function main() {
       webStatus: webReferral.status, webRowsAdded: referralCountAfterWeb - referralCountAfterMobile, listStatus: referralList.status },
     championTrigger: { member: memberChampionTrigger.status, admin: adminChampionTrigger.status, firstHandlerMessage: adminChampionBody.message },
     disposableMemberDelete: { member: memberDelete.status, admin: adminDelete.status, remainingRows: deletedUserCount.rows[0].count },
+    invitedMemberDelete: { status: invitedMemberDelete.status, memberRowsAfter: invitedMemberAfter, visitorRowsAfter: publicVisitorAfter },
     userGroupsWithoutId: { status: userGroupsWithoutId.status, count: userGroupsWithoutIdBody.length },
     userGroupsOtherId: { status: userGroupsOtherId.status, count: userGroupsOtherIdBody.length },
     adminStatsAsMember: adminStatsAsMember.status,

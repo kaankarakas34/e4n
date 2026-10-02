@@ -20,6 +20,7 @@ export default function AdminReports() {
     const [trafficLights, setTrafficLights] = useState<any[]>([]);
     const [attendanceStats, setAttendanceStats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -27,16 +28,18 @@ export default function AdminReports() {
 
     const loadData = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
-            // Promise.allSettled might be better to avoid one failure blocking all
             const results = await Promise.allSettled([
-                api.getAdminStats?.() || Promise.resolve({}),
-                api.getAdminCharts?.() || Promise.resolve({}),
-                api.getAdminGroupStats?.() || Promise.resolve([]),
-                api.getAdminGeoStats?.() || Promise.resolve([]),
+                api.getAdminStats(),
+                api.getAdminCharts(),
+                api.getAdminGroupStats(),
+                api.getAdminGeoStats(),
                 api.getTrafficLightReport(),
                 api.getAttendanceReport()
             ]);
+            const failed = results.find(result => result.status === 'rejected');
+            if (failed?.status === 'rejected') throw failed.reason;
 
             // Helper to get fulfilled value or default
             const getVal = (idx: number, def: any) => results[idx].status === 'fulfilled' ? (results[idx] as any).value : def;
@@ -50,6 +53,7 @@ export default function AdminReports() {
 
         } catch (error) {
             console.error('Failed to load reports:', error);
+            setLoadError('Raporlar yüklenemedi. Lütfen tekrar deneyin.');
         } finally {
             setLoading(false);
         }
@@ -59,6 +63,15 @@ export default function AdminReports() {
         return (
             <div className="flex justify-center items-center min-h-screen bg-gray-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div className="p-6 space-y-4">
+                <p role="alert" className="text-red-700">{loadError}</p>
+                <Button onClick={() => void loadData()}>Tekrar dene</Button>
             </div>
         );
     }

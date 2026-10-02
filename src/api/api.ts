@@ -104,14 +104,10 @@ export const api = {
 
   // Admin Reports
   async getAdminStats() {
-    try { return await request('/reports/stats'); } catch {
-      return { totalRevenue: 5425000, internalRevenue: 3255000, externalRevenue: 2170000, totalMembers: 1250, lostMembers: 12, totalGroups: 42, totalPowerTeams: 156, totalEvents: 145, totalVisitors: 320, visitorConversionRate: 18, totalOneToOnes: 854 };
-    }
+    return await request('/reports/stats');
   },
   async getAdminCharts() {
-    try { return await request('/reports/charts'); } catch {
-      return { revenue: [], growth: [] };
-    }
+    return await request('/reports/charts');
   },
 
   // Professions

@@ -881,9 +881,11 @@ app.put('/api/professions/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/professions/:id', async (req, res) => {
+app.delete('/api/professions/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   try {
-    await pool.query("DELETE FROM professions WHERE id = $1", [req.params.id]);
+    const { rowCount } = await pool.query("DELETE FROM professions WHERE id = $1", [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Meslek bulunamadı.' });
     res.sendStatus(204);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

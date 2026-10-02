@@ -516,6 +516,21 @@ async function main() {
   }
   const pendingApplicantId = randomUUID();
   const approvalProfessionId = randomUUID();
+  const deleteProfessionId = randomUUID();
+  await pool.query("INSERT INTO professions (id, name, category, status) VALUES ($1, 'Delete Profession Fixture', 'Fixture', 'APPROVED')", [deleteProfessionId]);
+  const deleteProfessionUrl = `${base}/api/professions/${deleteProfessionId}`;
+  const publicProfessionDelete = await fetch(deleteProfessionUrl, { method: 'DELETE' });
+  const memberProfessionDelete = await fetch(deleteProfessionUrl, { method: 'DELETE', headers: authHeaders });
+  const deniedProfessionDeleteCount = (await pool.query('SELECT COUNT(*)::int AS count FROM professions WHERE id = $1', [deleteProfessionId])).rows[0].count;
+  const adminProfessionDelete = await fetch(deleteProfessionUrl, { method: 'DELETE', headers: adminHeaders });
+  const deletedProfessionCount = (await pool.query('SELECT COUNT(*)::int AS count FROM professions WHERE id = $1', [deleteProfessionId])).rows[0].count;
+  const repeatedProfessionDelete = await fetch(deleteProfessionUrl, { method: 'DELETE', headers: adminHeaders });
+  const missingProfessionDelete = await fetch(`${base}/api/professions/${randomUUID()}`, { method: 'DELETE', headers: adminHeaders });
+  if (publicProfessionDelete.status !== 401 || memberProfessionDelete.status !== 403 || deniedProfessionDeleteCount !== 1
+      || adminProfessionDelete.status !== 204 || deletedProfessionCount !== 0
+      || repeatedProfessionDelete.status !== 404 || missingProfessionDelete.status !== 404) {
+    throw new Error('Profession delete role boundary or missing record response changed');
+  }
   const createProfessionPayload = { name: 'Created Profession Fixture', category: 'Fixture', status: 'APPROVED' };
   const createProfession = (headers, payload = createProfessionPayload) => fetch(`${base}/api/professions`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(payload),

@@ -35,7 +35,7 @@ interface PaymentRecord {
   profession: string;
   created_at: string;
   type: 'VISITOR' | 'MEMBER';
-  amount: number;
+  amount: number | null;
   invoice_url: string | null;
   invoice_issued: boolean;
   tax_number: string | null;
@@ -45,11 +45,16 @@ interface PaymentRecord {
   plan?: string;
 }
 
+const money = (value: number | null) => value != null && Number.isFinite(value) ? `₺${value.toLocaleString('tr-TR')}` : 'Tutar bilgisi yok';
+const totalAmount = (records: PaymentRecord[]) => records.every(p => typeof p.amount === 'number' && Number.isFinite(p.amount))
+  ? records.reduce((sum, p) => sum + p.amount!, 0) : null;
+
 export function AdminAccounting() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Tabs: 'ALL' | 'VISITOR' | 'MEMBER' | 'PENDING' | 'COMPLETED'
@@ -66,10 +71,14 @@ export function AdminAccounting() {
   const fetchPayments = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
+      setSelectedRecord(null);
       const data = await api.getAccountingPayments();
-      setPayments(data || []);
+      if (!Array.isArray(data)) throw new Error('Invalid accounting response');
+      setPayments(data);
     } catch (err) {
       console.error('Ödemeler yüklenirken hata oluştu:', err);
+      setLoadError('Muhasebe kayıtları yüklenemedi. Tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -146,9 +155,8 @@ export function AdminAccounting() {
   const filtered = getFilteredPayments();
 
   const stats = {
-    totalRevenue: payments.reduce((acc, p) => acc + p.amount, 0),
-    visitorRevenue: payments.filter(p => p.type === 'VISITOR').reduce((acc, p) => acc + p.amount, 0),
-    memberRevenue: payments.filter(p => p.type === 'MEMBER').reduce((acc, p) => acc + p.amount, 0),
+    totalRevenue: totalAmount(payments),
+    visitorRevenue: totalAmount(payments.filter(p => p.type === 'VISITOR')),
     pendingInvoices: payments.filter(p => !p.invoice_issued).length,
     completedInvoices: payments.filter(p => p.invoice_issued).length
   };
@@ -176,7 +184,7 @@ export function AdminAccounting() {
               <span className="text-xs font-semibold uppercase tracking-wider">Admin Paneline Dön</span>
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mt-2">Muhasebe &amp; Fatura Yönetimi</h1>
-            <p className="text-slate-500 mt-1 text-sm">Ziyaretçiler ve üyeler tarafından gerçekleştirilen tüm başarılı ödemeleri listeleyip faturalandırabilirsiniz.</p>
+            <p className="text-slate-500 mt-1 text-sm">Ziyaretçi ve üyelik kayıtlarının fatura bilgileri. Eksik tutarlar toplam hesaplanmasını engeller; kayıt tarihi ödeme tarihi değildir.</p>
           </div>
           <Button 
             onClick={() => fetchPayments()} 
@@ -188,12 +196,12 @@ export function AdminAccounting() {
         </div>
 
         {/* Accounting Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {!loading && !loadError && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-white border-l-4 border-l-emerald-500 shadow-sm">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Toplam Tahsilat</p>
-                <p className="text-3xl font-bold text-slate-800 mt-1">₺{stats.totalRevenue.toLocaleString('tr-TR')}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kayıtlı Tutarlar Toplamı</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">{money(stats.totalRevenue)}</p>
               </div>
               <DollarSign className="h-10 w-10 text-emerald-500 opacity-20" />
             </CardContent>
@@ -202,8 +210,8 @@ export function AdminAccounting() {
           <Card className="bg-white border-l-4 border-l-blue-500 shadow-sm">
             <CardContent className="p-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ziyaretçi Geliri (₺1k)</p>
-                <p className="text-3xl font-bold text-slate-800 mt-1">₺{stats.visitorRevenue.toLocaleString('tr-TR')}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ziyaretçi Kayıtlı Tutarları</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">{money(stats.visitorRevenue)}</p>
               </div>
               <User className="h-10 w-10 text-blue-500 opacity-20" />
             </CardContent>
@@ -228,7 +236,7 @@ export function AdminAccounting() {
               <CheckCircle className="h-10 w-10 text-indigo-500 opacity-20" />
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
         {/* Toolbar & Filters */}
         <Card className="bg-white shadow-sm border border-slate-100">
@@ -290,6 +298,11 @@ export function AdminAccounting() {
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto"></div>
               <p className="text-slate-400 mt-4 text-sm font-medium">Ödeme kayıtları yükleniyor...</p>
             </div>
+          ) : loadError ? (
+            <div role="alert" className="p-6 text-red-700">
+              <p>{loadError}</p>
+              <Button variant="outline" onClick={() => fetchPayments()}>Tekrar dene</Button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -297,7 +310,7 @@ export function AdminAccounting() {
                   <tr>
                     <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Ödeyen Bilgisi</th>
                     <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Ödeme Tipi</th>
-                    <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Tutar ve Tarih</th>
+                    <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Tutar ve Kayıt Tarihi</th>
                     <th className="px-6 py-4 text-left font-semibold text-slate-500 uppercase tracking-wider text-xs">Fatura Durumu</th>
                     <th className="px-6 py-4 text-right font-semibold text-slate-500 uppercase tracking-wider text-xs">İşlemler</th>
                   </tr>
@@ -323,7 +336,7 @@ export function AdminAccounting() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-extrabold text-slate-800">₺{p.amount.toLocaleString('tr-TR')}</div>
+                          <div className="font-extrabold text-slate-800">{money(p.amount)}</div>
                           <div className="text-slate-400 text-xs mt-1 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {new Date(p.created_at).toLocaleDateString('tr-TR')}
@@ -416,11 +429,11 @@ export function AdminAccounting() {
             {/* Payment Summary */}
             <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tahsilat Tutarı</p>
-                <p className="text-2xl font-black text-slate-800 mt-0.5">₺{selectedRecord.amount.toLocaleString('tr-TR')}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kayıtlı Tutar</p>
+                <p className="text-2xl font-black text-slate-800 mt-0.5">{money(selectedRecord.amount)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">İşlem Tarihi</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kayıt Tarihi</p>
                 <p className="font-semibold text-slate-800 mt-0.5">{new Date(selectedRecord.created_at).toLocaleDateString('tr-TR')}</p>
               </div>
             </div>

@@ -3740,7 +3740,7 @@ app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) =>
         pv.profession, 
         pv.created_at, 
         'VISITOR' as type, 
-        COALESCE((pv.form_data->>'payment_amount')::float, 1000.00) as amount, 
+        (pv.form_data->>'payment_amount')::float as amount,
         pv.invoice_url, 
         pv.invoice_issued, 
         pv.form_data->>'tax_number' as tax_number, 
@@ -3778,12 +3778,7 @@ app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) =>
     const members = await pool.query(membersQuery);
 
     const mappedMembers = members.rows.map(m => {
-      let amount = m.last_amount ? parseFloat(m.last_amount) : 6000;
-      if (!m.last_amount) {
-        if (m.plan === '1_MONTH') amount = 7200;
-        else if (m.plan === '6_MONTHS') amount = 39000;
-        else if (m.plan === '12_MONTHS') amount = 69000;
-      }
+      const amount = m.last_amount == null ? null : parseFloat(m.last_amount);
       return { ...m, amount };
     });
 

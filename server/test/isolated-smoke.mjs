@@ -870,6 +870,27 @@ async function main() {
     throw new Error('Common event registration repeat/missing/auth baseline changed');
   }
   const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const accountingMembers = [randomUUID(), randomUUID(), randomUUID()];
+  const accountingVisitors = [randomUUID(), randomUUID(), randomUUID()];
+  for (let n = 0; n < 3; n++) {
+    await pool.query(`INSERT INTO users (id, email, name, profession, subscription_plan, subscription_end_date, last_membership_payment_amount)
+      VALUES ($1, $2, 'Accounting Fixture', 'Fixture', $3, NOW() + INTERVAL '1 month', $4)`,
+      [accountingMembers[n], `accounting-${n}@example.invalid`, ['1_MONTH', '6_MONTHS', '12_MONTHS'][n], [null, 0, 125][n]]);
+    await pool.query(`INSERT INTO public_visitors (id, name, email, source, kvkk_accepted, form_data)
+      VALUES ($1, 'Accounting Visitor Fixture', $2, 'visitor_payment', true, $3)`,
+      [accountingVisitors[n], `accounting-visitor-${n}@example.invalid`, JSON.stringify(n === 0 ? { payment_status: 'PAID' } : { payment_status: 'PAID', payment_amount: [null, 0, 25][n] })]);
+  }
+  const accountingList = await fetch(`${base}/api/admin/accounting/payments`, { headers: adminHeaders });
+  const accountingRows = await accountingList.json();
+  const accountingMemberDenied = await fetch(`${base}/api/admin/accounting/payments`, { headers: authHeaders });
+  const accountingPublicDenied = await fetch(`${base}/api/admin/accounting/payments`);
+  if (accountingList.status !== 200 || accountingMemberDenied.status !== 403 || accountingPublicDenied.status !== 401
+      || accountingMembers.some((id, n) => accountingRows.find(row => row.id === id && row.type === 'MEMBER')?.amount !== [null, 0, 125][n])
+      || accountingVisitors.some((id, n) => accountingRows.find(row => row.id === id && row.type === 'VISITOR')?.amount !== [null, 0, 25][n])) {
+    throw new Error('Accounting recorded amount, real zero, unavailable amount or role contract changed');
+  }
+  await pool.query('DELETE FROM public_visitors WHERE id = ANY($1::uuid[])', [accountingVisitors]);
+  await pool.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [accountingMembers]);
   const linkedHistoryOid = `history-linked-${randomUUID()}`;
   const unlinkedHistoryOid = `history-unlinked-${randomUUID()}`;
   await pool.query(`INSERT INTO payment_transactions (merchant_oid, user_id, amount, status, action_type, action_data)

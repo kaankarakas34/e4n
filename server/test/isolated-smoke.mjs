@@ -401,6 +401,35 @@ async function main() {
       || statusHttpBaseline.conversionUsersAdded !== 0) {
     throw new Error(`Status HTTP baseline changed: ${JSON.stringify(statusHttpBaseline)}`);
   }
+  const noSubscription = (await pool.query('SELECT account_status, subscription_plan, subscription_end_date FROM users WHERE id = $1', [userId])).rows[0];
+  const activeGroupJoin = await fetch(`${base}/api/groups/${groupId}/join`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const activePowerTeamJoin = await fetch(`${base}/api/power-teams/${powerTeamId}/join`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const activeJoinStatuses = (await pool.query(
+    'SELECT status FROM group_members WHERE user_id = $1 AND group_id = $2', [userId, groupId],
+  )).rows.map(row => row.status);
+  await pool.query("UPDATE users SET account_status = 'PENDING' WHERE id = $1", [userId]);
+  const pendingGroupJoin = await fetch(`${base}/api/groups/${groupId}/join`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const pendingPowerTeamJoin = await fetch(`${base}/api/power-teams/${powerTeamId}/join`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  await pool.query("UPDATE users SET account_status = 'ACTIVE' WHERE id = $1", [userId]);
+  const membershipGateBaseline = { accountStatus: noSubscription.account_status,
+    hasPlan: noSubscription.subscription_plan !== null, hasEndDate: noSubscription.subscription_end_date !== null,
+    activeGroupJoin: activeGroupJoin.status, activePowerTeamJoin: activePowerTeamJoin.status,
+    groupRequestStatuses: activeJoinStatuses, pendingGroupJoin: pendingGroupJoin.status,
+    pendingPowerTeamJoin: pendingPowerTeamJoin.status };
+  if (membershipGateBaseline.accountStatus !== 'ACTIVE' || membershipGateBaseline.hasPlan || membershipGateBaseline.hasEndDate
+      || membershipGateBaseline.activeGroupJoin !== 200 || membershipGateBaseline.activePowerTeamJoin !== 200
+      || membershipGateBaseline.groupRequestStatuses.join(',') !== 'REQUESTED'
+      || membershipGateBaseline.pendingGroupJoin !== 403 || membershipGateBaseline.pendingPowerTeamJoin !== 403) {
+    throw new Error(`Membership gate baseline changed: ${JSON.stringify(membershipGateBaseline)}`);
+  }
   const noInviteRegistration = await fetch(`${base}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: 'No Invite Fixture', email: 'no-invite@example.invalid', password: 'fixture-password', profession: 'Fixture', role: 'MEMBER' }),
@@ -770,6 +799,7 @@ async function main() {
     notificationMigrationVariants: notificationVariants,
     statusConstraintSqlStates: statusResults,
     statusHttpBaseline,
+    membershipGateBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

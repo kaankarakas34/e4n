@@ -89,13 +89,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 5 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 6 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=5')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=6')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -107,14 +107,21 @@ async function main() {
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
   if (tableCount !== 34) throw new Error(`Repository schema bootstrap expected 34 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
+  await pool.query("DELETE FROM schema_migrations WHERE version = '0006_registration_consents'");
   await pool.query("DELETE FROM schema_migrations WHERE version = '0005_public_visitor_inviter'");
+  await pool.query('ALTER TABLE users DROP COLUMN kvkk_consent, DROP COLUMN marketing_consent, DROP COLUMN explicit_consent, DROP COLUMN consent_date');
   await pool.query('ALTER TABLE public_visitors DROP COLUMN inviter_id');
   const oldVisitorId = randomUUID();
+  const oldConsentUserId = randomUUID();
+  await pool.query("INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'old-consent-fixture@example.invalid', 'Old Consent Fixture', 'Fixture', 'fixture-only')", [oldConsentUserId]);
   await pool.query("INSERT INTO public_visitors (id, name) VALUES ($1, 'Existing Fixture Visitor')", [oldVisitorId]);
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
-  if (visitorUpgrade.applied.length !== 1 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
-      || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null) {
+  const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
+  if (visitorUpgrade.applied.length !== 2 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+      || visitorUpgrade.applied[1] !== '0006_registration_consents'
+      || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null
+      || Object.values(oldConsent).some(value => value !== null)) {
     throw new Error('Existing versioned visitor row was not preserved during 0005 upgrade');
   }
   if (process.env.E4N_SOURCE_SCHEMA_OUTPUT) {
@@ -186,7 +193,7 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 4
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 5
         || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 34 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
@@ -401,7 +408,7 @@ async function main() {
       || statusHttpBaseline.conversionUsersAdded !== 0) {
     throw new Error(`Status HTTP baseline changed: ${JSON.stringify(statusHttpBaseline)}`);
   }
-  const noSubscription = (await pool.query('SELECT account_status, subscription_plan, subscription_end_date FROM users WHERE id = $1', [userId])).rows[0];
+  const noSubscription = (await pool.query('SELECT account_status, subscription_plan, subscription_end_date, company FROM users WHERE id = $1', [userId])).rows[0];
   const activeGroupJoin = await fetch(`${base}/api/groups/${groupId}/join`, {
     method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
   });
@@ -421,10 +428,12 @@ async function main() {
   await pool.query("UPDATE users SET account_status = 'ACTIVE' WHERE id = $1", [userId]);
   const membershipGateBaseline = { accountStatus: noSubscription.account_status,
     hasPlan: noSubscription.subscription_plan !== null, hasEndDate: noSubscription.subscription_end_date !== null,
+    companyMissing: noSubscription.company === null || noSubscription.company === '',
     activeGroupJoin: activeGroupJoin.status, activePowerTeamJoin: activePowerTeamJoin.status,
     groupRequestStatuses: activeJoinStatuses, pendingGroupJoin: pendingGroupJoin.status,
     pendingPowerTeamJoin: pendingPowerTeamJoin.status };
   if (membershipGateBaseline.accountStatus !== 'ACTIVE' || membershipGateBaseline.hasPlan || membershipGateBaseline.hasEndDate
+      || !membershipGateBaseline.companyMissing
       || membershipGateBaseline.activeGroupJoin !== 200 || membershipGateBaseline.activePowerTeamJoin !== 200
       || membershipGateBaseline.groupRequestStatuses.join(',') !== 'REQUESTED'
       || membershipGateBaseline.pendingGroupJoin !== 403 || membershipGateBaseline.pendingPowerTeamJoin !== 403) {
@@ -438,6 +447,23 @@ async function main() {
   const noInviteUserCount = (await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE email = 'no-invite@example.invalid'")).rows[0].count;
   if (noInviteRegistration.status !== 403 || noInviteUserCount !== 0) {
     throw new Error('Active registration invite gate baseline changed');
+  }
+  const noCompanyCommunityRegistration = await fetch(`${base}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'No Company Community Fixture', email: 'no-company-community@example.invalid',
+      password: 'fixture-password', profession: 'Fixture', role: 'COMMUNITY_MEMBER' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const noCompanyCommunityBody = await noCompanyCommunityRegistration.json();
+  const communityWithoutCompany = (await pool.query(
+    "SELECT account_status, role, company, kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE email = 'no-company-community@example.invalid'",
+  )).rows;
+  if (noCompanyCommunityRegistration.status !== 201 || communityWithoutCompany.length !== 1
+      || communityWithoutCompany[0].account_status !== 'ACTIVE' || communityWithoutCompany[0].role !== 'COMMUNITY_MEMBER'
+      || communityWithoutCompany[0].company !== '' || communityWithoutCompany[0].kvkk_consent !== false
+      || communityWithoutCompany[0].marketing_consent !== false || communityWithoutCompany[0].explicit_consent !== false
+      || !communityWithoutCompany[0].consent_date) {
+    throw new Error(`No-company community registration baseline changed: ${JSON.stringify({ status: noCompanyCommunityRegistration.status, body: noCompanyCommunityBody, rows: communityWithoutCompany })}`);
   }
   const pendingApplicantId = randomUUID();
   await pool.query(
@@ -762,6 +788,9 @@ async function main() {
     fixtureLogin: login.status,
     fixtureAdminLogin: adminLogin.status,
     registrationWithoutInvite: { status: noInviteRegistration.status, rowsAdded: noInviteUserCount },
+    communityRegistrationWithoutCompany: { status: noCompanyCommunityRegistration.status,
+      rowsAdded: communityWithoutCompany.length, accountStatus: communityWithoutCompany[0].account_status,
+      companyBlank: communityWithoutCompany[0].company === '' },
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),

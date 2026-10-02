@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { useMembershipStore } from '../stores/membershipStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Check, Shield, Zap } from 'lucide-react';
@@ -10,10 +9,6 @@ import { api } from '../api/api';
 
 export function MembershipPage() {
     const { user } = useAuthStore();
-    const { items, renew } = useMembershipStore();
-
-    // Find current user's membership
-    const cachedMembershipForUpdate = items.find(m => m.user_id === user?.id);
     const [record, setRecord] = useState<{ id: string; subscription_plan?: string | null; subscription_end_date?: string | null } | null>(null);
     const [readState, setReadState] = useState<{ userId?: string; loading: boolean; error: string | null }>({ loading: true, error: null });
     const [retry, setRetry] = useState(0);
@@ -46,7 +41,6 @@ export function MembershipPage() {
     const endDate = ownRecord?.subscription_end_date ? new Date(ownRecord.subscription_end_date) : null;
 
     const [selectedPlan, setSelectedPlan] = useState<{ plan: MembershipPlan, price: number, title: string } | null>(null);
-    const [loading, setLoading] = useState(false);
     const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
 
     const PLANS = [
@@ -93,34 +87,16 @@ export function MembershipPage() {
         setPaymentModalOpen(true);
     };
 
-    const handlePaymentSuccess = async (paymentDetails?: any) => {
+    const handlePaymentSuccess = () => {
         if (!selectedPlan || !user) return;
-
-        const paidAmount = paymentDetails?.finalAmount || selectedPlan.price;
-
-        setLoading(true);
-        try {
-            if (cachedMembershipForUpdate?.id) {
-                await renew(cachedMembershipForUpdate.id, selectedPlan.plan, paidAmount);
-            } else {
-                await useMembershipStore.getState().create({
-                    user_id: user.id!,
-                    plan: selectedPlan.plan,
-                    start_date: new Date().toISOString(),
-                    payment_amount: paidAmount
-                });
-                await useMembershipStore.getState().fetchAll(); // refresh state
-            }
-            setRetry(value => value + 1);
-            alert('Ödemeniz başarıyla alındı ve üyeliğiniz yenilendi!');
-        } catch (error) {
-            console.error('Payment error:', error);
-            alert('Üyelik güncellenemedi. Ödeme durumunuzu kontrol edin.');
-        } finally {
-            setLoading(false);
-            setSelectedPlan(null);
-            setPaymentModalOpen(false);
-        }
+        // The server callback applies the recorded payment action. A popup notification
+        // only triggers a fresh read; it must not grant or extend membership again.
+        setRecord(null);
+        setReadState({ userId: user.id, loading: true, error: null });
+        setRetry(value => value + 1);
+        setSelectedPlan(null);
+        setPaymentModalOpen(false);
+        alert('Ödeme bildirimi alındı. Güncel üyelik bilgilerinizi kontrol edin.');
     };
 
     if (!user) return <div className="p-8 text-center text-gray-600">Lütfen giriş yapın.</div>;
@@ -204,9 +180,9 @@ export function MembershipPage() {
                             <Button
                                 className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-xl text-center font-semibold text-base transition-colors ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
                                 onClick={() => handleSelectPlan(plan)}
-                                disabled={loading}
+                                disabled={isPaymentModalOpen}
                             >
-                                {loading ? 'İşleniyor...' : 'Seç ve Öde'}
+                                Seç ve Öde
                             </Button>
                         </div>
                     ))}

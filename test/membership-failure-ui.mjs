@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 const states = [];
-let cursor = 0, effect, fail = true, readFail = false, fetchCalls = 0, role = 'ADMIN';
+let cursor = 0, effect, fail = true, readFail = false, fetchCalls = 0, writeCalls = 0, role = 'ADMIN';
 const fixture = { id: 'fixture', user_id: 'fixture', name: 'Fixture User', plan: '1_MONTH', status: 'ACTIVE', end_date: '2099-01-01T00:00:00Z' };
 const membership = { items: [fixture], error: null, fetchAll: async () => { fetchCalls++; membership.error = readFail ? 'Fixture read failure' : null; },
-  create: async () => { if (fail) throw new Error('Fixture create failure'); },
-  renew: async () => { if (fail) throw new Error('Fixture renew failure'); },
-  expire: async () => { if (fail) throw new Error('Fixture expire failure'); },
+  create: async () => { writeCalls++; if (fail) throw new Error('Fixture create failure'); },
+  renew: async () => { writeCalls++; if (fail) throw new Error('Fixture renew failure'); },
+  expire: async () => { writeCalls++; if (fail) throw new Error('Fixture expire failure'); },
 };
 globalThis.failureMembership = Object.assign(() => membership, { getState: () => membership });
 globalThis.failureAuth = () => ({ user: { id: 'fixture', role } });
@@ -41,16 +41,23 @@ const renderPayment = () => { cursor = 0; return MembershipPage(); };
 const originalError = console.error;
 console.error = () => {};
 try {
-  for (const items of [[fixture], []]) {
+  for (const scenario of ['ADMIN', 'MEMBER', 'PRESIDENT'].flatMap(role => [[fixture], []].map(items => ({ role, items })))) {
+    const { items } = scenario;
+    role = scenario.role;
     states.length = 0; membership.items = items; alerts.length = 0;
     const planButton = nodes(renderPayment()).find(node => node.type === 'Button' && node.props?.onClick?.toString().includes('handleSelectPlan'));
     assert.ok(planButton);
     await planButton.props.onClick();
     const modal = nodes(renderPayment()).find(node => node.type === 'PaymentModal');
     assert.ok(modal);
+    const beforeWrites = writeCalls, beforeFetch = fetchCalls;
     await modal.props.onSuccess({ finalAmount: 125 });
-    assert.deepEqual(alerts, ['Üyelik güncellenemedi. Ödeme durumunuzu kontrol edin.']);
+    assert.equal(writeCalls, beforeWrites);
+    assert.equal(fetchCalls, beforeFetch);
+    assert.deepEqual(alerts, ['Ödeme bildirimi alındı. Güncel üyelik bilgilerinizi kontrol edin.']);
+    assert.equal(nodes(renderPayment()).some(node => node.type === 'PaymentModal'), false);
   }
+  role = 'ADMIN';
   const MemberProfile = await load('../src/pages/MemberProfile.tsx', 'MemberProfile');
   const renderProfile = () => { cursor = 0; return MemberProfile(); };
   for (const items of [[fixture], []]) {
@@ -93,6 +100,6 @@ try {
   role = 'ADMIN'; states.length = 0; effect = undefined; membership.items = [];
   renderProfile(); effect(); await flush();
   assert.ok(nodes(renderProfile()).some(node => node.type === 'Button' && node.props?.onClick?.toString().includes('setShowSubscriptionModal')));
-  console.log('Membership UI: create/renew failures never show payment or profile success; expire failure is caught. No payment provider/mail/network calls.');
+  console.log('Membership UI: payment notification never writes membership or fetches admin collection, cache present/absent; profile write failures remain caught. No provider/mail/network calls.');
   console.log('Profile subscription read: failed refresh hides cached controls; retry restores them; MEMBER/PRESIDENT skip admin collection; successful empty response permits admin creation.');
 } finally { console.error = originalError; }

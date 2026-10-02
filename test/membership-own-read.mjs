@@ -67,6 +67,23 @@ assert.ok(hasText('Kayıtlı Üyelik Bilgileri'));
 assert.ok(hasText('4 Aylık Paket'));
 assert.equal(hasText('Aktif'), false); // Account status is not a confirmed subscription entitlement.
 assert.ok(hasText('Veri yok'));
+const alerts = [];
+globalThis.alert = text => alerts.push(text);
+const select = nodes(render()).find(node => node.type === 'Button' && node.props?.onClick?.toString().includes('handleSelectPlan'));
+await select.props.onClick();
+const modal = nodes(render()).find(node => node.type === 'PaymentModal');
+assert.equal(modal.props.action.type, 'membership');
+assert.equal(modal.props.action.data.user_id, user.id);
+modal.props.onSuccess({ finalAmount: 0, invoiceId: 'fixture-notification' });
+assert.equal(hasText('Kayıtlı Üyelik Bilgileri'), false);
+assert.deepEqual(alerts, ['Ödeme bildirimi alındı. Güncel üyelik bilgilerinizi kontrol edin.']);
+response = async () => { throw new Error('Fixture refresh failure after notification'); };
+render(); commitEffect(); await flush();
+assert.ok(nodes(render()).some(node => node.props?.role === 'alert'));
+assert.equal(hasText('Kayıtlı Üyelik Bilgileri'), false);
+response = async () => ({ id: user.id, subscription_plan: '1_MONTH', subscription_end_date: '2031-01-01' });
+await retry();
+assert.ok(hasText('Kayıtlı Üyelik Bilgileri'));
 user = { id: 'member-b', role: 'PRESIDENT' };
 assert.equal(hasText('Kayıtlı Üyelik Bilgileri'), false); // Hide A before B's effect runs.
 let resolveOld;

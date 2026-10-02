@@ -89,6 +89,17 @@ async function main() {
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
   if (tableCount !== 34) throw new Error(`Repository schema bootstrap expected 34 tables, found ${tableCount}`);
+  // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
+  await pool.query("DELETE FROM schema_migrations WHERE version = '0005_public_visitor_inviter'");
+  await pool.query('ALTER TABLE public_visitors DROP COLUMN inviter_id');
+  const oldVisitorId = randomUUID();
+  await pool.query("INSERT INTO public_visitors (id, name) VALUES ($1, 'Existing Fixture Visitor')", [oldVisitorId]);
+  const visitorUpgrade = await applyVersionedSchema();
+  const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
+  if (visitorUpgrade.applied.length !== 1 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+      || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null) {
+    throw new Error('Existing versioned visitor row was not preserved during 0005 upgrade');
+  }
   if (process.env.E4N_SOURCE_SCHEMA_OUTPUT) {
     const { rows } = await pool.query(`
       SELECT table_name, column_name, data_type, is_nullable, column_default
@@ -468,6 +479,7 @@ async function main() {
     legacyRepeatAppliedVersions: legacyRepeat?.applied.length,
     legacyRowsPreserved,
     publicVisitorInviterFk: inviterFk.rows[0].count === 1,
+    existingVisitorUpgrade: visitorUpgrade.applied,
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,

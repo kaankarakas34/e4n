@@ -879,6 +879,26 @@ async function main() {
       || capacityBaseline.after !== 36) {
     throw new Error(`Capacity baseline changed: ${JSON.stringify(capacityBaseline)}`);
   }
+  const interviewGroupId = randomUUID();
+  const interviewApplicantId = randomUUID();
+  await pool.query("INSERT INTO groups (id, name, status) VALUES ($1, 'Interview Fixture Group', 'ACTIVE')", [interviewGroupId]);
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'interview-applicant@example.invalid', 'Interview Applicant', 'Interview Profession', 'fixture-only')",
+    [interviewApplicantId],
+  );
+  await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'REQUESTED')", [interviewApplicantId, interviewGroupId]);
+  const memberApprovedWithoutInterview = await fetch(`${base}/api/groups/${interviewGroupId}/members/${interviewApplicantId}`, {
+    method: 'PUT', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'ACTIVE' }), signal: AbortSignal.timeout(10_000),
+  });
+  const interviewApprovalStatus = (await pool.query(
+    'SELECT status FROM group_members WHERE user_id = $1 AND group_id = $2', [interviewApplicantId, interviewGroupId],
+  )).rows[0]?.status;
+  const interviewApprovalBaseline = { memberHttpStatus: memberApprovedWithoutInterview.status,
+    membershipStatus: interviewApprovalStatus };
+  if (interviewApprovalBaseline.memberHttpStatus !== 200 || interviewApprovalBaseline.membershipStatus !== 'ACTIVE') {
+    throw new Error(`Interview approval baseline changed: ${JSON.stringify(interviewApprovalBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -956,6 +976,7 @@ async function main() {
     paymentCallbackBaseline,
     professionConflictBaseline,
     capacityBaseline,
+    interviewApprovalBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

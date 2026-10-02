@@ -1,0 +1,42 @@
+diff --git a/app/admin/professions.tsx b/app/admin/professions.tsx
+index 824b47f..847f083 100644
+--- a/app/admin/professions.tsx
++++ b/app/admin/professions.tsx
+@@ -9,6 +9,7 @@ export default function AdminProfessionsScreen() {
+     const router = useRouter();
+     const [professions, setProfessions] = useState<any[]>([]);
+     const [isLoading, setIsLoading] = useState(true);
++    const [loadError, setLoadError] = useState<string | null>(null);
+     const [searchQuery, setSearchQuery] = useState('');
+ 
+     useEffect(() => {
+@@ -17,11 +18,13 @@ export default function AdminProfessionsScreen() {
+ 
+     const loadData = async () => {
+         setIsLoading(true);
++        setLoadError(null);
+         try {
+             const data = await apiClient.get<any[]>('/professions');
+-            setProfessions(data || []);
++            if (!Array.isArray(data)) throw new Error('Invalid profession list response');
++            setProfessions(data);
+         } catch (error) {
+-            Alert.alert('Hata', 'Meslekler yüklenemedi.');
++            setLoadError('Meslekler yüklenemedi. Tekrar deneyin.');
+         } finally {
+             setIsLoading(false);
+         }
+@@ -70,6 +73,13 @@ export default function AdminProfessionsScreen() {
+                 <View style={styles.center}>
+                     <ActivityIndicator size="large" color="#8b5cf6" />
+                 </View>
++            ) : loadError ? (
++                <View style={styles.center} accessibilityRole="alert">
++                    <Text>{loadError}</Text>
++                    <TouchableOpacity accessibilityRole="button" onPress={() => loadData()}>
++                        <Text>Tekrar dene</Text>
++                    </TouchableOpacity>
++                </View>
+             ) : (
+                 <ScrollView contentContainerStyle={styles.list}>
+                     {filtered.map(p => (

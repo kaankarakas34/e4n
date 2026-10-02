@@ -508,8 +508,24 @@ async function main() {
     headers: authHeaders, signal: AbortSignal.timeout(10_000),
   });
   const attendanceRows = await attendanceList.json();
+  const registrationCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM attendance WHERE event_id = $1 AND user_id = $2', [futureEventId, userId])).rows[0].count;
+  const repeatRegistration = await fetch(`${base}/api/events/${futureEventId}/register`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(10_000),
+  });
+  const repeatRegistrationBody = await repeatRegistration.json();
+  const registrationCountAfter = (await pool.query('SELECT COUNT(*)::int AS count FROM attendance WHERE event_id = $1 AND user_id = $2', [futureEventId, userId])).rows[0].count;
+  const missingEventRegistration = await fetch(`${base}/api/events/${randomUUID()}/register`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(10_000),
+  });
+  const unauthenticatedRegistration = await fetch(`${base}/api/events/${futureEventId}/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(10_000),
+  });
   if (attendanceList.status !== 200 || attendanceRows.length !== 2) {
     throw new Error(`Event attendance route baseline changed: ${attendanceList.status}`);
+  }
+  if (registrationCountBefore !== 1 || repeatRegistration.status !== 200 || repeatRegistrationBody.message !== 'Already registered'
+      || registrationCountAfter !== 1 || missingEventRegistration.status !== 404 || unauthenticatedRegistration.status !== 401) {
+    throw new Error('Common event registration repeat/missing/auth baseline changed');
   }
   const reportStats = await fetch(`${base}/api/reports/stats`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const reportStatsBody = await reportStats.json();
@@ -665,6 +681,9 @@ async function main() {
     adminStatsAsAdmin: adminStats.status,
     adminRouteChecks,
     attendanceList: attendanceList.status,
+    eventRegistrationSharedPath: { repeatStatus: repeatRegistration.status, repeatMessage: repeatRegistrationBody.message,
+      rowsBefore: registrationCountBefore, rowsAfter: registrationCountAfter,
+      missingEventStatus: missingEventRegistration.status, unauthenticatedStatus: unauthenticatedRegistration.status },
     attendanceHasUserNameAlias: Object.hasOwn(attendanceRows[0], 'user_name'),
     reportStats: { status: reportStats.status, visitorConversionRate: reportStatsBody.visitorConversionRate },
     reportCharts: { status: reportCharts.status, revenuePoints: reportChartsBody.revenue?.length },

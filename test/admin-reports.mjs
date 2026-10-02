@@ -66,4 +66,12 @@ assert.ok(!nodes(tree).some(node => node.props?.role === 'alert'));
 assert.equal(nodes(tree).find(node => node.props?.title === 'Toplam Ciro').props.value, '₺0');
 assert.ok(nodes(tree).some(node => node.props?.children === 'Veri yok'));
 assert.ok(!nodes(tree).some(node => node.props?.children === '78.5'));
+globalThis.reportApi.getAdminCharts = async () => ({
+  revenue: [], growth: [], availability: { revenue: false, growth: false },
+});
+retry.props.onClick();
+await flush();
+tree = render();
+assert.equal(nodes(tree).filter(node => node.props?.children === 'Veri yok').length, 3);
+assert.ok(!nodes(tree).some(node => node.type === 'ResponsiveContainer'));
 console.log('AdminReports: failed load shows alert without KPI; retry restores real zero; unavailable average is labeled.');

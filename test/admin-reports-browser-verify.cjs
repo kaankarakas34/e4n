@@ -13,8 +13,7 @@ async (page) => {
     }),
   }));
   if (sizes.page > sizes.viewport) throw new Error('Horizontal page overflow');
-  if (sizes.charts.length !== 2 || sizes.charts.some(chart => chart.width <= 0 || chart.height <= 0)) {
-    throw new Error('Chart dimensions missing');
-  }
+  if (sizes.charts.length !== 0) throw new Error('Unavailable charts should not render a series');
+  if (await page.getByText('Veri yok', { exact: true }).count() !== 3) throw new Error('Unavailable chart labels missing');
   return { retry: 'passed', realZero: 'passed', unavailableScore: 'passed', sizes };
 }

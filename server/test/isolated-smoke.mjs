@@ -703,6 +703,12 @@ async function main() {
   const reportStatsBody = await reportStats.json();
   const reportCharts = await fetch(`${base}/api/reports/charts`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const reportChartsBody = await reportCharts.json();
+  const unauthenticatedCharts = await fetch(`${base}/api/reports/charts`, { signal: AbortSignal.timeout(10_000) });
+  if (reportCharts.status !== 200 || reportChartsBody.revenue?.length !== 0 || reportChartsBody.growth?.length !== 0
+      || reportChartsBody.availability?.revenue !== false || reportChartsBody.availability?.growth !== false
+      || unauthenticatedCharts.status !== 401) {
+    throw new Error('Unavailable monthly report series/auth contract changed');
+  }
   const health = await fetch(`${base}/api/health-check`, { signal: AbortSignal.timeout(10_000) });
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
@@ -1046,7 +1052,9 @@ async function main() {
       missingEventStatus: missingEventRegistration.status, unauthenticatedStatus: unauthenticatedRegistration.status },
     attendanceHasUserNameAlias: Object.hasOwn(attendanceRows[0], 'user_name'),
     reportStats: { status: reportStats.status, visitorConversionRate: reportStatsBody.visitorConversionRate },
-    reportCharts: { status: reportCharts.status, revenuePoints: reportChartsBody.revenue?.length },
+    reportCharts: { status: reportCharts.status, revenuePoints: reportChartsBody.revenue?.length,
+      growthPoints: reportChartsBody.growth?.length, availability: reportChartsBody.availability,
+      unauthenticatedStatus: unauthenticatedCharts.status },
     publicEventList: events.status,
     publicEventCount: publicEvents.length,
     adminEventList: adminEvents.status,

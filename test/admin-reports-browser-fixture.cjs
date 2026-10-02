@@ -10,7 +10,7 @@ async (page) => {
     }
     const data = {
       '/api/reports/stats': { totalRevenue: 0, totalMembers: 0 },
-      '/api/reports/charts': { revenue: [], growth: [] },
+      '/api/reports/charts': { revenue: [], growth: [], availability: { revenue: false, growth: false } },
       '/api/groups': [],
       '/api/reports/traffic-lights': [],
       '/api/reports/attendance-stats': [],

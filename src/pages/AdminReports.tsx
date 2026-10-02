@@ -119,6 +119,9 @@ export default function AdminReports() {
                         <CardTitle>Aylık Ciro Trendi</CardTitle>
                     </CardHeader>
                     <CardContent className="h-80">
+                        {charts?.availability?.revenue === false ? (
+                            <p className="text-gray-500">Veri yok</p>
+                        ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={charts?.revenue || []}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -128,6 +131,7 @@ export default function AdminReports() {
                                 <Area type="monotone" dataKey="value" stroke="#10b981" fill="#d1fae5" name="Ciro" />
                             </AreaChart>
                         </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -136,6 +140,9 @@ export default function AdminReports() {
                         <CardTitle>Üye Büyümesi</CardTitle>
                     </CardHeader>
                     <CardContent className="h-80">
+                        {charts?.availability?.growth === false ? (
+                            <p className="text-gray-500">Veri yok</p>
+                        ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={charts?.growth || []}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -146,6 +153,7 @@ export default function AdminReports() {
                                 <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={3} name="Yeni Üye" />
                             </LineChart>
                         </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </Card>
             </div>

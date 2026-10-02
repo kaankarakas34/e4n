@@ -501,24 +501,11 @@ app.get('/api/reports/stats', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/reports/charts', authenticateToken, async (req, res) => {
-  // Mock chart data for now, ideally group by month from DB
+  // Monthly aggregation has no implemented source yet. Do not report demo series.
   res.json({
-    revenue: [
-      { name: 'Oca', value: 4000 },
-      { name: 'Şub', value: 3000 },
-      { name: 'Mar', value: 2000 },
-      { name: 'Nis', value: 2780 },
-      { name: 'May', value: 1890 },
-      { name: 'Haz', value: 2390 },
-    ],
-    growth: [
-      { name: 'Oca', value: 10 },
-      { name: 'Şub', value: 25 },
-      { name: 'Mar', value: 35 },
-      { name: 'Nis', value: 42 },
-      { name: 'May', value: 48 },
-      { name: 'Haz', value: 55 },
-    ]
+    revenue: [],
+    growth: [],
+    availability: { revenue: false, growth: false },
   });
 });
 

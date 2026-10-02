@@ -899,6 +899,26 @@ async function main() {
   if (interviewApprovalBaseline.memberHttpStatus !== 200 || interviewApprovalBaseline.membershipStatus !== 'ACTIVE') {
     throw new Error(`Interview approval baseline changed: ${JSON.stringify(interviewApprovalBaseline)}`);
   }
+  await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'ACTIVE')", [otherUserId, interviewGroupId]);
+  const multipleActiveGroups = (await pool.query(
+    "SELECT COUNT(*)::int AS count FROM group_members WHERE user_id = $1 AND status = 'ACTIVE'", [otherUserId],
+  )).rows[0].count;
+  const removeAcceptedGroupMember = await fetch(`${base}/api/groups/${interviewGroupId}/members/${interviewApplicantId}`, {
+    method: 'DELETE', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const removedMembershipCount = (await pool.query(
+    'SELECT COUNT(*)::int AS count FROM group_members WHERE user_id = $1 AND group_id = $2', [interviewApplicantId, interviewGroupId],
+  )).rows[0].count;
+  const removedMemberAccountStatus = (await pool.query('SELECT account_status FROM users WHERE id = $1', [interviewApplicantId])).rows[0]?.account_status;
+  const placementHistoryTable = (await pool.query("SELECT to_regclass('public.group_placement_events') AS table_name")).rows[0].table_name;
+  const placementHistoryBaseline = { multipleActiveGroups, removeHttpStatus: removeAcceptedGroupMember.status,
+    remainingMembershipRows: removedMembershipCount, accountStatus: removedMemberAccountStatus,
+    hasPlacementHistoryTable: placementHistoryTable !== null };
+  if (placementHistoryBaseline.multipleActiveGroups !== 2 || placementHistoryBaseline.removeHttpStatus !== 200
+      || placementHistoryBaseline.remainingMembershipRows !== 0 || placementHistoryBaseline.accountStatus !== 'ACTIVE'
+      || placementHistoryBaseline.hasPlacementHistoryTable) {
+    throw new Error(`Placement history baseline changed: ${JSON.stringify(placementHistoryBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -977,6 +997,7 @@ async function main() {
     professionConflictBaseline,
     capacityBaseline,
     interviewApprovalBaseline,
+    placementHistoryBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

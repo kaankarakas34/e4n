@@ -516,6 +516,27 @@ async function main() {
   }
   const pendingApplicantId = randomUUID();
   const approvalProfessionId = randomUUID();
+  const createProfessionPayload = { name: 'Created Profession Fixture', category: 'Fixture', status: 'APPROVED' };
+  const createProfession = (headers, payload = createProfessionPayload) => fetch(`${base}/api/professions`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(payload),
+  });
+  const publicProfessionCreate = await createProfession({});
+  const memberProfessionCreate = await createProfession(authHeaders);
+  const deniedProfessionCreateCount = (await pool.query("SELECT COUNT(*)::int AS count FROM professions WHERE name = $1", [createProfessionPayload.name])).rows[0].count;
+  const adminProfessionCreate = await createProfession(adminHeaders);
+  const createdProfession = await adminProfessionCreate.json();
+  const createdProfessionDbStatus = (await pool.query('SELECT status FROM professions WHERE id = $1', [createdProfession.id])).rows[0]?.status;
+  const defaultProfessionCreate = await createProfession(adminHeaders, { name: 'Default Profession Fixture', category: 'Fixture' });
+  const defaultProfession = await defaultProfessionCreate.json();
+  const invalidProfessionCreate = await createProfession(adminHeaders, { name: 'Invalid Profession Fixture', status: 42 });
+  const invalidProfessionCreateCount = (await pool.query("SELECT COUNT(*)::int AS count FROM professions WHERE name = 'Invalid Profession Fixture'")).rows[0].count;
+  if (publicProfessionCreate.status !== 401 || memberProfessionCreate.status !== 403 || deniedProfessionCreateCount !== 0
+      || adminProfessionCreate.status !== 201 || createdProfession.status !== 'APPROVED' || createdProfessionDbStatus !== 'APPROVED'
+      || defaultProfessionCreate.status !== 201 || defaultProfession.status !== 'ACTIVE'
+      || invalidProfessionCreate.status !== 400 || invalidProfessionCreateCount !== 0) {
+    throw new Error('Profession create status persistence or role boundary changed');
+  }
+  await pool.query('DELETE FROM professions WHERE id = ANY($1::uuid[])', [[createdProfession.id, defaultProfession.id]]);
   await pool.query("INSERT INTO professions (id, name, category, status, created_at) VALUES ($1, 'Approval Profession Fixture', 'Fixture', 'PENDING', '2026-02-03T10:00:00Z')", [approvalProfessionId]);
   const professionApprovalPayload = { name: 'Approval Profession Fixture', category: 'Fixture', status: 'APPROVED' };
   const professionListFixtures = await pool.query(`

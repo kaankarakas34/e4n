@@ -850,12 +850,16 @@ app.get('/api/professions', (req, res, next) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/professions', async (req, res) => {
+app.post('/api/professions', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  const { name, category, status } = req.body;
+  if (status != null && (typeof status !== 'string' || !status.trim() || status.length > 20)) {
+    return res.status(400).json({ error: 'Geçersiz meslek durumu.' });
+  }
   try {
-    const { name, category } = req.body;
     const { rows } = await pool.query(
-      "INSERT INTO professions (name, category) VALUES ($1, $2) RETURNING *",
-      [name, category]
+      "INSERT INTO professions (name, category, status) VALUES ($1, $2, COALESCE($3, 'ACTIVE')) RETURNING *",
+      [name, category, status]
     );
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }

@@ -358,6 +358,15 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const noInviteRegistration = await fetch(`${base}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'No Invite Fixture', email: 'no-invite@example.invalid', password: 'fixture-password', profession: 'Fixture', role: 'MEMBER' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const noInviteUserCount = (await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE email = 'no-invite@example.invalid'")).rows[0].count;
+  if (noInviteRegistration.status !== 403 || noInviteUserCount !== 0) {
+    throw new Error('Active registration invite gate baseline changed');
+  }
   const pendingApplicantId = randomUUID();
   await pool.query(
     "INSERT INTO users (id, email, name, profession, password_hash, account_status) VALUES ($1, 'pending-applicant@example.invalid', 'Pending Applicant', 'Fixture', 'not-a-real-password', 'PENDING')",
@@ -664,6 +673,7 @@ async function main() {
     apiHealth: health.status,
     fixtureLogin: login.status,
     fixtureAdminLogin: adminLogin.status,
+    registrationWithoutInvite: { status: noInviteRegistration.status, rowsAdded: noInviteUserCount },
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),

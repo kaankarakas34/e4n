@@ -3269,21 +3269,6 @@ app.delete('/api/power-teams/:id/members/:userId', authenticateToken, async (req
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Get User's Groups
-app.get('/api/user/groups', authenticateToken, async (req, res) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT g.* FROM groups g
-      JOIN group_members gm ON g.id = gm.group_id
-      WHERE gm.user_id = $1 AND gm.status = 'ACTIVE'
-  `, [req.user.id]);
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-
 // --- SHUFFLE & ROLE MANAGEMENT ---
 
 // Save Shuffle Distribution
@@ -3332,96 +3317,6 @@ VALUES($1, $2, 'ACTIVE', NOW())
   } catch (e) {
     await client.query('ROLLBACK');
     console.error('Shuffle save error:', e);
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
-
-// Delete Member (Cascading)
-app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { id } = req.params;
-
-  // Protect key users
-  // We can fetch user first to check email
-  const checkRes = await pool.query('SELECT email FROM users WHERE id = $1', [id]);
-  if (checkRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-  const email = checkRes.rows[0].email;
-  /* Protected Users Logic Removed as per Request */
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // 1. Delete Dependencies
-    await client.query('DELETE FROM group_members WHERE user_id = $1', [id]);
-    await client.query('DELETE FROM generated_leads WHERE user_id = $1', [id]);
-
-    // Potentially handle Power Teams if table exists
-    try { await client.query('DELETE FROM power_team_members WHERE user_id = $1', [id]); } catch (e) { }
-
-    // Attendance
-    await client.query('DELETE FROM attendance WHERE user_id = $1', [id]);
-
-    // Visitors (invited by user)
-    await client.query('DELETE FROM visitors WHERE inviter_id = $1', [id]);
-
-    // Education
-    await client.query('DELETE FROM education WHERE user_id = $1', [id]);
-
-    // Champions
-    try { await client.query('DELETE FROM champions WHERE user_id = $1', [id]); } catch (e) { }
-
-    // Notifications
-    try { await client.query('DELETE FROM notifications WHERE user_id = $1', [id]); } catch (e) { }
-
-    // Support & Messages
-    await safeDelete('ticket_messages', 'DELETE FROM ticket_messages WHERE sender_id = $1', [id]);
-    await safeDelete('tickets', 'DELETE FROM tickets WHERE user_id = $1', [id]);
-    await safeDelete('messages', 'DELETE FROM messages WHERE sender_id = $1', [id]);
-
-    // Scoring & Revenue
-    await safeDelete('user_score_history', 'DELETE FROM user_score_history WHERE user_id = $1', [id]);
-    await safeDelete('revenue_entries', 'DELETE FROM revenue_entries WHERE user_id = $1', [id]);
-
-    // Referrals (Giver or Receiver)
-    try {
-      await client.query('SAVEPOINT sp_referrals');
-      console.log('Fix: Deleting Referrals (giver only)');
-      await client.query('DELETE FROM referrals WHERE giver_id = $1', [id]);
-      await client.query('RELEASE SAVEPOINT sp_referrals');
-    } catch (e) {
-      await client.query('ROLLBACK TO SAVEPOINT sp_referrals');
-      console.warn('Referral Delete Failed (Ignored):', e.message);
-    }
-
-    // One-to-Ones
-    await client.query('DELETE FROM one_to_ones WHERE requester_id = $1 OR partner_id = $1', [id]);
-
-    // Friend Requests
-    try {
-      await client.query('SAVEPOINT sp_friend_requests');
-      console.log('Fix: Deleting FriendReqs (sender only)');
-      await client.query('DELETE FROM friend_requests WHERE sender_id = $1', [id]);
-      await client.query('RELEASE SAVEPOINT sp_friend_requests');
-    } catch (e) {
-      await client.query('ROLLBACK TO SAVEPOINT sp_friend_requests');
-      console.warn('FriendReq Delete Failed (Ignored):', e.message);
-    }
-
-    // Update Events created by user to NULL
-    await client.query('UPDATE events SET created_by = NULL WHERE created_by = $1', [id]);
-
-    // 2. Finally Delete User
-    await client.query('DELETE FROM users WHERE id = $1', [id]);
-
-    await client.query('COMMIT');
-    res.json({ success: true, message: 'Üye başarıyla silindi.' });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('Delete Member Error:', e);
     res.status(500).json({ error: e.message });
   } finally {
     client.release();
@@ -3506,29 +3401,6 @@ app.get('/api/champions', authenticateToken, async (req, res) => {
     `);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/admin/trigger-champions', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  // Manual trigger for testing/demo
-  const today = new Date();
-  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
-  await calculateChampions('WEEK', weekStart.toISOString(), today.toISOString());
-
-  // Last month
-  const start = new Date(); start.setMonth(start.getMonth() - 1); start.setDate(1);
-  const end = new Date(); end.setDate(0); // Last day of prev month
-  await calculateChampions('MONTH', start.toISOString(), end.toISOString());
-
-  // For manual now, just calculate current month as month
-  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  await calculateChampions('MONTH', currentMonthStart.toISOString(), today.toISOString());
-
-  // Year
-  const yearStart = new Date(today.getFullYear(), 0, 1);
-  await calculateChampions('YEAR', yearStart.toISOString(), today.toISOString());
-
-  res.json({ success: true });
 });
 
 // Assign Role

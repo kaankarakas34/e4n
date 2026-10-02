@@ -358,6 +358,32 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const memberChampionTrigger = await fetch(`${base}/api/admin/trigger-champions`, {
+    method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const adminChampionTrigger = await fetch(`${base}/api/admin/trigger-champions`, {
+    method: 'POST', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const adminChampionBody = await adminChampionTrigger.json();
+  if (memberChampionTrigger.status !== 403 || adminChampionTrigger.status !== 200
+      || adminChampionBody.message !== 'Champions calculation triggered.') {
+    throw new Error('First admin champions handler did not preserve its role and response contract');
+  }
+  const disposableUserId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'disposable@example.invalid', 'Disposable Fixture', 'Fixture', 'not-a-real-password')",
+    [disposableUserId],
+  );
+  const memberDelete = await fetch(`${base}/api/admin/members/${disposableUserId}`, {
+    method: 'DELETE', headers: authHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const adminDelete = await fetch(`${base}/api/admin/members/${disposableUserId}`, {
+    method: 'DELETE', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const deletedUserCount = await pool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [disposableUserId]);
+  if (memberDelete.status !== 403 || adminDelete.status !== 200 || deletedUserCount.rows[0].count !== 0) {
+    throw new Error(`First admin delete handler changed: MEMBER ${memberDelete.status}, ADMIN ${adminDelete.status}`);
+  }
   const manualMigration = await fetch(`${base}/api/admin/run-migrations`, {
     method: 'POST', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
   });
@@ -534,6 +560,8 @@ async function main() {
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),
+    championTrigger: { member: memberChampionTrigger.status, admin: adminChampionTrigger.status, firstHandlerMessage: adminChampionBody.message },
+    disposableMemberDelete: { member: memberDelete.status, admin: adminDelete.status, remainingRows: deletedUserCount.rows[0].count },
     userGroupsWithoutId: { status: userGroupsWithoutId.status, count: userGroupsWithoutIdBody.length },
     userGroupsOtherId: { status: userGroupsOtherId.status, count: userGroupsOtherIdBody.length },
     adminStatsAsMember: adminStatsAsMember.status,

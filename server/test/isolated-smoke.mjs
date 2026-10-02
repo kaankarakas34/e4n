@@ -953,6 +953,19 @@ async function main() {
       || scoreHistoryBaseline.scoreAfterRepeated !== 20 || scoreHistoryBaseline.hasScoreHistoryTable) {
     throw new Error(`Score history baseline changed: ${JSON.stringify(scoreHistoryBaseline)}`);
   }
+  const trafficLights = await fetch(`${base}/api/reports/traffic-lights`, {
+    headers: { Authorization: `Bearer ${scoreToken}` }, signal: AbortSignal.timeout(10_000),
+  });
+  const trafficLightRows = await trafficLights.json();
+  const scoreTrafficLight = trafficLightRows.find(row => row.id === scoreUserId);
+  const monthlyScoreBaseline = { status: trafficLights.status, score: scoreTrafficLight?.score,
+    hasMonth: Object.hasOwn(scoreTrafficLight || {}, 'month'),
+    hasSource: Object.hasOwn(scoreTrafficLight || {}, 'source'),
+    hasRuleVersion: Object.hasOwn(scoreTrafficLight || {}, 'rule_version') };
+  if (monthlyScoreBaseline.status !== 200 || monthlyScoreBaseline.score !== 20
+      || monthlyScoreBaseline.hasMonth || monthlyScoreBaseline.hasSource || monthlyScoreBaseline.hasRuleVersion) {
+    throw new Error(`Monthly score baseline changed: ${JSON.stringify(monthlyScoreBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -1033,6 +1046,7 @@ async function main() {
     interviewApprovalBaseline,
     placementHistoryBaseline,
     scoreHistoryBaseline,
+    monthlyScoreBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

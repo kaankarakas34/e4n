@@ -358,6 +358,28 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const referralCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
+  const mobileReferral = await fetch(`${base}/api/referrals`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiver_id: otherUserId, type: 'INTERNAL', temperature: 'HOT', description: 'Mobile payload fixture' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const referralCountAfterMobile = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
+  const webReferral = await fetch(`${base}/api/referrals`, {
+    method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiverId: otherUserId, type: 'INTERNAL', temperature: 'HOT', description: 'Web payload fixture', amount: 0 }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const webReferralBody = await webReferral.json();
+  const referralCountAfterWeb = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
+  const referralList = await fetch(`${base}/api/referrals`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  const referralRows = await referralList.json();
+  if (mobileReferral.status !== 500 || referralCountAfterMobile !== referralCountBefore
+      || webReferral.status !== 201 || webReferralBody.receiver_id !== otherUserId
+      || referralCountAfterWeb !== referralCountBefore + 1 || referralList.status !== 200
+      || !referralRows.some(row => row.id === webReferralBody.id)) {
+    throw new Error('Web/mobile referral payload and persistence baseline changed');
+  }
   const memberChampionTrigger = await fetch(`${base}/api/admin/trigger-champions`, {
     method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),
   });
@@ -560,6 +582,8 @@ async function main() {
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),
+    referralPayloadParity: { mobileStatus: mobileReferral.status, mobileRowsAdded: referralCountAfterMobile - referralCountBefore,
+      webStatus: webReferral.status, webRowsAdded: referralCountAfterWeb - referralCountAfterMobile, listStatus: referralList.status },
     championTrigger: { member: memberChampionTrigger.status, admin: adminChampionTrigger.status, firstHandlerMessage: adminChampionBody.message },
     disposableMemberDelete: { member: memberDelete.status, admin: adminDelete.status, remainingRows: deletedUserCount.rows[0].count },
     userGroupsWithoutId: { status: userGroupsWithoutId.status, count: userGroupsWithoutIdBody.length },

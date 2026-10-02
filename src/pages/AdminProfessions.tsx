@@ -7,6 +7,12 @@ import { Input } from '../shared/Input';
 import { Plus, Trash2, Edit, Check, X } from 'lucide-react';
 import { Badge } from '../shared/Badge';
 
+function formatProfessionDate(value: unknown) {
+    if (typeof value !== 'string' || !value.trim()) return 'Tarih bilgisi yok';
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? date.toLocaleDateString('tr-TR') : 'Tarih bilgisi yok';
+}
+
 export function AdminProfessions() {
     const [professions, setProfessions] = useState<any[]>([]);
     const [pendingProfessions, setPendingProfessions] = useState<any[]>([]);
@@ -234,7 +240,7 @@ export function AdminProfessions() {
                                                 <span className="font-bold text-lg">{prof.name}</span>
                                             </div>
                                             <div className="text-sm text-gray-500 mt-1">
-                                                Kategori: {prof.category || 'Belirtilmemiş'} • İstenen Tarih: {new Date(prof.created_at).toLocaleDateString()}
+                                                Kategori: {prof.category || 'Belirtilmemiş'} • Kayıt Tarihi: {formatProfessionDate(prof.created_at)}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">

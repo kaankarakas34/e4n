@@ -31,7 +31,10 @@ compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line
 const { AdminProfessions } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 const render = () => { cursor = 0; return AdminProfessions(); };
 const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : !tree || typeof tree !== 'object' ? [] : [tree, ...nodes(tree.props?.children)];
-const hasText = text => nodes(render()).some(node => node.props?.children === text);
+const hasText = text => nodes(render()).some(node => {
+  const children = node.props?.children;
+  return (Array.isArray(children) ? children.flat(Infinity) : [children]).includes(text);
+});
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const clickRetry = () => nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick();
 const originalError = console.error;
@@ -82,6 +85,18 @@ try {
   clickRetry();
   await flush();
   assert.ok(hasText('Bekleyen talep yok.'));
+  for (const created_at of [undefined, null, '', 'not-a-date', 0]) {
+    response = async () => [{ id: 'pending', name: 'Pending profession', status: 'PENDING', created_at }];
+    effect();
+    await flush();
+    assert.ok(hasText('Tarih bilgisi yok'));
+    assert.ok(!hasText('Invalid Date'));
+  }
+  response = async () => [{ id: 'pending', name: 'Pending profession', status: 'PENDING', created_at: '2026-02-03T10:00:00.000Z' }];
+  effect();
+  await flush();
+  assert.ok(hasText(new Date('2026-02-03T10:00:00.000Z').toLocaleDateString('tr-TR')));
+  assert.ok(!hasText('Tarih bilgisi yok'));
   console.log('AdminProfessions: error/empty, malformed response, retry, stale refresh and request race verified.');
 } finally {
   console.error = originalError;

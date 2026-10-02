@@ -838,7 +838,7 @@ app.get('/api/professions', (req, res, next) => {
   const { q } = req.query;
   const isAdmin = req.user?.role === 'ADMIN';
   try {
-    let query = `SELECT id, name, category${isAdmin ? ', status' : ''} FROM professions`;
+    let query = `SELECT id, name, category${isAdmin ? ', status, created_at' : ''} FROM professions`;
     let params = [];
     if (q) {
       query += ' WHERE name ILIKE $1';

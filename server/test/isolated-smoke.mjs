@@ -516,7 +516,7 @@ async function main() {
   }
   const pendingApplicantId = randomUUID();
   const approvalProfessionId = randomUUID();
-  await pool.query("INSERT INTO professions (id, name, category, status) VALUES ($1, 'Approval Profession Fixture', 'Fixture', 'PENDING')", [approvalProfessionId]);
+  await pool.query("INSERT INTO professions (id, name, category, status, created_at) VALUES ($1, 'Approval Profession Fixture', 'Fixture', 'PENDING', '2026-02-03T10:00:00Z')", [approvalProfessionId]);
   const professionApprovalPayload = { name: 'Approval Profession Fixture', category: 'Fixture', status: 'APPROVED' };
   const professionListFixtures = await pool.query(`
     INSERT INTO professions (name, category, status)
@@ -534,10 +534,12 @@ async function main() {
   const searchedProfessionRows = await searchedProfessionList.json();
   const invalidProfessionToken = await fetch(`${base}/api/professions`, { headers: { Authorization: 'Bearer invalid' } });
   if (adminProfessionList.status !== 200 || adminProfessionRows.length !== professionDbCount
-      || !adminProfessionRows.some(row => row.id === approvalProfessionId && row.status === 'PENDING')
+      || !adminProfessionRows.some(row => row.id === approvalProfessionId && row.status === 'PENDING' && row.created_at === '2026-02-03T10:00:00.000Z')
       || publicProfessionList.status !== 200 || publicProfessionRows.length !== 50 || publicProfessionRows.some(row => Object.hasOwn(row, 'status'))
       || memberProfessionList.status !== 200 || memberProfessionRows.length !== 50 || memberProfessionRows.some(row => Object.hasOwn(row, 'status'))
       || searchedProfessionList.status !== 200 || searchedProfessionRows.length !== 1 || searchedProfessionRows[0].id !== approvalProfessionId
+      || publicProfessionRows.some(row => Object.hasOwn(row, 'created_at'))
+      || memberProfessionRows.some(row => Object.hasOwn(row, 'created_at'))
       || invalidProfessionToken.status !== 403) {
     throw new Error('Profession admin list completeness or status boundary changed');
   }

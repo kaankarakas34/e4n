@@ -1637,7 +1637,8 @@ app.post('/api/user/friends/request/:id/reject', authenticateToken, async (req, 
 app.get('/api/users', authenticateToken, async (req, res) => {
   const { name, profession, city } = req.query;
   try {
-    let query = 'SELECT id, name, profession, city, email, phone FROM users WHERE 1=1';
+    const adminFields = req.user.role === 'ADMIN' ? ', account_status' : '';
+    let query = `SELECT id, name, profession, city, email, phone${adminFields} FROM users WHERE 1=1`;
     const params = [];
     let paramCount = 1;
 
@@ -2725,7 +2726,7 @@ app.post('/api/visitors/apply', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/public-visitors', authenticateToken, async (req, res) => {
+app.get(['/api/admin/public-visitors', '/api/public-visitors'], authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Access denied' });
   try {
     const { rows } = await pool.query(`

@@ -524,11 +524,24 @@ async function main() {
   const mobileAdminUserRows = await mobileAdminUserList.json();
   const mobileAdminPendingRows = mobileAdminUserRows.filter(row => row.status === 'PENDING' || row.account_status === 'PENDING');
   const pendingApplicantResponse = mobileAdminUserRows.find(row => row.id === pendingApplicantId);
+  const mobileVisitorApplicantId = randomUUID();
+  await pool.query("INSERT INTO public_visitors (id, name, email) VALUES ($1, 'Mobile Applicant Fixture', 'mobile-applicant@example.invalid')", [mobileVisitorApplicantId]);
   const mobileVisitorApplications = await fetch(`${base}/api/public-visitors`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
   const adminVisitorApplications = await fetch(`${base}/api/admin/public-visitors`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const mobileVisitorApplicationRows = await mobileVisitorApplications.json();
+  const adminVisitorApplicationRows = await adminVisitorApplications.json();
+  const memberApplicantList = await fetch(`${base}/api/users`, { headers: authHeaders });
+  const memberApplicantRows = await memberApplicantList.json();
+  const memberVisitorApplications = await fetch(`${base}/api/public-visitors`, { headers: authHeaders });
+  const unauthenticatedVisitorApplications = await fetch(`${base}/api/public-visitors`);
   if (pendingApplicantDbCount !== 1 || mobileAdminUserList.status !== 200 || !pendingApplicantResponse
-      || Object.hasOwn(pendingApplicantResponse, 'account_status') || mobileAdminPendingRows.length !== 0
-      || mobileVisitorApplications.status !== 404 || adminVisitorApplications.status !== 200) {
+      || pendingApplicantResponse.account_status !== 'PENDING'
+      || !mobileAdminPendingRows.some(row => row.id === pendingApplicantId)
+      || mobileVisitorApplications.status !== 200 || adminVisitorApplications.status !== 200
+      || JSON.stringify(mobileVisitorApplicationRows) !== JSON.stringify(adminVisitorApplicationRows)
+      || !mobileVisitorApplicationRows.some(row => row.id === mobileVisitorApplicantId)
+      || memberApplicantList.status !== 200 || memberApplicantRows.some(row => Object.hasOwn(row, 'account_status'))
+      || memberVisitorApplications.status !== 403 || unauthenticatedVisitorApplications.status !== 401) {
     throw new Error('Mobile admin applications field contract baseline changed');
   }
   const referralCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;

@@ -17,6 +17,10 @@ const savedReferral = { id: 'server-referral', giver_id: 'giver-fixture',
 let shouldFail = true;
 const requestFailure = new Error('Fixture API failure');
 globalThis.referralApiFixture = {
+  getReferralsByUser: async () => {
+    if (shouldFail) throw requestFailure;
+    return [];
+  },
   createReferral: async body => {
     assert.equal(body.giverId, 'giver-fixture');
     assert.equal(body.receiverId, payload.receiverId);
@@ -47,4 +51,12 @@ shouldFail = true;
 await assert.rejects(useReferralStore.getState().createReferral(payload, 'giver-fixture'));
 assert.deepEqual(useReferralStore.getState().referrals, [savedReferral]);
 assert.equal(useReferralStore.getState().loading, false);
+await useReferralStore.getState().fetchReferrals('giver-fixture');
+assert.deepEqual(useReferralStore.getState().referrals, [savedReferral]);
+assert.ok(useReferralStore.getState().error);
+assert.equal(useReferralStore.getState().loading, false);
+shouldFail = false;
+await useReferralStore.getState().fetchReferrals('giver-fixture');
+assert.deepEqual(useReferralStore.getState().referrals, []);
+assert.equal(useReferralStore.getState().error, null);
 console.log('Referral store: old cache cleared; failed writes rejected without fake rows; successful retry uses server record.');

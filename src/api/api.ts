@@ -85,11 +85,7 @@ export const api = {
 
   // Referrals
   async getReferralsByUser(userId: string) {
-    try {
-      return await request(`/referrals?userId=${encodeURIComponent(userId)}`);
-    } catch {
-      return [];
-    }
+    return await request(`/referrals?userId=${encodeURIComponent(userId)}`);
   },
   async _legacy_createReferral(payload: any) {
     return await request('/referrals', { method: 'POST', body: JSON.stringify(payload) });

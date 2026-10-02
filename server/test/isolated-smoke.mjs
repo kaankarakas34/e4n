@@ -919,6 +919,40 @@ async function main() {
       || placementHistoryBaseline.hasPlacementHistoryTable) {
     throw new Error(`Placement history baseline changed: ${JSON.stringify(placementHistoryBaseline)}`);
   }
+  const scoreUserId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'score-fixture@example.invalid', 'Score Fixture', 'Score Profession', $2)",
+    [scoreUserId, fixturePasswordHash],
+  );
+  const scoreLogin = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'score-fixture@example.invalid', password: 'fixture-password' }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const scoreToken = (await scoreLogin.json()).token;
+  if (scoreLogin.status !== 200 || !scoreToken) throw new Error('Score fixture login failed');
+  const visitorScoreBody = { name: 'Repeated Score Visitor', email: 'repeated-score-visitor@example.invalid',
+    visitedAt: new Date().toISOString(), status: 'ATTENDED' };
+  const scoreVisitorHeaders = { Authorization: `Bearer ${scoreToken}`, 'Content-Type': 'application/json' };
+  const firstScoreVisitor = await fetch(`${base}/api/visitors`, {
+    method: 'POST', headers: scoreVisitorHeaders, body: JSON.stringify(visitorScoreBody), signal: AbortSignal.timeout(10_000),
+  });
+  const scoreAfterFirstVisitor = (await pool.query('SELECT performance_score FROM users WHERE id = $1', [scoreUserId])).rows[0].performance_score;
+  const repeatedScoreVisitor = await fetch(`${base}/api/visitors`, {
+    method: 'POST', headers: scoreVisitorHeaders, body: JSON.stringify(visitorScoreBody), signal: AbortSignal.timeout(10_000),
+  });
+  const scoreAfterRepeatedVisitor = (await pool.query('SELECT performance_score FROM users WHERE id = $1', [scoreUserId])).rows[0].performance_score;
+  const repeatedVisitorRows = (await pool.query('SELECT COUNT(*)::int AS count FROM visitors WHERE inviter_id = $1 AND email = $2',
+    [scoreUserId, visitorScoreBody.email])).rows[0].count;
+  const scoreHistoryTable = (await pool.query("SELECT to_regclass('public.user_score_history') AS table_name")).rows[0].table_name;
+  const scoreHistoryBaseline = { firstVisitor: firstScoreVisitor.status, repeatedVisitor: repeatedScoreVisitor.status,
+    visitorRows: repeatedVisitorRows, scoreAfterFirst: scoreAfterFirstVisitor,
+    scoreAfterRepeated: scoreAfterRepeatedVisitor, hasScoreHistoryTable: scoreHistoryTable !== null };
+  if (scoreHistoryBaseline.firstVisitor !== 201 || scoreHistoryBaseline.repeatedVisitor !== 201
+      || scoreHistoryBaseline.visitorRows !== 2 || scoreHistoryBaseline.scoreAfterFirst !== 10
+      || scoreHistoryBaseline.scoreAfterRepeated !== 20 || scoreHistoryBaseline.hasScoreHistoryTable) {
+    throw new Error(`Score history baseline changed: ${JSON.stringify(scoreHistoryBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -998,6 +1032,7 @@ async function main() {
     capacityBaseline,
     interviewApprovalBaseline,
     placementHistoryBaseline,
+    scoreHistoryBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

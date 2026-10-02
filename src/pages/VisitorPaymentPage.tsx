@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, User, Mail, Phone, Building, Briefcase, FileText, Landmark, MapPin, ShieldAlert, ShieldCheck, ArrowRight } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
@@ -28,7 +28,10 @@ type VisitorPaymentFormData = z.infer<typeof visitorPaymentSchema>;
 
 export function VisitorPaymentPage() {
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
+  const { search } = useLocation();
+  const token = new URLSearchParams(search).get('token');
+  const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
+  const verifySequence = useRef(0);
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
   const [inviterName, setInviterName] = useState<string>('');
   const [tokenLoading, setTokenLoading] = useState(false);
@@ -48,20 +51,39 @@ export function VisitorPaymentPage() {
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenParam = params.get('token');
-    if (tokenParam) {
-      setToken(tokenParam);
-      verifyToken(tokenParam);
+    setPaymentModalOpen(false);
+    setPendingFormData(null);
+    if (token) {
+      verifyToken(token);
+    } else {
+      setIsTokenValid(null);
+      setTokenLoading(false);
+      setTokenError(null);
+      setVerifiedToken(null);
     }
-  }, []);
+    return () => { verifySequence.current++; };
+  }, [token]);
+
+  const checkingToken = !!token && (tokenLoading || verifiedToken !== token);
+  const verifiedInvite = !!token && !checkingToken && isTokenValid === true;
+  const inviteBlocked = checkingToken || (!!token && isTokenValid === null);
 
   const verifyToken = async (t: string) => {
+    const sequence = ++verifySequence.current;
     setTokenLoading(true);
+    setIsTokenValid(null);
     setTokenError(null);
     try {
       const res = await api.verifyVisitorInvite(t);
-      if (res.valid) {
+      if (sequence !== verifySequence.current) return;
+      if (!res || typeof res.valid !== 'boolean' ||
+        (res.valid && (typeof res.email !== 'string' || !res.email.trim())) ||
+        (res.inviter_name != null && typeof res.inviter_name !== 'string') ||
+        (res.error != null && typeof res.error !== 'string')) {
+        throw new Error('Invalid invite response');
+      }
+      setVerifiedToken(t);
+      if (res.valid === true) {
         setIsTokenValid(true);
         setInviterName(res.inviter_name || 'E4N Üyesi');
         setValue('email', res.email);
@@ -70,16 +92,18 @@ export function VisitorPaymentPage() {
         setTokenError(res.error || 'Davet linki geçersiz.');
       }
     } catch (err: any) {
-      setIsTokenValid(false);
-      setTokenError('Davetiyenin süresi dolmuş veya geçersiz.');
-      console.error(err);
+      if (sequence !== verifySequence.current) return;
+      setVerifiedToken(t);
+      setIsTokenValid(null);
+      setTokenError('Davetiye kontrol edilemedi. Lütfen tekrar deneyin.');
     } finally {
-      setTokenLoading(false);
+      if (sequence === verifySequence.current) setTokenLoading(false);
     }
   };
 
   const handleFormSubmit = (data: VisitorPaymentFormData) => {
-    if (isTokenValid) {
+    if (isSubmitting || inviteBlocked) return;
+    if (verifiedInvite) {
       // Free registration
       submitRegistration(data, null);
     } else {
@@ -184,14 +208,21 @@ export function VisitorPaymentPage() {
 
           <div className="p-8">
             {/* Token Status Feedback */}
-            {tokenLoading && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center space-x-3 text-blue-700 animate-pulse">
+            {checkingToken && (
+              <div role="status" className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center space-x-3 text-blue-700 animate-pulse">
                 <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-blue-600 animate-spin"></div>
                 <span className="text-sm font-medium">Davetiye kontrol ediliyor...</span>
               </div>
             )}
 
-            {!tokenLoading && token && isTokenValid && (
+            {!checkingToken && tokenError && isTokenValid === null && (
+              <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p>{tokenError}</p>
+                <Button onClick={() => token && verifyToken(token)}>Tekrar dene</Button>
+              </div>
+            )}
+
+            {verifiedInvite && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start space-x-3">
                 <ShieldCheck className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -203,13 +234,13 @@ export function VisitorPaymentPage() {
               </div>
             )}
 
-            {!tokenLoading && token && isTokenValid === false && (
+            {!checkingToken && token && isTokenValid === false && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-3">
                 <ShieldAlert className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-red-800">Davetiye Geçersiz veya Süresi Dolmuş</h4>
+                  <h4 className="text-sm font-bold text-red-800">Davetiye Doğrulanamadı</h4>
                   <p className="text-xs text-red-700 mt-1">
-                    Gönderilen davet bağlantısı 6 saatlik geçerlilik süresini doldurmuş veya geçersizdir. Toplantıya katılmak için 1000 TL katılım bedeli ödemeniz gerekmektedir.
+                    {tokenError || 'Davet bağlantısı geçersiz.'} Ücretli kayıt seçeneğini kullanabilirsiniz.
                   </p>
                 </div>
               </div>
@@ -248,8 +279,8 @@ export function VisitorPaymentPage() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       {...register('email')}
-                      readOnly={!!isTokenValid}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${isTokenValid ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-gray-50'} ${errors.email ? 'border-red-300' : 'border-gray-200'}`}
+                      readOnly={verifiedInvite}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${verifiedInvite ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-gray-50'} ${errors.email ? 'border-red-300' : 'border-gray-200'}`}
                       placeholder="ornek@sirket.com"
                     />
                   </div>
@@ -365,8 +396,9 @@ export function VisitorPaymentPage() {
                   variant="primary"
                   className="w-full h-12 text-lg shadow-lg shadow-red-200 flex items-center justify-center"
                   isLoading={isSubmitting}
+                  disabled={isSubmitting || inviteBlocked}
                 >
-                  {isTokenValid ? (
+                  {verifiedInvite ? (
                     <>
                       Kaydı Tamamla <Check className="ml-2 h-5 w-5" />
                     </>
@@ -382,7 +414,7 @@ export function VisitorPaymentPage() {
         </div>
       </main>
 
-      {isPaymentModalOpen && pendingFormData && (
+      {isPaymentModalOpen && pendingFormData && !inviteBlocked && !verifiedInvite && (
         <PaymentModal
           isOpen={isPaymentModalOpen}
           onClose={() => setPaymentModalOpen(false)}

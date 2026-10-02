@@ -12,7 +12,7 @@ interface PaymentModalProps {
     onClose: () => void;
     planTitle: string;
     amount: number;
-    onSuccess: (paymentDetails?: any) => void;
+    onSuccess: (paymentDetails?: any) => void | Promise<void>;
     isMembership?: boolean;
     initialBillingData?: {
         company?: string;
@@ -56,6 +56,22 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
     });
 
     const wasOpen = useRef(false);
+    const attempt = useRef(0);
+    const pending = useRef(false);
+    const popupCleanup = useRef<(() => void) | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) {
+            pending.current = false;
+            setIsProcessing(false);
+        }
+        return () => {
+            attempt.current++;
+            pending.current = false;
+            popupCleanup.current?.();
+            popupCleanup.current = null;
+        };
+    }, [isOpen]);
 
     // Pre-populate billing data from user store or initial billing data when modal opens
     useEffect(() => {
@@ -148,6 +164,24 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     const handlePaymentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isOpen || pending.current) return;
+        pending.current = true;
+        const currentAttempt = ++attempt.current;
+        const isCurrent = () => attempt.current === currentAttempt;
+        const finish = () => {
+            if (!isCurrent()) return;
+            pending.current = false;
+            setIsProcessing(false);
+        };
+        const notifySuccess = async (invoiceId?: string) => {
+            try {
+                await onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId });
+            } catch {
+                if (isCurrent()) setError('Ödeme bildirimi işlenemedi. Tekrar ödeme yapmadan işlem durumunu kontrol edin.');
+            } finally {
+                finish();
+            }
+        };
         setIsProcessing(true);
         setError('');
 
@@ -155,7 +189,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             const expiryParts = cardData.expiryDate.split('/');
             if (expiryParts.length !== 2) {
                 setError('Geçersiz son kullanma tarihi (AA/YY)');
-                setIsProcessing(false);
+                finish();
                 return;
             }
             const [month, year] = expiryParts;
@@ -174,43 +208,59 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 tax_office: billingData.tax_office,
                 action: action
             });
+            if (!isCurrent()) return;
 
             if (res.success && res.is3D) {
                 // Open a popup for 3D Secure Verification
                 const popup = window.open('', 'Sipay3DPayment', 'width=600,height=700,status=yes,resizable=yes,scrollbars=yes');
-                if (popup) {
-                    popup.document.write(res.html);
-                    popup.document.close();
-                } else {
+                if (!popup) {
                     setError('3D Secure doğrulama penceresi engellendi. Lütfen tarayıcınızın popup engelleyicisini kaldırıp tekrar deneyin.');
-                    setIsProcessing(false);
+                    finish();
                     return;
                 }
 
                 // Listen for verification result from the popup window
                 const handleMessage = (event: MessageEvent) => {
-                    if (event.data && (event.data.status === 'success' || event.data.status === 'fail')) {
-                        window.removeEventListener('message', handleMessage);
+                    if (isCurrent() && event.source === popup && event.data && (event.data.status === 'success' || event.data.status === 'fail')) {
+                        popupCleanup.current?.();
+                        popupCleanup.current = null;
                         if (event.data.status === 'success') {
-                            onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId: event.data.invoice_id });
+                            void notifySuccess(event.data.invoice_id);
                         } else {
                             setError(event.data.message || 'Ödeme banka tarafından reddedildi.');
-                            setIsProcessing(false);
+                            finish();
                         }
                     }
                 };
 
                 window.addEventListener('message', handleMessage);
+                const timer = window.setInterval(() => {
+                    if (isCurrent() && popup.closed) {
+                        popupCleanup.current?.();
+                        popupCleanup.current = null;
+                        setError('Doğrulama penceresi kapandı. Ödeme sonucu doğrulanamadı; tekrar ödeme yapmadan işlem durumunu kontrol edin.');
+                        finish();
+                    }
+                }, 500);
+                popupCleanup.current = () => {
+                    window.removeEventListener('message', handleMessage);
+                    window.clearInterval(timer);
+                };
+                popup.document.write(res.html);
+                popup.document.close();
             } else if (res.success) {
-                onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied });
+                await notifySuccess();
             } else {
                 setError(res.message || 'Ödeme gerçekleştirilemedi.');
-                setIsProcessing(false);
+                finish();
             }
         } catch (err: any) {
+            if (!isCurrent()) return;
+            popupCleanup.current?.();
+            popupCleanup.current = null;
             console.error('POS Payment Error:', err);
             setError(err.message || 'Ödeme sırasında bir hata oluştu.');
-            setIsProcessing(false);
+            finish();
         }
     };
 
@@ -236,7 +286,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 </div>
 
                 {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-lg">
+                    <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-lg">
                         {error}
                     </div>
                 )}

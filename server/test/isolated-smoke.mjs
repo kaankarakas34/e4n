@@ -805,6 +805,48 @@ async function main() {
   if (!notificationVariants.legacy || !notificationVariants.liveShape) {
     throw new Error(`Notification migration variant failed: ${JSON.stringify(notificationVariants)}`);
   }
+  const sameProfessionApplicantId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'same-profession-applicant@example.invalid', 'Same Profession Applicant', 'Other Profession', 'fixture-only')",
+    [sameProfessionApplicantId],
+  );
+  let requestedIntoOccupiedGroupSqlState = null;
+  try { await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'REQUESTED')", [sameProfessionApplicantId, groupId]); }
+  catch (error) { requestedIntoOccupiedGroupSqlState = error.code; }
+  const conflictGroupId = randomUUID();
+  await pool.query("INSERT INTO groups (id, name, status) VALUES ($1, 'Profession Conflict Fixture', 'ACTIVE')", [conflictGroupId]);
+  const directSameProfessionId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'direct-same-profession@example.invalid', 'Direct Same Profession', 'Other Profession', 'fixture-only')",
+    [directSameProfessionId],
+  );
+  await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'REQUESTED'), ($3, $2, 'REQUESTED')", [sameProfessionApplicantId, conflictGroupId, directSameProfessionId]);
+  const approveSameProfession = await fetch(`${base}/api/groups/${conflictGroupId}/members/${sameProfessionApplicantId}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'ACTIVE' }), signal: AbortSignal.timeout(10_000),
+  });
+  const approveSecondSameProfession = await fetch(`${base}/api/groups/${conflictGroupId}/members/${directSameProfessionId}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'ACTIVE' }), signal: AbortSignal.timeout(10_000),
+  });
+  const activeSameProfessionCount = (await pool.query(
+    "SELECT COUNT(*)::int AS count FROM group_members gm JOIN users u ON u.id = gm.user_id WHERE gm.group_id = $1 AND gm.status = 'ACTIVE' AND u.profession = 'Other Profession'",
+    [conflictGroupId],
+  )).rows[0].count;
+  const thirdSameProfessionId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, 'third-same-profession@example.invalid', 'Third Same Profession', 'Other Profession', 'fixture-only')",
+    [thirdSameProfessionId],
+  );
+  let directSameProfessionSqlState = null;
+  try { await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'ACTIVE')", [thirdSameProfessionId, conflictGroupId]); }
+  catch (error) { directSameProfessionSqlState = error.code; }
+  const professionConflictBaseline = { requestedIntoOccupiedGroupSqlState,
+    firstApproval: approveSameProfession.status, secondApproval: approveSecondSameProfession.status,
+    activeSameProfessionCount, directInsertSqlState: directSameProfessionSqlState };
+  if (professionConflictBaseline.requestedIntoOccupiedGroupSqlState !== 'P0001'
+      || professionConflictBaseline.firstApproval !== 200 || professionConflictBaseline.secondApproval !== 200
+      || professionConflictBaseline.activeSameProfessionCount !== 2 || professionConflictBaseline.directInsertSqlState !== 'P0001') {
+    throw new Error(`Profession conflict baseline changed: ${JSON.stringify(professionConflictBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -880,6 +922,7 @@ async function main() {
     membershipGateBaseline,
     openPowerTeamBaseline,
     paymentCallbackBaseline,
+    professionConflictBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

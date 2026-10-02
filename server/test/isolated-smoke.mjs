@@ -358,6 +358,23 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const pendingApplicantId = randomUUID();
+  await pool.query(
+    "INSERT INTO users (id, email, name, profession, password_hash, account_status) VALUES ($1, 'pending-applicant@example.invalid', 'Pending Applicant', 'Fixture', 'not-a-real-password', 'PENDING')",
+    [pendingApplicantId],
+  );
+  const pendingApplicantDbCount = (await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE id = $1 AND account_status = 'PENDING'", [pendingApplicantId])).rows[0].count;
+  const mobileAdminUserList = await fetch(`${base}/api/users`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const mobileAdminUserRows = await mobileAdminUserList.json();
+  const mobileAdminPendingRows = mobileAdminUserRows.filter(row => row.status === 'PENDING' || row.account_status === 'PENDING');
+  const pendingApplicantResponse = mobileAdminUserRows.find(row => row.id === pendingApplicantId);
+  const mobileVisitorApplications = await fetch(`${base}/api/public-visitors`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  const adminVisitorApplications = await fetch(`${base}/api/admin/public-visitors`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
+  if (pendingApplicantDbCount !== 1 || mobileAdminUserList.status !== 200 || !pendingApplicantResponse
+      || Object.hasOwn(pendingApplicantResponse, 'account_status') || mobileAdminPendingRows.length !== 0
+      || mobileVisitorApplications.status !== 404 || adminVisitorApplications.status !== 200) {
+    throw new Error('Mobile admin applications field contract baseline changed');
+  }
   const referralCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
   const mobileReferral = await fetch(`${base}/api/referrals`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
@@ -582,6 +599,10 @@ async function main() {
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),
+    mobileAdminApplications: { databasePendingRows: pendingApplicantDbCount, usersStatus: mobileAdminUserList.status,
+      responseHasApplicant: Boolean(pendingApplicantResponse), responseHasAccountStatus: Object.hasOwn(pendingApplicantResponse, 'account_status'),
+      mobileFilterPendingRows: mobileAdminPendingRows.length, mobileVisitorPathStatus: mobileVisitorApplications.status,
+      adminVisitorPathStatus: adminVisitorApplications.status },
     referralPayloadParity: { mobileStatus: mobileReferral.status, mobileRowsAdded: referralCountAfterMobile - referralCountBefore,
       webStatus: webReferral.status, webRowsAdded: referralCountAfterWeb - referralCountAfterMobile, listStatus: referralList.status },
     championTrigger: { member: memberChampionTrigger.status, admin: adminChampionTrigger.status, firstHandlerMessage: adminChampionBody.message },

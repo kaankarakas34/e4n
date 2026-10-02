@@ -1,0 +1,64 @@
+diff --git a/app/admin/applications.tsx b/app/admin/applications.tsx
+--- a/app/admin/applications.tsx
++++ b/app/admin/applications.tsx
+@@ -11,6 +11,7 @@ export default function AdminApplicationsScreen() {
+     const [visitors, setVisitors] = useState<any[]>([]);
+     const [members, setMembers] = useState<any[]>([]);
+     const [isLoading, setIsLoading] = useState(true);
++    const [loadError, setLoadError] = useState<string | null>(null);
+     const [selectedItem, setSelectedItem] = useState<any>(null);
+ 
+     useEffect(() => {
+@@ -19,15 +20,19 @@ export default function AdminApplicationsScreen() {
+ 
+     const loadData = async () => {
+         setIsLoading(true);
++        setLoadError(null);
+         try {
+             const [vData, mData] = await Promise.all([
+-                apiClient.get<any[]>('/public-visitors').catch(() => []),
+-                apiClient.get<any[]>('/users').catch(() => [])
++                apiClient.get<any[]>('/public-visitors'),
++                apiClient.get<any[]>('/users')
+             ]);
++            if (!Array.isArray(vData) || !Array.isArray(mData)) {
++                throw new Error('Invalid application list response');
++            }
+             setVisitors(vData || []);
+             setMembers((mData || []).filter(m => m.status === 'PENDING' || m.account_status === 'PENDING'));
+         } catch (error) {
+-            Alert.alert('Hata', 'Veriler yüklenemedi.');
++            setLoadError('Başvurular yüklenemedi. Lütfen tekrar deneyin.');
+         } finally {
+             setIsLoading(false);
+         }
+@@ -84,13 +89,13 @@ export default function AdminApplicationsScreen() {
+                     style={[styles.tab, activeTab === 'VISITORS' && styles.activeTab]} 
+                     onPress={() => setActiveTab('VISITORS')}
+                 >
+-                    <Text style={[styles.tabText, activeTab === 'VISITORS' && styles.activeTabText]}>Ziyaretçiler ({visitors.length})</Text>
++                    <Text style={[styles.tabText, activeTab === 'VISITORS' && styles.activeTabText]}>{loadError ? 'Ziyaretçiler' : `Ziyaretçiler (${visitors.length})`}</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity 
+                     style={[styles.tab, activeTab === 'MEMBERS' && styles.activeTab]} 
+                     onPress={() => setActiveTab('MEMBERS')}
+                 >
+-                    <Text style={[styles.tabText, activeTab === 'MEMBERS' && styles.activeTabText]}>Üyelikler ({members.length})</Text>
++                    <Text style={[styles.tabText, activeTab === 'MEMBERS' && styles.activeTabText]}>{loadError ? 'Üyelikler' : `Üyelikler (${members.length})`}</Text>
+                 </TouchableOpacity>
+             </View>
+ 
+@@ -98,6 +103,13 @@ export default function AdminApplicationsScreen() {
+                 <View style={styles.center}>
+                     <ActivityIndicator size="large" color="#ef4444" />
+                 </View>
++            ) : loadError ? (
++                <View style={styles.center}>
++                    <Text accessibilityRole="alert">{loadError}</Text>
++                    <TouchableOpacity accessibilityRole="button" onPress={() => void loadData()}>
++                        <Text>Tekrar dene</Text>
++                    </TouchableOpacity>
++                </View>
+             ) : (
+                 <ScrollView contentContainerStyle={styles.list}>
+                     {activeTab === 'VISITORS' && visitors.map(v => (

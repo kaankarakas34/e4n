@@ -20,11 +20,11 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import os from 'os';
 import multer from 'multer';
-import { runMigrations } from './config/migrate.js';
 import adminRoutes from './routes/admin.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
+const scheduleCron = process.env.NODE_ENV === 'test' ? () => undefined : cron.schedule.bind(cron);
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
 
@@ -233,7 +233,7 @@ const calculateChampions = async (periodType, startDate, endDate) => {
 
 // --- CRON JOBS ---
 // Auto-complete past events every 10 minutes
-cron.schedule('*/10 * * * *', async () => {
+scheduleCron('*/10 * * * *', async () => {
   console.log('Running cron to auto-complete past events...');
   try {
     const res = await pool.query(`
@@ -253,7 +253,7 @@ cron.schedule('*/10 * * * *', async () => {
 
 
 // Weekly: Sunday 23:59
-cron.schedule('59 23 * * 0', async () => {
+scheduleCron('59 23 * * 0', async () => {
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - 7);
@@ -261,7 +261,7 @@ cron.schedule('59 23 * * 0', async () => {
 });
 
 // Monthly: Last day of month 23:59
-cron.schedule('59 23 28-31 * *', async () => {
+scheduleCron('59 23 28-31 * *', async () => {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -273,14 +273,14 @@ cron.schedule('59 23 28-31 * *', async () => {
 });
 
 // Term: End of April, August, December
-cron.schedule('59 23 30 4,8 *', async () => { // Apr 30, Aug 30 (Use 30 for safety)
+scheduleCron('59 23 30 4,8 *', async () => { // Apr 30, Aug 30 (Use 30 for safety)
   const today = new Date();
   const start = new Date(today);
   start.setMonth(start.getMonth() - 3);
   start.setDate(1);
   await calculateChampions('TERM', start.toISOString(), today.toISOString());
 });
-cron.schedule('59 23 31 8,12 *', async () => {
+scheduleCron('59 23 31 8,12 *', async () => {
   const today = new Date();
   const start = new Date(today);
   start.setMonth(start.getMonth() - 3);
@@ -288,7 +288,7 @@ cron.schedule('59 23 31 8,12 *', async () => {
   await calculateChampions('TERM', start.toISOString(), today.toISOString());
 });
 // Yearly: Dec 31
-cron.schedule('59 23 31 12 *', async () => {
+scheduleCron('59 23 31 12 *', async () => {
   const today = new Date();
   const start = new Date(today.getFullYear(), 0, 1);
   await calculateChampions('YEAR', start.toISOString(), today.toISOString());
@@ -1998,20 +1998,6 @@ app.delete('/api/events/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Run Migrations manually (Admin only)
-app.post('/api/admin/run-migrations', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Access denied: Admins only.' });
-  }
-  try {
-    await runMigrations();
-    res.json({ success: true, message: 'Database migrations executed successfully.' });
-  } catch (e) {
-    console.error('Error running manual migration:', e);
-    res.status(500).json({ error: e.message || String(e) });
-  }
-});
-
 app.get('/api/admin/members', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -2510,18 +2496,6 @@ app.post('/api/payment/sipay-callback/success', async (req, res) => {
       );
 
       if (checkExist.rows.length === 0) {
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS title VARCHAR(255)");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS web_linkedin VARCHAR(255)");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS activity_area VARCHAR(255)");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS duration VARCHAR(100)");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS target_customer TEXT");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS why_join TEXT");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
-        await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
-
         const finalFormData = {
           ...(form_data || {}),
           payment_status: 'PAID',
@@ -2778,19 +2752,6 @@ app.post('/api/visitors/apply', async (req, res) => {
         return res.status(201).json(checkExist.rows[0]);
       }
     }
-    // Lazy migration
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS title VARCHAR(255)");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS web_linkedin VARCHAR(255)");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS activity_area VARCHAR(255)");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS duration VARCHAR(100)");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS target_customer TEXT");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS why_join TEXT");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS value_add TEXT");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS previous_groups TEXT");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
-    await pool.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL");
-
     const finalFormData = {
       ...(form_data || {}),
       ...paymentInfo
@@ -2828,8 +2789,6 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
     await client.query('BEGIN');
 
     // 1. Update public_visitors status
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS inviter_id UUID REFERENCES users(id)");
-    await client.query("ALTER TABLE public_visitors ADD COLUMN IF NOT EXISTS form_data JSONB DEFAULT '{}'::jsonb");
     if (form_data) {
       await client.query('UPDATE public_visitors SET status = $1, form_data = COALESCE(form_data, \'{}\'::jsonb) || $3 WHERE id = $2', [status, id, JSON.stringify(form_data)]);
     } else {
@@ -2838,13 +2797,6 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 
     // 2. If it's a conversion to a group, create a record in the visitors table
     if (status === 'CONVERTED' && group_id) {
-      // Lazy migration: Ensure visitors table has necessary columns
-      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company VARCHAR(255)");
-      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS email VARCHAR(255)");
-      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
-      await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS profession VARCHAR(255)");
-      await client.query("ALTER TABLE visitors ALTER COLUMN inviter_id DROP NOT NULL");
-
       // Get visitor details first
       const { rows } = await client.query('SELECT * FROM public_visitors WHERE id = $1', [id]);
       if (rows.length > 0) {
@@ -3543,7 +3495,7 @@ const sendNotification = async (userId, title, message) => {
 };
 
 // Daily Cron: Subscription Reminders (Every day at 09:00)
-cron.schedule('0 9 * * *', async () => {
+scheduleCron('0 9 * * *', async () => {
   console.log('Running daily subscription check...');
   try {
     const { rows } = await pool.query(`
@@ -4157,27 +4109,6 @@ const calculateFixedTermEndDate = (startDate, monthsToAdd) => {
 
 // --- SUPPORT TICKET SYSTEM ---
 
-// Update Schema for Tickets
-pool.query(`
-    CREATE TABLE IF NOT EXISTS tickets(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id),
-    subject VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'OPEN', --OPEN, ANSWERED, CLOSED
-        created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-  );
-
-    CREATE TABLE IF NOT EXISTS ticket_messages(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    ticket_id UUID REFERENCES tickets(id),
-    sender_id UUID REFERENCES users(id),
-    message TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-`).catch(err => console.error('Ticket tables creation error:', err));
-
-
 // Get Tickets
 // User: Gets only their tickets
 // Admin: Gets ALL tickets
@@ -4351,10 +4282,13 @@ if ((process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'tr
 (async () => {
   if (!process.env.VERCEL) {
     try {
-      await runMigrations();
-      console.log('✅ Migrations completed.');
+      const { applyVersionedSchema } = await import('./config/versioned-schema.js');
+      await applyVersionedSchema();
+      console.log('✅ Versioned migrations completed.');
     } catch (e) {
-      console.error('⚠️ Migration Warning (non-fatal):', e.message);
+      console.error('❌ Versioned migration failed; API will not start:', e.message);
+      process.exitCode = 1;
+      return;
     }
   }
 

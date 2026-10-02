@@ -6,6 +6,12 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+// Legacy seed/import helper. Never run implicitly or as the default migration command.
+if (process.env.E4N_ALLOW_LEGACY_SEED !== '1') {
+    console.error('Legacy init/seed helper is disabled; use npm run migrate for versioned schema changes.');
+    process.exit(1);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

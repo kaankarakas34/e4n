@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "migrate": "node migrate_supabase.js",
+    "migrate": "node src/config/run-versioned-schema.js",
     "test:isolated": "node test/isolated-smoke.mjs"
   },
   "dependencies": {

@@ -74,12 +74,29 @@ async function main() {
   process.env.JWT_SECRET = 'isolated_fixture_signing_key';
 
   ({ default: pool } = await import('../src/config/db.js'));
+  let databaseReady = false;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    try {
+      await pool.query('SELECT 1');
+      databaseReady = true;
+      break;
+    } catch {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { runMigrations } = await import('../src/config/migrate.js');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
   if (firstMigration.applied.length !== 5 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
+  }
+  const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
+    cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
+  });
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=5')) {
+    throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
   const tableResult = await pool.query(`
@@ -341,6 +358,30 @@ async function main() {
     throw new Error(`Admin stats route baseline changed: MEMBER ${adminStatsAsMember.status}, ADMIN ${adminStats.status}`);
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
+  const manualMigration = await fetch(`${base}/api/admin/run-migrations`, {
+    method: 'POST', headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  if (manualMigration.status !== 404) throw new Error('HTTP migration endpoint is still active');
+  const visitorApply = await fetch(`${base}/api/visitors/apply`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Schema Fixture Visitor', email: 'schema-fixture@example.invalid', inviter_id: userId }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const visitorApplyBody = await visitorApply.json();
+  const visitorStatus = await fetch(`${base}/api/admin/public-visitors/${visitorApplyBody.id}/status`, {
+    method: 'PUT', headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'CONTACTED', form_data: { fixture: true } }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const visitorRow = await pool.query('SELECT inviter_id, status, form_data FROM public_visitors WHERE id = $1', [visitorApplyBody.id]);
+  if (visitorApply.status !== 201 || visitorStatus.status !== 200 || visitorRow.rows[0]?.inviter_id !== userId
+      || visitorRow.rows[0].status !== 'CONTACTED' || visitorRow.rows[0].form_data.fixture !== true) {
+    throw new Error(`Visitor API failed without request-time DDL: apply ${visitorApply.status}, status ${visitorStatus.status}`);
+  }
+  const memberTickets = await fetch(`${base}/api/tickets`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
+  if (memberTickets.status !== 200 || !Array.isArray(await memberTickets.json())) {
+    throw new Error(`Ticket list failed without import-time DDL: ${memberTickets.status}`);
+  }
   const adminRouteChecks = {};
   for (const path of ['email-config', 'stats/charts', 'stats/groups', 'stats/geo']) {
     const memberResponse = await fetch(`${base}/api/admin/${path}`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
@@ -472,6 +513,7 @@ async function main() {
     sourceTables: tableCount,
     versionedMigrations: firstMigration.applied,
     repeatAppliedVersions: secondMigration.applied.length,
+    migrationCommandAppliedVersions: 0,
     checksumGuard,
     existingSchemaGuard,
     legacyDriftGuard,
@@ -480,6 +522,10 @@ async function main() {
     legacyRowsPreserved,
     publicVisitorInviterFk: inviterFk.rows[0].count === 1,
     existingVisitorUpgrade: visitorUpgrade.applied,
+    visitorApplyWithoutDdl: visitorApply.status,
+    visitorStatusWithoutDdl: visitorStatus.status,
+    ticketListWithoutDdl: memberTickets.status,
+    manualMigrationEndpoint: manualMigration.status,
     migrationFailureCode,
     localCompatibilityShim: null,
     apiHealth: health.status,

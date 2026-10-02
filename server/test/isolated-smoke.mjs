@@ -847,6 +847,38 @@ async function main() {
       || professionConflictBaseline.activeSameProfessionCount !== 2 || professionConflictBaseline.directInsertSqlState !== 'P0001') {
     throw new Error(`Profession conflict baseline changed: ${JSON.stringify(professionConflictBaseline)}`);
   }
+  const capacityGroupId = randomUUID();
+  await pool.query("INSERT INTO groups (id, name, status) VALUES ($1, 'Capacity Fixture Group', 'ACTIVE')", [capacityGroupId]);
+  await pool.query(`
+    INSERT INTO users (email, name, profession, password_hash)
+    SELECT 'capacity-' || n || '@example.invalid', 'Capacity Fixture ' || n,
+           'Capacity Profession ' || n, 'fixture-only'
+    FROM generate_series(1, 34) AS n
+  `);
+  await pool.query(`
+    INSERT INTO group_members (user_id, group_id, status)
+    SELECT id, $1, 'ACTIVE' FROM users WHERE email LIKE 'capacity-%@example.invalid'
+  `, [capacityGroupId]);
+  const capacityCountBefore = (await pool.query("SELECT COUNT(*)::int AS count FROM group_members WHERE group_id = $1 AND status = 'ACTIVE'", [capacityGroupId])).rows[0].count;
+  const capacityApplicantIds = [randomUUID(), randomUUID()];
+  for (const [index, applicantId] of capacityApplicantIds.entries()) {
+    await pool.query(
+      'INSERT INTO users (id, email, name, profession, password_hash) VALUES ($1, $2, $3, $4, $5)',
+      [applicantId, `capacity-applicant-${index}@example.invalid`, `Capacity Applicant ${index}`, `Capacity Applicant Profession ${index}`, 'fixture-only'],
+    );
+    await pool.query("INSERT INTO group_members (user_id, group_id, status) VALUES ($1, $2, 'REQUESTED')", [applicantId, capacityGroupId]);
+  }
+  const capacityApprovals = await Promise.all(capacityApplicantIds.map(applicantId => fetch(
+    `${base}/api/groups/${capacityGroupId}/members/${applicantId}`,
+    { method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'ACTIVE' }), signal: AbortSignal.timeout(10_000) },
+  )));
+  const capacityCountAfter = (await pool.query("SELECT COUNT(*)::int AS count FROM group_members WHERE group_id = $1 AND status = 'ACTIVE'", [capacityGroupId])).rows[0].count;
+  const capacityBaseline = { before: capacityCountBefore, approvals: capacityApprovals.map(response => response.status),
+    after: capacityCountAfter };
+  if (capacityBaseline.before !== 34 || capacityBaseline.approvals.some(status => status !== 200)
+      || capacityBaseline.after !== 36) {
+    throw new Error(`Capacity baseline changed: ${JSON.stringify(capacityBaseline)}`);
+  }
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',
@@ -923,6 +955,7 @@ async function main() {
     openPowerTeamBaseline,
     paymentCallbackBaseline,
     professionConflictBaseline,
+    capacityBaseline,
     fixtureEventsAfterGet: eventRows.length,
     eventStatusesAfterGet: eventRows.map(row => row.status),
   }, null, 2));

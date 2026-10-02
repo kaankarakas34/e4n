@@ -534,9 +534,11 @@ async function main() {
   const referralCountBefore = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
   const mobileReferral = await fetch(`${base}/api/referrals`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ receiver_id: otherUserId, type: 'INTERNAL', temperature: 'HOT', description: 'Mobile payload fixture' }),
+    body: JSON.stringify({ receiver_id: otherUserId, giverId: adminUserId, giver_id: adminUserId,
+      type: 'INTERNAL', temperature: 'HOT', description: 'Mobile payload fixture' }),
     signal: AbortSignal.timeout(10_000),
   });
+  const mobileReferralBody = await mobileReferral.json();
   const referralCountAfterMobile = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
   const webReferral = await fetch(`${base}/api/referrals`, {
     method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
@@ -547,11 +549,35 @@ async function main() {
   const referralCountAfterWeb = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
   const referralList = await fetch(`${base}/api/referrals`, { headers: authHeaders, signal: AbortSignal.timeout(10_000) });
   const referralRows = await referralList.json();
-  if (mobileReferral.status !== 500 || referralCountAfterMobile !== referralCountBefore
+  if (mobileReferral.status !== 201 || referralCountAfterMobile !== referralCountBefore + 1
+      || mobileReferralBody.receiver_id !== otherUserId || mobileReferralBody.giver_id !== userId
       || webReferral.status !== 201 || webReferralBody.receiver_id !== otherUserId
-      || referralCountAfterWeb !== referralCountBefore + 1 || referralList.status !== 200
-      || !referralRows.some(row => row.id === webReferralBody.id)) {
+      || referralCountAfterWeb !== referralCountBefore + 2 || referralList.status !== 200
+      || !referralRows.some(row => row.id === webReferralBody.id)
+      || !referralRows.some(row => row.id === mobileReferralBody.id)) {
     throw new Error('Web/mobile referral payload and persistence baseline changed');
+  }
+  for (const payload of [{}, { receiverId: 'not-a-uuid' }, { receiver_id: '' },
+    { receiverId: otherUserId, receiver_id: adminUserId }]) {
+    const invalidReferral = await fetch(`${base}/api/referrals`, {
+      method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload), signal: AbortSignal.timeout(10_000),
+    });
+    if (invalidReferral.status !== 400) throw new Error('Invalid referral recipient must return 400');
+  }
+  const unauthenticatedReferral = await fetch(`${base}/api/referrals`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiver_id: otherUserId }), signal: AbortSignal.timeout(10_000),
+  });
+  const unrelatedReferralList = await fetch(`${base}/api/referrals?userId=${userId}`, {
+    headers: adminHeaders, signal: AbortSignal.timeout(10_000),
+  });
+  const unrelatedReferralRows = await unrelatedReferralList.json();
+  const referralCountAfterInvalid = (await pool.query('SELECT COUNT(*)::int AS count FROM referrals')).rows[0].count;
+  if (unauthenticatedReferral.status !== 401 || unrelatedReferralList.status !== 200
+      || unrelatedReferralRows.some(row => [webReferralBody.id, mobileReferralBody.id].includes(row.id))
+      || referralCountAfterInvalid !== referralCountAfterWeb) {
+    throw new Error('Referral sender/list scope or invalid-write boundary changed');
   }
   const memberChampionTrigger = await fetch(`${base}/api/admin/trigger-champions`, {
     method: 'POST', headers: authHeaders, signal: AbortSignal.timeout(10_000),

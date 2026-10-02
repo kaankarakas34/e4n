@@ -1428,7 +1428,14 @@ app.get('/api/referrals', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/referrals', authenticateToken, async (req, res) => {
-  const { receiverId, type, temperature, description, amount } = req.body;
+  const { receiverId: webReceiverId, receiver_id: mobileReceiverId, type, temperature, description, amount } = req.body || {};
+  if (webReceiverId !== undefined && mobileReceiverId !== undefined && webReceiverId !== mobileReceiverId) {
+    return res.status(400).json({ error: 'Alıcı alanları birbiriyle uyuşmuyor.' });
+  }
+  const receiverId = webReceiverId ?? mobileReceiverId;
+  if (typeof receiverId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(receiverId)) {
+    return res.status(400).json({ error: 'Geçerli bir alıcı seçiniz.' });
+  }
   try {
     const { rows } = await pool.query(
       `INSERT INTO referrals(giver_id, receiver_id, type, temperature, status, description, amount)

@@ -41,3 +41,16 @@ response = new Response('[]', { status: 200 }); assert.deepEqual(await api.getGr
 globalThis.fetch = async () => { throw new Error('Activity fixture offline'); };
 await assert.rejects(api.getGroupActivities('fixture-group'), /Activity fixture offline/);
 console.log('Group activity reads: HTTP/network errors reject; true empty remains empty.');
+globalThis.fetch = async (url, options) => {
+  assert.equal(url, 'http://localhost:4005/api/events/fixture-meeting/attendance');
+  assert.equal(options.headers.Authorization, 'Bearer fixture-token'); return response;
+};
+response = new Response('Unavailable detail', { status: 503 }); await assert.rejects(api.getMeetingAttendance('fixture-meeting'), /Unavailable detail/);
+for (const bad of [null, {}, [null], [{ id: 'bad', event_id: 'different' }]]) {
+  response = new Response(JSON.stringify(bad), { status: 200 }); await assert.rejects(api.getMeetingAttendance('fixture-meeting'), /Invalid meeting attendance response/);
+}
+for (const rows of [[], [{ id: 'fixture-attendance', event_id: 'fixture-meeting', status: 'PRESENT' }]]) {
+  response = new Response(JSON.stringify(rows), { status: 200 }); assert.deepEqual(await api.getMeetingAttendance('fixture-meeting'), rows);
+}
+globalThis.fetch = async () => { throw new Error('Offline detail'); }; await assert.rejects(api.getMeetingAttendance('fixture-meeting'), /Offline detail/);
+console.log('Meeting attendance API: failure vs true empty, valid rows, wrong-target/malformed response rejected.');

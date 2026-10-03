@@ -37,6 +37,9 @@ export function GroupManagerDashboard() {
     const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
     const [viewingMeeting, setViewingMeeting] = useState<any>(null);
     const [meetingAttendance, setMeetingAttendance] = useState<any[]>([]);
+    const [meetingDetailLoading, setMeetingDetailLoading] = useState(false);
+    const [meetingDetailError, setMeetingDetailError] = useState<string | null>(null);
+    const [meetingDetailRetry, setMeetingDetailRetry] = useState(0);
     const [attendancePending, setAttendancePending] = useState(false);
     const [attendanceNotice, setAttendanceNotice] = useState<{ context: string; text: string } | null>(null);
     const attendanceBusy = useRef(false);
@@ -162,6 +165,27 @@ export function GroupManagerDashboard() {
         loadData();
         return () => { cancelled = true; };
     }, [user?.id, user?.role, readContext, retryCount]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!viewingMeeting?.id || loadedFor !== readContext) return;
+        setMeetingAttendance([]);
+        setMeetingDetailLoading(true);
+        setMeetingDetailError(null);
+        const load = async () => {
+            try {
+                const rows = await api.getMeetingAttendance(viewingMeeting.id);
+                if (!Array.isArray(rows) || rows.some(row => !row || typeof row.id !== 'string' || row.event_id !== viewingMeeting.id)) throw new Error('Invalid attendance response');
+                if (!cancelled) setMeetingAttendance(rows);
+            } catch {
+                if (!cancelled) setMeetingDetailError('Yoklama detayları yüklenemedi.');
+            } finally {
+                if (!cancelled) setMeetingDetailLoading(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [viewingMeeting?.id, loadedFor, readContext, meetingDetailRetry]);
 
     const handleGroupRequest = async (userId: string, status: 'ACTIVE' | 'REJECTED') => {
         if (!selectedGroup) return;
@@ -479,10 +503,11 @@ export function GroupManagerDashboard() {
                                                     <span className="block text-2xl font-bold text-gray-900">{m.attendees_count != null && m.total_members > 0 && m.attendees_count <= m.total_members ? `%${Math.round((m.attendees_count / m.total_members) * 100)}` : 'Veri yok'}</span>
                                                     <span className="text-xs text-gray-500">Katılım</span>
                                                 </div>
-                                                <Button size="sm" variant="outline" onClick={async () => {
+                                                <Button size="sm" variant="outline" onClick={() => {
+                                                    setMeetingAttendance([]);
+                                                    setMeetingDetailLoading(true);
+                                                    setMeetingDetailError(null);
                                                     setViewingMeeting(m);
-                                                    const att = await api.getMeetingAttendance(m.id);
-                                                    setMeetingAttendance(att);
                                                 }}>
                                                     <Eye className="h-4 w-4 mr-1" /> İncele
                                                 </Button>
@@ -502,9 +527,13 @@ export function GroupManagerDashboard() {
                                             <CardTitle>{viewingMeeting.topic}</CardTitle>
                                             <p className="text-sm text-gray-500">{new Date(viewingMeeting.date).toLocaleDateString()}</p>
                                         </div>
-                                        <Button variant="ghost" size="sm" onClick={() => setViewingMeeting(null)}><XCircle className="h-5 w-5" /></Button>
+                                        <Button aria-label="Yoklama detayını kapat" variant="ghost" size="sm" onClick={() => setViewingMeeting(null)}><XCircle className="h-5 w-5" /></Button>
                                     </CardHeader>
                                     <CardContent className="pt-4">
+                                        {meetingDetailLoading ? <p role="status">Yoklama detayları yükleniyor...</p> : meetingDetailError ? <div role="alert">
+                                            <p>{meetingDetailError}</p>
+                                            <Button onClick={() => { setMeetingDetailLoading(true); setMeetingDetailError(null); setMeetingDetailRetry(count => count + 1); }}>Tekrar dene</Button>
+                                        </div> : meetingAttendance.length === 0 ? <p>Bu toplantıda katılım kaydı yok.</p> : (
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                                 <tr>
@@ -525,13 +554,14 @@ export function GroupManagerDashboard() {
                                                                     att.status === 'LATE' ? 'bg-yellow-100 text-yellow-800' :
                                                                         'bg-blue-100 text-blue-800'
                                                                 }`}>
-                                                                {att.status === 'PRESENT' ? 'Var' : att.status === 'ABSENT' ? 'Yok' : att.status === 'LATE' ? 'Geç' : 'Vekil'}
+                                                                {att.status === 'PRESENT' ? 'Var' : att.status === 'ABSENT' ? 'Yok' : att.status === 'LATE' ? 'Geç' : att.status === 'SUBSTITUTE' ? 'Vekil' : 'Bilinmeyen durum'}
                                                             </span>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </div>

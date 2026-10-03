@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 let cursor = 0, user = { id: 'fixture-president', role: 'PRESIDENT' }, mode = 'ok', submits = [], meetingsFail = false, meetingRows = [];
 let readFailure, readMalformed, withTeam = false, noGroups = false, delayedGroups, readCalls = [];
+let attendanceRows = [], attendanceReadFailure = false;
 const state = [], effects = new Map();
 globalThis.managerHooks = {
   useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], v => { state[i] = typeof v === 'function' ? v(state[i]) : v; }]; },
@@ -21,6 +22,7 @@ globalThis.managerApi = new Proxy({}, { get: (_, method) => async payload => {
     return { success: true, eventId: 'fixture-event' };
   }
   readCalls.push(method);
+  if (method === 'getMeetingAttendance') { if (attendanceReadFailure) throw new Error('Unavailable detail'); return attendanceRows; }
   if (readFailure === method) throw new Error('Fixture dashboard unavailable');
   if (readMalformed === method) return null;
   if (method === 'getGroupMeetings' && meetingsFail) throw new Error('Fixture refresh unavailable');
@@ -109,3 +111,19 @@ user = { id: 'fresh-president', role: 'PRESIDENT' }; delayedGroups = undefined; 
 resolve([]); await flush(); assert.equal(has('Yönetici olduğunuz bir grup bulunamadı.'), false);
 user = null; readCalls = []; render(); await runEffects(); assert.equal(readCalls.length, 0);
 console.log('Manager read: every source reject/null/retry, no false empty or partial metrics, true empty, changed session hides old panel, delayed old empty ignored, unauthenticated zero reads.');
+meetingRows = [{ id: 'detail-meeting', topic: 'Detail fixture', date: '2026-10-03', attendees_count: 1, total_members: 2 }];
+const openDetail = async () => { await setup(); nodes(render()).find(n => n.type === 'button' && n.key === 'ATTENDANCE').props.onClick(); nodes(render()).find(n => n.props?.onClick?.toString().includes('setViewingMeeting(m)')).props.onClick(); render(); await runEffects(); };
+attendanceReadFailure = true; await openDetail(); assert.ok(has('Yoklama detayları yüklenemedi.')); assert.equal(has('Bu toplantıda katılım kaydı yok.'), false);
+attendanceReadFailure = false; attendanceRows = [];
+nodes(render()).find(n => n.props?.children === 'Tekrar dene').props.onClick(); render(); await runEffects(); assert.ok(has('Bu toplantıda katılım kaydı yok.'));
+attendanceRows = [{ id: 'attendance-fixture', event_id: 'detail-meeting', user_name: 'Actual Fixture', status: 'UNKNOWN' }];
+await openDetail(); assert.ok(has('Actual Fixture')); assert.ok(has('Bilinmeyen durum')); assert.equal(has('Vekil'), false);
+attendanceRows = [{ id: 'wrong', event_id: 'other-event' }]; await openDetail(); assert.ok(has('Yoklama detayları yüklenemedi.'));
+attendanceRows = new Promise(done => { resolve = done; }); await openDetail();
+assert.ok(has('Yoklama detayları yükleniyor...')); assert.equal(has('Actual Fixture'), false);
+nodes(render()).find(n => n.props?.['aria-label'] === 'Yoklama detayını kapat').props.onClick(); render(); await runEffects();
+resolve([{ id: 'late', event_id: 'detail-meeting', user_name: 'Late Fixture' }]); await flush(); assert.equal(has('Late Fixture'), false);
+attendanceRows = new Promise(done => { resolve = done; }); await openDetail();
+user = { id: 'other-context', role: 'PRESIDENT' }; render(); await runEffects();
+resolve([{ id: 'late', event_id: 'detail-meeting', user_name: 'Late Fixture' }]); await flush(); assert.equal(has('Late Fixture'), false);
+console.log('Meeting detail modal: loading/error/retry/true empty/records, target mismatch, unknown status, closed/session-changed late response ignored.');

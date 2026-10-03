@@ -316,7 +316,11 @@ export const api = {
   },
 
   async getMeetingAttendance(meetingId: string) {
-    try { return await request(`/events/${meetingId}/attendance`); } catch { return []; }
+    const rows = await request(`/events/${meetingId}/attendance`);
+    if (!Array.isArray(rows) || rows.some(row => !row || typeof row !== 'object' || typeof row.id !== 'string' || !row.id || row.event_id !== meetingId)) {
+      throw new Error('Invalid meeting attendance response');
+    }
+    return rows;
   },
 
   async removeEventParticipant(eventId: string, userId: string) {

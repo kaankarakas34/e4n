@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0;
+let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0, write, writes = [];
 globalThis.supportListHooks = {
   useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { stateWrites++; slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
   useEffect(fn, dependencies) { const i = cursor++; const old = effects.get(i); if (!old || dependencies.some((value, j) => value !== old.dependencies[j])) effects.set(i, { fn, dependencies, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.supportListAuth = () => ({ user });
-globalThis.supportListAPI = { getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
+globalThis.supportListAPI = { replyTicket: (id, message) => { writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status) => { writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/AdminSupportTickets.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
@@ -27,7 +27,7 @@ const render = () => { cursor = 0; return AdminSupportTickets(); };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const flush = async () => { for (const effect of effects.values()) if (effect.pending) { effect.cleanup?.(); effect.cleanup = effect.fn(); effect.pending = false; } await settle(); };
 const cleanup = () => { for (const effect of effects.values()) effect.cleanup?.(); };
-const reset = () => { cleanup(); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
+const reset = () => { cleanup(); writes = []; write = async () => ({ success: true }); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const count = () => nodes(render()).find(node => node.type === 'span' && node.props?.className?.startsWith('bg-gray-200')).props.children;
 
@@ -90,3 +90,49 @@ await mountList(); const detached = deferred(); detailRead = () => detached.prom
 const pendingDetached = row('ticket').props.onClick(); cleanup(); const beforeDetached = stateWrites;
 detached.resolve({ ticket: fixture(), messages: [message('ticket')] }); await pendingDetached; assert.equal(stateWrites, beforeDetached);
 console.log('Real admin support details: reject/malformed/wrong-ticket/wrong-owner/message target rejected, retry/confirmed empty, loading hides old messages, switched/closed/session/unmounted responses ignored.');
+
+const button = label => nodes(render()).find(node => node.type === 'Button' && text(node).includes(label));
+const send = () => nodes(render()).find(node => node.props?.onClick?.name === 'handleSendMessage');
+const draft = value => nodes(render()).find(node => node.type === 'textarea').props.onChange({ target: { value } });
+const mountDetail = async () => { await mountList(); await row('ticket').props.onClick(); draft('Reply fixture'); };
+for (const invalid of [null, {}, { success: false }, { success: 'true' }, 'reject']) {
+  await mountDetail(); write = async () => { if (invalid === 'reject') throw new Error('fixture'); return invalid; };
+  await send().props.onClick();
+  assert.equal(writes.length, 1); assert.ok(text(render()).includes('İşlem sonucu doğrulanamadı.'));
+  assert.equal(nodes(render()).find(node => node.type === 'textarea').props.value, 'Reply fixture');
+  await button('Talebi tekrar yükle').props.onClick(); assert.equal(writes.length, 1);
+}
+await mountDetail(); write = async () => ({ success: false });
+await button('Talebi Kapat').props.onClick(); assert.ok(button('Talebi Kapat')); assert.equal(button('Tekrar Aç'), undefined);
+assert.ok(text(render()).includes('İşlem sonucu doğrulanamadı.'));
+await mountDetail(); const duplicate = deferred(); write = () => duplicate.promise;
+const oldSend = send().props.onClick, oldStatus = button('Talebi Kapat').props.onClick;
+const saving = oldSend(); await oldSend(); await oldStatus(); assert.equal(writes.length, 1);
+assert.equal(send().props.disabled, true); assert.equal(button('Talebi Kapat').props.disabled, true);
+duplicate.resolve({ success: true }); await saving;
+assert.equal(nodes(render()).find(node => node.type === 'textarea').props.value, '');
+await mountDetail(); read = async () => { throw new Error('list refresh'); }; detailRead = async () => { throw new Error('detail refresh'); };
+await send().props.onClick(); assert.ok(text(render()).includes('Yanıt kaydedildi.'));
+assert.ok(text(render()).includes('Destek talepleri yüklenemedi.')); assert.ok(text(render()).includes('Talep detayları yüklenemedi.'));
+read = async () => [fixture()]; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] });
+await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick();
+await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick(); assert.equal(writes.length, 1);
+await mountDetail(); detailRead = async id => ({ ticket: { ...fixture(), id, status: 'CLOSED' }, messages: [] });
+await button('Talebi Kapat').props.onClick(); assert.deepEqual(writes, [{ id: 'ticket', status: 'CLOSED' }]);
+assert.ok(button('Tekrar Aç')); assert.ok(text(render()).includes('Durum değişikliği onaylandı.'));
+for (const boundary of ['switch', 'close', 'session', 'unmount']) {
+  await mountDetail(); const lateWrite = deferred(); write = () => lateWrite.promise;
+  const pendingWrite = send().props.onClick();
+  if (boundary === 'switch') { await row('other').props.onClick(); draft('Other draft'); }
+  if (boundary === 'close') button('←').props.onClick();
+  if (boundary === 'session') { user = { id: 'new-admin', role: 'ADMIN' }; render(); }
+  if (boundary === 'unmount') cleanup();
+  const before = stateWrites, beforeReads = calls + detailCalls;
+  lateWrite.resolve({ success: true }); await pendingWrite;
+  assert.equal(calls + detailCalls, beforeReads);
+  assert.equal(text(render()).includes('Yanıt kaydedildi.'), false);
+  if (boundary === 'switch') assert.equal(nodes(render()).find(node => node.type === 'textarea').props.value, 'Other draft');
+  if (boundary === 'session' || boundary === 'unmount') assert.equal(stateWrites, before);
+}
+await mountDetail(); const staleSend = send().props.onClick; await row('other').props.onClick(); await staleSend(); assert.equal(writes.length, 0);
+console.log('Admin support writes: strict ACK/draft preservation, shared same-tick lock, confirmed write versus failed GET/retry, server status refresh, target/session/unmount boundaries passed.');

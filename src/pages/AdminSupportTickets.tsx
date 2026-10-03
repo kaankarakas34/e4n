@@ -54,6 +54,11 @@ export function AdminSupportTickets() {
     const [requestedTicket, setRequestedTicket] = useState<string | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
+    const mutationLock = useRef<object | null>(null);
+    const [pendingFor, setPendingFor] = useState<string | null>(null);
+    const [mutationNotice, setMutationNotice] = useState<{ context: string; ticketId: string; text: string; error: boolean } | null>(null);
+    const renderedDetailSequence = detailSequence.current;
+    const pending = pendingFor === context;
     const isCurrentContext = () => active.current && currentContext.current === context && user?.role === 'ADMIN';
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -64,7 +69,7 @@ export function AdminSupportTickets() {
 
     useEffect(() => {
         active.current = true;
-        setSelectedTicket(null); setMessages([]); setNewMessage('');
+        setSelectedTicket(null); setMessages([]); setNewMessage(''); setPendingFor(null); setMutationNotice(null);
         detailTarget.current = null; setRequestedTicket(null); setDetailError(null); setDetailLoading(false);
         if (user?.role === 'ADMIN') void loadTickets();
         return () => { active.current = false; listSequence.current++; detailSequence.current++; detailTarget.current = null; };
@@ -78,7 +83,7 @@ export function AdminSupportTickets() {
         if (!isCurrentContext()) return;
         const sequence = ++listSequence.current;
         const isCurrent = () => isCurrentContext() && sequence === listSequence.current;
-        setLoading(true); setListError(null); setLoadedFor(null);
+        setLoading(true); setListError(null);
         try {
             const data = await api.getTickets();
             if (!Array.isArray(data) || !data.every(isTicket)) throw new Error('Invalid tickets response');
@@ -93,7 +98,7 @@ export function AdminSupportTickets() {
     const loadTicketDetails = async (ticketId: string) => {
         if (!isCurrentContext() || loading || listError || loadedFor !== context || !tickets.some(ticket => ticket.id === ticketId)) return;
         const owner = tickets.find(ticket => ticket.id === ticketId)!.user_id;
-        if (detailTarget.current !== ticketId) setNewMessage('');
+        if (detailTarget.current !== ticketId) { setNewMessage(''); setMutationNotice(null); }
         detailTarget.current = ticketId;
         const sequence = ++detailSequence.current;
         const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
@@ -117,38 +122,45 @@ export function AdminSupportTickets() {
     };
 
     const closeDetails = () => {
-        detailSequence.current++; detailTarget.current = null;
+        detailSequence.current++; detailTarget.current = null; setMutationNotice(null);
         setRequestedTicket(null); setSelectedTicket(null); setMessages([]); setNewMessage(''); setDetailError(null); setDetailLoading(false);
     };
 
-    const handleSendMessage = async () => {
-        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id || !newMessage.trim()) return;
+    const runMutation = async (kind: 'reply' | 'status', status?: 'CLOSED' | 'OPEN') => {
+        if (!isCurrentContext() || mutationLock.current || loading || listError || loadedFor !== context
+            || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id
+            || renderedDetailSequence !== detailSequence.current || (kind === 'reply' && !newMessage.trim())
+            || (kind === 'status' && status !== 'CLOSED' && status !== 'OPEN')) return;
+        const ticketId = selectedTicket.id;
         const sequence = detailSequence.current;
+        const token = {};
+        mutationLock.current = token;
+        setPendingFor(context); setMutationNotice(null);
+        const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
         try {
-            await api.replyTicket(selectedTicket.id, newMessage);
-            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
-            setNewMessage('');
-            loadTicketDetails(selectedTicket.id);
-            loadTickets(); // Refresh list status
-        } catch (error) {
-            console.error('Failed to send message', error);
+            const result = kind === 'reply' ? await api.replyTicket(ticketId, newMessage.trim())
+                : await api.updateTicketStatus(ticketId, status!);
+            if (!isCurrent()) return;
+            if (result?.success !== true) throw new Error('Unconfirmed mutation');
+            if (kind === 'reply') setNewMessage('');
+            setMutationNotice({ context, ticketId, error: false, text: kind === 'reply'
+                ? 'Yanıt kaydedildi. Güncel bilgiler yükleniyor; yenileme hatasında yalnızca tekrar yükleyin.'
+                : 'Durum değişikliği onaylandı. Güncel bilgiler yükleniyor; yenileme hatasında yalnızca tekrar yükleyin.' });
+            // Read failures have their own retry controls and never repeat the confirmed write.
+            await Promise.all([loadTicketDetails(ticketId), loadTickets()]);
+        } catch {
+            if (isCurrent()) setMutationNotice({ context, ticketId, error: true,
+                text: 'İşlem sonucu doğrulanamadı. Yeniden göndermeden önce talebi tekrar yükleyip kontrol edin.' });
+        } finally {
+            if (mutationLock.current === token) {
+                mutationLock.current = null;
+                if (isCurrentContext()) setPendingFor(null);
+            }
         }
     };
 
-    const handleStatusChange = async (newStatus: 'CLOSED' | 'OPEN') => {
-        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id) return;
-        const sequence = detailSequence.current;
-        try {
-            await api.updateTicketStatus(selectedTicket.id, newStatus);
-            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
-            // Reload ticket details to reflect status change in current view
-            const updated = { ...selectedTicket, status: newStatus };
-            setSelectedTicket(updated);
-            loadTickets(); // Refresh list
-        } catch (e) {
-            console.error(e);
-        }
-    }
+    const handleSendMessage = () => runMutation('reply');
+    const handleStatusChange = (status: 'CLOSED' | 'OPEN') => runMutation('status', status);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -166,6 +178,12 @@ export function AdminSupportTickets() {
         <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col">
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Destek Paneli</h1>
 
+            {mutationNotice?.context === context && mutationNotice.ticketId === requestedTicket && (
+                <div role={mutationNotice.error ? 'alert' : 'status'} className="mb-3">
+                    <p>{mutationNotice.text}</p>
+                    {mutationNotice.error && <Button disabled={pending || loading || !!listError} onClick={() => loadTicketDetails(mutationNotice.ticketId)}>Talebi tekrar yükle</Button>}
+                </div>
+            )}
             <div className="flex-1 flex gap-6 overflow-hidden">
                 {/* Board / List */}
                 <div className={`${requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
@@ -229,11 +247,11 @@ export function AdminSupportTickets() {
                                 </div>
                                 <div className="flex space-x-2">
                                     {selectedTicket.status !== 'CLOSED' ? (
-                                        <Button size="sm" variant="outline" onClick={() => handleStatusChange('CLOSED')} className="text-red-600 border-red-200 hover:bg-red-50">
+                                        <Button size="sm" variant="outline" disabled={pending} onClick={() => handleStatusChange('CLOSED')} className="text-red-600 border-red-200 hover:bg-red-50">
                                             <XCircle className="h-4 w-4 mr-1" /> Talebi Kapat
                                         </Button>
                                     ) : (
-                                        <Button size="sm" variant="outline" onClick={() => handleStatusChange('OPEN')} className="text-green-600 border-green-200 hover:bg-green-50">
+                                        <Button size="sm" variant="outline" disabled={pending} onClick={() => handleStatusChange('OPEN')} className="text-green-600 border-green-200 hover:bg-green-50">
                                             <CheckCircle className="h-4 w-4 mr-1" /> Tekrar Aç
                                         </Button>
                                     )}
@@ -276,12 +294,13 @@ export function AdminSupportTickets() {
                             <div className="p-4 bg-white border-t border-gray-200">
                                 <div className="flex space-x-2">
                                     <textarea
+                                        disabled={pending}
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         placeholder="Yanıtınız..."
                                         className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-20"
                                     />
-                                    <Button onClick={handleSendMessage} disabled={!newMessage.trim()} className="bg-blue-600 hover:bg-blue-700 text-white h-20 px-6">
+                                    <Button onClick={handleSendMessage} disabled={pending || !newMessage.trim()} className="bg-blue-600 hover:bg-blue-700 text-white h-20 px-6">
                                         <Send className="h-5 w-5" />
                                     </Button>
                                 </div>

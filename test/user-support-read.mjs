@@ -8,7 +8,7 @@ globalThis.supportListHooks = {
   useEffect(fn, dependencies) { const i = cursor++; const old = effects.get(i); if (!old || dependencies.some((value, j) => value !== old.dependencies[j])) effects.set(i, { fn, dependencies, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.supportListAuth = () => ({ user });
-globalThis.supportListAPI = { replyTicket: (id, message) => { writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status) => { writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
+globalThis.supportListAPI = { createTicket: payload => { writes.push({ create: payload }); return write(); }, replyTicket: (id, message) => { writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status) => { writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/SupportTickets.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
@@ -97,3 +97,64 @@ const oldMemberRow = row('ticket').props.onClick;
 user = null; render(); const requestsBeforeLogout = calls + detailCalls;
 await oldMemberRow(); assert.equal(calls + detailCalls, requestsBeforeLogout);
 console.log('User support reads: actual MEMBER owner validation, list/detail errors and retry, target switching/closing, logout/session/unmount boundaries passed.');
+
+const button = label => nodes(render()).find(node => node.type === 'Button' && text(node).includes(label));
+const send = () => nodes(render()).find(node => node.props?.onClick?.name === 'handleSendMessage');
+const create = () => nodes(render()).find(node => node.props?.onClick?.name === 'handleCreateTicket');
+const change = (placeholder, value) => nodes(render()).find(node => node.props?.placeholder === placeholder).props.onChange({ target: { value } });
+const mountDetail = async () => { await mountList(); await row('ticket').props.onClick(); change('Bir mesaj yazın...', 'Reply fixture'); };
+const fillCreate = () => { button('Yeni Destek Talebi').props.onClick(); change('Örn: Ödeme Sorunu', 'Fixture ticket'); change('Sorununuzu detaylı bir şekilde açıklayınız...', 'Creation fixture'); };
+for (const invalid of [null, {}, { success: true }, { ...fixture(), user_id: 'wrong' }, { ...fixture(), subject: 'wrong' }, { ...fixture(), status: 'CLOSED' }, 'reject']) {
+  await mountList(); fillCreate(); write = async () => { if (invalid === 'reject') throw new Error('fixture'); return invalid; };
+  await create().props.onClick(); assert.equal(writes.length, 1);
+  assert.equal(nodes(render()).find(node => node.type === 'Modal').props.open, true);
+  assert.equal(nodes(render()).find(node => node.props?.placeholder === 'Örn: Ödeme Sorunu').props.value, 'Fixture ticket');
+  assert.ok(text(render()).includes('İşlem sonucu doğrulanamadı.'));
+  await button('Talepleri tekrar yükle').props.onClick(); assert.equal(writes.length, 1);
+}
+for (const invalid of [null, {}, { success: false }, { success: 'true' }, 'reject']) {
+  await mountDetail(); write = async () => { if (invalid === 'reject') throw new Error('fixture'); return invalid; };
+  await send().props.onClick(); assert.equal(writes.length, 1);
+  assert.equal(nodes(render()).find(node => node.props?.placeholder === 'Bir mesaj yazın...').props.value, 'Reply fixture');
+  assert.ok(text(render()).includes('İşlem sonucu doğrulanamadı.'));
+}
+await mountDetail(); fillCreate(); const locked = deferred(); write = () => locked.promise;
+const oldCreate = create().props.onClick, oldSend = send().props.onClick;
+const creating = oldCreate(); await oldCreate(); await oldSend(); assert.equal(writes.length, 1);
+assert.equal(create().props.disabled, true); assert.equal(send().props.disabled, true);
+locked.resolve(fixture()); await creating; assert.equal(nodes(render()).find(node => node.type === 'Modal').props.open, false);
+assert.ok(text(render()).includes('Destek talebi oluşturuldu.'));
+for (const kind of ['create', 'reply']) {
+  await mountDetail(); if (kind === 'create') fillCreate(); write = async () => kind === 'create' ? fixture() : { success: true };
+  read = async () => { throw new Error('refresh fixture'); }; detailRead = async () => { throw new Error('detail fixture'); };
+  await (kind === 'create' ? create() : send()).props.onClick();
+  assert.ok(text(render()).includes(kind === 'create' ? 'Destek talebi oluşturuldu.' : 'Yanıt kaydedildi.'));
+  assert.ok(text(render()).includes('Destek talepleri yüklenemedi.'));
+  read = async () => [fixture()]; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] });
+  await button('Tekrar dene').props.onClick();
+  if (kind === 'reply') await button('Tekrar dene').props.onClick();
+  assert.equal(writes.length, 1);
+}
+await mountList(); fillCreate(); const modalLate = deferred(); write = () => modalLate.promise;
+const staleCreate = create().props.onClick; const oldModalWrite = staleCreate();
+nodes(render()).find(node => node.type === 'Modal').props.onClose(); fillCreate();
+change('Örn: Ödeme Sorunu', 'New draft'); await staleCreate(); assert.equal(writes.length, 1);
+const beforeModalReads = calls + detailCalls; modalLate.resolve(fixture()); await oldModalWrite;
+assert.equal(calls + detailCalls, beforeModalReads);
+assert.equal(nodes(render()).find(node => node.type === 'Modal').props.open, true);
+assert.equal(nodes(render()).find(node => node.props?.placeholder === 'Örn: Ödeme Sorunu').props.value, 'New draft');
+assert.equal(text(render()).includes('Destek talebi oluşturuldu.'), false);
+for (const kind of ['create', 'reply']) for (const boundary of ['session', 'unmount']) {
+  await mountDetail(); if (kind === 'create') fillCreate(); const lateWrite = deferred(); write = () => lateWrite.promise;
+  const savedCallback = (kind === 'create' ? create() : send()).props.onClick;
+  const pendingWrite = savedCallback();
+  if (boundary === 'session') { user = { id: 'another-member', role: 'MEMBER' }; render(); } else cleanup();
+  const before = stateWrites, beforeReads = calls + detailCalls;
+  lateWrite.resolve(kind === 'create' ? fixture() : { success: true }); await pendingWrite; await savedCallback();
+  assert.equal(stateWrites, before); assert.equal(calls + detailCalls, beforeReads); assert.equal(writes.length, 1);
+}
+await mountDetail(); const lateReply = deferred(); write = () => lateReply.promise;
+const replyPending = send().props.onClick(); await row('other').props.onClick(); change('Bir mesaj yazın...', 'Other draft');
+lateReply.resolve({ success: true }); await replyPending;
+assert.equal(nodes(render()).find(node => node.props?.placeholder === 'Bir mesaj yazın...').props.value, 'Other draft');
+console.log('User support writes: ticket-row ACK versus reply ACK, drafts, shared same-tick lock, refresh-only retries, modal reopen and session/unmount/target boundaries passed.');

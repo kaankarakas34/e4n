@@ -56,6 +56,12 @@ export function SupportTickets() {
     const detailSequence = useRef(0);
     const detailTarget = useRef<string | null>(null);
     const isCurrentContext = () => active.current && currentContext.current === context && !!user?.id;
+    const mutationLock = useRef<object | null>(null);
+    const modalSequence = useRef(0);
+    const [pendingFor, setPendingFor] = useState<string | null>(null);
+    const [mutationNotice, setMutationNotice] = useState<{ context: string; text: string; error: boolean; ticketId?: string; modalVersion?: number } | null>(null);
+    const pending = pendingFor === context;
+    const renderedModalSequence = modalSequence.current;
     const renderedDetailSequence = detailSequence.current;
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -67,6 +73,7 @@ export function SupportTickets() {
     useEffect(() => {
         active.current = true;
         setSelectedTicket(null); setMessages([]); setNewMessage('');
+        modalSequence.current++; setPendingFor(null); setMutationNotice(null);
         setShowNewTicketModal(false); setNewTicketSubject(''); setNewTicketMessage('');
         detailTarget.current = null; setRequestedTicket(null); setDetailLoading(false); setDetailError(null);
         if (user?.id) void loadTickets();
@@ -96,7 +103,7 @@ export function SupportTickets() {
     const loadTicketDetails = async (ticketId: string) => {
         if (!isCurrentContext() || loading || listError || loadedFor !== context || !tickets.some(ticket => ticket.id === ticketId)) return;
         const owner = tickets.find(ticket => ticket.id === ticketId)!.user_id;
-        if (detailTarget.current !== ticketId) { setNewMessage(''); }
+        if (detailTarget.current !== ticketId) { setNewMessage(''); setMutationNotice(null); }
         detailTarget.current = ticketId;
         const sequence = ++detailSequence.current;
         const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
@@ -120,38 +127,62 @@ export function SupportTickets() {
     };
 
     const closeDetails = () => {
-        detailSequence.current++; detailTarget.current = null;
+        detailSequence.current++; detailTarget.current = null; setMutationNotice(null);
         setRequestedTicket(null); setSelectedTicket(null); setMessages([]); setNewMessage(''); setDetailError(null); setDetailLoading(false);
     };
 
-    const handleCreateTicket = async () => {
-        if (!isCurrentContext() || !newTicketSubject.trim() || !newTicketMessage.trim()) return;
-        try {
-            await api.createTicket({ subject: newTicketSubject, message: newTicketMessage });
-            if (!isCurrentContext()) return;
-            setShowNewTicketModal(false);
-            setNewTicketSubject('');
-            setNewTicketMessage('');
-            loadTickets();
-        } catch (error) {
-            console.error('Failed to create ticket', error);
-        }
+    const openNewTicket = () => {
+        if (!isCurrentContext()) return;
+        modalSequence.current++; setMutationNotice(null); setShowNewTicketModal(true);
+    };
+    const closeNewTicket = () => {
+        modalSequence.current++; setMutationNotice(null); setShowNewTicketModal(false);
     };
 
-    const handleSendMessage = async () => {
-        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id || renderedDetailSequence !== detailSequence.current || !newMessage.trim()) return;
-        const sequence = detailSequence.current;
+    const runMutation = async (kind: 'create' | 'reply') => {
+        if (!isCurrentContext() || mutationLock.current) return;
+        if (kind === 'create' && (!showNewTicketModal || renderedModalSequence !== modalSequence.current
+            || !newTicketSubject.trim() || !newTicketMessage.trim())) return;
+        if (kind === 'reply' && (loading || listError || loadedFor !== context || detailLoading || detailError
+            || !selectedTicket || selectedTicket.status === 'CLOSED' || detailTarget.current !== selectedTicket.id
+            || renderedDetailSequence !== detailSequence.current || !newMessage.trim())) return;
+        const ticketId = selectedTicket?.id;
+        const detailVersion = detailSequence.current;
+        const modalVersion = modalSequence.current;
+        const token = {};
+        mutationLock.current = token; setPendingFor(context); setMutationNotice(null);
+        const isCurrent = () => isCurrentContext() && (kind === 'create' ? modalVersion === modalSequence.current
+            : detailVersion === detailSequence.current && detailTarget.current === ticketId);
         try {
-            await api.replyTicket(selectedTicket.id, newMessage);
-            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
-            setNewMessage('');
-            loadTicketDetails(selectedTicket.id);
-            // Refresh list to update "last updated" sort or status
-            loadTickets();
-        } catch (error) {
-            console.error('Failed to send message', error);
+            const result = kind === 'create'
+                ? await api.createTicket({ subject: newTicketSubject.trim(), message: newTicketMessage.trim() })
+                : await api.replyTicket(ticketId!, newMessage.trim());
+            if (!isCurrent()) return;
+            if (kind === 'create' ? !isTicket(result) || result.user_id !== user?.id
+                || result.subject !== newTicketSubject.trim() || result.status !== 'OPEN' : result?.success !== true) throw new Error('Unconfirmed mutation');
+            if (kind === 'create') {
+                setShowNewTicketModal(false); setNewTicketSubject(''); setNewTicketMessage('');
+            } else setNewMessage('');
+            setMutationNotice({ context, ticketId: kind === 'reply' ? ticketId : undefined, error: false,
+                text: kind === 'create' ? 'Destek talebi oluşturuldu. Liste yenileme hatasında yalnızca tekrar yükleyin.'
+                    : 'Yanıt kaydedildi. Yenileme hatasında yalnızca tekrar yükleyin.' });
+            await Promise.all([loadTickets(), ...(kind === 'reply' ? [loadTicketDetails(ticketId!)] : [])]);
+        } catch {
+            if (isCurrent()) setMutationNotice({ context, ticketId: kind === 'reply' ? ticketId : undefined,
+                modalVersion: kind === 'create' ? modalVersion : undefined, error: true,
+                text: 'İşlem sonucu doğrulanamadı. Yeniden göndermeden önce talepleri tekrar yükleyip kontrol edin.' });
+        } finally {
+            if (mutationLock.current === token) {
+                mutationLock.current = null;
+                if (isCurrentContext()) setPendingFor(null);
+            }
         }
     };
+    const handleCreateTicket = () => runMutation('create');
+    const handleSendMessage = () => runMutation('reply');
+    const visibleNotice = mutationNotice?.context === context
+        && (!mutationNotice.ticketId || mutationNotice.ticketId === requestedTicket)
+        && (mutationNotice.modalVersion === undefined || (showNewTicketModal && mutationNotice.modalVersion === modalSequence.current));
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -172,11 +203,17 @@ export function SupportTickets() {
                     <h1 className="text-2xl font-bold text-gray-900">Destek Taleplerim</h1>
                     <p className="text-gray-500 text-sm">Sorun ve şikayetlerinizi buradan bildirebilirsiniz.</p>
                 </div>
-                <Button onClick={() => setShowNewTicketModal(true)} className="bg-red-600 hover:bg-red-700 text-white">
+                <Button onClick={openNewTicket} className="bg-red-600 hover:bg-red-700 text-white">
                     <Plus className="h-4 w-4 mr-2" /> Yeni Destek Talebi
                 </Button>
             </div>
 
+            {visibleNotice && mutationNotice && (
+                <div role={mutationNotice.error ? 'alert' : 'status'} className="mb-3">
+                    <p>{mutationNotice.text}</p>
+                    {mutationNotice.error && <Button disabled={pending} onClick={() => loadTickets()}>Talepleri tekrar yükle</Button>}
+                </div>
+            )}
             <div className="flex-1 flex gap-6 overflow-hidden">
                 {/* Ticket List */}
                 <div className={`${requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
@@ -275,6 +312,7 @@ export function SupportTickets() {
                                 <div className="p-4 bg-white border-t border-gray-200">
                                     <div className="flex space-x-2">
                                         <textarea
+                                            disabled={pending}
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
                                             placeholder="Bir mesaj yazın..."
@@ -286,7 +324,7 @@ export function SupportTickets() {
                                                 }
                                             }}
                                         />
-                                        <Button onClick={handleSendMessage} disabled={!newMessage.trim()} className="bg-red-600 hover:bg-red-700 text-white h-20 px-6">
+                                        <Button onClick={handleSendMessage} disabled={pending || !newMessage.trim()} className="bg-red-600 hover:bg-red-700 text-white h-20 px-6">
                                             <Send className="h-5 w-5" />
                                         </Button>
                                     </div>
@@ -310,15 +348,17 @@ export function SupportTickets() {
             <Modal
                 title="Yeni Destek Talebi Oluştur"
                 open={showNewTicketModal}
-                onClose={() => setShowNewTicketModal(false)}
+                onClose={closeNewTicket}
             >
                 <div className="space-y-4">
+                    {visibleNotice && mutationNotice?.error && mutationNotice.modalVersion !== undefined && <div role="alert"><p>{mutationNotice.text}</p><Button disabled={pending} onClick={() => loadTickets()}>Talepleri tekrar yükle</Button></div>}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Konu</label>
                         <input
                             type="text"
                             className="w-full border border-gray-300 rounded-lg px-3 py-2"
                             placeholder="Örn: Ödeme Sorunu"
+                            disabled={pending}
                             value={newTicketSubject}
                             onChange={(e) => setNewTicketSubject(e.target.value)}
                         />
@@ -328,13 +368,14 @@ export function SupportTickets() {
                         <textarea
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 h-32 resize-none"
                             placeholder="Sorununuzu detaylı bir şekilde açıklayınız..."
+                            disabled={pending}
                             value={newTicketMessage}
                             onChange={(e) => setNewTicketMessage(e.target.value)}
                         />
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="ghost" onClick={() => setShowNewTicketModal(false)}>İptal</Button>
-                        <Button onClick={handleCreateTicket} className="bg-red-600 text-white">Gönder</Button>
+                        <Button variant="ghost" onClick={closeNewTicket}>İptal</Button>
+                        <Button disabled={pending || !newTicketSubject.trim() || !newTicketMessage.trim()} onClick={handleCreateTicket} className="bg-red-600 text-white">Gönder</Button>
                     </div>
                 </div>
             </Modal>

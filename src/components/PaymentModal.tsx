@@ -59,6 +59,11 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
     const attempt = useRef(0);
     const pending = useRef(false);
     const popupCleanup = useRef<(() => void) | null>(null);
+    const paymentContext = JSON.stringify([user?.id,user?.role,action,amount]);
+    const currentContext = useRef(paymentContext); currentContext.current = paymentContext;
+    const receiptRef = useRef<{context:string;invoiceId:string;receiptToken:string} | null>(null);
+    const [receipt, setReceipt] = useState<{context:string;invoiceId:string;receiptToken:string} | null>(null);
+    const canCheck = receipt?.context === paymentContext;
 
     useEffect(() => {
         if (!isOpen) {
@@ -71,7 +76,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             popupCleanup.current?.();
             popupCleanup.current = null;
         };
-    }, [isOpen]);
+    }, [isOpen, paymentContext]);
 
     // Pre-populate billing data from user store or initial billing data when modal opens
     useEffect(() => {
@@ -164,18 +169,28 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     const handlePaymentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isOpen || pending.current) return;
+        if (!isOpen || pending.current || currentContext.current !== paymentContext) return;
+        if (receiptRef.current?.context === paymentContext) {
+            setError('Yeni ödeme başlatmadan önce mevcut işlemin durumunu kontrol edin.'); return;
+        }
         pending.current = true;
         const currentAttempt = ++attempt.current;
-        const isCurrent = () => attempt.current === currentAttempt;
+        const isCurrent = () => attempt.current === currentAttempt && currentContext.current === paymentContext;
         const finish = () => {
             if (!isCurrent()) return;
             pending.current = false;
             setIsProcessing(false);
         };
-        const notifySuccess = async (invoiceId?: string) => {
+        const confirmPayment = async (payment: {invoiceId:string;receiptToken:string}) => {
             try {
-                await onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId });
+                const status = await api.getPaymentStatus(payment.invoiceId,payment.receiptToken);
+                if (!isCurrent()) return;
+                if (status.invoice_id !== payment.invoiceId || status.action_type !== action.type || Math.round(status.amount*100) !== Math.round(finalAmount*100)) throw new Error('Ödeme eşleşmedi');
+                if (status.status === 'FAILED') {
+                    receiptRef.current = null; setReceipt(null); setError('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.'); return;
+                }
+                if (!['SUCCESS','PAID'].includes(status.status)) { setError('Ödeme henüz kesinleşmedi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.'); return; }
+                await onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId:payment.invoiceId });
             } catch {
                 if (isCurrent()) setError('Ödeme bildirimi işlenemedi. Tekrar ödeme yapmadan işlem durumunu kontrol edin.');
             } finally {
@@ -209,6 +224,10 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 action: action
             });
             if (!isCurrent()) return;
+            if (res?.success !== true || res.is3D !== true || typeof res.html !== 'string' || !res.html.trim()
+                || typeof res.invoiceId !== 'string' || !res.invoiceId || typeof res.receiptToken !== 'string' || !res.receiptToken) throw new Error('Ödeme başlatma sonucu doğrulanamadı.');
+            const payment = {context:paymentContext,invoiceId:res.invoiceId,receiptToken:res.receiptToken};
+            receiptRef.current = payment; setReceipt(payment);
 
             if (res.success && res.is3D) {
                 // Open a popup for 3D Secure Verification
@@ -221,15 +240,11 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
                 // Listen for verification result from the popup window
                 const handleMessage = (event: MessageEvent) => {
-                    if (isCurrent() && event.source === popup && event.data && (event.data.status === 'success' || event.data.status === 'fail')) {
+                    if (isCurrent() && event.source === popup && event.data?.invoice_id === payment.invoiceId
+                        && ['success','fail','pending'].includes(event.data.status)) {
                         popupCleanup.current?.();
                         popupCleanup.current = null;
-                        if (event.data.status === 'success') {
-                            void notifySuccess(event.data.invoice_id);
-                        } else {
-                            setError(event.data.message || 'Ödeme banka tarafından reddedildi.');
-                            finish();
-                        }
+                        void confirmPayment(payment);
                     }
                 };
 
@@ -248,8 +263,6 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 };
                 popup.document.write(res.html);
                 popup.document.close();
-            } else if (res.success) {
-                await notifySuccess();
             } else {
                 setError(res.message || 'Ödeme gerçekleştirilemedi.');
                 finish();
@@ -262,6 +275,25 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             setError(err.message || 'Ödeme sırasında bir hata oluştu.');
             finish();
         }
+    };
+
+    const checkExistingPayment = async () => {
+        const payment = receiptRef.current;
+        if (!isOpen || pending.current || !payment || payment.context !== paymentContext || currentContext.current !== paymentContext) return;
+        pending.current = true; setIsProcessing(true); setError('');
+        const version = ++attempt.current;
+        const isCurrent = () => attempt.current === version && currentContext.current === paymentContext;
+        try {
+            const result = await api.getPaymentStatus(payment.invoiceId,payment.receiptToken);
+            if (!isCurrent()) return;
+            if (result.invoice_id !== payment.invoiceId || result.action_type !== action.type || Math.round(result.amount*100) !== Math.round(finalAmount*100)) throw new Error('Ödeme eşleşmedi');
+            if (['SUCCESS','PAID'].includes(result.status)) {
+                await onSuccess({cardName:cardData.cardName,finalAmount,promoApplied,invoiceId:payment.invoiceId});
+            } else if (result.status === 'FAILED') {
+                receiptRef.current = null; setReceipt(null); setError('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.');
+            } else setError('Ödeme henüz kesinleşmedi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.');
+        } catch { if (isCurrent()) setError('Ödeme sonucu doğrulanamadı. Tekrar ödeme yapmadan işlem durumunu kontrol edin.'); }
+        finally { if(isCurrent()) { pending.current=false;setIsProcessing(false); } }
     };
 
     return (
@@ -290,6 +322,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                         {error}
                     </div>
                 )}
+                {canCheck && <Button type="button" disabled={isProcessing} onClick={checkExistingPayment}>İşlem durumunu kontrol et</Button>}
 
                 {step === 1 ? (
                     <form onSubmit={handleBillingSubmit} className="space-y-4">

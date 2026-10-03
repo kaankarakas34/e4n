@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
-let cursor = 0, props, response, calls = 0, opens = 0, successes = 0, popup;
+let cursor = 0, props, response, statusRead, reads = 0, calls = 0, opens = 0, successes = 0, popup;
 const state = [], dependencies = [], cleanups = [], effects = [], listeners = new Set(), timers = new Map();
 globalThis.paymentHooks = {
   useState(initial) {
@@ -21,6 +21,7 @@ globalThis.paymentHooks = {
 };
 globalThis.paymentApi = {
   payWithSipay: () => { calls++; return response(); },
+  getPaymentStatus: (id,token) => { reads++; assert.equal(id,'fixture-invoice');assert.equal(token,'fixture-receipt');return statusRead(); },
   updateMe: () => { throw new Error('Unexpected profile write'); },
 };
 globalThis.paymentAuth = () => ({ user: null, updateUser: () => {} });
@@ -56,7 +57,8 @@ const unmount = () => { for (const cleanup of cleanups) cleanup?.(); cleanups.le
 async function setup(onSuccess = async () => { successes++; }) {
   unmount(); state.length = 0; dependencies.length = 0; effects.length = 0;
   popup = { closed: false, document: { write() {}, close() {} } };
-  response = async () => ({ success: true, is3D: true, html: '<p>Fixture</p>' });
+  response = async () => ({ success: true, is3D: true, html: '<p>Fixture</p>',invoiceId:'fixture-invoice',receiptToken:'fixture-receipt' });
+  statusRead = async () => ({invoice_id:'fixture-invoice',status:'SUCCESS',amount:100,action_type:'membership'});
   props = { isOpen: true, onClose() {}, onSuccess, amount: 100, planTitle: 'Fixture', action: { type: 'membership', data: {} },
     initialBillingData: { company: 'Fixture', tax_number: 'Fixture', tax_office: 'Fixture', billing_address: 'Fixture' } };
   commit(); await submit(); // Billing step, no logged-in profile write.
@@ -72,8 +74,8 @@ emit('success', {}); assert.equal(successes, before); assert.equal(listeners.siz
 emit('success'); emit('success'); await flush(); clean(); idle();
 assert.equal(successes, before + 1);
 
-await setup(); await submit(); emit('fail'); clean(); idle();
-assert.ok(hasText('Ödeme banka tarafından reddedildi.'));
+await setup(); await submit(); statusRead=async()=>({invoice_id:'fixture-invoice',status:'FAILED',amount:100,action_type:'membership'});emit('fail');await flush();clean(); idle();
+assert.ok(hasText('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.'));
 
 await setup(); await submit(); popup.closed = true;
 for (const tick of [...timers.values()]) tick();
@@ -101,12 +103,29 @@ props = { ...props, isOpen: false }; commit();
 resolvePay({ success: true, is3D: true, html: '<p>Stale</p>' }); await first;
 assert.equal(opens, beforeOpens); clean();
 
-for (const is3D of [false, true]) {
+for (const is3D of [true]) {
   await setup(async () => { throw new Error('Fixture consumer failure'); });
-  response = async () => ({ success: true, is3D, html: '<p>Fixture</p>' });
+  response = async () => ({ success: true, is3D, html: '<p>Fixture</p>',invoiceId:'fixture-invoice',receiptToken:'fixture-receipt' });
   await submit(); if (is3D) emit('success'); await flush();
   clean(); idle();
   assert.ok(hasText('Ödeme bildirimi işlenemedi. Tekrar ödeme yapmadan işlem durumunu kontrol edin.'));
 }
+// A popup signal alone never confirms payment; recovery reads do not start a new charge.
+for (const result of [{invoice_id:'fixture-invoice',status:'PENDING',amount:100,action_type:'membership'},
+  {invoice_id:'other',status:'SUCCESS',amount:100,action_type:'membership'},
+  {invoice_id:'fixture-invoice',status:'SUCCESS',amount:99,action_type:'membership'}]) {
+  await setup();await submit();const successBefore=successes,payBefore=calls;statusRead=async()=>result;
+  emit('success');await flush();assert.equal(successes,successBefore);idle();
+  await submit();assert.equal(calls,payBefore);
+  statusRead=async()=>({invoice_id:'fixture-invoice',status:'SUCCESS',amount:100,action_type:'membership'});
+  await nodes(render()).find(n=>n.props?.children==='İşlem durumunu kontrol et').props.onClick();
+  assert.equal(successes,successBefore+1);assert.equal(calls,payBefore);
+}
+await setup();await submit();const readBefore=reads;
+for(const cb of [...listeners])cb({source:popup,data:{status:'success',invoice_id:'wrong'}});
+assert.equal(reads,readBefore);assert.equal(listeners.size,1);
+let resolveStatus;statusRead=()=>new Promise(resolve=>{resolveStatus=resolve;});emit('success');
+props={...props,action:{type:'membership',data:{plan:'other'}}};commit();const successBefore=successes;
+resolveStatus({invoice_id:'fixture-invoice',status:'SUCCESS',amount:100,action_type:'membership'});await flush();assert.equal(successes,successBefore);
 unmount();
 console.log('Payment modal: one pending submit, popup blocked/closed/fail/success, source separation, close/reopen/unmount cleanup, stale API response ignored, async consumer rejection caught. Controlled hooks/window/API only; no payment/network calls.');

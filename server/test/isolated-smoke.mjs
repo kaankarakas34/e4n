@@ -71,6 +71,8 @@ async function main() {
   process.env.DB_PASSWORD = dbPassword;
   process.env.DB_NAME = dbName;
   process.env.NODE_ENV = 'test';
+  // Callback regression must never consult a real payment provider.
+  for (const key of ['SIPAY_API_URL','SIPAY_APP_ID','SIPAY_APP_SECRET','SIPAY_MERCHANT_KEY']) delete process.env[key];
   process.env.VERCEL = '1'; // Prevent automatic migrations and network listening on module import.
   process.env.JWT_SECRET = 'isolated_fixture_signing_key';
 
@@ -563,13 +565,13 @@ async function main() {
     repeatChangedEnd: userAfterRepeat.subscription_end_date?.getTime() !== userAfterFirst.subscription_end_date?.getTime(),
     transactionAfterLateFail: paymentAfterLateFail.status, userAfterLateFail: userAfterLateFail.account_status,
     membershipEndAfterLateFail: Boolean(userAfterLateFail.subscription_end_date) };
-  if (paymentCallbackBaseline.firstSuccess !== 200 || paymentCallbackBaseline.repeatedSuccess !== 200
-      || paymentCallbackBaseline.lateFail !== 200 || !paymentCallbackBaseline.transactionUserMissing
-      || paymentCallbackBaseline.transactionAfterFirst !== 'SUCCESS' || paymentCallbackBaseline.membershipPlanAfterFirst !== '1_MONTH'
-      || !paymentCallbackBaseline.membershipEndWritten || paymentCallbackBaseline.repeatChangedEnd
-      || paymentCallbackBaseline.transactionAfterLateFail !== 'FAILED' || paymentCallbackBaseline.userAfterLateFail !== 'ACTIVE'
-      || !paymentCallbackBaseline.membershipEndAfterLateFail) {
-    throw new Error(`Payment callback baseline changed: ${JSON.stringify(paymentCallbackBaseline)}`);
+  if (paymentCallbackBaseline.firstSuccess !== 503 || paymentCallbackBaseline.repeatedSuccess !== 503
+      || paymentCallbackBaseline.lateFail !== 503 || !paymentCallbackBaseline.transactionUserMissing
+      || paymentCallbackBaseline.transactionAfterFirst !== 'PENDING'
+      || paymentCallbackBaseline.membershipEndWritten || paymentCallbackBaseline.repeatChangedEnd
+      || paymentCallbackBaseline.transactionAfterLateFail !== 'PENDING' || paymentCallbackBaseline.userAfterLateFail !== 'ACTIVE'
+      || paymentCallbackBaseline.membershipEndAfterLateFail) {
+    throw new Error(`Unverified payment callback changed state: ${JSON.stringify(paymentCallbackBaseline)}`);
   }
   const noInviteRegistration = await fetch(`${base}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

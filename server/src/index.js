@@ -21,6 +21,7 @@ import fs from 'fs';
 import os from 'os';
 import multer from 'multer';
 import adminRoutes from './routes/admin.js';
+import { installPaymentProcessing } from './payment-processing.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -2149,6 +2150,33 @@ function generateSipayHash(parts, appSecret) {
 }
 
 app.post('/api/payment/pay', async (req, res) => {
+  const action = req.body.action;
+  const amount = Number(req.body.total);
+  if (!action || !['membership','event_registration','visitor_registration'].includes(action.type)
+    || !action.data || typeof action.data !== 'object' || Array.isArray(action.data)
+    || !Number.isFinite(amount) || amount <= 0 || amount > 99999999.99 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+    return res.status(400).json({error:'Geçersiz ödeme işlemi.'});
+  }
+  if (req.headers.authorization) {
+    try { req.user = jwt.verify(req.headers.authorization.split(' ')[1], SECRET_KEY); }
+    catch { return res.sendStatus(403); }
+  }
+  if (action.type !== 'visitor_registration') {
+    if (!req.user?.id) return res.sendStatus(401);
+    if (action.data.user_id && action.data.user_id !== req.user.id) return res.sendStatus(403);
+    try {
+      if (!(await pool.query('SELECT id FROM users WHERE id=$1',[req.user.id])).rowCount) return res.sendStatus(403);
+      if (action.type === 'event_registration' && (!meetingUuid(action.data.event_id)
+        || !(await pool.query('SELECT id FROM events WHERE id=$1',[action.data.event_id])).rowCount)) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+    } catch { return res.status(500).json({error:'Ödeme hesabı doğrulanamadı.'}); }
+    action.data = {...action.data,user_id:req.user.id,amount};
+    if (action.type === 'membership' && !['1_MONTH','4_MONTHS','6_MONTHS','8_MONTHS','12_MONTHS'].includes(action.data.plan)) return res.status(400).json({error:'Geçersiz plan.'});
+  } else if (typeof action.data.email !== 'string' || !action.data.email.trim() || typeof action.data.name !== 'string' || !action.data.name.trim()) {
+    return res.status(400).json({error:'Ziyaretçi bilgileri eksik.'});
+  }
+  if (!process.env.SIPAY_API_URL || !process.env.SIPAY_APP_ID || !process.env.SIPAY_APP_SECRET || !process.env.SIPAY_MERCHANT_KEY) {
+    return res.status(503).json({error:'Ödeme yapılandırması eksik.'});
+  }
   const { 
     cardNumber, 
     cardHolderName, 
@@ -2161,25 +2189,25 @@ app.post('/api/payment/pay', async (req, res) => {
     company,
     address,
     tax_number,
-    tax_office,
-    action
+    tax_office
   } = req.body;
   
   if (!cardNumber || !cardHolderName || !expiryMonth || !expiryYear || !cvv || !total) {
     return res.status(400).json({ error: 'Eksik kart veya ödeme bilgileri.' });
   }
 
-  // Load configs from environment variables with fallback to Sipay test values
-  const sipayApiUrl = process.env.SIPAY_API_URL || 'https://provisioning.sipay.com.tr/ccpayment';
-  const sipayAppId = process.env.SIPAY_APP_ID || '6d4a7e9374a76c15260fcc75e315b0b9';
-  const sipayAppSecret = process.env.SIPAY_APP_SECRET || 'b46a67571aa1e7ef5641dc3fa6f1712a';
-  const sipayMerchantKey = process.env.SIPAY_MERCHANT_KEY || '$2y$10$HmRgYosneqcwHj.UH7upGuyCZqpQ1ITgSMj9Vvxn.t6f.Vdf2SQFO';
+  // Payment credentials must be explicitly configured for this environment.
+  const sipayApiUrl = process.env.SIPAY_API_URL;
+  const sipayAppId = process.env.SIPAY_APP_ID;
+  const sipayAppSecret = process.env.SIPAY_APP_SECRET;
+  const sipayMerchantKey = process.env.SIPAY_MERCHANT_KEY;
 
   try {
     // 1. Generate token
     const tokenResponse = await fetch(`${sipayApiUrl}/api/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
         app_id: sipayAppId,
         app_secret: sipayAppSecret,
@@ -2198,7 +2226,7 @@ app.post('/api/payment/pay', async (req, res) => {
     const sipayToken = tokenData.data.token;
 
     // 2. Generate Hash Signature
-    const invoice_id = "INV-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    const invoice_id = "INV-" + crypto.randomUUID();
     
     // Sipay amount format is strictly string float with 2 decimal places in hash (e.g. "1000.00")
     const formattedTotal = parseFloat(total).toFixed(2);
@@ -2246,6 +2274,7 @@ app.post('/api/payment/pay', async (req, res) => {
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
     const payResponse = await fetch(`${sipayApiUrl}/api/paySmart3D`, {
       method: 'POST',
+      signal: AbortSignal.timeout(10_000),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${sipayToken}`
@@ -2300,7 +2329,9 @@ app.post('/api/payment/pay', async (req, res) => {
     } else {
       const payDataHTML = await payResponse.text();
       // Sipay paySmart3D returns an HTML self-submitting form page
-      return res.json({ success: true, is3D: true, html: payDataHTML });
+      if (!payResponse.ok || !payDataHTML.trim()) return res.status(502).json({error:'Ödeme doğrulaması başlatılamadı.'});
+      const receiptToken = jwt.sign({invoice:invoice_id}, `${SECRET_KEY}:payment-receipt`, {audience:'e4n-payment-receipt',expiresIn:'24h'});
+      return res.json({ success: true, is3D: true, html: payDataHTML, invoiceId: invoice_id, receiptToken });
     }
   } catch (err) {
     console.error('Sipay 3D POS Error:', err);
@@ -2308,130 +2339,14 @@ app.post('/api/payment/pay', async (req, res) => {
   }
 });
 
-// Sipay Success Callback
-app.post('/api/payment/sipay-callback/success', async (req, res) => {
-  const { invoice_id, payment_status, status_code } = req.body;
-  const frontendUrl = req.query.frontend_url || 'https://www.event4network.com';
-
-  console.log(`💳 Sipay Success Callback triggered for Invoice ID: ${invoice_id}`, req.body);
-
-  if (!invoice_id) {
-    return res.send(`
-      <html>
-      <body>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({ status: 'fail', message: 'Invoice ID eksik.' }, "*");
-          }
-          window.close();
-        </script>
-      </body>
-      </html>
-    `);
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // 1. Fetch transaction details
-    const txRes = await client.query('SELECT * FROM payment_transactions WHERE merchant_oid = $1', [invoice_id]);
-    if (txRes.rows.length === 0) {
-      await client.query('ROLLBACK');
-      console.error(`Transaction not found: ${invoice_id}`);
-      return res.send(`
-        <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ status: 'fail', message: 'İşlem kaydı bulunamadı.' }, "*");
-            }
-            window.close();
-          </script>
-        </body>
-        </html>
-      `);
-    }
-
-    const tx = txRes.rows[0];
-
-    // If transaction is already processed successfully, don't re-run actions
-    if (tx.status === 'SUCCESS' || tx.status === 'PAID') {
-      await client.query('COMMIT');
-      return res.send(`
-        <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id}" }, "*");
-            }
-            window.close();
-          </script>
-        </body>
-        </html>
-      `);
-    }
-
-    // 2. Update transaction status
-    await client.query(
-      "UPDATE payment_transactions SET status = 'SUCCESS', updated_at = NOW() WHERE merchant_oid = $1",
-      [invoice_id]
-    );
-
-    // 3. Process the action
-    const actionType = tx.action_type;
-    const actionData = tx.action_data || {};
-
-    if (actionType === 'membership') {
-      const { user_id, plan, amount } = actionData;
-      const start = new Date();
-      const end = new Date(start);
-
-      if (plan === '12_MONTHS') end.setMonth(end.getMonth() + 12);
-      else if (plan === '8_MONTHS') end.setMonth(end.getMonth() + 8);
-      else if (plan === '6_MONTHS') end.setMonth(end.getMonth() + 6);
-      else if (plan === '1_MONTH') end.setMonth(end.getMonth() + 1);
-      else end.setMonth(end.getMonth() + 4); // Default 4
-
-      await client.query(`
-        UPDATE users 
-        SET subscription_plan = $1, 
-            subscription_end_date = $2, 
-            account_status = 'ACTIVE',
-            last_reminder_trigger = NULL,
-            last_membership_payment_amount = $4
-        WHERE id = $3
-      `, [plan, end.toISOString(), user_id, amount]);
-
-      console.log(`✅ Membership activated for user ${user_id}, plan: ${plan}`);
-
-    } else if (actionType === 'event_registration') {
-      const { event_id, user_id } = actionData;
-
-      // Check if already registered
-      const attCheck = await client.query('SELECT 1 FROM attendance WHERE event_id = $1 AND user_id = $2', [event_id, user_id]);
-      if (attCheck.rows.length === 0) {
-        // Register (Insert Attendance)
-        await client.query(`
-          INSERT INTO attendance(event_id, user_id, status)
-          VALUES($1, $2, 'PRESENT')
-        `, [event_id, user_id]);
-
-        // Get Event Details
-        const eventRes = await client.query('SELECT * FROM events WHERE id = $1', [event_id]);
-        if (eventRes.rows.length > 0) {
-          const event = eventRes.rows[0];
-          // Generate Ticket if enabled
-          if (event.generate_tickets) {
-            const ticketNumber = `E4N-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-            await client.query(`
-              INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status)
-              VALUES($1, $2, $3, 'PAID')
-            `, [event_id, user_id, ticketNumber]);
-          }
-
-          // Send confirmation email
-          try {
+installPaymentProcessing(app, {
+  pool, secret: SECRET_KEY, generateHash: generateSipayHash,
+  onEventPaid: async tx => {
+    if (process.env.NODE_ENV === 'test') return;
+    const { user_id, event_id } = tx.action_data;
+    const event = (await pool.query('SELECT * FROM events WHERE id=$1',[event_id])).rows[0];
+    if (!event) return;
+    const client = pool;
             const userRes = await client.query('SELECT name, email FROM users WHERE id = $1', [user_id]);
             if (userRes.rows.length > 0) {
               const userInfo = userRes.rows[0];
@@ -2471,142 +2386,8 @@ app.post('/api/payment/sipay-callback/success', async (req, res) => {
 
               await sendEmail(userInfo.email, `Etkinlik Kaydınız Onaylandı: ${event.title}`, htmlContent);
             }
-          } catch (mailErr) {
-            console.error('Error sending registration confirmation email:', mailErr);
-          }
-        }
-      }
-      
-      console.log(`✅ Event registration completed for user ${user_id}, event: ${event_id}`);
-
-    } else if (actionType === 'visitor_registration') {
-      const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, event_id } = actionData;
-
-      const finalEmail = email ? email.trim().toLowerCase() : '';
-      
-      // Check duplicate row to prevent duplicates
-      const checkExist = await client.query(
-        'SELECT 1 FROM public_visitors WHERE LOWER(email) = $1 AND event_id = $2',
-        [finalEmail, event_id || null]
-      );
-
-      if (checkExist.rows.length === 0) {
-        const finalFormData = {
-          ...(form_data || {}),
-          payment_status: 'PAID',
-          payment_amount: tx.amount,
-          payment_date: new Date().toISOString()
-        };
-
-        await client.query(
-          'INSERT INTO public_visitors (name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, event_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
-          [name, finalEmail, phone, company, profession || 'Ziyaretçi', source || 'visitor_payment', kvkk_accepted || false, inviter_id || null, title || null, web_linkedin || null, activity_area || null, duration || null, target_customer || null, why_join || null, value_add || null, previous_groups || null, finalFormData, event_id || null]
-        );
-      }
-
-      console.log(`✅ Visitor registration completed for ${name} (${finalEmail})`);
-    }
-
-    await client.query('COMMIT');
-    
-    res.send(`
-      <html>
-      <body>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id}" }, "*");
-          }
-          window.close();
-        </script>
-      </body>
-      </html>
-    `);
-
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Error completing payment action:', err);
-    res.send(`
-      <html>
-      <body>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({ status: 'fail', message: 'Ödeme başarılı oldu fakat veritabanı kaydı güncellenemedi.' }, "*");
-          }
-          window.close();
-        </script>
-      </body>
-      </html>
-    `);
-  } finally {
-    client.release();
   }
 });
-
-// Sipay Fail Callback
-app.post('/api/payment/sipay-callback/fail', async (req, res) => {
-  const { invoice_id, status_description } = req.body;
-  const errorMsg = status_description || 'Ödeme banka tarafından reddedildi.';
-
-  console.log(`❌ Sipay Fail Callback triggered for Invoice ID: ${invoice_id}. Reason: ${errorMsg}`);
-
-  if (invoice_id) {
-    try {
-      await pool.query(
-        "UPDATE payment_transactions SET status = 'FAILED', updated_at = NOW() WHERE merchant_oid = $1",
-        [invoice_id]
-      );
-    } catch (dbErr) {
-      console.error('Error updating transaction status to FAILED:', dbErr);
-    }
-  }
-
-  res.send(`
-    <html>
-    <body>
-      <script>
-        if (window.opener) {
-          window.opener.postMessage({ status: 'fail', message: "${errorMsg.replace(/"/g, '\\"')}" }, "*");
-        }
-        window.close();
-      </script>
-    </body>
-    </html>
-  `);
-});
-
-// Fallback GET route handlers for Sipay Callbacks (to prevent Nginx 404/Cannot GET errors if a redirect converts POST to GET)
-app.get('/api/payment/sipay-callback/success', (req, res) => {
-  const invoice_id = req.query.invoice_id || '';
-  res.send(`
-    <html>
-    <body>
-      <script>
-        if (window.opener) {
-          window.opener.postMessage({ status: 'success', invoice_id: "${invoice_id.replace(/"/g, '\\"')}" }, "*");
-        }
-        window.close();
-      </script>
-    </body>
-    </html>
-  `);
-});
-
-app.get('/api/payment/sipay-callback/fail', (req, res) => {
-  const errorMsg = req.query.status_description || 'Ödeme banka tarafından reddedildi.';
-  res.send(`
-    <html>
-    <body>
-      <script>
-        if (window.opener) {
-          window.opener.postMessage({ status: 'fail', message: "${errorMsg.replace(/"/g, '\\"')}" }, "*");
-        }
-        window.close();
-      </script>
-    </body>
-    </html>
-  `);
-});
-
 /* --- VISITOR INVITATION ENDPOINTS --- */
 
 // Send Visitor Invite (Auth required)
@@ -3564,6 +3345,7 @@ app.get('/api/memberships', authenticateToken, async (req, res) => {
 
 // Create Membership (Start Subscription)
 app.post('/api/memberships', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   const { user_id, plan, start_date, payment_amount } = req.body;
 
   // Calculate end date based on plan
@@ -3610,6 +3392,7 @@ app.post('/api/memberships', authenticateToken, async (req, res) => {
 
 // Update Membership (Renew/Edit)
 app.put('/api/memberships/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   // :id is the membership_id, which we mapped to user_id
   const userId = req.params.id;
   const { plan, end_date, status, payment_amount } = req.body;

@@ -27,6 +27,12 @@ interface Message {
     sender_id: string;
 }
 
+const isTicket = (value: any): value is Ticket => value && typeof value === 'object' && !Array.isArray(value)
+    && ['id', 'user_id'].every(key => typeof value[key] === 'string' && !!value[key].trim())
+    && typeof value.subject === 'string' && typeof value.status === 'string'
+    && ['created_at', 'updated_at'].every(key => typeof value[key] === 'string' && Number.isFinite(Date.parse(value[key])))
+    && ['user_name', 'user_email', 'last_message'].every(key => value[key] == null || typeof value[key] === 'string');
+
 export function AdminSupportTickets() {
     const { user } = useAuthStore();
     const navigate = useNavigate();
@@ -35,6 +41,14 @@ export function AdminSupportTickets() {
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [listError, setListError] = useState<string | null>(null);
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
+    const context = `${user?.id}:${user?.role}`;
+    const currentContext = useRef(context);
+    currentContext.current = context;
+    const active = useRef(true);
+    const listSequence = useRef(0);
+    const isCurrentContext = () => active.current && currentContext.current === context && user?.role === 'ADMIN';
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,28 +57,37 @@ export function AdminSupportTickets() {
     };
 
     useEffect(() => {
-        if (user?.role !== 'ADMIN') return;
-        loadTickets();
-    }, [user]);
+        active.current = true;
+        setSelectedTicket(null); setMessages([]); setNewMessage('');
+        if (user?.role === 'ADMIN') void loadTickets();
+        return () => { active.current = false; listSequence.current++; };
+    }, [user?.id, user?.role]);
 
     useEffect(() => {
         scrollToBottom();
     }, [messages, selectedTicket]);
 
     const loadTickets = async () => {
+        if (!isCurrentContext()) return;
+        const sequence = ++listSequence.current;
+        const isCurrent = () => isCurrentContext() && sequence === listSequence.current;
+        setLoading(true); setListError(null); setLoadedFor(null);
         try {
             const data = await api.getTickets();
-            setTickets(data);
-        } catch (error) {
-            console.error('Failed to load tickets', error);
+            if (!Array.isArray(data) || !data.every(isTicket)) throw new Error('Invalid tickets response');
+            if (isCurrent()) { setTickets(data); setLoadedFor(context); }
+        } catch {
+            if (isCurrent()) { setListError('Destek talepleri yüklenemedi.'); setLoadedFor(context); }
         } finally {
-            setLoading(false);
+            if (isCurrent()) setLoading(false);
         }
     };
 
     const loadTicketDetails = async (ticketId: string) => {
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || !tickets.some(ticket => ticket.id === ticketId)) return;
         try {
             const data = await api.getTicketDetails(ticketId);
+            if (!isCurrentContext()) return;
             setMessages(data.messages);
             setSelectedTicket(data.ticket);
         } catch (error) {
@@ -73,9 +96,10 @@ export function AdminSupportTickets() {
     };
 
     const handleSendMessage = async () => {
-        if (!selectedTicket || !newMessage.trim()) return;
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || !selectedTicket || !newMessage.trim()) return;
         try {
             await api.replyTicket(selectedTicket.id, newMessage);
+            if (!isCurrentContext()) return;
             setNewMessage('');
             loadTicketDetails(selectedTicket.id);
             loadTickets(); // Refresh list status
@@ -85,9 +109,10 @@ export function AdminSupportTickets() {
     };
 
     const handleStatusChange = async (newStatus: 'CLOSED' | 'OPEN') => {
-        if (!selectedTicket) return;
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || !selectedTicket) return;
         try {
             await api.updateTicketStatus(selectedTicket.id, newStatus);
+            if (!isCurrentContext()) return;
             // Reload ticket details to reflect status change in current view
             const updated = { ...selectedTicket, status: newStatus };
             setSelectedTicket(updated);
@@ -102,11 +127,12 @@ export function AdminSupportTickets() {
             case 'OPEN': return <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">Açık</span>;
             case 'ANSWERED': return <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">Cevaplandı</span>;
             case 'CLOSED': return <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full font-medium">Kapalı</span>;
-            default: return null;
+            default: return <span>Bilinmeyen durum</span>;
         }
     };
 
     if (user?.role !== 'ADMIN') return <div>Erişim reddedildi.</div>;
+    if (loadedFor !== context) return <p role="status">Destek talepleri yükleniyor...</p>;
 
     return (
         <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col">
@@ -117,10 +143,12 @@ export function AdminSupportTickets() {
                 <div className={`${selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
                     <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <h2 className="font-semibold text-gray-700">Gelen Talepler</h2>
-                        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{tickets.length}</span>
+                        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{listError ? 'Bilinmiyor' : loading ? 'Yükleniyor...' : tickets.length}</span>
                     </div>
                     <div className="flex-1 overflow-y-auto">
-                        {loading ? (
+                        {listError ? (
+                            <div role="alert" className="p-4"><p>{listError}</p><Button onClick={() => loadTickets()}>Tekrar dene</Button></div>
+                        ) : loading ? (
                             <div className="p-4 text-center text-gray-500">Yükleniyor...</div>
                         ) : tickets.length === 0 ? (
                             <div className="p-8 text-center text-gray-500">Talep bulunamadı.</div>
@@ -150,7 +178,7 @@ export function AdminSupportTickets() {
 
                 {/* Details view */}
                 <div className={`${!selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
-                    {selectedTicket ? (
+                    {selectedTicket && !loading && !listError ? (
                         <>
                             <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <div className="flex items-center">

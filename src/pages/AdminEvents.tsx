@@ -58,6 +58,10 @@ const readCapacity = (value: unknown): number | null => {
   const count = Number(value);
   return Number.isSafeInteger(count) && count > 0 ? count : null;
 };
+const readParticipantCount = (value: unknown): number | null => {
+  if (!Array.isArray(value) || value.some(row => !row || typeof row !== 'object' || Array.isArray(row) || typeof row.id !== 'string' || !row.id.trim())) return null;
+  return value.length;
+};
 const readLocalDate = (value: string): Date | null => {
   const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
   if (!parts) return null;
@@ -763,7 +767,7 @@ export function AdminEvents() {
                     </div>
                     <div className="flex items-center text-gray-500">
                       <Users className="h-4 w-4 mr-2" />
-                      {event.attendees?.length || 0} / {event.max_attendees} katılımcı
+                      {readParticipantCount(event.attendees) ?? 'Bilinmiyor'} / {readCapacity(event.max_attendees) ?? 'Bilinmiyor'} katılımcı
                     </div>
                   </div>
 
@@ -773,7 +777,7 @@ export function AdminEvents() {
                         event.event_type === 'WORKSHOP' ? 'Atölye' :
                           event.event_type === 'SEMINAR' ? 'Seminer' :
                             event.event_type === 'CONFERENCE' ? 'Konferans' :
-                              'Sosyal'}
+                              event.event_type === 'SOCIAL' ? 'Sosyal' : 'Tür bilinmiyor'}
                     </Badge>
 
                     <div className="flex space-x-2">

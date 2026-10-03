@@ -139,3 +139,18 @@ assert.equal(payloads.at(-1).max_attendees, 12);
 assert.equal(payloads.at(-1).start_at, new Date('2026-10-03T12:00').toISOString());
 assert.equal(payloads.at(-1).end_at, new Date('2026-10-03T14:00').toISOString());
 console.log('Admin capacity/date form: invalid capacity source blank/no write, fraction not truncated, empty/malformed/calendar/reversed dates blocked, valid numeric capacity and local-to-ISO payload passed.');
+const text = tree => Array.isArray(tree) ? tree.map(text).join('') : tree && typeof tree === 'object' ? text(tree.props?.children) : typeof tree === 'string' || typeof tree === 'number' ? String(tree) : '';
+for (const invalid of [undefined, null, {}, [null], [{ id: '' }]]) {
+  event.attendees = invalid; event.max_attendees = 10; await setup();
+  assert.ok(text(render()).includes('Bilinmiyor / 10 katılımcı'));
+  assert.equal(text(render()).includes('0 / 10 katılımcı'), false);
+}
+for (const [attendees, count] of [[[], 0], [[{ id: 'one' }, { id: 'two' }], 2]]) {
+  event.attendees = attendees; await setup(); assert.ok(text(render()).includes(`${count} / 10 katılımcı`));
+}
+event.max_attendees = null; await setup(); assert.ok(text(render()).includes('2 / Bilinmiyor katılımcı'));
+for (const type of [undefined, null, 'unrecognized']) {
+  event.event_type = type; await setup(); assert.ok(has('Tür bilinmiyor')); assert.equal(nodes(render()).some(node => node.type === 'Badge' && node.props.children === 'Sosyal'), false);
+}
+event.event_type = 'SOCIAL'; await setup(); assert.ok(nodes(render()).some(node => node.type === 'Badge' && node.props.children === 'Sosyal')); assert.equal(has('Tür bilinmiyor'), false);
+console.log('Admin cards: missing/malformed participants unknown vs confirmed empty/count; missing capacity unknown; unknown type never shown as Social.');

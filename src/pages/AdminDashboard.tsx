@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useEventStore } from '../stores/eventStore';
-import { useLMSStore } from '../stores/lmsStore';
 import { api } from '../api/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
@@ -22,24 +21,64 @@ import {
   Landmark
 } from 'lucide-react';
 
+type CounterKey = 'members' | 'groups' | 'teams';
+type CounterRead = { context: string; loading: boolean; count: number | null; error: string | null };
+
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { events, fetchEvents, readLoading: eventsLoading, readError: eventsError, loadedFor: eventsLoadedFor } = useEventStore();
-  const { courses, fetchCourses } = useLMSStore();
-  const [membersCount, setMembersCount] = useState(0);
-  const [groupsCount, setGroupsCount] = useState(0);
-  const [teamsCount, setTeamsCount] = useState(0);
+  const context = `${user?.id}:${user?.role}`;
+  const currentContext = useRef(context);
+  currentContext.current = context;
+  const [counters, setCounters] = useState<Partial<Record<CounterKey, CounterRead>>>({});
+  const [counterRetry, setCounterRetry] = useState(0);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') fetchEvents();
-    fetchCourses();
-    api.getMembers().then(r => setMembersCount(Array.isArray(r) ? r.length : 0)).catch(() => setMembersCount(0));
-    api.getGroups().then(r => setGroupsCount(Array.isArray(r) ? r.length : 0)).catch(() => setGroupsCount(0));
-    api.getPowerTeams().then(r => setTeamsCount(Array.isArray(r) ? r.length : 0)).catch(() => setTeamsCount(0));
-  }, [fetchEvents, fetchCourses, user?.id, user?.role]);
+  }, [fetchEvents, user?.id, user?.role]);
 
-  useMemo(() => [membersCount, groupsCount, teamsCount], [membersCount, groupsCount, teamsCount]);
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') return;
+    let active = true;
+    const sources: [CounterKey, () => Promise<unknown>][] = [
+      ['members', () => api.getMembers()],
+      ['groups', () => api.getGroups()],
+      ['teams', () => api.getPowerTeams()],
+    ];
+    setCounters(Object.fromEntries(sources.map(([key]) => [key, { context, loading: true, count: null, error: null }])));
+    for (const [key, read] of sources) {
+      void (async () => {
+        try {
+          const rows = await read();
+          if (!Array.isArray(rows) || rows.some(row => !row || typeof row !== 'object' || Array.isArray(row) || typeof row.id !== 'string' || !row.id.trim())) {
+            throw new Error('Geçersiz liste yanıtı');
+          }
+          if (active && currentContext.current === context) {
+            setCounters(previous => ({ ...previous, [key]: { context, loading: false, count: rows.length, error: null } }));
+          }
+        } catch {
+          if (active && currentContext.current === context) {
+            setCounters(previous => ({ ...previous, [key]: { context, loading: false, count: null, error: 'Sayaç verisi alınamadı.' } }));
+          }
+        }
+      })();
+    }
+    return () => { active = false; };
+  }, [context, user?.role, counterRetry]);
+
+  const counterValue = (key: CounterKey) => {
+    const read = counters[key];
+    if (!read || read.context !== context || read.loading) return 'Yükleniyor...';
+    return read.error ? 'Veri yok' : read.count;
+  };
+  const counterError = (key: CounterKey) => {
+    const read = counters[key];
+    if (!read || read.context !== context || !read.error) return null;
+    return <div role="alert"><p>{read.error}</p><Button onClick={() => {
+      if (currentContext.current === context && user?.role === 'ADMIN') setCounterRetry(previous => previous + 1);
+    }}>Tekrar dene</Button></div>;
+  };
 
   if (!user || user.role !== 'ADMIN') {
     return (
@@ -75,7 +114,8 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-indigo-600">Toplam Üye</p>
-                  <p className="text-2xl font-bold text-indigo-900">{membersCount}</p>
+                  <p className="text-2xl font-bold text-indigo-900">{counterValue('members')}</p>
+                  {counterError('members')}
                 </div>
                 <Users className="h-8 w-8 text-indigo-600" />
               </div>
@@ -86,7 +126,8 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Gruplar</p>
-                  <p className="text-2xl font-bold text-blue-900">{groupsCount}</p>
+                  <p className="text-2xl font-bold text-blue-900">{counterValue('groups')}</p>
+                  {counterError('groups')}
                 </div>
                 <Layers className="h-8 w-8 text-blue-600" />
               </div>
@@ -97,7 +138,8 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-purple-600">Loncalar</p>
-                  <p className="text-2xl font-bold text-purple-900">{teamsCount}</p>
+                  <p className="text-2xl font-bold text-purple-900">{counterValue('teams')}</p>
+                  {counterError('teams')}
                 </div>
                 <Briefcase className="h-8 w-8 text-purple-600" />
               </div>

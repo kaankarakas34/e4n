@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 let cursor = 0, id = 'event-a', role = 'MEMBER', calls = 0, writes = 0, stateWrites = 0, response, registrationResponse = async () => ({ success: true, ticket_needed: false });
 const state = [], dependencies = [], cleanups = [], effects = [], alerts = [];
-const fixture = (attendees = [], price = 100) => ({ id, title: 'Fixture Event', price, is_public: true, start_at: '2030-01-01', end_at: '2030-01-02', attendees });
+const fixture = (attendees = [], price = 100) => ({ id, title: 'Fixture Event', price, currency: 'TRY', is_public: true, start_at: '2030-01-01', end_at: '2030-01-02', attendees });
 globalThis.eventPaymentHooks = {
   useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], value => { stateWrites++; state[i] = typeof value === 'function' ? value(state[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return state[i] ??= { current: initial }; },
@@ -146,7 +146,39 @@ const beforeUnknownWrite = writes; await unknownButton.props.onClick(); assert.e
 response = async () => fixture([], 0);
 await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick(); commit();
 assert.equal(nodes(render()).find(node => node.props?.onClick?.name === 'handleRegister').props.disabled, false);
+const text = tree => Array.isArray(tree) ? tree.map(text).join('') : tree && typeof tree === 'object' ? text(tree.props?.children) : typeof tree === 'string' || typeof tree === 'number' ? String(tree) : '';
+for (const badPrice of [undefined, null, '', ' ', true, -1, '-1', 'abc', '1e3', Infinity, NaN]) {
+  await mount(); response = async () => ({ ...fixture(), price: badPrice }); await notify(); commit();
+  assert.ok(text(render()).includes('Ücret bilgisi doğrulanamadı.'));
+  assert.equal(text(render()).includes('Ücretsiz'), false);
+  assert.equal(nodes(render()).some(node => node.type === 'PaymentModal'), false);
+  const button = nodes(render()).find(node => node.props?.onClick?.name === 'handleRegister');
+  assert.equal(button.props.disabled, true);
+  const before = writes; await button.props.onClick(); assert.equal(writes, before);
+}
+for (const badCurrency of [undefined, '', 'try', 'USD']) {
+  await mount(); response = async () => ({ ...fixture(), currency: badCurrency }); await notify(); commit();
+  assert.equal(nodes(render()).some(node => node.type === 'PaymentModal'), false);
+  assert.equal(nodes(render()).find(node => node.props?.onClick?.name === 'handleRegister').props.disabled, true);
+  if (badCurrency === 'USD') assert.ok(text(render()).includes('100 USD'), 'source currency displayed without conversion');
+}
+for (const validPrice of [0, '0.00', 125.5, '125.50']) {
+  await mount(); response = async () => ({ ...fixture([], validPrice), max_attendees: 20 }); await notify(); commit();
+  assert.ok(text(render()).includes('20 kişi'));
+  const modal = nodes(render()).find(node => node.type === 'PaymentModal');
+  assert.equal(modal.props.amount, Number(validPrice));
+  if (Number(validPrice) > 0) {
+    assert.ok(text(render()).includes('125,5 TRY')); assert.equal(text(render()).includes('Ücretsiz'), false);
+    const before = writes; await clickRegister();
+    assert.equal(writes, before); assert.equal(nodes(render()).find(node => node.type === 'PaymentModal').props.isOpen, true);
+  } else assert.ok(text(render()).includes('Ücretsiz'));
+}
+for (const invalidCapacity of [undefined, null, 0, -1, 1.5, '20']) {
+  await mount(); response = async () => ({ ...fixture(), max_attendees: invalidCapacity }); await notify(); commit();
+  assert.ok(text(render()).includes('KontenjanBilinmiyor')); assert.equal(text(render()).includes('Sınırlı Sayıda'), false);
+}
 for (const cleanup of cleanups) cleanup?.();
 console.log('Event payment notification: three roles, no second registration write, fresh attendees only, read error/retry, malformed/wrong-id response, stale route read ignored; explicit free registration preserved. No payment/network/mail calls.');
 console.log('FREE event registration: explicit success true including repeat, malformed/rejected result never registered; no email claim, duplicate submit one call, old route/user/role and unmounted results ignored.');
 console.log('Detail reads: malformed row/text/date rejected; old route/user/role hidden before cleanup and old callbacks inert; late read ignored; unknown attendance blocks repeat until confirmed retry.');
+console.log('Detail price/capacity: unknown never free or zero modal; paid TRY numeric/decimal strings open exact amount without free write; unsupported currency blocked, valid capacity displayed.');

@@ -7,6 +7,12 @@ import { Button } from '../shared/Button';
 import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video } from 'lucide-react';
 import { PaymentModal } from '../components/PaymentModal';
 
+const readPrice = (value: unknown): number | null => {
+    if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+(\.\d+)?$/.test(value))) return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 0 && amount <= Number.MAX_SAFE_INTEGER ? amount : null;
+};
+
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -26,6 +32,10 @@ export function EventDetail() {
     const pageContext = `${id}:${user?.id}:${user?.role}`;
     const latestContext = useRef(pageContext);
     latestContext.current = pageContext;
+    const price = readPrice(event?.price);
+    const currency = typeof event?.currency === 'string' && /^[A-Z]{3}$/.test(event.currency) ? event.currency : null;
+    const paymentAvailable = price !== null && (price === 0 || currency === 'TRY');
+    const capacity = Number.isSafeInteger(event?.max_attendees) && event.max_attendees > 0 ? event.max_attendees : null;
 
     useEffect(() => {
         pageActive.current = true;
@@ -101,7 +111,8 @@ export function EventDetail() {
             return;
         }
 
-        if (event.price && Number(event.price) > 0) {
+        if (!paymentAvailable) return;
+        if (price! > 0) {
             setIsPaymentModalOpen(true);
             return;
         }
@@ -321,12 +332,14 @@ export function EventDetail() {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-500">Kontenjan</span>
-                                    <span className="font-medium text-gray-900">Sınırlı Sayıda</span>
+                                    <span className="font-medium text-gray-900">{capacity !== null ? `${capacity} kişi` : 'Bilinmiyor'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-500">Ücret</span>
-                                    <span className="font-bold text-gray-900">Ücretsiz</span>
+                                    <span className="font-bold text-gray-900">{price === 0 ? 'Ücretsiz' : price !== null && currency ? `${price.toLocaleString('tr-TR')} ${currency}` : 'Bilinmiyor'}</span>
                                 </div>
+
+                                {!paymentAvailable && <div role="alert"><p>{price === null || !currency ? 'Ücret bilgisi doğrulanamadı.' : 'Bu etkinlik için ödeme şu anda başlatılamıyor.'}</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>}
 
                                 {user && !Array.isArray(event.attendees) && !registered && (
                                     <div role="alert"><p>Etkinlik kaydınız doğrulanamadı.</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>
@@ -340,7 +353,7 @@ export function EventDetail() {
                                         variant="primary"
                                         className="w-full shadow-md shadow-red-200"
                                         onClick={handleRegister}
-                                        disabled={registering || (!!user && !Array.isArray(event.attendees))}
+                                        disabled={registering || (!!user && (!Array.isArray(event.attendees) || !paymentAvailable))}
                                     >
                                         {registering ? 'İşleniyor...' : (user ? 'Hemen Kayıt Ol' : 'Giriş Yap ve Kayıt Ol')}
                                     </Button>
@@ -364,11 +377,11 @@ export function EventDetail() {
                 </div>
             </div>
 
-            <PaymentModal
+            {paymentAvailable && <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 planTitle={event?.title || ''}
-                amount={Number(event?.price) || 0}
+                amount={price!}
                 onSuccess={handlePaymentSuccess}
                 action={{
                     type: 'event_registration',
@@ -377,7 +390,7 @@ export function EventDetail() {
                         user_id: user?.id
                     }
                 }}
-            />
+            />}
         </div>
     );
 }

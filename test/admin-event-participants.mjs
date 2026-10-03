@@ -12,7 +12,7 @@ globalThis.participantAuth = () => ({ user });
 const event = { id: 'fixture-event', title: 'Fixture Event', description: 'Fixture', start_at: '2026-10-03T12:00:00Z', end_at: '2026-10-03T14:00:00Z', status: 'PUBLISHED', event_type: 'NETWORKING', is_public: true, max_attendees: 10 };
 const fetchEvents = async () => {};
 const rejectedWrite = async () => { throw new Error('Fixture store mutation rejected'); };
-globalThis.participantStore = () => ({ events: [event], fetchEvents, createEvent: rejectedWrite, updateEvent: rejectedWrite, deleteEvent: rejectedWrite });
+globalThis.participantStore = () => ({ events: [event], fetchEvents, loadedFor: `${user?.id}:${user?.role}`, readLoading: false, readError: null, createEvent: rejectedWrite, updateEvent: rejectedWrite, deleteEvent: rejectedWrite });
 globalThis.participantApi = {
   async getMeetingAttendance(id) { reads++; if (readMode === 'fail') throw new Error('Unavailable'); if (readMode === 'null') return null; if (readMode === 'empty') return []; if (readMode instanceof Promise) return readMode; return [{ id: 'fixture-attendance', event_id: id, user_id: 'fixture-user', name: 'Actual Participant', status: 'PRESENT' }]; },
   async removeEventParticipant(id, uid) { deletes.push([id, uid]); if (removeMode === 'fail') throw new Error('Unavailable'); if (removeMode === 'null') return null; if (removeMode instanceof Promise) return removeMode; return { success: true }; },

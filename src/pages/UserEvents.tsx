@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function UserEvents() {
     const navigate = useNavigate();
-    const { events, fetchEvents } = useEventStore();
+    const { events, fetchEvents, readLoading, readError, loadedFor } = useEventStore();
     const { user } = useAuthStore();
     const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
     const [successMap, setSuccessMap] = useState<Record<string, boolean>>({});
@@ -21,7 +21,7 @@ export function UserEvents() {
 
     useEffect(() => {
         fetchEvents();
-    }, [fetchEvents]);
+    }, [fetchEvents, user?.id, user?.role]);
 
     const handleRegister = async (eventId: string) => {
         if (!window.confirm('Bu etkinliğe kayıt olmak istiyor musunuz?')) return;
@@ -65,6 +65,9 @@ export function UserEvents() {
     const displayEvents = filterTab === 'all'
         ? visibleEvents
         : visibleEvents.filter(e => e.attendees?.some((att: any) => att.id === user?.id));
+
+    if (readError) return <div role="alert" className="p-8"><p>{readError}</p><Button onClick={() => fetchEvents()}>Tekrar dene</Button></div>;
+    if (readLoading || loadedFor !== `${user?.id}:${user?.role}`) return <p role="status" className="p-8">Etkinlikler yükleniyor...</p>;
 
     return (
         <div className="min-h-screen bg-gray-50">

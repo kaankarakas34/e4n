@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '../api/api';
+import { useAuthStore } from './authStore';
 
 export interface EventItem {
   id: string;
@@ -28,6 +29,9 @@ interface EventStore {
   events: EventItem[];
   loading: boolean;
   error: string | null;
+  readLoading: boolean;
+  readError: string | null;
+  loadedFor: string | null;
   fetchEvents: () => Promise<void>;
   createEvent: (payload: any) => Promise<void>;
   updateEvent: (id: string, payload: any) => Promise<void>;
@@ -38,6 +42,8 @@ const isEventRecord = (value: any): value is EventItem => value && typeof value 
   && typeof value.id === 'string' && !!value.id.trim()
   && typeof value.title === 'string' && typeof value.start_at === 'string' && !!value.start_at
   && typeof value.is_public === 'boolean';
+let readSequence = 0;
+const contextFor = (user: any) => `${user?.id}:${user?.role}`;
 
 export const useEventStore = create<EventStore>()(
   persist(
@@ -45,14 +51,22 @@ export const useEventStore = create<EventStore>()(
       events: [],
       loading: false,
       error: null,
+      readLoading: false,
+      readError: null,
+      loadedFor: null,
 
       fetchEvents: async () => {
-        set({ loading: true, error: null });
+        const user = useAuthStore.getState().user;
+        const context = contextFor(user);
+        const sequence = ++readSequence;
+        const current = () => sequence === readSequence && contextFor(useAuthStore.getState().user) === context;
+        set({ readLoading: true, readError: null, loadedFor: null });
         try {
-          const data = await api.getEvents();
-          set({ events: data || [], loading: false });
+          const data = user?.role === 'ADMIN' ? await api.getEvents() : await api.getPublicEvents();
+          if (!Array.isArray(data) || !data.every(isEventRecord)) throw new Error('Invalid events list response');
+          if (current()) set({ events: data, readLoading: false, loadedFor: context });
         } catch (e) {
-          set({ error: 'Etkinlikler yüklenirken hata oluştu', loading: false });
+          if (current()) set({ readError: 'Etkinlikler yüklenirken hata oluştu', readLoading: false });
         }
       },
 

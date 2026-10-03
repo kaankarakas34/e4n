@@ -25,19 +25,19 @@ import {
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { events, fetchEvents, loading: eventsLoading } = useEventStore();
+  const { events, fetchEvents, readLoading: eventsLoading, readError: eventsError, loadedFor: eventsLoadedFor } = useEventStore();
   const { courses, fetchCourses } = useLMSStore();
   const [membersCount, setMembersCount] = useState(0);
   const [groupsCount, setGroupsCount] = useState(0);
   const [teamsCount, setTeamsCount] = useState(0);
 
   useEffect(() => {
-    fetchEvents();
+    if (user?.role === 'ADMIN') fetchEvents();
     fetchCourses();
     api.getMembers().then(r => setMembersCount(Array.isArray(r) ? r.length : 0)).catch(() => setMembersCount(0));
     api.getGroups().then(r => setGroupsCount(Array.isArray(r) ? r.length : 0)).catch(() => setGroupsCount(0));
     api.getPowerTeams().then(r => setTeamsCount(Array.isArray(r) ? r.length : 0)).catch(() => setTeamsCount(0));
-  }, [fetchEvents, fetchCourses]);
+  }, [fetchEvents, fetchCourses, user?.id, user?.role]);
 
   useMemo(() => [membersCount, groupsCount, teamsCount], [membersCount, groupsCount, teamsCount]);
 
@@ -108,7 +108,8 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600">Etkinlikler</p>
-                  <p className="text-2xl font-bold text-green-900">{events.length}</p>
+                  <p className="text-2xl font-bold text-green-900">{eventsError ? 'Veri yok' : eventsLoading || eventsLoadedFor !== `${user?.id}:${user?.role}` ? 'Yükleniyor...' : events.length}</p>
+                  {eventsError && <div role="alert"><p>{eventsError}</p><Button onClick={() => fetchEvents()}>Tekrar dene</Button></div>}
                 </div>
                 <Calendar className="h-8 w-8 text-green-600" />
               </div>

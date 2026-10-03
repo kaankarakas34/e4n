@@ -55,7 +55,7 @@ const CITIES = [
 export function AdminEvents() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { events, createEvent, updateEvent, deleteEvent, fetchEvents } = useEventStore();
+  const { events, createEvent, updateEvent, deleteEvent, fetchEvents, readLoading, readError, loadedFor } = useEventStore();
   const [showForm, setShowForm] = useState(false);
   const [eventWriteError, setEventWriteError] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -117,12 +117,12 @@ export function AdminEvents() {
   });
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    if (user?.role === 'ADMIN') fetchEvents();
+  }, [fetchEvents, user?.id, user?.role]);
 
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (event.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'ALL' || event.status === filterStatus;
     const matchesType = filterType === 'ALL' || event.event_type === filterType;
 
@@ -332,6 +332,9 @@ export function AdminEvents() {
       </div>
     );
   }
+
+  if (readError) return <div role="alert" className="p-8"><p>{readError}</p><Button onClick={() => fetchEvents()}>Tekrar dene</Button></div>;
+  if (readLoading || loadedFor !== `${user?.id}:${user?.role}`) return <p role="status" className="p-8">Etkinlikler yükleniyor...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50">

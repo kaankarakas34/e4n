@@ -43,6 +43,7 @@ const isEventRecord = (value: any): value is EventItem => value && typeof value 
   && typeof value.title === 'string' && typeof value.start_at === 'string' && !!value.start_at
   && typeof value.is_public === 'boolean';
 let readSequence = 0;
+let writeSequence = 0;
 const contextFor = (user: any) => `${user?.id}:${user?.role}`;
 
 export const useEventStore = create<EventStore>()(
@@ -71,38 +72,56 @@ export const useEventStore = create<EventStore>()(
       },
 
       createEvent: async (payload) => {
+        const context = contextFor(useAuthStore.getState().user);
+        if (useAuthStore.getState().user?.role !== 'ADMIN') throw new Error('Admin event write required');
+        const sequence = ++writeSequence;
+        const current = () => sequence === writeSequence && contextFor(useAuthStore.getState().user) === context;
         set({ loading: true, error: null });
         try {
           const created = await api.createEvent(payload);
           if (!isEventRecord(created)) throw new Error('Invalid created event response');
+          if (!current()) { if (sequence === writeSequence) set({ loading: false }); return; }
           set(state => ({ events: [created, ...state.events], loading: false }));
         } catch (e) {
-          set({ error: 'Etkinlik oluşturulurken hata oluştu', loading: false });
+          if (current()) set({ error: 'Etkinlik oluşturulurken hata oluştu', loading: false });
+          else if (sequence === writeSequence) set({ loading: false });
           throw e;
         }
       },
 
       updateEvent: async (id, payload) => {
+        const context = contextFor(useAuthStore.getState().user);
+        if (useAuthStore.getState().user?.role !== 'ADMIN') throw new Error('Admin event write required');
+        const sequence = ++writeSequence;
+        const current = () => sequence === writeSequence && contextFor(useAuthStore.getState().user) === context;
         set({ loading: true, error: null });
         try {
           // @ts-ignore
           const updated = await api.updateEvent(id, payload);
           if (!isEventRecord(updated) || updated.id !== id) throw new Error('Invalid updated event response');
+          if (!current()) { if (sequence === writeSequence) set({ loading: false }); return; }
           set(state => ({ events: state.events.map(e => e.id === id ? updated : e), loading: false }));
         } catch (e) {
-          set({ error: 'Etkinlik güncellenirken hata oluştu', loading: false });
+          if (current()) set({ error: 'Etkinlik güncellenirken hata oluştu', loading: false });
+          else if (sequence === writeSequence) set({ loading: false });
           throw e;
         }
       },
 
       deleteEvent: async (id: string) => {
+        const context = contextFor(useAuthStore.getState().user);
+        if (useAuthStore.getState().user?.role !== 'ADMIN') throw new Error('Admin event write required');
+        const sequence = ++writeSequence;
+        const current = () => sequence === writeSequence && contextFor(useAuthStore.getState().user) === context;
         set({ loading: true, error: null });
         try {
           const result = await api.deleteEvent(id);
           if (result?.success !== true) throw new Error('Invalid deleted event response');
+          if (!current()) { if (sequence === writeSequence) set({ loading: false }); return; }
           set(state => ({ events: state.events.filter(e => e.id !== id), loading: false }));
         } catch (e) {
-          set({ error: 'Etkinlik silinirken hata oluştu', loading: false });
+          if (current()) set({ error: 'Etkinlik silinirken hata oluştu', loading: false });
+          else if (sequence === writeSequence) set({ loading: false });
           throw e;
         }
       },

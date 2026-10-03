@@ -37,3 +37,10 @@ globalThis.eventApi.getPublicEvents = async () => [fixture]; await store.getStat
 let resolve; globalThis.eventApi.getPublicEvents = () => new Promise(done => { resolve = done; }); const old = store.getState().fetchEvents();
 authUser = { id: 'next', role: 'MEMBER' }; globalThis.eventApi.getPublicEvents = async () => []; await store.getState().fetchEvents(); resolve([fixture]); await old; assert.deepEqual(store.getState().events, []); assert.equal(store.getState().loadedFor, 'next:MEMBER');
 console.log('Event read: invalid/error cache preserved but not fresh, true empty, member public path and old session result ignored.');
+authUser = { id: 'admin', role: 'ADMIN' }; store.setState({ events: [fixture] });
+result = () => new Promise(done => { resolve = done; }); const oldWrite = store.getState().updateEvent(fixture.id, { status: 'DRAFT' });
+authUser = { id: 'member', role: 'MEMBER' }; resolve({ ...fixture, status: 'DRAFT' }); await oldWrite;
+assert.deepEqual(store.getState().events, [fixture]); assert.equal(store.getState().loading, false);
+await assert.rejects(() => store.getState().deleteEvent(fixture.id), /Admin event write required/);
+assert.deepEqual(store.getState().events, [fixture]);
+console.log('Event store stale-session write ignored and non-admin write blocked before API.');

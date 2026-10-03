@@ -58,7 +58,10 @@ export function AdminEvents() {
   const { events, createEvent, updateEvent, deleteEvent, fetchEvents, readLoading, readError, loadedFor } = useEventStore();
   const [showForm, setShowForm] = useState(false);
   const [eventWriteError, setEventWriteError] = useState<string | null>(null);
+  const [eventWritePending, setEventWritePending] = useState(false);
+  const eventWriteBusy = useRef(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const formVersion = useRef(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -66,6 +69,9 @@ export function AdminEvents() {
   const [participants, setParticipants] = useState<any[]>([]);
   const [viewingEventTitle, setViewingEventTitle] = useState('');
   const [viewingEventId, setViewingEventId] = useState<string | null>(null);
+  const eventWriteContext = `${user?.id}:${user?.role}:${editingEvent?.id}:${showForm}:${formVersion.current}`;
+  const latestEventWriteContext = useRef(eventWriteContext);
+  latestEventWriteContext.current = eventWriteContext;
   const [participantLoading, setParticipantLoading] = useState(false);
   const [participantError, setParticipantError] = useState<string | null>(null);
   const [participantNotice, setParticipantNotice] = useState<string | null>(null);
@@ -131,6 +137,10 @@ export function AdminEvents() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (eventWriteBusy.current || !alive.current || user?.role !== 'ADMIN' || latestEventWriteContext.current !== eventWriteContext || loadedFor !== `${user?.id}:${user?.role}`) return;
+    const context = eventWriteContext;
+    const isCurrent = () => alive.current && latestEventWriteContext.current === context;
+    eventWriteBusy.current = true; setEventWritePending(true);
     setEventWriteError(null);
 
     try {
@@ -171,14 +181,16 @@ export function AdminEvents() {
         await createEvent(serverPayload as any);
       }
 
-      resetForm();
-      fetchEvents();
+      if (isCurrent()) { resetForm(); fetchEvents(); }
     } catch (error) {
-      setEventWriteError('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.');
+      if (isCurrent()) setEventWriteError('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.');
+    } finally {
+      eventWriteBusy.current = false; if (alive.current) setEventWritePending(false);
     }
   };
 
   const resetForm = () => {
+    formVersion.current++;
     setFormData({
       title: '',
       description: '',
@@ -204,6 +216,8 @@ export function AdminEvents() {
   };
 
   const handleEdit = (event: any) => {
+    if (eventWriteBusy.current) return;
+    formVersion.current++;
     // Helper to format date for datetime-local input (YYYY-MM-DDThh:mm)
     const formatDateForInput = (dateStr: string) => {
       if (!dateStr) return '';
@@ -241,24 +255,36 @@ export function AdminEvents() {
   };
 
   const handleDelete = async (eventId: string) => {
+    if (eventWriteBusy.current || !alive.current || user?.role !== 'ADMIN' || latestEventWriteContext.current !== eventWriteContext || loadedFor !== `${user?.id}:${user?.role}`) return;
     if (window.confirm('Bu etkinliği silmek istediğinize emin misiniz?')) {
+      const context = eventWriteContext;
+      const isCurrent = () => alive.current && latestEventWriteContext.current === context;
+      eventWriteBusy.current = true; setEventWritePending(true);
       try {
         setEventWriteError(null);
         await deleteEvent(eventId);
-        fetchEvents();
+        if (isCurrent()) fetchEvents();
       } catch (error) {
-        setEventWriteError('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.');
+        if (isCurrent()) setEventWriteError('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.');
+      } finally {
+        eventWriteBusy.current = false; if (alive.current) setEventWritePending(false);
       }
     }
   };
 
   const handleStatusChange = async (eventId: string, newStatus: string) => {
+    if (eventWriteBusy.current || !alive.current || user?.role !== 'ADMIN' || latestEventWriteContext.current !== eventWriteContext || loadedFor !== `${user?.id}:${user?.role}`) return;
+    const context = eventWriteContext;
+    const isCurrent = () => alive.current && latestEventWriteContext.current === context;
+    eventWriteBusy.current = true; setEventWritePending(true);
     try {
       setEventWriteError(null);
       await updateEvent(eventId, { status: newStatus });
-      fetchEvents();
+      if (isCurrent()) fetchEvents();
     } catch (error) {
-      setEventWriteError('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.');
+      if (isCurrent()) setEventWriteError('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.');
+    } finally {
+      eventWriteBusy.current = false; if (alive.current) setEventWritePending(false);
     }
   };
 
@@ -605,7 +631,7 @@ export function AdminEvents() {
                   <Button type="button" variant="outline" onClick={resetForm}>
                     İptal
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={eventWritePending}>
                     {editingEvent ? 'Güncelle' : 'Oluştur'}
                   </Button>
                 </div>
@@ -715,6 +741,7 @@ export function AdminEvents() {
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={eventWritePending}
                         onClick={() => handleEdit(event)}
                         className="flex items-center"
                       >
@@ -724,6 +751,7 @@ export function AdminEvents() {
                       <Button
                         size="sm"
                         variant="destructive"
+                        disabled={eventWritePending}
                         onClick={() => handleDelete(event.id)}
                         className="flex items-center"
                       >
@@ -753,7 +781,8 @@ export function AdminEvents() {
                       {event.status === 'DRAFT' && (
                         <Button
                           size="sm"
-                          onClick={() => handleStatusChange(event.id, 'PUBLISHED')}
+                          disabled={eventWritePending}
+                        onClick={() => handleStatusChange(event.id, 'PUBLISHED')}
                           className="flex items-center"
                         >
                           <Send className="h-3 w-3 mr-1" />
@@ -764,7 +793,8 @@ export function AdminEvents() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleStatusChange(event.id, 'DRAFT')}
+                          disabled={eventWritePending}
+                        onClick={() => handleStatusChange(event.id, 'DRAFT')}
                           className="flex items-center"
                         >
                           <XCircle className="h-3 w-3 mr-1" />

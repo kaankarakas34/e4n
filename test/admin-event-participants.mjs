@@ -11,7 +11,8 @@ globalThis.participantHooks = {
 globalThis.participantAuth = () => ({ user });
 const event = { id: 'fixture-event', title: 'Fixture Event', description: 'Fixture', start_at: '2026-10-03T12:00:00Z', end_at: '2026-10-03T14:00:00Z', status: 'PUBLISHED', event_type: 'NETWORKING', is_public: true, max_attendees: 10 };
 const fetchEvents = async () => {};
-const rejectedWrite = async () => { throw new Error('Fixture store mutation rejected'); };
+let operationMode = 'fail', mutationCalls = 0;
+const rejectedWrite = async () => { mutationCalls++; if (operationMode instanceof Promise) return operationMode; throw new Error('Fixture store mutation rejected'); };
 globalThis.participantStore = () => ({ events: [event], fetchEvents, loadedFor: `${user?.id}:${user?.role}`, readLoading: false, readError: null, createEvent: rejectedWrite, updateEvent: rejectedWrite, deleteEvent: rejectedWrite });
 globalThis.participantApi = {
   async getMeetingAttendance(id) { reads++; if (readMode === 'fail') throw new Error('Unavailable'); if (readMode === 'null') return null; if (readMode === 'empty') return []; if (readMode instanceof Promise) return readMode; return [{ id: 'fixture-attendance', event_id: id, user_id: 'fixture-user', name: 'Actual Participant', status: 'PRESENT' }]; },
@@ -63,3 +64,22 @@ assert.ok(has('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.'
 await nodes(render()).find(n => n.props?.onClick?.toString().includes('handleStatusChange(event.id')).props.onClick();
 assert.ok(has('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.'));
 console.log('Admin event mutation failures: create/update form remains open, delete/status error visible.');
+await setup(); mutationCalls = 0;
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+operationMode = new Promise(done => { resolve = done; });
+const submit = submitForm().props.onSubmit; const pendingCreate = submit({ preventDefault() {} }); await submit({ preventDefault() {} });
+assert.equal(mutationCalls, 1); assert.equal(nodes(render()).find(n => n.props?.type === 'submit').props.disabled, true);
+user = { id: 'different', role: 'MEMBER' }; render(); await submit({ preventDefault() {} }); assert.equal(mutationCalls, 1);
+resolve(); await pendingCreate; assert.equal(has('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.'), false);
+await setup(); mutationCalls = 0; operationMode = new Promise(done => { resolve = done; });
+const deleteHandler = nodes(render()).find(n => n.props?.onClick?.toString().includes('handleDelete(event.id)')).props.onClick;
+const pendingDelete = deleteHandler(); await deleteHandler(); assert.equal(mutationCalls, 1); resolve(); await pendingDelete;
+operationMode = 'fail';
+console.log('Admin event writes: same-tick create/delete single request, disabled submit, stale role handler/result ignored.');
+await setup(); operationMode = new Promise(done => { resolve = done; });
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+const closedCreate = submitForm().props.onSubmit({ preventDefault() {} });
+nodes(render()).find(n => n.props?.children === 'İptal').props.onClick(); render();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); render();
+resolve(); await closedCreate; assert.ok(submitForm()); operationMode = 'fail';
+console.log('A closed/reopened create form is not reset by the previous request.');

@@ -1,0 +1,22 @@
+diff --git a/app/admin/groups.tsx b/app/admin/groups.tsx
+index 332044f..d0987f5 100644
+--- a/app/admin/groups.tsx
++++ b/app/admin/groups.tsx
+@@ -116,7 +116,7 @@ export default function AdminGroupsScreen() {
+                             <Text style={styles.emptyText}>Henüz hiç grup yok.</Text>
+                         ) : (
+                             groups.map(g => (
+-                                <TouchableOpacity key={g.id} style={styles.card}>
++                                <TouchableOpacity key={g.id} style={styles.card} accessibilityRole="button" onPress={() => router.push({ pathname: '/admin/group-detail', params: { id: g.id, type: 'group' } })}>
+                                     <View style={styles.cardHeader}>
+                                         <View style={[styles.iconBox, {backgroundColor: '#e0e7ff'}]}>
+                                             <Ionicons name="layers" size={20} color="#4f46e5" />
+@@ -135,7 +135,7 @@ export default function AdminGroupsScreen() {
+                             <Text style={styles.emptyText}>Henüz hiç lonca yok.</Text>
+                         ) : (
+                             teams.map(t => (
+-                                <TouchableOpacity key={t.id} style={styles.card}>
++                                <TouchableOpacity key={t.id} style={styles.card} accessibilityRole="button" onPress={() => router.push({ pathname: '/admin/group-detail', params: { id: t.id, type: 'team' } })}>
+                                     <View style={styles.cardHeader}>
+                                         <View style={[styles.iconBox, {backgroundColor: '#f3e8ff'}]}>
+                                             <Ionicons name="people" size={20} color="#9333ea" />

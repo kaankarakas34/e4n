@@ -4,7 +4,8 @@ import ts from 'typescript';
 const source = process.argv[2];
 if (!source) throw new Error('Pass mobile app/admin/groups.tsx');
 let cursor = 0, effect, role = 'ADMIN', mode = 'fail', calls = 0;
-const state = [];
+const state = [], navigation = [];
+globalThis.groupNavigation = navigation;
 globalThis.groupHooks = {
   useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], value => { state[i] = value; }]; },
   useRef(initial) { const i = cursor++; return state[i] ??= { current: initial }; },
@@ -15,7 +16,8 @@ globalThis.groupApi = { get: async path => {
   assert.ok(['/groups', '/power-teams'].includes(path)); calls++;
   if (mode === 'fail') throw new Error('Fixture unavailable');
   if (mode === 'invalid') return null;
-  if (mode === 'empty' || path === '/power-teams') return [];
+  if (mode === 'empty') return [];
+  if (path === '/power-teams') return [{ id: 'fixture-team', name: 'Fixture Team' }];
   return [{ id: 'fixture-group', name: 'Fixture Group', member_count: 0 }, { id: 'missing-count', name: 'Missing Count', current_month: null }];
 } };
 let compiled = ts.transpileModule(readFileSync(source, 'utf8'), {
@@ -28,7 +30,7 @@ compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line
   if (module === '@/hooks/use-auth') return 'const useAuth = globalThis.groupAuth;';
   return names.split(',').map(item => { const name = item.trim();
     if (name === 'StyleSheet') return 'const StyleSheet = { create: value => value };';
-    if (name === 'useRouter') return 'const useRouter = () => ({ back() {} });';
+    if (name === 'useRouter') return 'const useRouter = () => ({ back() {}, push: route => globalThis.groupNavigation.push(route) });';
     return `const ${name} = '${name}';`;
   }).join('\n');
 });
@@ -43,6 +45,11 @@ for (const failure of ['fail', 'invalid']) {
   assert.equal(has('Henüz hiç grup yok.'), false);
   mode = 'success'; await nodes(render()).find(node => node.props?.accessibilityRole === 'button').props.onPress();
   assert.ok(has('Fixture Group')); assert.ok(has('0 Üye Kaydı')); assert.ok(has('Üye sayısı bilinmiyor')); assert.ok(has('Dönem bilgisi yok'));
+  nodes(render()).find(node => node.key === 'fixture-group').props.onPress();
+  assert.deepEqual(navigation.at(-1), { pathname: '/admin/group-detail', params: { id: 'fixture-group', type: 'group' } });
+  nodes(render()).find(node => node.props?.onPress?.toString().includes("setActiveTab('TEAMS')")).props.onPress();
+  nodes(render()).find(node => node.key === 'fixture-team').props.onPress();
+  assert.deepEqual(navigation.at(-1), { pathname: '/admin/group-detail', params: { id: 'fixture-team', type: 'team' } });
   mode = 'fail'; effect(); await flush();
   assert.equal(has('Fixture Group'), false); assert.equal(has('Henüz hiç grup yok.'), false); cleanup();
 }

@@ -400,6 +400,51 @@ async function main() {
   }
   const adminHeaders = { Authorization: `Bearer ${adminLoginBody.token}` };
   const jsonAdminHeaders = { ...adminHeaders, 'Content-Type': 'application/json' };
+  // Map the existing read contract before adding a mobile admin detail route.
+  const auditGroupId = randomUUID(), auditTeamId = randomUUID(), auditPresidentId = randomUUID();
+  await pool.query("INSERT INTO users (id, email, name, profession, role) VALUES ($1, 'group-audit@example.invalid', 'Group Audit President', 'Audit Profession', 'PRESIDENT')", [auditPresidentId]);
+  await pool.query("INSERT INTO groups (id, name, status) VALUES ($1, 'Audit Group', 'ACTIVE')", [auditGroupId]);
+  await pool.query("INSERT INTO power_teams (id, name, status) VALUES ($1, 'Audit Team', 'ACTIVE')", [auditTeamId]);
+  for (const [fixtureId, status] of [[userId, 'ACTIVE'], [auditPresidentId, 'REQUESTED']]) {
+    await pool.query('INSERT INTO group_members (group_id, user_id, status) VALUES ($1, $2, $3)', [auditGroupId, fixtureId, status]);
+    await pool.query('INSERT INTO power_team_members (power_team_id, user_id, status, role) VALUES ($1, $2, $3, $4)', [auditTeamId, fixtureId, status, 'MEMBER']);
+  }
+  const auditSnapshot = async () => ({
+    groups: (await pool.query('SELECT * FROM groups WHERE id = $1', [auditGroupId])).rows,
+    teams: (await pool.query('SELECT * FROM power_teams WHERE id = $1', [auditTeamId])).rows,
+    groupMembers: (await pool.query('SELECT * FROM group_members WHERE group_id = $1 ORDER BY user_id', [auditGroupId])).rows,
+    teamMembers: (await pool.query('SELECT * FROM power_team_members WHERE power_team_id = $1 ORDER BY user_id', [auditTeamId])).rows,
+  });
+  const auditBefore = await auditSnapshot();
+  const presidentHeaders = { Authorization: `Bearer ${jwt.sign({ id: auditPresidentId, role: 'PRESIDENT' }, process.env.JWT_SECRET)}` };
+  const readContract = [];
+  for (const [role, headers] of [['ADMIN', adminHeaders], ['MEMBER', authHeaders], ['PRESIDENT', presidentHeaders], ['ANON', {}], ['INVALID', { Authorization: 'Bearer invalid.fixture' }]]) {
+    const statuses = [], bodies = [];
+    for (const route of [`/groups/${auditGroupId}`, `/groups/${auditGroupId}/members`, '/power-teams', `/power-teams/${auditTeamId}/members`]) {
+      const result = await fetch(`${base}/api${route}`, { headers, signal: AbortSignal.timeout(10_000) });
+      statuses.push(result.status); bodies.push(result.ok ? await result.json() : null);
+    }
+    const expected = role === 'ANON' ? 401 : role === 'INVALID' ? 403 : 200;
+    if (statuses.some(status => status !== expected)) throw new Error(`Group read role baseline changed: ${role}/${statuses}`);
+    if (expected === 200 && (bodies[0].id !== auditGroupId || bodies[0].member_count !== 2 || !Array.isArray(bodies[0].meeting_dates)
+        || bodies[1].length !== 2 || bodies[3].length !== 2 || !bodies[2].some(team => team.id === auditTeamId)
+        || bodies[1].some(member => !Object.hasOwn(member, 'full_name') || !Object.hasOwn(member, 'email') || Object.hasOwn(member, 'password_hash'))
+        || !bodies[1].some(member => member.status === 'REQUESTED') || !bodies[3].every(member => member.group_title === 'MEMBER'))) {
+      throw new Error('Group/team read shape changed');
+    }
+    readContract.push({ role, statuses, includesEmail: expected === 200, groupCountIncludesRequested: expected === 200 });
+  }
+  const missingGroup = await fetch(`${base}/api/groups/${randomUUID()}`, { headers: adminHeaders });
+  const missingMembers = await fetch(`${base}/api/groups/${randomUUID()}/members`, { headers: adminHeaders });
+  const missingTeamDetail = await fetch(`${base}/api/power-teams/${auditTeamId}`, { headers: adminHeaders });
+  if (missingGroup.status !== 404 || missingMembers.status !== 200 || (await missingMembers.json()).length !== 0 || missingTeamDetail.status !== 404
+      || JSON.stringify(auditBefore) !== JSON.stringify(await auditSnapshot())) throw new Error('Read-only group missing-route or persistence baseline changed');
+  const groupDetailReadContract = { roles: readContract, missingGroup: 404, missingGroupMembers: '200/[]', singleTeamRoute: 404, fixturesUnchanged: true };
+  await pool.query('DELETE FROM group_members WHERE group_id = $1', [auditGroupId]);
+  await pool.query('DELETE FROM power_team_members WHERE power_team_id = $1', [auditTeamId]);
+  await pool.query('DELETE FROM groups WHERE id = $1', [auditGroupId]);
+  await pool.query('DELETE FROM power_teams WHERE id = $1', [auditTeamId]);
+  await pool.query('DELETE FROM users WHERE id = $1', [auditPresidentId]);
   const rejectedGroup = await fetch(`${base}/api/groups/${groupId}/members/${otherUserId}`, {
     method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ status: 'REJECTED' }), signal: AbortSignal.timeout(10_000),
   });
@@ -1354,6 +1399,7 @@ async function main() {
     openPowerTeamBaseline,
     paymentCallbackBaseline,
     inviteVerification,
+    groupDetailReadContract,
     professionConflictBaseline,
     capacityBaseline,
     interviewApprovalBaseline,

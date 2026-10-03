@@ -1,0 +1,95 @@
+diff --git a/app/admin/group-detail.tsx b/app/admin/group-detail.tsx
+new file mode 100644
+--- /dev/null
++++ b/app/admin/group-detail.tsx
+@@ -0,0 +1,90 @@
++import React, { useEffect, useRef, useState } from 'react';
++import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
++import { SafeAreaView } from 'react-native-safe-area-context';
++import { useLocalSearchParams, useRouter } from 'expo-router';
++import { useAuth } from '@/hooks/use-auth';
++import { apiClient } from '@/utils/api-client';
++
++export default function AdminGroupDetailScreen() {
++    const router = useRouter();
++    const { id, type } = useLocalSearchParams<{ id: string; type: string }>();
++    const { user } = useAuth();
++    const isAdmin = user?.role === 'ADMIN';
++    const isTeam = type === 'team';
++    const validRoute = typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) && (type === 'group' || type === 'team');
++    const [record, setRecord] = useState<any>(null);
++    const [members, setMembers] = useState<any[]>([]);
++    const [loading, setLoading] = useState(true);
++    const [error, setError] = useState<string | null>(null);
++    const [loadedFor, setLoadedFor] = useState<string | null>(null);
++    const context = `${user?.id}:${type}:${id}`;
++    const sequence = useRef(0);
++
++    useEffect(() => {
++        if (isAdmin && validRoute) loadData();
++        return () => { sequence.current++; };
++    }, [id, type, user?.id, user?.role]);
++
++    const loadData = async () => {
++        if (!isAdmin || !validRoute) return;
++        const request = ++sequence.current;
++        setLoading(true); setError(null); setRecord(null); setMembers([]); setLoadedFor(null);
++        try {
++            const [data, rows] = await Promise.all([
++                apiClient.get<any>(isTeam ? '/power-teams' : `/groups/${id}`),
++                apiClient.get<any[]>(isTeam ? `/power-teams/${id}/members` : `/groups/${id}/members`)
++            ]);
++            if (request !== sequence.current) return;
++            if (isTeam && !Array.isArray(data)) throw new Error('Invalid team list');
++            const item = isTeam ? data.find((entry: any) => entry.id === id) : data;
++            if (!item || item.id !== id || !Array.isArray(rows) || rows.some((member: any) => !member || typeof member.id !== 'string')) {
++                throw new Error('Invalid group detail');
++            }
++            setRecord(item); setMembers(rows); setLoadedFor(context);
++        } catch {
++            if (request === sequence.current) setError('Detay bilgileri yüklenemedi.');
++        } finally {
++            if (request === sequence.current) setLoading(false);
++        }
++    };
++
++    if (!isAdmin) return <SafeAreaView><Text>Grup yönetimi için yönetici yetkisi gerekiyor.</Text></SafeAreaView>;
++    if (!validRoute) return <SafeAreaView><Text accessibilityRole="alert">Geçersiz grup veya lonca bağlantısı.</Text></SafeAreaView>;
++    return (
++        <SafeAreaView style={styles.container}>
++            <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}><Text>Geri</Text></TouchableOpacity>
++            <Text style={styles.title}>{isTeam ? 'Lonca Detayı' : 'Grup Detayı'}</Text>
++            {loading || (!error && loadedFor !== context) ? <ActivityIndicator accessibilityLabel="Detay yükleniyor" /> : error ? (
++                <View accessibilityRole="alert">
++                    <Text>{error}</Text>
++                    <TouchableOpacity accessibilityRole="button" onPress={loadData}><Text>Tekrar dene</Text></TouchableOpacity>
++                </View>
++            ) : record && (
++                <ScrollView>
++                    <Text style={styles.title}>{record.name || 'Ad bilgisi yok'}</Text>
++                    <Text>{record.description || 'Açıklama bilgisi yok'}</Text>
++                    <Text>Kayıt Durumu: {record.status || 'Veri yok'}</Text>
++                    {!isTeam && <View><Text>Toplantı Günü: {record.meeting_day || 'Veri yok'}</Text><Text>Toplantı Saati: {record.meeting_time || 'Veri yok'}</Text></View>}
++                    <Text style={styles.title}>Üye Kayıtları ({members.length})</Text>
++                    {members.length === 0 ? <Text>Üye kaydı yok.</Text> : members.map(member => (
++                        <View key={member.id} style={styles.card}>
++                            <Text style={styles.name}>{member.full_name || 'Ad bilgisi yok'}</Text>
++                            <Text>{member.profession || 'Meslek bilgisi yok'}</Text>
++                            <Text>{member.email || 'E-posta bilgisi yok'}</Text>
++                            <Text>Kayıt Durumu: {member.status || 'Veri yok'}</Text>
++                            <Text>Platform Rolü: {member.role || 'Veri yok'}</Text>
++                            {isTeam && <Text>Lonca Rolü: {member.group_title || 'Veri yok'}</Text>}
++                        </View>
++                    ))}
++                </ScrollView>
++            )}
++        </SafeAreaView>
++    );
++}
++
++const styles = StyleSheet.create({
++    container: { flex: 1, padding: 20, backgroundColor: '#f9fafb' },
++    title: { fontSize: 20, fontWeight: 'bold', marginVertical: 16 },
++    name: { fontSize: 16, fontWeight: 'bold' },
++    card: { padding: 16, marginBottom: 12, borderRadius: 12, backgroundColor: '#fff' }
++});

@@ -30,3 +30,14 @@ await assert.rejects(api.getGroupMeetings('fixture-group'), /Fixture unavailable
 globalThis.fetch = async () => { throw new Error('Fixture offline'); };
 await assert.rejects(api.getGroupMeetings('fixture-group'), /Fixture offline/);
 console.log('Meeting read API: validated list, known integer/zero vs unknown counts, HTTP/network errors preserved. No writes/network.');
+globalThis.fetch = async (url, options) => {
+  assert.equal(url, 'http://localhost:4005/api/groups/fixture-group/activities');
+  assert.equal(options.headers.Authorization, 'Bearer fixture-token');
+  return response;
+};
+response = new Response('Activity fixture unavailable', { status: 503 });
+await assert.rejects(api.getGroupActivities('fixture-group'), /Activity fixture unavailable/);
+response = new Response('[]', { status: 200 }); assert.deepEqual(await api.getGroupActivities('fixture-group'), []);
+globalThis.fetch = async () => { throw new Error('Activity fixture offline'); };
+await assert.rejects(api.getGroupActivities('fixture-group'), /Activity fixture offline/);
+console.log('Group activity reads: HTTP/network errors reject; true empty remains empty.');

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 let cursor = 0, user = { id: 'fixture-president', role: 'PRESIDENT' }, mode = 'ok', submits = [], meetingsFail = false, meetingRows = [];
+let readFailure, readMalformed, withTeam = false, noGroups = false, delayedGroups, readCalls = [];
 const state = [], effects = new Map();
 globalThis.managerHooks = {
   useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], v => { state[i] = typeof v === 'function' ? v(state[i]) : v; }]; },
@@ -19,9 +20,14 @@ globalThis.managerApi = new Proxy({}, { get: (_, method) => async payload => {
     if (mode instanceof Promise) return mode;
     return { success: true, eventId: 'fixture-event' };
   }
+  readCalls.push(method);
+  if (readFailure === method) throw new Error('Fixture dashboard unavailable');
+  if (readMalformed === method) return null;
   if (method === 'getGroupMeetings' && meetingsFail) throw new Error('Fixture refresh unavailable');
   if (method === 'getGroupMeetings') return meetingRows;
-  if (method === 'getUserGroups' || method === 'getGroups') return [group];
+  if (method === 'getUserGroups') return delayedGroups ?? (noGroups ? [] : [group]);
+  if (method === 'getGroups') return [group];
+  if (method === 'getUserPowerTeams') return withTeam ? [{ id: 'fixture-team', name: 'Fixture Team' }] : [];
   if (method === 'getGroupMembers') return [{ id: 'fixture-active', full_name: 'Active Fixture', status: 'ACTIVE' }, { id: 'fixture-requested', full_name: 'Requested Fixture', status: 'REQUESTED' }];
   return [];
 } });
@@ -43,10 +49,11 @@ const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof
 const has = text => nodes(render()).some(n => n.props?.children === text);
 const flush = () => new Promise(done => setImmediate(done));
 const runEffects = async () => { for (const e of effects.values()) if (e.pending) { e.cleanup?.(); e.cleanup = e.fn(); e.pending = false; } await flush(); };
-const setup = async () => {
+const setup = async (navigateToAttendance = true) => {
   for (const e of effects.values()) e.cleanup?.();
   state.length = 0; effects.clear(); submits = []; mode = 'ok'; meetingsFail = false; user = { id: 'fixture-president', role: 'PRESIDENT' };
   render(); await runEffects(); render(); await runEffects();
+  if (!navigateToAttendance) return;
   // Navigate through the real handlers.
   nodes(render()).find(n => n.type === 'button' && n.key === 'ATTENDANCE').props.onClick();
   nodes(render()).find(n => n.props?.onClick?.toString().includes("setActiveTab('TAKE_ATTENDANCE')")).props.onClick();
@@ -81,3 +88,24 @@ for (const [present, total, expected] of [[null, null, 'Veri yok'], [0, 0, 'Veri
   assert.equal(has('%NaN'), false); assert.equal(has('%Infinity'), false); assert.equal(has('%150'), false);
 }
 console.log('Manager attendance rates: null/0 denominator/inconsistent counts unknown; real zero and half preserved.');
+withTeam = true;
+for (const method of ['getUserGroups', 'getGroups', 'getGroupMembers', 'getGroupMeetings', 'getGroupVisitors', 'getGroupActivities', 'getAttendanceSubstitutes', 'getGroupReferrals', 'getUserPowerTeams', 'getPowerTeamMembers', 'getPowerTeamSynergy']) {
+  for (const kind of ['reject', 'null']) {
+    readFailure = kind === 'reject' ? method : undefined; readMalformed = kind === 'null' ? method : undefined;
+    await setup(false); assert.ok(nodes(render()).some(n => n.props?.role === 'alert'));
+    assert.equal(has('Yönetici olduğunuz bir grup bulunamadı.'), false);
+    assert.equal(nodes(render()).some(n => n.type === 'button' && n.key === 'ATTENDANCE'), false);
+    readFailure = readMalformed = undefined;
+    nodes(render()).find(n => n.props?.children === 'Tekrar dene').props.onClick(); render(); await runEffects(); render(); await runEffects();
+    assert.ok(nodes(render()).some(n => n.type === 'button' && n.key === 'ATTENDANCE'));
+  }
+}
+withTeam = false; noGroups = true; await setup(false); assert.ok(has('Yönetici olduğunuz bir grup bulunamadı.'));
+noGroups = false; await setup(false);
+user = { id: 'changed-president', role: 'PRESIDENT' }; render(); assert.equal(nodes(render()).some(n => n.type === 'button' && n.key === 'ATTENDANCE'), false);
+await runEffects(); render(); await runEffects(); assert.ok(nodes(render()).some(n => n.type === 'button' && n.key === 'ATTENDANCE'));
+delayedGroups = new Promise(done => { resolve = done; }); await setup(false);
+user = { id: 'fresh-president', role: 'PRESIDENT' }; delayedGroups = undefined; render(); await runEffects(); render(); await runEffects();
+resolve([]); await flush(); assert.equal(has('Yönetici olduğunuz bir grup bulunamadı.'), false);
+user = null; readCalls = []; render(); await runEffects(); assert.equal(readCalls.length, 0);
+console.log('Manager read: every source reject/null/retry, no false empty or partial metrics, true empty, changed session hides old panel, delayed old empty ignored, unauthenticated zero reads.');

@@ -29,6 +29,10 @@ export function GroupManagerDashboard() {
     const [members, setMembers] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>('OVERVIEW');
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const readContext = `${user?.id}:${user?.role}`;
     const [meetings, setMeetings] = useState<any[]>([]);
     const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
     const [viewingMeeting, setViewingMeeting] = useState<any>(null);
@@ -46,7 +50,7 @@ export function GroupManagerDashboard() {
     }, []);
 
     const handleAttendanceSubmit = async () => {
-        if (attendanceBusy.current || !mounted.current || currentAttendanceContext.current !== attendanceContext || !user?.id || !selectedGroup?.id) return;
+        if (attendanceBusy.current || !mounted.current || currentAttendanceContext.current !== attendanceContext || loadedFor !== readContext || !user?.id || !selectedGroup?.id) return;
         if (!confirm('Yoklamayı kaydetmek istiyor musunuz?')) return;
         const context = attendanceContext;
         const isCurrent = () => mounted.current && currentAttendanceContext.current === context;
@@ -103,71 +107,61 @@ export function GroupManagerDashboard() {
     const [substitutes, setSubstitutes] = useState<any[]>([]);
 
     useEffect(() => {
+        let cancelled = false;
+        const list = (value: any): any[] => {
+            if (!Array.isArray(value) || value.some(row => !row || typeof row !== 'object' || Array.isArray(row))) {
+                throw new Error('Invalid dashboard list response');
+            }
+            return value;
+        };
         const loadData = async () => {
             if (!user?.id) return;
             setLoading(true);
+            setLoadError(null);
+            setLoadedFor(null);
             try {
-                // 1. Get User Groups
-                const groups = await api.getUserGroups(user.id);
-                setMyGroups(groups);
-
+                const groups = list(await api.getUserGroups(user.id));
+                let detail = null;
+                let allMembers: any[] = [], groupMeetings: any[] = [], groupVisitors: any[] = [];
+                let acts: any[] = [], subs: any[] = [], refs: any[] = [];
                 if (groups.length > 0) {
                     const groupId = groups[0].id;
-                    const groupDetails = (await api.getGroups()).find((g: any) => g.id === groupId);
-                    setSelectedGroup(groupDetails || groups[0]);
-
-                    // 2. Fetch Members for this group
-                    const allMembers = await api.getGroupMembers(groupId);
-                    setMembers(allMembers);
-
-                    // 3. Fetch Meetings
-                    const groupMeetings = await api.getGroupMeetings(groupId);
-                    setMeetings(groupMeetings);
-
-                    // 4. Fetch Visitors
-                    const groupVisitors = await api.getGroupVisitors(groupId);
-                    setVisitors(groupVisitors);
-
-                    // NEW: Fetch Group Activities (121s)
-                    const acts = await api.getGroupActivities(groupId);
-                    setActivities(acts);
-
-                    // NEW: Fetch Substitute Reports
-                    const subs = await api.getAttendanceSubstitutes(groupId);
-                    setSubstitutes(subs);
-
-                    // NEW: Fetch Referrals
-                    try {
-                        const refs = await api.getGroupReferrals(groupId);
-                        setReferrals(refs || []);
-                    } catch (e) {
-                        console.error("Referrals fetch failed", e);
-                        setReferrals([]);
-                    }
+                    if (typeof groupId !== 'string' || !groupId) throw new Error('Invalid group id');
+                    detail = list(await api.getGroups()).find(g => g.id === groupId);
+                    if (!detail) throw new Error('Group detail missing');
+                    const values = await Promise.all([
+                        api.getGroupMembers(groupId), api.getGroupMeetings(groupId),
+                        api.getGroupVisitors(groupId), api.getGroupActivities(groupId),
+                        api.getAttendanceSubstitutes(groupId), api.getGroupReferrals(groupId),
+                    ]);
+                    [allMembers, groupMeetings, groupVisitors, acts, subs, refs] = values.map(list);
                 }
-
-                // 5. Check Power Team Leadership - Real Logic
+                let pt = null, ptMems: any[] = [], synergy: any[] = [];
                 if (user.role === 'PRESIDENT' || user.role === 'VICE_PRESIDENT' || user.role === 'ADMIN') {
-                    const myPts = await api.getUserPowerTeams(user.id);
+                    const myPts = list(await api.getUserPowerTeams(user.id));
                     if (myPts.length > 0) {
-                        const pt = myPts[0]; // Assume primary PT
-                        setMyPowerTeam(pt);
-                        const ptMems = await api.getPowerTeamMembers(pt.id);
-                        setPtMembers(ptMems);
-                        const synergy = await api.getPowerTeamSynergy(pt.id);
-                        setPtSynergy(synergy);
+                        pt = myPts[0];
+                        if (typeof pt.id !== 'string' || !pt.id) throw new Error('Invalid team id');
+                        const values = await Promise.all([api.getPowerTeamMembers(pt.id), api.getPowerTeamSynergy(pt.id)]);
+                        [ptMems, synergy] = values.map(list);
                     }
                 }
-
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
+                if (cancelled) return;
+                setMyGroups(groups); setSelectedGroup(detail); setMembers(allMembers);
+                setMeetings(groupMeetings); setVisitors(groupVisitors); setActivities(acts);
+                setSubstitutes(subs); setReferrals(refs); setMyPowerTeam(pt);
+                setPtMembers(ptMems); setPtSynergy(synergy);
+                setViewingMeeting(null); setMeetingAttendance([]);
+                setLoadedFor(readContext);
+            } catch {
+                if (!cancelled) setLoadError('Yönetim paneli yüklenemedi. Tekrar deneyin.');
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
-
         loadData();
-    }, [user]);
+        return () => { cancelled = true; };
+    }, [user?.id, user?.role, readContext, retryCount]);
 
     const handleGroupRequest = async (userId: string, status: 'ACTIVE' | 'REJECTED') => {
         if (!selectedGroup) return;
@@ -196,7 +190,11 @@ export function GroupManagerDashboard() {
     };
 
     if (!user) return <div>Giriş yapmalısınız.</div>;
-    if (loading) return <div className="p-8 text-center text-gray-500">Veriler yükleniyor...</div>;
+    if (loadError) return <div className="p-8" role="alert">
+        <p>{loadError}</p>
+        <Button onClick={() => { setLoadError(null); setLoading(true); setRetryCount(count => count + 1); }}>Tekrar dene</Button>
+    </div>;
+    if (loading || loadedFor !== readContext) return <div className="p-8 text-center text-gray-500">Veriler yükleniyor...</div>;
     if (!selectedGroup) return <div className="p-8 text-center">Yönetici olduğunuz bir grup bulunamadı.</div>;
 
     // Calculate Dynamic Stats

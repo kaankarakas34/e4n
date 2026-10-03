@@ -312,11 +312,7 @@ export const api = {
   },
 
   async getGroupActivities(groupId: string) {
-    try {
-      return await request(`/groups/${groupId}/activities`);
-    } catch {
-      return [];
-    }
+    return await request(`/groups/${groupId}/activities`);
   },
 
   async getMeetingAttendance(meetingId: string) {

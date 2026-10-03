@@ -34,6 +34,11 @@ interface EventStore {
   deleteEvent: (id: string) => Promise<void>;
 }
 
+const isEventRecord = (value: any): value is EventItem => value && typeof value === 'object' && !Array.isArray(value)
+  && typeof value.id === 'string' && !!value.id.trim()
+  && typeof value.title === 'string' && typeof value.start_at === 'string' && !!value.start_at
+  && typeof value.is_public === 'boolean';
+
 export const useEventStore = create<EventStore>()(
   persist(
     (set, get) => ({
@@ -55,9 +60,11 @@ export const useEventStore = create<EventStore>()(
         set({ loading: true, error: null });
         try {
           const created = await api.createEvent(payload);
+          if (!isEventRecord(created)) throw new Error('Invalid created event response');
           set(state => ({ events: [created, ...state.events], loading: false }));
         } catch (e) {
           set({ error: 'Etkinlik oluşturulurken hata oluştu', loading: false });
+          throw e;
         }
       },
 
@@ -66,19 +73,23 @@ export const useEventStore = create<EventStore>()(
         try {
           // @ts-ignore
           const updated = await api.updateEvent(id, payload);
+          if (!isEventRecord(updated) || updated.id !== id) throw new Error('Invalid updated event response');
           set(state => ({ events: state.events.map(e => e.id === id ? updated : e), loading: false }));
         } catch (e) {
           set({ error: 'Etkinlik güncellenirken hata oluştu', loading: false });
+          throw e;
         }
       },
 
       deleteEvent: async (id: string) => {
         set({ loading: true, error: null });
         try {
-          await api.deleteEvent(id);
+          const result = await api.deleteEvent(id);
+          if (result?.success !== true) throw new Error('Invalid deleted event response');
           set(state => ({ events: state.events.filter(e => e.id !== id), loading: false }));
         } catch (e) {
           set({ error: 'Etkinlik silinirken hata oluştu', loading: false });
+          throw e;
         }
       },
     }),

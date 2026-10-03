@@ -57,6 +57,7 @@ export function AdminEvents() {
   const { user } = useAuthStore();
   const { events, createEvent, updateEvent, deleteEvent, fetchEvents } = useEventStore();
   const [showForm, setShowForm] = useState(false);
+  const [eventWriteError, setEventWriteError] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
@@ -130,6 +131,7 @@ export function AdminEvents() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEventWriteError(null);
 
     try {
       const typeMap: Record<string, 'education' | 'meeting' | 'one_to_one' | 'visitor'> = {
@@ -172,7 +174,7 @@ export function AdminEvents() {
       resetForm();
       fetchEvents();
     } catch (error) {
-      console.error('Etkinlik kaydedilirken hata:', error);
+      setEventWriteError('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.');
     }
   };
 
@@ -241,20 +243,22 @@ export function AdminEvents() {
   const handleDelete = async (eventId: string) => {
     if (window.confirm('Bu etkinliği silmek istediğinize emin misiniz?')) {
       try {
+        setEventWriteError(null);
         await deleteEvent(eventId);
         fetchEvents();
       } catch (error) {
-        console.error('Etkinlik silinirken hata:', error);
+        setEventWriteError('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.');
       }
     }
   };
 
   const handleStatusChange = async (eventId: string, newStatus: string) => {
     try {
+      setEventWriteError(null);
       await updateEvent(eventId, { status: newStatus });
       fetchEvents();
     } catch (error) {
-      console.error('Statü güncellenirken hata:', error);
+      setEventWriteError('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.');
     }
   };
 
@@ -332,6 +336,7 @@ export function AdminEvents() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {eventWriteError && <p role="alert" className="mb-4">{eventWriteError}</p>}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Etkinlik Yönetimi</h1>
           <div className="flex space-x-3">

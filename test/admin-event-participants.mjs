@@ -11,7 +11,8 @@ globalThis.participantHooks = {
 globalThis.participantAuth = () => ({ user });
 const event = { id: 'fixture-event', title: 'Fixture Event', description: 'Fixture', start_at: '2026-10-03T12:00:00Z', end_at: '2026-10-03T14:00:00Z', status: 'PUBLISHED', event_type: 'NETWORKING', is_public: true, max_attendees: 10 };
 const fetchEvents = async () => {};
-globalThis.participantStore = () => ({ events: [event], fetchEvents });
+const rejectedWrite = async () => { throw new Error('Fixture store mutation rejected'); };
+globalThis.participantStore = () => ({ events: [event], fetchEvents, createEvent: rejectedWrite, updateEvent: rejectedWrite, deleteEvent: rejectedWrite });
 globalThis.participantApi = {
   async getMeetingAttendance(id) { reads++; if (readMode === 'fail') throw new Error('Unavailable'); if (readMode === 'null') return null; if (readMode === 'empty') return []; if (readMode instanceof Promise) return readMode; return [{ id: 'fixture-attendance', event_id: id, user_id: 'fixture-user', name: 'Actual Participant', status: 'PRESENT' }]; },
   async removeEventParticipant(id, uid) { deletes.push([id, uid]); if (removeMode === 'fail') throw new Error('Unavailable'); if (removeMode === 'null') return null; if (removeMode instanceof Promise) return removeMode; return { success: true }; },
@@ -50,3 +51,15 @@ await setup(); readMode = new Promise(done => { resolve = done; }); await open()
 nodes(render()).find(n => n.props?.children === 'Kapat').props.onClick(); render(); await runEffects(); resolve([{ id: 'late', event_id: event.id, name: 'Late Participant' }]); await flush(); assert.equal(has('Late Participant'), false);
 await setup(); readMode = 'ok'; await open(); removeMode = new Promise(done => { resolve = done; }); const old = remove().props.onClick; const pending = old(); user = { id: 'member', role: 'MEMBER' }; render(); await old(); assert.equal(deletes.length, 1); resolve({ success: true }); await pending; assert.equal(has('Katılımcı çıkarma işlemi sunucu tarafından onaylandı.'), false);
 console.log('Admin participant real component: read failure/null/retry/empty, single pending removal, strict ACK and refresh error separation, closed read and changed-role removal ignored. No network.');
+await setup();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+const submitForm = () => nodes(render()).find(n => n.type === 'form');
+await submitForm().props.onSubmit({ preventDefault() {} });
+assert.ok(submitForm()); assert.ok(has('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.'));
+nodes(render()).find(n => n.props?.onClick?.toString().includes('handleEdit(event)')).props.onClick();
+await submitForm().props.onSubmit({ preventDefault() {} }); assert.ok(submitForm());
+await nodes(render()).find(n => n.props?.onClick?.toString().includes('handleDelete(event.id)')).props.onClick();
+assert.ok(has('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.'));
+await nodes(render()).find(n => n.props?.onClick?.toString().includes('handleStatusChange(event.id')).props.onClick();
+assert.ok(has('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.'));
+console.log('Admin event mutation failures: create/update form remains open, delete/status error visible.');

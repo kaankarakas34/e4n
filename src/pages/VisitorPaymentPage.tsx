@@ -42,6 +42,9 @@ export function VisitorPaymentPage() {
   const [paymentNotice, setPaymentNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<VisitorPaymentFormData | null>(null);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const registrationPending = useRef(false);
+  const pageActive = useRef(true);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<VisitorPaymentFormData>({
     resolver: zodResolver(visitorPaymentSchema),
@@ -51,8 +54,12 @@ export function VisitorPaymentPage() {
   });
 
   useEffect(() => {
+    pageActive.current = true;
     setPaymentModalOpen(false);
     setPendingFormData(null);
+    setRegistrationError(null);
+    setIsSubmitted(false);
+    setPaymentNotice(false);
     if (token) {
       verifyToken(token);
     } else {
@@ -61,7 +68,7 @@ export function VisitorPaymentPage() {
       setTokenError(null);
       setVerifiedToken(null);
     }
-    return () => { verifySequence.current++; };
+    return () => { pageActive.current = false; verifySequence.current++; };
   }, [token]);
 
   const checkingToken = !!token && (tokenLoading || verifiedToken !== token);
@@ -102,10 +109,10 @@ export function VisitorPaymentPage() {
   };
 
   const handleFormSubmit = (data: VisitorPaymentFormData) => {
-    if (isSubmitting || inviteBlocked) return;
+    if (isSubmitting || registrationPending.current || inviteBlocked) return;
     if (verifiedInvite) {
       // Free registration
-      submitRegistration(data, null);
+      return submitRegistration(data);
     } else {
       // Payment required
       setPendingFormData(data);
@@ -113,8 +120,12 @@ export function VisitorPaymentPage() {
     }
   };
 
-  const submitRegistration = async (data: VisitorPaymentFormData, paymentDetails: any) => {
+  const submitRegistration = async (data: VisitorPaymentFormData) => {
+    if (!verifiedInvite || registrationPending.current) return;
+    registrationPending.current = true;
+    const sequence = verifySequence.current;
     setIsSubmitting(true);
+    setRegistrationError(null);
     try {
       const payload = {
         name: data.name,
@@ -123,27 +134,31 @@ export function VisitorPaymentPage() {
         company: data.company,
         profession: data.profession,
         kvkk_accepted: true,
-        source: isTokenValid ? 'visitor_invite' : 'visitor_payment',
-        token: isTokenValid ? token : undefined,
+        source: 'visitor_invite',
+        token,
         form_data: {
           tax_office: data.taxOffice,
           tax_number: data.taxNumber,
           address: data.address,
-          payment_status: isTokenValid ? 'FREE' : 'PAID',
-          payment_amount: isTokenValid ? 0 : 1000,
+          payment_status: 'FREE',
+          payment_amount: 0,
           payment_date: new Date().toISOString(),
-          payment_card_holder: paymentDetails?.cardName || null
+          payment_card_holder: null
         }
       };
 
-      await api.submitPublicVisitorApplication(payload);
+      const result = await api.submitPublicVisitorApplication(payload);
+      if (!pageActive.current || sequence !== verifySequence.current) return;
+      if (!result || typeof result.id !== 'string' || !result.id.trim()) throw new Error('Invalid visitor registration response');
       setIsSubmitted(true);
       setPaymentModalOpen(false);
-    } catch (err: any) {
-      console.error(err);
-      alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+    } catch {
+      if (pageActive.current && sequence === verifySequence.current) {
+        setRegistrationError('Başvuru sonucu doğrulanamadı. Yeni başvuru göndermeden mevcut kaydınızı kontrol edin.');
+      }
     } finally {
-      setIsSubmitting(false);
+      registrationPending.current = false;
+      if (pageActive.current) setIsSubmitting(false);
     }
   };
 
@@ -172,7 +187,7 @@ export function VisitorPaymentPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Başvurunuz Alındı!</h2>
           <p className="text-gray-600 mb-8">
-            Ziyaretçi kaydınız başarıyla tamamlandı. Detaylı bilgiler e-posta adresinize gönderilecektir.
+            Ziyaretçi başvurunuz kaydedildi.
           </p>
           <Button variant="primary" onClick={() => navigate('/')} className="w-full">
             Ana Sayfaya Dön
@@ -258,6 +273,7 @@ export function VisitorPaymentPage() {
               </div>
             )}
 
+            {registrationError && <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">{registrationError}</div>}
             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

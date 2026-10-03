@@ -39,79 +39,79 @@ export function AdminGroupDetail() {
     const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>('');
 
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     const isPowerTeam = location.pathname.includes('power-teams');
     const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
+    const allowedRoles = ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'];
+    const canRead = !!user && allowedRoles.includes(user.role);
+    const readContext = `${user?.id}:${user?.role}:${isPowerTeam}:${id}`;
 
     // Dynamic Stats
     const stats = {
         totalTurnover: referrals.reduce((acc, curr) => acc + (curr.amount || 0), 0),
         totalReferrals: referrals.length,
         activeMembers: members.filter(m => m.status === 'ACTIVE').length,
-        upcomingEvents: isPowerTeam ? 0 : 0 // Backend currently doesn't fetch future events count here, default to 0
     };
 
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'REFERRALS' | 'MEETINGS' | 'SYNERGY'>('OVERVIEW');
 
     useEffect(() => {
+        let cancelled = false;
         const loadData = async () => {
             setLoading(true);
+            setLoadError(null);
+            setLoadedFor(null);
             try {
                 let foundItem;
                 if (isPowerTeam) {
                     const teams = await api.getPowerTeams();
+                    if (!Array.isArray(teams)) throw new Error('Invalid team response');
                     foundItem = teams.find((t: any) => t.id === id);
                 } else {
                     foundItem = await api.getGroup(id!);
                 }
-
-                if (foundItem) {
-                    setData(foundItem);
-                    // Fetch members
-                    let teamMembers = [];
-                    if (isPowerTeam) {
-                        teamMembers = (await api.getPowerTeamMembers(id)) || [];
-                    } else {
-                        teamMembers = (await api.getGroupMembers(id)) || [];
-                    }
-                    setMembers(teamMembers);
-
-                    // Fetch meetings
-                    if (id) {
-                        const groupMeetings = await api.getGroupMeetings(id);
-                        setMeetings(groupMeetings);
-
-                        const groupVisitors = await api.getGroupVisitors(id);
-                        setVisitors(groupVisitors);
-
-                        if (isPowerTeam) {
-                            const synergyData = await api.getPowerTeamSynergy(id);
-                            setSynergy(synergyData);
-                            const refData = await api.getPowerTeamReferrals(id);
-                            setReferrals(refData || []);
-                        } else {
-                            const refData = await api.getGroupReferrals(id);
-                            setReferrals(refData || []);
-                        }
-                    }
+                if (!foundItem || foundItem.id !== id) throw new Error('Missing or invalid detail');
+                const [teamMembers, groupMeetings, groupVisitors, refData, synergyData] = await Promise.all([
+                    isPowerTeam ? api.getPowerTeamMembers(id!) : api.getGroupMembers(id!),
+                    api.getGroupMeetings(id!),
+                    api.getGroupVisitors(id!),
+                    isPowerTeam ? api.getPowerTeamReferrals(id!) : api.getGroupReferrals(id!),
+                    isPowerTeam ? api.getPowerTeamSynergy(id!) : Promise.resolve([]),
+                ]);
+                if (![teamMembers, groupMeetings, groupVisitors, refData, synergyData].every(Array.isArray)) {
+                    throw new Error('Invalid detail list response');
                 }
+                if (![teamMembers, groupMeetings, groupVisitors, refData, synergyData].every(list =>
+                    list.every((row: any) => row && typeof row === 'object' && !Array.isArray(row)))) {
+                    throw new Error('Invalid detail row response');
+                }
+                if (cancelled) return;
+                setData(foundItem);
+                setMembers(teamMembers);
+                setMeetings(groupMeetings);
+                setVisitors(groupVisitors);
+                setReferrals(refData);
+                setSynergy(synergyData);
+                setLoadedFor(readContext);
             } catch (error) {
-                console.error('Error loading details:', error);
+                if (!cancelled) setLoadError(`${typeLabel} bilgileri yüklenemedi. Tekrar deneyin.`);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
-        if (id) {
+        if (id && canRead) {
             loadData();
         }
-    }, [id, isPowerTeam]);
+        return () => { cancelled = true; };
+    }, [id, isPowerTeam, user?.id, user?.role, canRead, readContext, typeLabel, retryCount]);
 
 
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
     if (!user) return <div className="p-8">Giriş Yapılmalı</div>;
-
-    const allowedRoles = ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'];
 
     if (!allowedRoles.includes(user.role)) {
         return <div className="p-8">Erişim Kısıtlı</div>;
@@ -119,7 +119,16 @@ export function AdminGroupDetail() {
 
     const isAdminView = true;
 
-    if (loading) {
+    if (!id) return <div className="p-8">Geçersiz detay bağlantısı.</div>;
+
+    if (loadError) {
+        return <div className="p-8" role="alert">
+            <p>{loadError}</p>
+            <Button onClick={() => { setLoadError(null); setLoading(true); setRetryCount(count => count + 1); }}>Tekrar dene</Button>
+        </div>;
+    }
+
+    if (loading || loadedFor !== readContext) {
         return <div className="p-8">Yükleniyor...</div>;
     }
 
@@ -405,7 +414,7 @@ export function AdminGroupDetail() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-blue-600">Aktif Üyeler</p>
-                                            <p className="text-2xl font-bold text-gray-900">{members.length}</p>
+                                            <p className="text-2xl font-bold text-gray-900">{stats.activeMembers}</p>
                                         </div>
                                         <div className="p-3 bg-blue-100 rounded-full">
                                             <Users className="h-6 w-6 text-blue-600" />
@@ -433,7 +442,7 @@ export function AdminGroupDetail() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-green-600">Gelecek Etkinlikler</p>
-                                            <p className="text-2xl font-bold text-gray-900">{stats.upcomingEvents}</p>
+                                            <p className="text-2xl font-bold text-gray-900">Veri yok</p>
                                         </div>
                                         <div className="p-3 bg-green-100 rounded-full">
                                             <Calendar className="h-6 w-6 text-green-600" />

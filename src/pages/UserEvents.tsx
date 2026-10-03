@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useEventStore } from '../stores/eventStore';
+import { EventItem, useEventStore } from '../stores/eventStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
@@ -9,6 +9,11 @@ import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 
 import { useNavigate } from 'react-router-dom';
+
+const hasAttendanceList = (event: EventItem) => Array.isArray(event.attendees)
+    && event.attendees.every(att => att && typeof att === 'object' && !Array.isArray(att) && typeof att.id === 'string' && !!att.id.trim());
+const attendanceCount = (event: EventItem) => hasAttendanceList(event) ? event.attendees!.length : null;
+const eventCapacity = (event: EventItem) => Number.isSafeInteger(event.max_attendees) && event.max_attendees! > 0 ? event.max_attendees! : null;
 
 export function UserEvents() {
     const navigate = useNavigate();
@@ -62,9 +67,11 @@ export function UserEvents() {
         return isPublished && isUpcomingOrOngoing;
     });
 
-    const displayEvents = filterTab === 'all'
-        ? visibleEvents
-        : visibleEvents.filter(e => e.attendees?.some((att: any) => att.id === user?.id));
+    const attendanceKnown = !!user?.id && visibleEvents.every(hasAttendanceList);
+    const attendingEvents = attendanceKnown
+        ? visibleEvents.filter(e => e.attendees!.some((att: any) => att.id === user!.id))
+        : [];
+    const displayEvents = filterTab === 'all' ? visibleEvents : attendingEvents;
 
     if (readError) return <div role="alert" className="p-8"><p>{readError}</p><Button onClick={() => fetchEvents()}>Tekrar dene</Button></div>;
     if (readLoading || loadedFor !== `${user?.id}:${user?.role}`) return <p role="status" className="p-8">Etkinlikler yükleniyor...</p>;
@@ -97,11 +104,16 @@ export function UserEvents() {
                                 : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-250'
                         }`}
                     >
-                        Katılacağım Etkinlikler ({events.filter(e => e.attendees?.some((att: any) => att.id === user?.id)).length})
+                        Katılacağım Etkinlikler ({attendanceKnown ? attendingEvents.length : 'Bilinmiyor'})
                     </button>
                 </div>
 
-                {displayEvents.length === 0 ? (
+                {filterTab === 'attending' && !attendanceKnown ? (
+                    <div role="alert" className="p-6 bg-white rounded-lg">
+                        <p>{user?.id ? 'Etkinlik kayıtlarınız doğrulanamadı.' : 'Etkinlik kayıtlarınızı görmek için giriş yapın.'}</p>
+                        {user?.id && <Button onClick={() => fetchEvents()}>Tekrar dene</Button>}
+                    </div>
+                ) : displayEvents.length === 0 ? (
                     <Card>
                         <CardContent className="text-center py-12">
                             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -114,7 +126,11 @@ export function UserEvents() {
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {displayEvents.map((event) => (
+                        {displayEvents.map((event) => {
+                            const count = attendanceCount(event);
+                            const capacity = eventCapacity(event);
+                            const remaining = count !== null && capacity !== null && count <= capacity ? capacity - count : null;
+                            return (
                             <Card key={event.id} className="hover:shadow-lg transition-shadow border-t-4 border-t-red-600">
                                 <CardHeader>
                                     <div className="flex justify-between items-start mb-2">
@@ -177,11 +193,11 @@ export function UserEvents() {
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center text-gray-500">
                                                         <Users className="h-4 w-4 mr-2" />
-                                                        {event.attendees?.length || 0} / {event.max_attendees || '∞'}
+                                                        {count ?? 'Bilinmiyor'} / {capacity ?? 'Bilinmiyor'}
                                                     </div>
-                                                    {event.max_attendees && (
+                                                    {capacity !== null && (
                                                         <span className="text-xs text-red-600 font-medium ml-6">
-                                                            Kalan: {Math.max(0, event.max_attendees - (event.attendees?.length || 0))}
+                                                            Kalan: {remaining ?? 'Bilinmiyor'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -211,7 +227,7 @@ export function UserEvents() {
                                     </div>
                                 </CardContent>
                             </Card>
-                        ))}
+                        ); })}
                     </div>
                 )}
             </div>

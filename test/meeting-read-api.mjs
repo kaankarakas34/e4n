@@ -60,3 +60,33 @@ globalThis.fetch = async (url, options) => {
 };
 assert.deepEqual(await api.deleteEvent('fixture-event'), { success: true });
 console.log('Event delete API returns server ACK to caller.');
+
+const meetingRow = { id: 'request-key', requester_id: 'sender', partner_id: 'recipient', notes: 'Topic',
+  meeting_date: '2026-10-06T10:00:00Z', created_at: '2026-10-03T10:00:00Z', status: 'PENDING' };
+const payload = { requestId: meetingRow.id, senderId: 'sender', receiverId: 'recipient', topic: ' Topic ', proposedTime: meetingRow.meeting_date };
+globalThis.fetch = async (url, options) => {
+  assert.equal(url, 'http://localhost:4005/api/one-to-ones/request'); assert.equal(options.method, 'POST');
+  assert.deepEqual(JSON.parse(options.body), payload); return response;
+};
+for (const bad of [null, {success:true}, {...meetingRow,id:'different'}, {...meetingRow,requester_id:'other'},
+  {...meetingRow,partner_id:'other'}, {...meetingRow,status:'COMPLETED'}, {...meetingRow,notes:'Other'}, {...meetingRow,meeting_date:'bad'}]) {
+  response = new Response(JSON.stringify(bad)); await assert.rejects(api.requestMeeting(payload), /Unconfirmed meeting request/);
+}
+for (const status of ['PENDING', 'ACCEPTED', 'REJECTED']) {
+  response = new Response(JSON.stringify({...meetingRow,status})); assert.equal((await api.requestMeeting(payload)).status,status);
+}
+globalThis.fetch = async (url, options) => {
+  assert.equal(url, 'http://localhost:4005/api/one-to-ones/request-key/status'); assert.equal(options.method,'PUT'); return response;
+};
+for (const bad of [null, {success:true}, {...meetingRow,status:'PENDING'}, {...meetingRow,status:'ACCEPTED',id:'other'}]) {
+  response = new Response(JSON.stringify(bad)); await assert.rejects(api.updateMeetingStatus('request-key','ACCEPTED'), /Unconfirmed meeting status/);
+}
+response = new Response(JSON.stringify({...meetingRow,status:'ACCEPTED'})); assert.equal((await api.updateMeetingStatus('request-key','ACCEPTED')).success,true);
+globalThis.fetch = async () => response;
+for (const bad of [null, {}, [null], [{...meetingRow,requester_id:'other'}]]) {
+  response = new Response(JSON.stringify(bad)); await assert.rejects(api.getMyMeetingRequests('sender'));
+}
+response = new Response(JSON.stringify([{...meetingRow,status:'COMPLETED',requester_name:'Sender',partner_name:'Recipient'}]));
+const [mapped] = await api.getMyMeetingRequests('sender'); assert.equal(mapped.status,'COMPLETED'); assert.equal(mapped.receiverName,'Recipient');
+response = new Response('Unavailable', {status:503}); await assert.rejects(api.getMyMeetingRequests('sender'), /Unavailable/);
+console.log('Meeting request API: malformed/wrong-target write ACK rejected, decided-key retries allowed, owner and legacy status preserved, read failures reject.');

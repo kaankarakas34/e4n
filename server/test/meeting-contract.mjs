@@ -87,45 +87,67 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  await applyVersionedSchema();
+  assert.equal((await applyVersionedSchema()).applied.length,7);
+  assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids = [randomUUID(),randomUUID(),randomUUID()];
   for (const [i,id] of ids.entries()) await pool.query("INSERT INTO users (id,email,name,profession,password_hash,role) VALUES ($1,$2,$3,'Fixture','fixture-only','MEMBER')",[id,`meeting-${i}@example.invalid`,`Fixture ${i}`]);
   const meetingId=randomUUID();
   await pool.query("INSERT INTO one_to_ones (id,requester_id,partner_id,meeting_date,notes) VALUES ($1,$2,$3,'2026-10-05T10:00:00Z','Contract fixture')",[meetingId,ids[0],ids[1]]);
   const snapshot=async()=>(await pool.query('SELECT * FROM one_to_ones ORDER BY id')).rows;
   const before=await snapshot();
-  const { default:app }=await import('../src/index.js');
-  appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');
+  const scoresBefore=(await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows;
+  // Rehearse the already-versioned six-migration state with a preserved activity.
+  await pool.query("DELETE FROM schema_migrations WHERE version='0007_meeting_requests'");
+  await pool.query('DROP TABLE one_to_one_requests'); await pool.query('ALTER TABLE one_to_ones DROP COLUMN updated_at');
+  assert.deepEqual((await applyVersionedSchema()).applied,['0007_meeting_requests']);
+  assert.equal((await applyVersionedSchema()).applied.length,0); assert.deepEqual(await snapshot(),before);
+  const {default:app}=await import('../src/index.js');
+  appServer=app.listen(0,'127.0.0.1'); await once(appServer,'listening');
   const base=`http://127.0.0.1:${appServer.address().port}`;
   const token=id=>jwt.sign({id,role:'MEMBER'},process.env.JWT_SECRET);
-  const get=async id=>{const r=await fetch(`${base}/api/one-to-ones`,{headers:id?{Authorization:`Bearer ${token(id)}`}:{},signal:AbortSignal.timeout(10000)});const body=await r.text();let data;try{data=JSON.parse(body);}catch{data=body;}return {status:r.status,data};};
-  assert.equal((await get()).status,401);
-  const outgoing=await get(ids[0]),incoming=await get(ids[1]),other=await get(ids[2]);
-  assert.equal(outgoing.status,200);assert.equal(incoming.status,200);assert.equal(other.status,200);
-  assert.equal(outgoing.data.length,1);assert.equal(incoming.data.length,1);assert.deepEqual(other.data,[]);
-  assert.equal(outgoing.data[0].direction,'OUTGOING');assert.equal(incoming.data[0].direction,'INCOMING');
-  assert.equal(incoming.data[0].partner_id,ids[1]);assert.equal(incoming.data[0].requester_name,'Fixture 0');
-  assert.equal(outgoing.data[0].status,'COMPLETED');assert.deepEqual(await snapshot(),before);
-  const columns=(await pool.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='one_to_ones'")).rows.map(r=>r.column_name);
-  assert.equal(columns.includes('updated_at'),false);
-  const update=await fetch(`${base}/api/one-to-ones/${meetingId}/status`,{method:'PUT',headers:{Authorization:`Bearer ${token(ids[1])}`,'Content-Type':'application/json'},body:JSON.stringify({status:'ACCEPTED'}),signal:AbortSignal.timeout(10000)});
-  assert.equal(update.status,500);assert.match((await update.json()).error,/updated_at/);assert.deepEqual(await snapshot(),before);
+  const call=async(path,id,body,method=body?'POST':'GET')=>{
+    const r=await fetch(`${base}/api${path}`,{method,headers:{...(id?{Authorization:`Bearer ${token(id)}`}:{ }),'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(10000)});
+    const text=await r.text();let data;try{data=JSON.parse(text);}catch{data=text;}return {status:r.status,data};
+  };
+  assert.equal((await call('/one-to-ones')).status,401);
+  const outgoing=await call('/one-to-ones',ids[0]),incoming=await call('/one-to-ones',ids[1]);
+  assert.equal(outgoing.status,200);assert.equal(incoming.status,200);assert.equal(outgoing.data[0].direction,'OUTGOING');assert.equal(incoming.data[0].direction,'INCOMING');
+  assert.deepEqual((await call('/one-to-ones',ids[2])).data,[]);assert.equal(outgoing.data[0].status,'COMPLETED');
+  assert.equal((await call(`/one-to-ones/${meetingId}/status`,ids[1],{status:'ACCEPTED'},'PUT')).status,409,'completed history cannot become an accepted request');
   let compiled=ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/api.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   compiled=compiled.replace(/import \{ emailService \} from ['"]\.\.\/services\/emailService['"];?/,'const emailService = {};').replaceAll('import.meta.env.PROD','false').replaceAll('http://localhost:4005/api',`${base}/api`);
-  globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(ids[1])}})};
+  let loggedIn=ids[0];globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(loggedIn)}})};
   const {api}=await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
-  const mapped=await api.getMyMeetingRequests(ids[1]);assert.equal(mapped[0].receiverId,ids[1]);assert.equal(mapped[0].senderId,ids[0]);assert.equal(mapped[0].status,'COMPLETED');
-  const originalError = console.error;
-  console.error = (label, error) => originalError(label, error?.message ?? error);
-  await assert.rejects(api.updateMeetingStatus(meetingId,'ACCEPTED'),/updated_at/);
+  const requestId=randomUUID(),payload={requestId,senderId:ids[0],receiverId:ids[1],topic:'Request fixture',proposedTime:'2026-10-06T10:00:00Z'};
+  assert.equal((await api.requestMeeting(payload)).status,'PENDING');
+  await api.requestMeeting(payload);assert.equal((await pool.query('SELECT count(*)::int AS count FROM one_to_one_requests')).rows[0].count,1);
+  assert.equal((await call('/one-to-ones/request',ids[0],{...payload,topic:'Different content'})).status,409);
+  assert.equal((await call('/one-to-ones/request',ids[0],{...payload,requestId:randomUUID(),receiverId:ids[0]})).status,400);
+  assert.equal((await call('/one-to-ones/request',ids[0],{...payload,requestId:randomUUID(),receiverId:randomUUID()})).status,404);
+  assert.equal((await call('/one-to-ones/request',null,payload)).status,401);
+  loggedIn=ids[1]; const mapped=await api.getMyMeetingRequests(ids[1]);assert.equal(mapped.find(r=>r.id===requestId).receiverId,ids[1]);assert.equal(mapped.find(r=>r.id===requestId).senderName,'Fixture 0');
+  assert.equal((await call(`/one-to-ones/${requestId}/status`,ids[0],{status:'ACCEPTED'},'PUT')).status,404);
+  assert.equal((await call(`/one-to-ones/${requestId}/status`,ids[2],{status:'ACCEPTED'},'PUT')).status,404);
+  assert.equal((await call(`/one-to-ones/${requestId}/status`,ids[1],{status:'COMPLETED'},'PUT')).status,400);
+  assert.equal((await api.updateMeetingStatus(requestId,'ACCEPTED')).data.status,'ACCEPTED');
+  await api.updateMeetingStatus(requestId,'ACCEPTED');
+  assert.equal((await call(`/one-to-ones/${requestId}/status`,ids[1],{status:'REJECTED'},'PUT')).status,409);
+  const racingId=randomUUID();loggedIn=ids[0];await api.requestMeeting({...payload,requestId:racingId});
+  const race=await Promise.all(['ACCEPTED','REJECTED'].map(status=>call(`/one-to-ones/${racingId}/status`,ids[1],{status},'PUT')));
+  assert.deepEqual(race.map(r=>r.status).sort(),[200,409]);
+  const decided=(await pool.query('SELECT status,updated_at FROM one_to_one_requests WHERE id=$1',[racingId])).rows[0];assert.ok(decided.updated_at);assert.ok(['ACCEPTED','REJECTED'].includes(decided.status));
+  const legacyPending=randomUUID();await pool.query("INSERT INTO one_to_ones(id,requester_id,partner_id,meeting_date,status) VALUES($1,$2,$3,NOW(),'PENDING')",[legacyPending,ids[0],ids[1]]);
+  assert.equal((await call(`/one-to-ones/${legacyPending}/status`,ids[1],{status:'REJECTED'},'PUT')).status,200);
+  await pool.query('DELETE FROM one_to_ones WHERE id=$1',[legacyPending]);
   const originalQuery=pool.query.bind(pool);
   try {
-    pool.query=(sql,...args)=>typeof sql==='string'&&sql.includes('FROM one_to_ones o')?Promise.reject(new Error('isolated meeting read failure')):originalQuery(sql,...args);
-    assert.equal((await get(ids[1])).status,500);
-    assert.deepEqual(await api.getMyMeetingRequests(ids[1]),[],'baseline hides HTTP failure as empty');
-  }finally{pool.query=originalQuery;console.error=originalError;}
-  assert.deepEqual(await snapshot(),before);
-  console.log(JSON.stringify({isolated:true,read:{anonymous:401,outgoing:200,incoming:200,unrelatedRows:0,rowsUnchanged:true},findings:{statusWrite:500,missingUpdatedAt:true,defaultStatus:'COMPLETED',clientHidesReadFailure:true},migrations:(await pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count},null,2));
+    pool.query=(sql,...args)=>typeof sql==='string'&&sql.includes('UNION ALL')&&sql.includes('one_to_one_requests')?Promise.reject(new Error('isolated meeting read failure')):originalQuery(sql,...args);
+    loggedIn=ids[1];assert.equal((await call('/one-to-ones',ids[1])).status,500);
+    await assert.rejects(api.getMyMeetingRequests(ids[1]),/isolated meeting read failure/);
+  }finally{pool.query=originalQuery;}
+  assert.deepEqual(await snapshot(),before);assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
+  console.log(JSON.stringify({isolated:true,migrations:7,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
+
 }
 let exitCode = 0;
 try {

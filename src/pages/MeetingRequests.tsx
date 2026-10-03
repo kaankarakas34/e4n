@@ -1,49 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../api/api';
+import { useMeetingRequests, meetingStatusLabel } from '../hooks/useMeetingRequests';
 import { useAuthStore } from '../stores/authStore';
-import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
+import { Card, CardContent } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Calendar, Clock, User, Check, X, ExternalLink, RefreshCw } from 'lucide-react';
 
 export function MeetingRequests() {
     const { user } = useAuthStore();
-    const [requests, setRequests] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { requests, loading, error, notice, pending, loadRequests, handleAction } = useMeetingRequests();
+    if (!user?.id) return <p>Toplantı talepleri için giriş yapın.</p>;
+    if (loading || error) return <div><p role="status">{notice}</p>{loading ? <p role="status">Toplantı talepleri yükleniyor...</p> : <p role="alert">{error}</p>}<Button disabled={loading || pending} onClick={loadRequests}>Tekrar yükle</Button></div>;
 
-    useEffect(() => {
-        loadRequests();
-    }, [user]);
-
-    const loadRequests = async () => {
-        if (!user) return;
-        setLoading(true);
-        try {
-            const data = await api.getMyMeetingRequests(user.id);
-            // Sort: Pending first, then by date
-            const sorted = data.sort((a: any, b: any) => {
-                if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
-                if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
-                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            });
-            setRequests(sorted);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAction = async (id: string, status: 'ACCEPTED' | 'REJECTED') => {
-        try {
-            await api.updateMeetingStatus(id, status);
-            await loadRequests();
-            alert(status === 'ACCEPTED' ? 'Toplantı onaylandı ve takvim linki mail olarak gönderildi.' : 'Toplantı reddedildi.');
-        } catch (e) {
-            alert('İşlem sırasında hata oluştu.');
-        }
-    };
-
-    if (loading) return <div className="p-4 text-center">Yükleniyor...</div>;
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8">
@@ -52,11 +18,12 @@ export function MeetingRequests() {
                     <Calendar className="mr-3 h-8 w-8 text-indigo-600" />
                     Toplantı Talepleri
                 </h1>
-                <Button variant="outline" size="sm" onClick={loadRequests}>
+                <Button variant="outline" size="sm" disabled={pending} onClick={loadRequests}>
                     <RefreshCw className="h-4 w-4 mr-2" /> Yenile
                 </Button>
             </div>
 
+            {notice && <p role="status">{notice}</p>}
             <div className="space-y-4">
                 {requests.length === 0 ? (
                     <Card>
@@ -67,7 +34,6 @@ export function MeetingRequests() {
                 ) : (
                     requests.map((req) => {
                         const isIncoming = req.receiverId === user?.id;
-                        const otherPartyName = isIncoming ? req.senderName : 'Siz'; // Simplified for outgoing
 
                         return (
                             <Card key={req.id} className={`border-l-4 ${req.status === 'PENDING' ? 'border-l-yellow-400' : req.status === 'ACCEPTED' ? 'border-l-green-500' : 'border-l-gray-300'}`}>
@@ -79,7 +45,7 @@ export function MeetingRequests() {
                                                         req.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
                                                             'bg-gray-100 text-gray-800'
                                                     }`}>
-                                                    {req.status === 'PENDING' ? 'Bekliyor' : req.status === 'ACCEPTED' ? 'Onaylandı' : 'Reddedildi'}
+                                                    {meetingStatusLabel(req.status)}
                                                 </span>
                                                 <span className="text-xs text-gray-400">
                                                     {isIncoming ? 'Gelen İstek' : 'Giden İstek'}
@@ -91,7 +57,7 @@ export function MeetingRequests() {
                                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                                                 <div className="flex items-center">
                                                     <User className="h-4 w-4 mr-1 text-gray-400" />
-                                                    {isIncoming ? `İsteyen: ${req.senderName}` : `Alıcı: (ID: ${req.receiverId})`}
+                                                    {isIncoming ? `İsteyen: ${req.senderName}` : `Alıcı: ${req.receiverName || req.receiverId}`}
                                                 </div>
                                                 <div className="flex items-center">
                                                     <Calendar className="h-4 w-4 mr-1 text-gray-400" />
@@ -110,7 +76,7 @@ export function MeetingRequests() {
                                                 <>
                                                     <Button
                                                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                                                        onClick={() => handleAction(req.id, 'ACCEPTED')}
+                                                        disabled={pending} onClick={() => handleAction(req.id, 'ACCEPTED')}
                                                     >
                                                         <Check className="h-4 w-4 md:mr-2" />
                                                         <span className="md:inline">Kabul Et</span>
@@ -118,7 +84,7 @@ export function MeetingRequests() {
                                                     <Button
                                                         variant="outline"
                                                         className="flex-1 text-red-600 hover:bg-red-50 border-red-200"
-                                                        onClick={() => handleAction(req.id, 'REJECTED')}
+                                                        disabled={pending} onClick={() => handleAction(req.id, 'REJECTED')}
                                                     >
                                                         <X className="h-4 w-4 md:mr-2" />
                                                         <span className="md:inline">Reddet</span>

@@ -1,4 +1,10 @@
 import { emailService } from '../services/emailService';
+const validMeetingRow = (row: any) => row && typeof row === 'object' && !Array.isArray(row)
+  && ['id','requester_id','partner_id'].every(key => typeof row[key] === 'string' && !!row[key].trim())
+  && typeof row.status === 'string' && !!row.status.trim()
+  && ['meeting_date','created_at'].every(key => typeof row[key] === 'string' && Number.isFinite(Date.parse(row[key])))
+  && ['notes','requester_name','partner_name'].every(key => row[key] == null || typeof row[key] === 'string');
+
 const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';
 
 
@@ -536,40 +542,23 @@ export const api = {
 
   // Meeting Requests (One-to-Ones)
   async getMyMeetingRequests(userId: string) {
-    try {
-      const rows = await request('/one-to-ones');
-      return rows.map((r: any) => ({
-        id: r.id,
-        topic: r.notes || 'Birebir Görüşme',
-        proposedTime: r.meeting_date,
-        status: r.status || 'PENDING',
-        senderName: r.direction === 'INCOMING' ? r.requester_name : r.partner_name,
-        receiverId: r.partner_id,
-        senderId: r.requester_id
-      }));
-    } catch (e) {
-      console.error("getMyMeetingRequests FAILED:", e);
-      return [];
-    }
+    if (!userId?.trim()) throw new Error('Missing meeting user');
+    const rows = await request('/one-to-ones');
+    if (!Array.isArray(rows) || rows.some((r: any) => !validMeetingRow(r)
+        || (r.requester_id !== userId && r.partner_id !== userId))) throw new Error('Invalid meeting list');
+    return rows.map((r: any) => ({
+      id: r.id, topic: r.notes || 'Birebir Görüşme', proposedTime: r.meeting_date,
+      created_at: r.created_at, status: r.status,
+      senderName: r.requester_name, receiverName: r.partner_name,
+      receiverId: r.partner_id, senderId: r.requester_id,
+      recordKind: r.record_kind ?? 'ACTIVITY'
+    }));
   },
-
   async updateMeetingStatus(id: string, status: string) {
-    try {
-      const res = await request(`/one-to-ones/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status })
-      });
-
-      // Mock email sending logic can remain here or move to backend
-      if (status === 'ACCEPTED') {
-        // ... email logic ...
-        // For now, let's trust the backend or frontend notification
-      }
-      return { success: true, data: res };
-    } catch (e) {
-      console.error("updateMeetingStatus failed:", e);
-      throw e;
-    }
+    if (!id?.trim() || !['ACCEPTED','REJECTED'].includes(status)) throw new Error('Invalid meeting action');
+    const row = await request(`/one-to-ones/${encodeURIComponent(id)}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+    if (!validMeetingRow(row) || row.id !== id || row.status !== status) throw new Error('Unconfirmed meeting status');
+    return { success: true, data: row };
   },
 
   async getMessages(userId: string, friendId: string) {
@@ -627,7 +616,12 @@ export const api = {
     return await request('/shuffle/notify', { method: 'POST', body: JSON.stringify({ items }) });
   },
   async requestMeeting(payload: any) {
-    return await request('/one-to-ones/request', { method: 'POST', body: JSON.stringify(payload) });
+    const row = await request('/one-to-ones/request', { method: 'POST', body: JSON.stringify(payload) });
+    if (!validMeetingRow(row) || !['PENDING', 'ACCEPTED', 'REJECTED'].includes(row.status)
+        || row.id !== payload.requestId || row.partner_id !== payload.receiverId
+        || row.requester_id !== payload.senderId || row.notes !== payload.topic.trim()
+        || Date.parse(row.meeting_date) !== Date.parse(payload.proposedTime)) throw new Error('Unconfirmed meeting request');
+    return row;
   },
   async createReferral(payload: any) {
     return await request('/referrals', { method: 'POST', body: JSON.stringify(payload) });

@@ -1013,24 +1013,36 @@ app.get('/api/users/:id', async (req, res) => {
 /* --- TRAFFIC LIGHT DATA ENDPOINTS --- */
 
 // 1. One-to-Ones
+const meetingUuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 app.get('/api/one-to-ones', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT o.*,
-      u.name as partner_name,
-      u2.name as requester_name,
-      CASE 
-                WHEN o.requester_id = $1 THEN 'OUTGOING'
-                ELSE 'INCOMING'
-              END as direction
-       FROM one_to_ones o 
-       LEFT JOIN users u ON o.partner_id = u.id 
-       LEFT JOIN users u2 ON o.requester_id = u2.id
-       WHERE o.requester_id = $1 OR o.partner_id = $1 
-       ORDER BY o.meeting_date DESC`,
-      [req.user.id]
-    );
+    const { rows } = await pool.query(`
+      SELECT o.*, u.name AS partner_name, u2.name AS requester_name,
+        CASE WHEN o.requester_id = $1 THEN 'OUTGOING' ELSE 'INCOMING' END AS direction
+      FROM (
+        SELECT id, requester_id, partner_id, meeting_date, notes, status, created_at, updated_at, 'ACTIVITY' AS record_kind FROM one_to_ones
+        UNION ALL
+        SELECT id, requester_id, partner_id, meeting_date, notes, status, created_at, updated_at, 'REQUEST' AS record_kind FROM one_to_one_requests
+      ) o LEFT JOIN users u ON o.partner_id=u.id LEFT JOIN users u2 ON o.requester_id=u2.id
+      WHERE o.requester_id=$1 OR o.partner_id=$1 ORDER BY o.meeting_date DESC`, [req.user.id]);
     res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/one-to-ones/request', authenticateToken, async (req, res) => {
+  const { requestId, receiverId, topic, proposedTime } = req.body;
+  if (!meetingUuid(requestId) || !meetingUuid(receiverId) || receiverId === req.user.id
+      || typeof topic !== 'string' || !topic.trim() || typeof proposedTime !== 'string' || !Number.isFinite(Date.parse(proposedTime))) {
+    return res.status(400).json({ error: 'Invalid meeting request' });
+  }
+  try {
+    if (!(await pool.query('SELECT id FROM users WHERE id=$1', [receiverId])).rowCount) return res.status(404).json({ error: 'Recipient not found' });
+    const inserted = await pool.query(`INSERT INTO one_to_one_requests (id,requester_id,partner_id,meeting_date,notes)
+      VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO NOTHING RETURNING *`, [requestId,req.user.id,receiverId,proposedTime,topic.trim()]);
+    const row = inserted.rows[0] || (await pool.query('SELECT * FROM one_to_one_requests WHERE id=$1', [requestId])).rows[0];
+    if (!row || row.requester_id !== req.user.id || row.partner_id !== receiverId || row.notes !== topic.trim()
+        || new Date(row.meeting_date).getTime() !== Date.parse(proposedTime)) return res.status(409).json({ error: 'Request key already used' });
+    res.status(inserted.rowCount ? 201 : 200).json(row);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1051,20 +1063,25 @@ app.post('/api/one-to-ones', authenticateToken, async (req, res) => {
 app.put('/api/one-to-ones/:id/status', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  if (!meetingUuid(id) || !['ACCEPTED','REJECTED'].includes(status)) return res.status(400).json({ error: 'Invalid meeting status' });
   try {
-    const { rows } = await pool.query(
-      `UPDATE one_to_ones 
-       SET status = $1, updated_at = NOW() 
-       WHERE id = $2 AND(requester_id = $3 OR partner_id = $3)
-       RETURNING * `,
-      [status, id, req.user.id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Meeting not found' });
-
-    // Also update score if needed
-    await calculateMemberScore(req.user.id);
-
-    res.json(rows[0]);
+    // Resolve only a record belonging to the authenticated recipient. Requests do not change activity scores.
+    const requestRow = (await pool.query('SELECT * FROM one_to_one_requests WHERE id=$1 AND partner_id=$2', [id,req.user.id])).rows[0];
+    const legacyRow = requestRow ? null : (await pool.query('SELECT * FROM one_to_ones WHERE id=$1 AND partner_id=$2', [id,req.user.id])).rows[0];
+    const row = requestRow || legacyRow;
+    if (!row) return res.status(404).json({ error: 'Meeting not found' });
+    if (row.status === status) return res.json(row);
+    if (row.status !== 'PENDING') return res.status(409).json({ error: 'Meeting already decided' });
+    const sql = requestRow
+      ? "UPDATE one_to_one_requests SET status=$1,updated_at=NOW() WHERE id=$2 AND partner_id=$3 AND status='PENDING' RETURNING *"
+      : "UPDATE one_to_ones SET status=$1,updated_at=NOW() WHERE id=$2 AND partner_id=$3 AND status='PENDING' RETURNING *";
+    const changed = (await pool.query(sql,[status,id,req.user.id])).rows[0];
+    if (changed) return res.json(changed);
+    const current = requestRow
+      ? (await pool.query('SELECT * FROM one_to_one_requests WHERE id=$1 AND partner_id=$2',[id,req.user.id])).rows[0]
+      : (await pool.query('SELECT * FROM one_to_ones WHERE id=$1 AND partner_id=$2',[id,req.user.id])).rows[0];
+    if (current?.status === status) return res.json(current);
+    return res.status(409).json({ error: 'Meeting already decided' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

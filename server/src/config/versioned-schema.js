@@ -17,6 +17,8 @@ const notificationSql = readFileSync(path.join(serverDir, 'migrations/0004_notif
 const publicVisitorInviterSql = readFileSync(path.join(serverDir, 'migrations/0005_public_visitor_inviter.sql'), 'utf8');
 const registrationConsentsSql = readFileSync(path.join(serverDir, 'migrations/0006_registration_consents.sql'), 'utf8');
 
+const meetingRequestsSql = readFileSync(path.join(serverDir, 'migrations/0007_meeting_requests.sql'), 'utf8');
+
 function checksum(source) {
   return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
 }
@@ -28,6 +30,7 @@ const versions = [
   { version: '0004_notifications_contract', checksum: checksum(notificationSql), apply: client => client.query(notificationSql) },
   { version: '0005_public_visitor_inviter', checksum: checksum(publicVisitorInviterSql), apply: client => client.query(publicVisitorInviterSql) },
   { version: '0006_registration_consents', checksum: checksum(registrationConsentsSql), apply: client => client.query(registrationConsentsSql) },
+  { version: '0007_meeting_requests', checksum: checksum(meetingRequestsSql), apply: client => client.query(meetingRequestsSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

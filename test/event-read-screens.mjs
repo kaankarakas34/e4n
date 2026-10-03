@@ -7,11 +7,14 @@ const user = { id: 'admin', role: 'ADMIN' };
 globalThis.readScreenAuth = () => ({ user });
 globalThis.readScreenStore = () => ({ events: [{ id: 'fixture', title: 'Fixture Event', description: null, start_at: '2099-10-03', is_public: true, status: 'PUBLISHED' }], fetchEvents: async () => {}, ...status });
 const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === 'object' ? [tree, ...nodes(tree.props?.children)] : [];
+const priceCode = ts.transpileModule(readFileSync(new URL('../src/utils/eventPrice.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const priceModule = `data:text/javascript;base64,${Buffer.from(priceCode).toString('base64')}`;
 for (const name of ['AdminEvents', 'UserEvents', 'AdminDashboard']) {
   let code = ts.transpileModule(readFileSync(new URL(`../src/pages/${name}.tsx`, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   code = code.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_, names) => `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.readScreenHooks;`);
   code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
     if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
+    if (module === '../utils/eventPrice') return line.replace(module, priceModule);
     if (module === 'react') return `const {${names}} = globalThis.readScreenHooks;`;
     if (module === '../stores/authStore') return 'const useAuthStore = globalThis.readScreenAuth;';
     if (module === '../stores/eventStore') return 'const useEventStore = globalThis.readScreenStore;';

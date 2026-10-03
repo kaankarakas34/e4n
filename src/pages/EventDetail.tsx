@@ -6,12 +6,7 @@ import { api } from '../api/api';
 import { Button } from '../shared/Button';
 import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video } from 'lucide-react';
 import { PaymentModal } from '../components/PaymentModal';
-
-const readPrice = (value: unknown): number | null => {
-    if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+(\.\d+)?$/.test(value))) return null;
-    const amount = Number(value);
-    return Number.isFinite(amount) && amount >= 0 && amount <= Number.MAX_SAFE_INTEGER ? amount : null;
-};
+import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
 
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
@@ -32,8 +27,8 @@ export function EventDetail() {
     const pageContext = `${id}:${user?.id}:${user?.role}`;
     const latestContext = useRef(pageContext);
     latestContext.current = pageContext;
-    const price = readPrice(event?.price);
-    const currency = typeof event?.currency === 'string' && /^[A-Z]{3}$/.test(event.currency) ? event.currency : null;
+    const price = readEventPrice(event?.price);
+    const currency = readEventCurrency(event?.currency);
     const paymentAvailable = price !== null && (price === 0 || currency === 'TRY');
     const capacity = Number.isSafeInteger(event?.max_attendees) && event.max_attendees > 0 ? event.max_attendees : null;
 
@@ -336,7 +331,7 @@ export function EventDetail() {
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-500">Ücret</span>
-                                    <span className="font-bold text-gray-900">{price === 0 ? 'Ücretsiz' : price !== null && currency ? `${price.toLocaleString('tr-TR')} ${currency}` : 'Bilinmiyor'}</span>
+                                    <span className="font-bold text-gray-900">{formatEventPrice(price, currency)}</span>
                                 </div>
 
                                 {!paymentAvailable && <div role="alert"><p>{price === null || !currency ? 'Ücret bilgisi doğrulanamadı.' : 'Bu etkinlik için ödeme şu anda başlatılamıyor.'}</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>}

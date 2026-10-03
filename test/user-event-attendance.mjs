@@ -9,8 +9,11 @@ globalThis.attendanceHooks = {
 globalThis.attendanceAuth = () => ({ user });
 globalThis.attendanceStore = () => ({ events, fetchEvents: async () => { reads++; }, readError: null, readLoading: false, loadedFor: `${user?.id}:${user?.role}` });
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/UserEvents.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+const priceCode = ts.transpileModule(readFileSync(new URL('../src/utils/eventPrice.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const priceModule = `data:text/javascript;base64,${Buffer.from(priceCode).toString('base64')}`;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
+  if (module === '../utils/eventPrice') return line.replace(module, priceModule);
   if (module === 'react') return `const {${names}} = globalThis.attendanceHooks;`;
   if (module === '../stores/authStore') return 'const useAuthStore = globalThis.attendanceAuth;';
   if (module === '../stores/eventStore') return 'const useEventStore = globalThis.attendanceStore;';
@@ -51,4 +54,16 @@ for (const max_attendees of [undefined, null, 0, -1, 1.5, '10']) {
   reset({ attendees: [], max_attendees }); output = render(); assert.ok(output.text.includes('0 / Bilinmiyor')); assert.equal(output.text.includes('∞'), false);
 }
 reset({ attendees: [{ id: 'me' }, { id: 'other' }], max_attendees: 1 }); assert.ok(render().text.includes('Kalan: Bilinmiyor'), 'contradictory count does not assert zero capacity');
+for (const price of [undefined, null, '', ' ', true, -1, '-1', 'invalid', '1e3', Infinity, NaN]) {
+  reset({ attendees: [], price, currency: 'TRY' }); output = render();
+  assert.equal(output.text.includes('Ücretsiz'), false);
+  assert.ok(output.nodes.some(node => node.type === 'span' && node.props?.className === 'font-bold text-gray-900' && node.props.children === 'Bilinmiyor'));
+}
+for (const price of [0, '0.00']) { reset({ attendees: [], price }); assert.ok(render().text.includes('Ücretsiz')); }
+for (const price of [125.5, '125.50']) {
+  reset({ attendees: [], price, currency: 'TRY' }); assert.ok(render().text.includes('125,5 TRY'));
+  reset({ attendees: [], price, currency: 'USD' }); assert.ok(render().text.includes('125,5 USD'));
+  reset({ attendees: [], price, currency: null }); assert.equal(render().text.includes('Ücretsiz'), false);
+}
 console.log('Real UserEvents attendance: missing/malformed unknown vs confirmed empty/count, retry, scoped count, anonymous and capacity boundaries passed.');
+console.log('Real UserEvents prices: unknown never free, confirmed numeric/string zero free, paid decimal/currency display preserved.');

@@ -19,8 +19,11 @@ let compiled = ts.transpileModule(readFileSync(new URL('../src/pages/EventDetail
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 compiled = compiled.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_, names) => `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.eventPaymentHooks;`);
+const priceCode = ts.transpileModule(readFileSync(new URL('../src/utils/eventPrice.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const priceModule = `data:text/javascript;base64,${Buffer.from(priceCode).toString('base64')}`;
 compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, source) => {
   if (source === 'react/jsx-runtime') return line.replace(source, import.meta.resolve(source));
+  if (source === '../utils/eventPrice') return line.replace(source, priceModule);
   if (source === '../api/api') return 'const api = globalThis.eventPaymentApi;';
   if (source === '../stores/authStore') return 'const useAuthStore = globalThis.eventPaymentAuth;';
   if (source === 'react-router-dom') return 'const { useParams, useNavigate } = globalThis.eventPaymentRouter;';

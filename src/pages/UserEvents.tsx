@@ -9,6 +9,7 @@ import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 
 import { useNavigate } from 'react-router-dom';
+import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
 
 const hasAttendanceList = (event: EventItem) => Array.isArray(event.attendees)
     && event.attendees.every(att => att && typeof att === 'object' && !Array.isArray(att) && typeof att.id === 'string' && !!att.id.trim());
@@ -130,6 +131,8 @@ export function UserEvents() {
                             const count = attendanceCount(event);
                             const capacity = eventCapacity(event);
                             const remaining = count !== null && capacity !== null && count <= capacity ? capacity - count : null;
+                            const price = readEventPrice(event.price);
+                            const currency = readEventCurrency(event.currency);
                             return (
                             <Card key={event.id} className="hover:shadow-lg transition-shadow border-t-4 border-t-red-600">
                                 <CardHeader>
@@ -201,11 +204,7 @@ export function UserEvents() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {event.price && event.price > 0 ? (
-                                                    <span className="font-bold text-gray-900">{event.price} {event.currency}</span>
-                                                ) : (
-                                                    <span className="text-green-600 font-medium">Ücretsiz</span>
-                                                )}
+                                                <span className={price === 0 ? 'text-green-600 font-medium' : 'font-bold text-gray-900'}>{formatEventPrice(price, currency)}</span>
                                             </div>
                                         </div>
 

@@ -148,6 +148,31 @@ async function main() {
     loggedIn=ids[1];assert.equal((await call('/one-to-ones',ids[1])).status,500);
     await assert.rejects(api.getMyMeetingRequests(ids[1]),/isolated meeting read failure/);
   }finally{pool.query=originalQuery;}
+  if(process.argv[2]) {
+    // Actual mobile client/service use only this disposable loopback server and fixture tokens.
+    const mobileRoot=path.resolve(process.argv[2]);
+    const compile=file=>ts.transpileModule(readFileSync(path.join(mobileRoot,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+    const transport=compile('utils/api-client.ts').replace(/import \{ API_CONFIG \} from ['"]@\/constants\/api['"];?/,`const API_CONFIG={BASE_URL:${JSON.stringify(`${base}/api`)}};`)
+      .replace(/import \{ SecureStorage \} from ['"]\.\/secure-storage['"];?/,'const SecureStorage={getToken:async()=>globalThis.meetingsToken()};');
+    globalThis.meetingsToken=()=>token(loggedIn);
+    const {apiClient}=await import(`data:text/javascript;base64,${Buffer.from(transport).toString('base64')}`);globalThis.meetingsClient=apiClient;
+    const service=compile('utils/meetings-api.ts').replace(/import \{ apiClient \} from ['"]\.\/api-client['"];?/,'const apiClient=globalThis.meetingsClient;');
+    const {meetingsApi:mobile}=await import(`data:text/javascript;base64,${Buffer.from(service).toString('base64')}`);
+    loggedIn=ids[0];const mobileId=randomUUID(),schedule='2026-10-07T11:30:00Z';
+    assert.equal((await mobile.people(ids[0])).some(person=>person.id===ids[0]),false);
+    assert.equal((await mobile.request(ids[0],ids[1],'Mobile meeting',schedule,mobileId)).status,'PENDING');
+    await mobile.request(ids[0],ids[1],'Mobile meeting',schedule,mobileId);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM one_to_one_requests WHERE id=$1',[mobileId])).rows[0].count,1);
+    await assert.rejects(mobile.request(ids[0],ids[1],'Changed content',schedule,mobileId));
+    assert.equal((await mobile.list(ids[0])).find(row=>row.id===mobileId).record_kind,'REQUEST');
+    assert.equal((await mobile.list(ids[0])).find(row=>row.id===meetingId).record_kind,'ACTIVITY');
+    await assert.rejects(mobile.decide(ids[0],mobileId,'ACCEPTED'));
+    loggedIn=ids[2];assert.deepEqual(await mobile.list(ids[2]),[]);await assert.rejects(mobile.decide(ids[2],mobileId,'ACCEPTED'));
+    loggedIn=ids[1];assert.equal((await mobile.decide(ids[1],mobileId,'ACCEPTED')).status,'ACCEPTED');
+    await mobile.decide(ids[1],mobileId,'ACCEPTED');await assert.rejects(mobile.decide(ids[1],mobileId,'REJECTED'));
+    assert.equal((await mobile.list(ids[1])).find(row=>row.id===mobileId).status,'ACCEPTED');
+    console.log('Actual mobile transport/service → isolated HTTP/PG: users/self exclusion, request replay, recipient decision, foreign rejection and activity/request separation passed.');
+  }
   assert.deepEqual(await snapshot(),before);assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
   console.log(JSON.stringify({isolated:true,migrations:9,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
 

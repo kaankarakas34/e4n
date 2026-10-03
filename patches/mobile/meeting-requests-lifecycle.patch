@@ -1,0 +1,171 @@
+diff --git a/app/(tabs)/menu.tsx b/app/(tabs)/menu.tsx
+index 882dc8d..6591d77 100644
+--- a/app/(tabs)/menu.tsx
++++ b/app/(tabs)/menu.tsx
+@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
+ import { Link, useRouter } from 'expo-router';
+
+ const MENU_ITEMS = [
++    { id: 'meeting-requests', title: 'Toplantı Talepleri', icon: 'calendar', color: '#6366f1', route: '/features/meeting-requests' },
+     { id: 'referrals', title: 'Referanslar', icon: 'share-social', color: '#dc2626', route: '/features/referrals' },
+     { id: 'activities', title: 'Birebir Görüşmeler', icon: 'people', color: '#10b981', route: '/features/activities' },
+     { id: 'lms', title: 'E-Akademi', icon: 'school', color: '#0ea5e9', route: '/features/lms' },
+diff --git a/app/features/meeting-requests.tsx b/app/features/meeting-requests.tsx
+new file mode 100644
+--- /dev/null
++++ b/app/features/meeting-requests.tsx
+@@ -0,0 +1,99 @@
++import React, { useEffect, useRef, useState } from 'react';
++import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Linking } from 'react-native';
++import { uuid } from 'expo-modules-core';
++import { useAuth } from '@/hooks/use-auth';
++import { meetingsApi, meetingTime, meetingCalendar, type MeetingRow, type MeetingPerson } from '@/utils/meetings-api';
++
++const labels: Record<string,string> = {PENDING:'Bekliyor',ACCEPTED:'Onaylandı',REJECTED:'Reddedildi',COMPLETED:'Tamamlandı'};
++export default function MeetingRequestsScreen() {
++    const {user} = useAuth(), context = `${user?.id}:${user?.role}`;
++    const current = useRef(context), generation = useRef(0), active = useRef(true);
++    if (current.current!==context) { current.current=context; generation.current++; }
++    const version = generation.current, valid = ()=>active.current && current.current===context && generation.current===version && !!user?.id;
++    const listSeq = useRef(0), peopleSeq = useRef(0), lock = useRef<object|null>(null);
++    const intent = useRef<{signature:string;id:string}|null>(null);
++    const [list,setList] = useState<{context:string;rows:MeetingRow[]}|null>(null);
++    const [people,setPeople] = useState<{context:string;rows:MeetingPerson[]}|null>(null);
++    const [loading,setLoading] = useState(false), [peopleLoading,setPeopleLoading] = useState(false);
++    const [error,setError] = useState<string|null>(null), [peopleError,setPeopleError] = useState<string|null>(null);
++    const [notice,setNotice] = useState<{context:string;text:string}|null>(null), [pendingFor,setPendingFor] = useState<string|null>(null);
++    const [receiver,setReceiver] = useState(''), [topic,setTopic] = useState(''), [date,setDate] = useState(''), [time,setTime] = useState('');
++    const pending = pendingFor===context;
++    const load = async()=>{
++        if(!valid())return;
++        const seq=++listSeq.current;setLoading(true);setError(null);
++        try { const rows=await meetingsApi.list(user.id);if(valid()&&seq===listSeq.current)setList({context,rows}); }
++        catch {if(valid()&&seq===listSeq.current){setList({context,rows:[]});setError('Toplantı talepleri yüklenemedi.');}}
++        finally {if(valid()&&seq===listSeq.current)setLoading(false);}
++    };
++    const loadPeople = async()=>{
++        if(!valid())return;
++        const seq=++peopleSeq.current;setPeopleLoading(true);setPeopleError(null);
++        try {const rows=await meetingsApi.people(user.id);if(valid()&&seq===peopleSeq.current){setPeople({context,rows});if(!rows.some(row=>row.id===receiver))setReceiver('');}}
++        catch {if(valid()&&seq===peopleSeq.current){setPeople({context,rows:[]});setPeopleError('Üyeler yüklenemedi.');}}
++        finally {if(valid()&&seq===peopleSeq.current)setPeopleLoading(false);}
++    };
++    useEffect(()=>{
++        active.current=true;setList(null);setPeople(null);setReceiver('');setTopic('');setDate('');setTime('');setNotice(null);setPendingFor(null);intent.current=null;
++        void load();void loadPeople();
++        return ()=>{active.current=false;listSeq.current++;peopleSeq.current++;};
++    },[context]);
++    const ready=list?.context===context&&!loading&&!error;
++    const peopleReady=people?.context===context&&!peopleLoading&&!peopleError;
++    const listVersion=listSeq.current;
++    const run = async(status?:'ACCEPTED'|'REJECTED',row?:MeetingRow)=>{
++        if(!valid() || lock.current)return;
++        if(status && (!ready || listVersion!==listSeq.current || !row || row.partner_id!==user.id || row.status!=='PENDING'))return;
++        if(!status && (!peopleReady || !receiver || !people!.rows.some(person=>person.id===receiver) || !topic.trim()))return;
++        let proposedTime='';
++        if(!status){try{proposedTime=meetingTime(date,time);}catch{setNotice({context,text:'Konu, tarih ve saati kontrol edin.'});return;}}
++        const token={};lock.current=token;setPendingFor(context);setNotice(null);
++        try {
++            if(status)await meetingsApi.decide(user.id,row!.id,status);
++            else {
++                const signature=JSON.stringify([context,receiver,topic.trim(),proposedTime]);
++                if(intent.current?.signature!==signature)intent.current={signature,id:uuid.v4()};
++                await meetingsApi.request(user.id,receiver,topic.trim(),proposedTime,intent.current.id);
++            }
++            if(!valid())return;
++            if(!status){intent.current=null;setReceiver('');setTopic('');setDate('');setTime('');}
++            setNotice({context,text:status?(status==='ACCEPTED'?'Talep onaylandı.':'Talep reddedildi.'):'Toplantı talebi gönderildi.'});
++            await load();
++        } catch {if(valid())setNotice({context,text:'İşlem sonucu doğrulanamadı. Listeyi yenileyip kontrol edin; aynı talep bilgileriyle yeniden deneyebilirsiniz.'});}
++        finally {if(lock.current===token){lock.current=null;if(valid())setPendingFor(null);}}
++    };
++    const calendar = async(row:MeetingRow)=>{
++        if(!valid()||!ready||row.status!=='ACCEPTED')return;
++        try{await Linking.openURL(meetingCalendar(row));}catch{if(valid())setNotice({context,text:'Takvim bağlantısı açılamadı.'});}
++    };
++    const button=(label:string,onPress:()=>void,disabled=false)=><TouchableOpacity accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} style={[styles.button,disabled&&styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
++    if(!user?.id)return <Text>Toplantı talepleri için giriş yapın.</Text>;
++    return <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
++        <Text style={styles.title}>Toplantı Talepleri</Text>
++        {notice?.context===context&&<Text accessibilityRole="alert">{notice.text}</Text>}
++        {button('Talepleri yenile',load,pending||loading)}
++        {loading||list?.context!==context?<Text>Talepler yükleniyor...</Text>:error?<Text accessibilityRole="alert">{error}</Text>:<View>
++            {!list.rows.length&&<Text>Henüz toplantı talebi veya görüşme kaydı bulunmuyor.</Text>}
++            {list.rows.map(row=><View key={row.id} style={styles.card}>
++                <Text>{row.record_kind==='REQUEST'?'Toplantı talebi':row.record_kind==='ACTIVITY'?'Görüşme kaydı':'Kayıt türü bilinmiyor'} · {row.partner_id===user.id?'Gelen':'Giden'}</Text>
++                <Text style={styles.title}>{row.notes||'Birebir Görüşme'}</Text>
++                <Text>{row.partner_id===user.id?(row.requester_name||row.requester_id):(row.partner_name||row.partner_id)}</Text>
++                <Text>{new Date(row.meeting_date).toLocaleString('tr-TR')} · {labels[row.status]||'Bilinmeyen durum'}</Text>
++                {row.partner_id===user.id&&row.status==='PENDING'&&<View>{button(`Kabul et: ${row.id}`,()=>run('ACCEPTED',row),pending)}{button(`Reddet: ${row.id}`,()=>run('REJECTED',row),pending)}</View>}
++                {row.status==='ACCEPTED'&&button(`Takvime ekle: ${row.id}`,()=>calendar(row),pending)}
++            </View>)}
++        </View>}
++        <View style={styles.card}><Text style={styles.title}>Yeni Toplantı Talebi</Text>
++            {button('Üyeleri yenile',loadPeople,pending||peopleLoading)}
++            {peopleLoading||people?.context!==context?<Text>Üyeler yükleniyor...</Text>:peopleError?<Text accessibilityRole="alert">{peopleError}</Text>:<View>
++                {!people.rows.length&&<Text>Talep gönderilebilecek üye bulunmuyor.</Text>}
++                {people.rows.map(person=><TouchableOpacity key={person.id} accessibilityRole="button" accessibilityLabel={`Üye: ${person.name}`} accessibilityState={{selected:receiver===person.id}} disabled={pending} onPress={()=>{if(valid()&&!lock.current)setReceiver(person.id);}} style={styles.person}><Text>{receiver===person.id?'✓ ':''}{person.name}</Text></TouchableOpacity>)}
++            </View>}
++            <TextInput accessibilityLabel="Toplantı konusu" placeholder="Toplantı konusu" value={topic} onChangeText={setTopic} editable={!pending} maxLength={10000} style={styles.input}/>
++            <TextInput accessibilityLabel="Toplantı tarihi" placeholder="Tarih: YYYY-AA-GG" value={date} onChangeText={setDate} editable={!pending} maxLength={10} style={styles.input}/>
++            <TextInput accessibilityLabel="Toplantı saati" placeholder="Yerel saat: SS:DD" value={time} onChangeText={setTime} editable={!pending} maxLength={5} style={styles.input}/>
++            {button('Toplantı talebi gönder',()=>run(),pending||!peopleReady||!receiver||!topic.trim()||!date||!time)}
++        </View>
++    </ScrollView>;
++}
++const styles=StyleSheet.create({container:{padding:20,backgroundColor:'#f8fafc'},title:{fontSize:20,fontWeight:'bold',color:'#1e293b'},card:{padding:16,gap:10,backgroundColor:'white',borderRadius:12,marginVertical:8},person:{padding:12,backgroundColor:'#e2e8f0',marginVertical:3},input:{borderWidth:1,borderColor:'#cbd5e1',padding:12,borderRadius:8},button:{padding:14,backgroundColor:'#475569',borderRadius:8,marginVertical:6},buttonText:{color:'white',textAlign:'center'},disabled:{opacity:0.5}});
+diff --git a/utils/meetings-api.ts b/utils/meetings-api.ts
+new file mode 100644
+--- /dev/null
++++ b/utils/meetings-api.ts
+@@ -0,0 +1,50 @@
++import { apiClient } from './api-client';
++
++export interface MeetingRow {
++    id: string; requester_id: string; partner_id: string; meeting_date: string; created_at: string;
++    status: string; notes: string | null; requester_name?: string; partner_name?: string; record_kind?: string;
++}
++export interface MeetingPerson { id: string; name: string }
++const text = (value: unknown) => typeof value === 'string' && !!value.trim();
++const valid = (row: any): row is MeetingRow => row && !Array.isArray(row)
++    && ['id','requester_id','partner_id','status'].every(key=>text(row[key]))
++    && ['meeting_date','created_at'].every(key=>typeof row[key]==='string' && Number.isFinite(Date.parse(row[key])))
++    && ['notes','requester_name','partner_name','record_kind'].every(key=>row[key]==null || typeof row[key]==='string');
++
++export function meetingTime(date: string, time: string) {
++    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Tarih ve saati kontrol edin.');
++    const value = new Date(`${date}T${time}`), [year,month,day] = date.split('-').map(Number);
++    if (!Number.isFinite(value.getTime()) || value.getFullYear()!==year || value.getMonth()+1!==month || value.getDate()!==day
++        || value.getHours()!==Number(time.slice(0,2)) || value.getMinutes()!==Number(time.slice(3))) throw new Error('Tarih ve saati kontrol edin.');
++    return value.toISOString();
++}
++export function meetingCalendar(row: MeetingRow) {
++    const stamp = (date: Date)=>date.toISOString().replace(/-|:|\.\d{3}/g,'');
++    const start = new Date(row.meeting_date), end = new Date(start.getTime()+60*60000);
++    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(row.notes || 'Birebir Görüşme')}&dates=${stamp(start)}/${stamp(end)}&details=${encodeURIComponent('Event 4 Network Toplantısı')}`;
++}
++export const meetingsApi = {
++    async list(userId: string) {
++        const rows = await apiClient.get<unknown>('/one-to-ones');
++        if (!Array.isArray(rows) || !rows.every(row=>valid(row) && (row.requester_id===userId || row.partner_id===userId))) throw new Error('Toplantı listesi doğrulanamadı.');
++        return (rows as MeetingRow[]).sort((a,b)=>Number(b.status==='PENDING')-Number(a.status==='PENDING') || Date.parse(b.created_at)-Date.parse(a.created_at));
++    },
++    async people(userId: string) {
++        const rows = await apiClient.get<unknown>('/users');
++        if (!Array.isArray(rows) || !rows.every(row=>row && text(row.id) && text(row.name))) throw new Error('Üye listesi doğrulanamadı.');
++        return rows.filter(row=>row.id!==userId).map(row=>({id:row.id,name:row.name})) as MeetingPerson[];
++    },
++    async request(userId: string, receiverId: string, topic: string, proposedTime: string, requestId: string) {
++        if (!text(userId) || !text(receiverId) || userId===receiverId || !topic.trim() || !Number.isFinite(Date.parse(proposedTime))) throw new Error('Talep bilgilerini kontrol edin.');
++        const row = await apiClient.post<any>('/one-to-ones/request',{requestId,receiverId,topic:topic.trim(),proposedTime});
++        if (!valid(row) || row.id!==requestId || row.requester_id!==userId || row.partner_id!==receiverId || row.notes!==topic.trim()
++            || Date.parse(row.meeting_date)!==Date.parse(proposedTime) || !['PENDING','ACCEPTED','REJECTED'].includes(row.status)) throw new Error('Talep sonucu doğrulanamadı.');
++        return row;
++    },
++    async decide(userId: string, id: string, status: 'ACCEPTED'|'REJECTED') {
++        if (!['ACCEPTED','REJECTED'].includes(status)) throw new Error('Geçersiz karar.');
++        const row = await apiClient.put<any>(`/one-to-ones/${encodeURIComponent(id)}/status`,{status});
++        if (!valid(row) || row.id!==id || row.partner_id!==userId || row.status!==status) throw new Error('Karar sonucu doğrulanamadı.');
++        return row;
++    }
++};

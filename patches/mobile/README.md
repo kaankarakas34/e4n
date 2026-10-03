@@ -1,5 +1,13 @@
 # Mobile changes awaiting repository integration
 
+## P32-B / E4N-129: meeting requests
+
+`meeting-requests-lifecycle.patch` is already applied locally; do not reapply it there. It adds a reachable menu route and typed service for incoming/outgoing meeting requests, keyed request creation with validated local date/time, recipient-only pending accept/reject, validated ACKs, list/people error-retry-empty states and context/generation/unmount boundaries. Existing ACTIVITY rows are labelled separately from REQUEST rows; this package does not implement completed activity recording or scores. The existing `/activities` recording screen remains an open contract item.
+
+Requires migration 0007 and the current `/one-to-ones` request/list/status API. Reuses the native UUID dependency introduced by P32-A. Same intent uses the same request ID after an ambiguous response; keys are in memory, without reload recovery. Accepted meetings open the same one-hour Google Calendar template as the web flow only on user action.
+
+Verification passed: mobile TypeScript, `node test/mobile-meetings.mjs <mobile-root>` with actual screen/service and controlled RN hooks/transport; `node server/test/meeting-contract.mjs <mobile-root>` with actual mobile transport/service against disposable Express/PostgreSQL17, same-key single request, recipient/foreign/status boundaries, existing migration/race tests and unchanged legacy activity/score snapshots. Offline Android Metro export passed (1400 modules, exit 0); scoped patch reverse-check passed. No device acceptance, mobile repository integration or production release is implied.
+
 ## P32-A / E4N-128: support lifecycle
 
 `support-lifecycle.patch` is already applied to the local mobile source; do not apply it there again. It replaces the member and admin support routes with a shared workspace and typed service: owner list/detail/create/reply, ADMIN reply/close/reopen, visible read errors/retry/true empty, validated acknowledgements, one synchronous mutation lock and same-key retry after ambiguous failure. Session/target/unmount guards discard stale results; closed members cannot reply. Keys are held in memory; reload recovery is not included.

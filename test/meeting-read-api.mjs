@@ -54,3 +54,9 @@ for (const rows of [[], [{ id: 'fixture-attendance', event_id: 'fixture-meeting'
 }
 globalThis.fetch = async () => { throw new Error('Offline detail'); }; await assert.rejects(api.getMeetingAttendance('fixture-meeting'), /Offline detail/);
 console.log('Meeting attendance API: failure vs true empty, valid rows, wrong-target/malformed response rejected.');
+globalThis.fetch = async (url, options) => {
+  assert.equal(url, 'http://localhost:4005/api/events/fixture-event'); assert.equal(options.method, 'DELETE');
+  return new Response('{"success":true}', { status: 200 });
+};
+assert.deepEqual(await api.deleteEvent('fixture-event'), { success: true });
+console.log('Event delete API returns server ACK to caller.');

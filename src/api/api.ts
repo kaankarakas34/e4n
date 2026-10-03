@@ -195,7 +195,7 @@ export const api = {
     return await request(`/events/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
   },
   async deleteEvent(id: string) {
-    await request(`/events/${id}`, { method: 'DELETE' });
+    return await request(`/events/${id}`, { method: 'DELETE' });
   },
   async registerForEvent(eventId: string, payload?: any) {
     return await request(`/events/${eventId}/register`, { 

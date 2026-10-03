@@ -154,3 +154,25 @@ for (const type of [undefined, null, 'unrecognized']) {
 }
 event.event_type = 'SOCIAL'; await setup(); assert.ok(nodes(render()).some(node => node.type === 'Badge' && node.props.children === 'Sosyal')); assert.equal(has('Tür bilinmiyor'), false);
 console.log('Admin cards: missing/malformed participants unknown vs confirmed empty/count; missing capacity unknown; unknown type never shown as Social.');
+event.max_attendees = 10; event.price = 0; event.currency = 'TRY';
+const typeSelect = () => nodes(render()).find(n => n.type === 'select' && nodes(n.props.children).some(child => child.props?.value === 'WORKSHOP'));
+for (const [serverType, subtype] of [['education', undefined], ['meeting', undefined], ['visitor', null], ['one_to_one', 'unknown'], ['education', 'SEMINAR'], ['meeting', 'SOCIAL']]) {
+  event.type = serverType; event.event_type = subtype; await setup(); edit();
+  await submitForm().props.onSubmit({ preventDefault() {} });
+  assert.equal(Object.hasOwn(payloads.at(-1), 'type'), false, 'unchanged edit omits type');
+  assert.equal(typeSelect().props.value, ['SEMINAR', 'SOCIAL'].includes(subtype) ? subtype : '');
+}
+event.type = 'education'; event.event_type = undefined; await setup(); edit();
+typeSelect().props.onChange({ target: { value: 'CONFERENCE' } });
+await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(payloads.at(-1).type, 'meeting');
+for (const selected of ['invalid', 'toString']) {
+  typeSelect().props.onChange({ target: { value: selected } });
+  const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} });
+  assert.equal(mutationCalls, before); assert.ok(has('Geçerli bir etkinlik türü seçin.'));
+}
+await setup(); nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates();
+typeSelect().props.onChange({ target: { value: '' } });
+const beforeMissingType = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, beforeMissingType);
+typeSelect().props.onChange({ target: { value: 'WORKSHOP' } });
+await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(payloads.at(-1).type, 'education');
+console.log('Admin type payload: unchanged/missing subtype omits type across four server kinds; explicit selection uses existing map, invalid/new empty type never writes.');

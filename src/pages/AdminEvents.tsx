@@ -36,7 +36,7 @@ interface EventFormData {
   location: string;
   is_public: boolean;
   max_attendees: number | string;
-  event_type: 'NETWORKING' | 'WORKSHOP' | 'SEMINAR' | 'CONFERENCE' | 'SOCIAL';
+  event_type: '' | 'NETWORKING' | 'WORKSHOP' | 'SEMINAR' | 'CONFERENCE' | 'SOCIAL';
   status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
   chapter_id?: string;
   price?: number | string;
@@ -52,6 +52,9 @@ interface EventFormData {
 const CITIES = [
   'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Şanlıurfa', 'Kocaeli', 'Mersin', 'Diyarbakır', 'Hatay', 'Manisa', 'Kayseri', 'Samsun', 'Balıkesir', 'Kahramanmaraş', 'Van', 'Aydın', 'Tekirdağ', 'Denizli', 'Sakarya', 'Muğla', 'Eskişehir'
 ];
+const EVENT_TYPES: Record<string, 'education' | 'meeting'> = {
+  NETWORKING: 'meeting', WORKSHOP: 'education', SEMINAR: 'education', CONFERENCE: 'meeting', SOCIAL: 'meeting',
+};
 
 const readCapacity = (value: unknown): number | null => {
   if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
@@ -165,6 +168,12 @@ export function AdminEvents() {
       setEventWriteError('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.');
       return;
     }
+    const selectedType = Object.prototype.hasOwnProperty.call(EVENT_TYPES, formData.event_type) ? EVENT_TYPES[formData.event_type] : undefined;
+    if ((!editingEvent && !selectedType) || (formData.event_type !== '' && !selectedType)) {
+      setEventWriteError('Geçerli bir etkinlik türü seçin.');
+      return;
+    }
+    const changeType = !editingEvent || (formData.event_type !== '' && formData.event_type !== editingEvent.event_type);
     const capacity = readCapacity(formData.max_attendees);
     const start = readLocalDate(formData.start_at);
     const end = readLocalDate(formData.end_at);
@@ -182,14 +191,6 @@ export function AdminEvents() {
     setEventWriteError(null);
 
     try {
-      const typeMap: Record<string, 'education' | 'meeting' | 'one_to_one' | 'visitor'> = {
-        NETWORKING: 'meeting',
-        WORKSHOP: 'education',
-        SEMINAR: 'education',
-        CONFERENCE: 'meeting',
-        SOCIAL: 'meeting',
-      };
-
       const serverPayload = {
         title: formData.title,
         description: formData.description,
@@ -198,7 +199,7 @@ export function AdminEvents() {
         end_at: end.toISOString(),
         created_by: user?.id,
         is_public: formData.is_public,
-        type: typeMap[formData.event_type] || 'meeting',
+        ...(changeType ? { type: selectedType } : {}),
         group_id: formData.chapter_id || null,
         member_id: null,
         has_equal_opportunity_badge: formData.has_equal_opportunity_badge,
@@ -277,7 +278,7 @@ export function AdminEvents() {
       location: event.location,
       is_public: event.is_public,
       max_attendees: readCapacity(event.max_attendees) !== null ? event.max_attendees : '',
-      event_type: event.event_type,
+      event_type: Object.prototype.hasOwnProperty.call(EVENT_TYPES, event.event_type) ? event.event_type : '',
       status: event.status,
       chapter_id: event.chapter_id || '',
       price: readEventPrice(event.price) !== null ? event.price : '',
@@ -445,7 +446,9 @@ export function AdminEvents() {
                       value={formData.event_type}
                       onChange={(e) => setFormData({ ...formData, event_type: e.target.value as any })}
                       className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                      required={!editingEvent}
                     >
+                      <option value="">{editingEvent ? 'Mevcut türü koru' : 'Etkinlik türü seçin'}</option>
                       <option value="NETWORKING">Network Etkinliği</option>
                       <option value="WORKSHOP">Atölye</option>
                       <option value="SEMINAR">Seminer</option>

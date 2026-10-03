@@ -9,10 +9,10 @@ globalThis.participantHooks = {
   useEffect(fn, deps) { const i = cursor++; const old = effects.get(i); if (!old || deps.some((v, j) => v !== old.deps[j])) effects.set(i, { fn, deps, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.participantAuth = () => ({ user });
-const event = { id: 'fixture-event', title: 'Fixture Event', description: 'Fixture', start_at: '2026-10-03T12:00:00Z', end_at: '2026-10-03T14:00:00Z', status: 'PUBLISHED', event_type: 'NETWORKING', is_public: true, max_attendees: 10 };
+const event = { id: 'fixture-event', title: 'Fixture Event', description: 'Fixture', start_at: '2026-10-03T12:00:00Z', end_at: '2026-10-03T14:00:00Z', status: 'PUBLISHED', event_type: 'NETWORKING', is_public: true, max_attendees: 10, price: 0, currency: 'TRY' };
 const fetchEvents = async () => {};
-let operationMode = 'fail', mutationCalls = 0;
-const rejectedWrite = async () => { mutationCalls++; if (operationMode instanceof Promise) return operationMode; throw new Error('Fixture store mutation rejected'); };
+let operationMode = 'fail', mutationCalls = 0, payloads = [];
+const rejectedWrite = async (...args) => { mutationCalls++; payloads.push(args.at(-1)); if (operationMode instanceof Promise) return operationMode; throw new Error('Fixture store mutation rejected'); };
 globalThis.participantStore = () => ({ events: [event], fetchEvents, loadedFor: `${user?.id}:${user?.role}`, readLoading: false, readError: null, createEvent: rejectedWrite, updateEvent: rejectedWrite, deleteEvent: rejectedWrite });
 globalThis.participantApi = {
   async getMeetingAttendance(id) { reads++; if (readMode === 'fail') throw new Error('Unavailable'); if (readMode === 'null') return null; if (readMode === 'empty') return []; if (readMode instanceof Promise) return readMode; return [{ id: 'fixture-attendance', event_id: id, user_id: 'fixture-user', name: 'Actual Participant', status: 'PRESENT' }]; },
@@ -22,8 +22,11 @@ globalThis.window = { confirm: () => true };
 let compiled = ts.transpileModule(readFileSync(new URL('../src/pages/AdminEvents.tsx', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_, names) => `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.participantHooks;`);
+const priceCode = ts.transpileModule(readFileSync(new URL('../src/utils/eventPrice.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const priceModule = `data:text/javascript;base64,${Buffer.from(priceCode).toString('base64')}`;
 compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
+  if (module === '../utils/eventPrice') return line.replace(module, priceModule);
   if (module === '../api/api') return 'const api = globalThis.participantApi;';
   if (module === '../stores/authStore') return 'const useAuthStore = globalThis.participantAuth;';
   if (module === '../stores/eventStore') return 'const useEventStore = globalThis.participantStore;';
@@ -83,3 +86,29 @@ nodes(render()).find(n => n.props?.children === 'İptal').props.onClick(); rende
 nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); render();
 resolve(); await closedCreate; assert.ok(submitForm()); operationMode = 'fail';
 console.log('A closed/reopened create form is not reset by the previous request.');
+const edit = () => nodes(render()).find(n => n.props?.onClick?.toString().includes('handleEdit(event)')).props.onClick();
+const priceInput = () => nodes(render()).find(n => n.type === 'Input' && n.props?.step === '0.01');
+const currencySelect = () => nodes(render()).find(n => n.type === 'select' && nodes(n.props.children).some(child => child.props?.value === 'TRY'));
+for (const invalid of [undefined, null, '', ' ', -1, NaN, Infinity, 'invalid']) {
+  event.price = invalid; event.currency = 'TRY'; await setup(); edit();
+  assert.equal(priceInput().props.value, '', 'invalid edit source stays blank');
+  const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} });
+  assert.equal(mutationCalls, before); assert.ok(has('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.'));
+}
+for (const invalid of [undefined, null, '', 'try']) {
+  event.price = 100; event.currency = invalid; await setup(); edit();
+  assert.equal(currencySelect().props.value, '');
+  const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, before);
+}
+for (const [price, currency] of [[0, 'TRY'], ['125.50', 'USD'], [100, 'GBP']]) {
+  event.price = price; event.currency = currency; await setup(); edit();
+  assert.equal(priceInput().props.value, price); assert.equal(currencySelect().props.value, currency);
+  await submitForm().props.onSubmit({ preventDefault() {} });
+  assert.equal(payloads.at(-1).price, Number(price)); assert.equal(payloads.at(-1).currency, currency);
+}
+event.price = 0; event.currency = 'TRY'; await setup(); edit();
+priceInput().props.onChange({ target: { value: '' } });
+const beforeBlank = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, beforeBlank);
+priceInput().props.onChange({ target: { value: '0' } });
+await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(payloads.at(-1).price, 0);
+console.log('Admin price form: missing/invalid edit source stays blank and sends no write; numeric/decimal price and original currency preserved; cleared price blocked until explicit zero.');

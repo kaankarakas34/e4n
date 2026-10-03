@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '../shared/Modal';
 import { api } from '../api/api';
+import { readEventPrice, readEventCurrency } from '../utils/eventPrice';
 
 interface EventFormData {
   title: string;
@@ -38,7 +39,7 @@ interface EventFormData {
   event_type: 'NETWORKING' | 'WORKSHOP' | 'SEMINAR' | 'CONFERENCE' | 'SOCIAL';
   status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
   chapter_id?: string;
-  price?: number;
+  price?: number | string;
   currency?: string;
   has_equal_opportunity_badge?: boolean;
   city?: string;
@@ -138,6 +139,12 @@ export function AdminEvents() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (eventWriteBusy.current || !alive.current || user?.role !== 'ADMIN' || latestEventWriteContext.current !== eventWriteContext || loadedFor !== `${user?.id}:${user?.role}`) return;
+    const price = readEventPrice(formData.price);
+    const currency = readEventCurrency(formData.currency);
+    if (price === null || currency === null) {
+      setEventWriteError('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.');
+      return;
+    }
     const context = eventWriteContext;
     const isCurrent = () => alive.current && latestEventWriteContext.current === context;
     eventWriteBusy.current = true; setEventWritePending(true);
@@ -170,8 +177,8 @@ export function AdminEvents() {
         max_attendees: formData.max_attendees,
         generate_tickets: formData.generate_tickets,
         status: formData.status,
-        price: formData.price,
-        currency: formData.currency,
+        price,
+        currency,
         online_link: formData.online_link || null
       };
 
@@ -242,8 +249,8 @@ export function AdminEvents() {
       event_type: event.event_type,
       status: event.status,
       chapter_id: event.chapter_id || '',
-      price: event.price || 0,
-      currency: event.currency || 'TRY',
+      price: readEventPrice(event.price) !== null ? event.price : '',
+      currency: readEventCurrency(event.currency) ?? '',
       has_equal_opportunity_badge: event.has_equal_opportunity_badge || false,
       city: event.city || '',
       is_online: event.is_online || false,
@@ -545,14 +552,15 @@ export function AdminEvents() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Ücret (İsteğe Bağlı)
+                      Ücret (Ücretsiz için 0)
                     </label>
                     <Input
                       type="number"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       min="0"
                       step="0.01"
+                      required
                     />
                   </div>
                   <div>
@@ -563,7 +571,10 @@ export function AdminEvents() {
                       value={formData.currency}
                       onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                       className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                      required
                     >
+                      <option value="">Para birimi seçin</option>
+                      {formData.currency && !['TRY', 'USD', 'EUR'].includes(formData.currency) && <option value={formData.currency}>{formData.currency}</option>}
                       <option value="TRY">TRY</option>
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>

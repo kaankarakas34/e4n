@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-let cursor = 0, slots = [], effects = new Map(), user, read, calls = 0, stateWrites = 0, detailCalls = 0;
+let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0;
 globalThis.supportListHooks = {
   useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { stateWrites++; slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
   useEffect(fn, dependencies) { const i = cursor++; const old = effects.get(i); if (!old || dependencies.some((value, j) => value !== old.dependencies[j])) effects.set(i, { fn, dependencies, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.supportListAuth = () => ({ user });
-globalThis.supportListAPI = { getTickets: () => { calls++; return read(); }, getTicketDetails: async () => { detailCalls++; return { ticket: fixture(), messages: [] }; } };
+globalThis.supportListAPI = { getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/AdminSupportTickets.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
@@ -27,7 +27,7 @@ const render = () => { cursor = 0; return AdminSupportTickets(); };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const flush = async () => { for (const effect of effects.values()) if (effect.pending) { effect.cleanup?.(); effect.cleanup = effect.fn(); effect.pending = false; } await settle(); };
 const cleanup = () => { for (const effect of effects.values()) effect.cleanup?.(); };
-const reset = () => { cleanup(); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; };
+const reset = () => { cleanup(); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const count = () => nodes(render()).find(node => node.type === 'span' && node.props?.className?.startsWith('bg-gray-200')).props.children;
 
@@ -54,3 +54,39 @@ const beforeRestricted = calls; await flush(); assert.equal(calls, beforeRestric
 reset(); const unmounted = deferred(); read = () => unmounted.promise; render(); await flush(); cleanup();
 const beforeUnmount = stateWrites; unmounted.resolve([fixture()]); await settle(); assert.equal(stateWrites, beforeUnmount);
 console.log('Real admin support list: initial loading, confirmed empty/count, network/malformed errors and retry, old-admin view/callback, role-change and unmount response boundaries passed.');
+const message = id => ({ id: 'message', ticket_id: id, sender_id: 'member', sender_role: 'MEMBER', sender_name: 'Fixture member', message: 'Fixture message', created_at: '2026-10-03T10:00:00Z' });
+const row = id => nodes(render()).find(node => node.key === id && node.props?.onClick);
+const mountList = async () => { reset(); read = async () => [fixture(), { ...fixture(), id: 'other', subject: 'Other ticket' }]; render(); await flush(); };
+for (const invalid of ['reject', null, {}, { ticket: { ...fixture(), id: 'wrong' }, messages: [] }, { ticket: { ...fixture(), user_id: 'wrong-owner' }, messages: [] }, { ticket: fixture(), messages: null }, { ticket: fixture(), messages: [null] }, { ticket: fixture(), messages: [{ ...message('ticket'), ticket_id: 'other' }] }, { ticket: fixture(), messages: [{ ...message('ticket'), message: {} }] }]) {
+  await mountList(); detailRead = async () => { if (invalid === 'reject') throw new Error('fixture detail failure'); return invalid; };
+  await row('ticket').props.onClick();
+  assert.ok(text(render()).includes('Talep detayları yüklenemedi.'));
+  assert.equal(text(render()).includes('Bu talepte henüz mesaj bulunmuyor.'), false);
+  detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] });
+  await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick();
+  assert.ok(text(render()).includes('Bu talepte henüz mesaj bulunmuyor.'));
+}
+await mountList(); detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [message(id)] });
+await row('ticket').props.onClick(); assert.ok(text(render()).includes('Fixture message'));
+const oldDetail = deferred(); detailRead = id => id === 'ticket' ? oldDetail.promise : Promise.resolve({ ticket: { ...fixture(), id }, messages: [] });
+const pendingOld = row('ticket').props.onClick();
+assert.ok(text(render()).includes('Talep detayları yükleniyor...')); assert.equal(text(render()).includes('Fixture message'), false);
+await row('other').props.onClick();
+oldDetail.resolve({ ticket: fixture(), messages: [message('ticket')] }); await pendingOld;
+assert.equal(text(render()).includes('Fixture message'), false);
+assert.ok(text(render()).includes('Bu talepte henüz mesaj bulunmuyor.'));
+const closed = deferred(); detailRead = () => closed.promise;
+const pendingClosed = row('ticket').props.onClick();
+nodes(render()).find(node => node.props?.children === 'Listeye dön').props.onClick();
+closed.resolve({ ticket: fixture(), messages: [message('ticket')] }); await pendingClosed;
+assert.equal(text(render()).includes('Fixture message'), false);
+assert.ok(text(render()).includes('Detayları görmek için listeden bir talep seçin'));
+await mountList(); const changed = deferred(); detailRead = () => changed.promise;
+const pendingChanged = row('ticket').props.onClick();
+user = { id: 'new-admin', role: 'ADMIN' }; render(); const beforeDetailResult = stateWrites;
+changed.resolve({ ticket: fixture(), messages: [message('ticket')] }); await pendingChanged;
+assert.equal(stateWrites, beforeDetailResult);
+await mountList(); const detached = deferred(); detailRead = () => detached.promise;
+const pendingDetached = row('ticket').props.onClick(); cleanup(); const beforeDetached = stateWrites;
+detached.resolve({ ticket: fixture(), messages: [message('ticket')] }); await pendingDetached; assert.equal(stateWrites, beforeDetached);
+console.log('Real admin support details: reject/malformed/wrong-ticket/wrong-owner/message target rejected, retry/confirmed empty, loading hides old messages, switched/closed/session/unmounted responses ignored.');

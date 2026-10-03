@@ -20,6 +20,7 @@ interface Ticket {
 
 interface Message {
     id: string;
+    ticket_id: string;
     message: string;
     sender_name: string;
     sender_role: string;
@@ -48,6 +49,11 @@ export function AdminSupportTickets() {
     currentContext.current = context;
     const active = useRef(true);
     const listSequence = useRef(0);
+    const detailSequence = useRef(0);
+    const detailTarget = useRef<string | null>(null);
+    const [requestedTicket, setRequestedTicket] = useState<string | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState<string | null>(null);
     const isCurrentContext = () => active.current && currentContext.current === context && user?.role === 'ADMIN';
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -59,8 +65,9 @@ export function AdminSupportTickets() {
     useEffect(() => {
         active.current = true;
         setSelectedTicket(null); setMessages([]); setNewMessage('');
+        detailTarget.current = null; setRequestedTicket(null); setDetailError(null); setDetailLoading(false);
         if (user?.role === 'ADMIN') void loadTickets();
-        return () => { active.current = false; listSequence.current++; };
+        return () => { active.current = false; listSequence.current++; detailSequence.current++; detailTarget.current = null; };
     }, [user?.id, user?.role]);
 
     useEffect(() => {
@@ -85,21 +92,41 @@ export function AdminSupportTickets() {
 
     const loadTicketDetails = async (ticketId: string) => {
         if (!isCurrentContext() || loading || listError || loadedFor !== context || !tickets.some(ticket => ticket.id === ticketId)) return;
+        const owner = tickets.find(ticket => ticket.id === ticketId)!.user_id;
+        if (detailTarget.current !== ticketId) setNewMessage('');
+        detailTarget.current = ticketId;
+        const sequence = ++detailSequence.current;
+        const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
+        setRequestedTicket(ticketId); setDetailLoading(true); setDetailError(null); setSelectedTicket(null); setMessages([]);
         try {
             const data = await api.getTicketDetails(ticketId);
-            if (!isCurrentContext()) return;
+            if (!isTicket(data?.ticket) || data.ticket.id !== ticketId || data.ticket.user_id !== owner
+                || !Array.isArray(data.messages) || data.messages.some((message: any) => !message || typeof message !== 'object' || Array.isArray(message)
+                    || message.ticket_id !== ticketId || ['id', 'sender_id'].some(key => typeof message[key] !== 'string' || !message[key].trim())
+                    || typeof message.message !== 'string' || typeof message.sender_role !== 'string'
+                    || (message.sender_name != null && typeof message.sender_name !== 'string')
+                    || typeof message.created_at !== 'string' || !Number.isFinite(Date.parse(message.created_at)))) throw new Error('Invalid ticket details');
+            if (!isCurrent()) return;
             setMessages(data.messages);
             setSelectedTicket(data.ticket);
-        } catch (error) {
-            console.error('Failed to load ticket details', error);
+        } catch {
+            if (isCurrent()) setDetailError('Talep detayları yüklenemedi.');
+        } finally {
+            if (isCurrent()) setDetailLoading(false);
         }
     };
 
+    const closeDetails = () => {
+        detailSequence.current++; detailTarget.current = null;
+        setRequestedTicket(null); setSelectedTicket(null); setMessages([]); setNewMessage(''); setDetailError(null); setDetailLoading(false);
+    };
+
     const handleSendMessage = async () => {
-        if (!isCurrentContext() || loading || listError || loadedFor !== context || !selectedTicket || !newMessage.trim()) return;
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id || !newMessage.trim()) return;
+        const sequence = detailSequence.current;
         try {
             await api.replyTicket(selectedTicket.id, newMessage);
-            if (!isCurrentContext()) return;
+            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
             setNewMessage('');
             loadTicketDetails(selectedTicket.id);
             loadTickets(); // Refresh list status
@@ -109,10 +136,11 @@ export function AdminSupportTickets() {
     };
 
     const handleStatusChange = async (newStatus: 'CLOSED' | 'OPEN') => {
-        if (!isCurrentContext() || loading || listError || loadedFor !== context || !selectedTicket) return;
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id) return;
+        const sequence = detailSequence.current;
         try {
             await api.updateTicketStatus(selectedTicket.id, newStatus);
-            if (!isCurrentContext()) return;
+            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
             // Reload ticket details to reflect status change in current view
             const updated = { ...selectedTicket, status: newStatus };
             setSelectedTicket(updated);
@@ -140,7 +168,7 @@ export function AdminSupportTickets() {
 
             <div className="flex-1 flex gap-6 overflow-hidden">
                 {/* Board / List */}
-                <div className={`${selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
+                <div className={`${requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
                     <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <h2 className="font-semibold text-gray-700">Gelen Talepler</h2>
                         <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{listError ? 'Bilinmiyor' : loading ? 'Yükleniyor...' : tickets.length}</span>
@@ -177,12 +205,17 @@ export function AdminSupportTickets() {
                 </div>
 
                 {/* Details view */}
-                <div className={`${!selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
-                    {selectedTicket && !loading && !listError ? (
+                <div className={`${!requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
+                    {requestedTicket && (detailLoading || detailError) ? (
+                        <div className="p-4">
+                            <Button onClick={closeDetails}>Listeye dön</Button>
+                            {detailLoading ? <p role="status">Talep detayları yükleniyor...</p> : <div role="alert"><p>{detailError}</p><Button onClick={() => loadTicketDetails(requestedTicket)}>Tekrar dene</Button></div>}
+                        </div>
+                    ) : selectedTicket && !loading && !listError ? (
                         <>
                             <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="sm" onClick={() => setSelectedTicket(null)} className="md:hidden mr-2">←</Button>
+                                    <Button variant="ghost" size="sm" onClick={closeDetails} className="md:hidden mr-2">←</Button>
                                     <div>
                                         <h2 className="font-bold text-gray-800">{selectedTicket.subject}</h2>
                                         <div
@@ -208,6 +241,7 @@ export function AdminSupportTickets() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                                {messages.length === 0 && <p>Bu talepte henüz mesaj bulunmuyor.</p>}
                                 {messages.map(msg => {
                                     const isMe = msg.sender_id === user?.id; // Me is Admin here
                                     const isStaff = msg.sender_role === 'ADMIN';

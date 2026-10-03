@@ -35,7 +35,7 @@ interface EventFormData {
   end_at: string;
   location: string;
   is_public: boolean;
-  max_attendees: number;
+  max_attendees: number | string;
   event_type: 'NETWORKING' | 'WORKSHOP' | 'SEMINAR' | 'CONFERENCE' | 'SOCIAL';
   status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
   chapter_id?: string;
@@ -52,6 +52,22 @@ interface EventFormData {
 const CITIES = [
   'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Şanlıurfa', 'Kocaeli', 'Mersin', 'Diyarbakır', 'Hatay', 'Manisa', 'Kayseri', 'Samsun', 'Balıkesir', 'Kahramanmaraş', 'Van', 'Aydın', 'Tekirdağ', 'Denizli', 'Sakarya', 'Muğla', 'Eskişehir'
 ];
+
+const readCapacity = (value: unknown): number | null => {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
+  const count = Number(value);
+  return Number.isSafeInteger(count) && count > 0 ? count : null;
+};
+const readLocalDate = (value: string): Date | null => {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
+  if (!parts) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime()) || date.getFullYear() !== Number(parts[1])
+    || date.getMonth() + 1 !== Number(parts[2]) || date.getDate() !== Number(parts[3])
+    || date.getHours() !== Number(parts[4]) || date.getMinutes() !== Number(parts[5])
+    || date.getSeconds() !== Number(parts[6] ?? 0)) return null;
+  return date;
+};
 
 export function AdminEvents() {
   const navigate = useNavigate();
@@ -145,6 +161,17 @@ export function AdminEvents() {
       setEventWriteError('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.');
       return;
     }
+    const capacity = readCapacity(formData.max_attendees);
+    const start = readLocalDate(formData.start_at);
+    const end = readLocalDate(formData.end_at);
+    if (capacity === null) {
+      setEventWriteError('Maksimum katılımcı için pozitif bir tam sayı girin.');
+      return;
+    }
+    if (!start || !end || end.getTime() < start.getTime()) {
+      setEventWriteError('Başlangıç ve bitiş tarihlerini doğrulayın. Bitiş başlangıçtan önce olamaz.');
+      return;
+    }
     const context = eventWriteContext;
     const isCurrent = () => alive.current && latestEventWriteContext.current === context;
     eventWriteBusy.current = true; setEventWritePending(true);
@@ -163,8 +190,8 @@ export function AdminEvents() {
         title: formData.title,
         description: formData.description,
         location: formData.location,
-        start_at: formData.start_at ? new Date(formData.start_at).toISOString() : '',
-        end_at: formData.end_at ? new Date(formData.end_at).toISOString() : '',
+        start_at: start.toISOString(),
+        end_at: end.toISOString(),
         created_by: user?.id,
         is_public: formData.is_public,
         type: typeMap[formData.event_type] || 'meeting',
@@ -174,7 +201,7 @@ export function AdminEvents() {
         city: formData.city,
         is_online: formData.is_online,
         pinned: formData.pinned,
-        max_attendees: formData.max_attendees,
+        max_attendees: capacity,
         generate_tickets: formData.generate_tickets,
         status: formData.status,
         price,
@@ -245,7 +272,7 @@ export function AdminEvents() {
       end_at: formatDateForInput(event.end_at),
       location: event.location,
       is_public: event.is_public,
-      max_attendees: event.max_attendees,
+      max_attendees: readCapacity(event.max_attendees) !== null ? event.max_attendees : '',
       event_type: event.event_type,
       status: event.status,
       chapter_id: event.chapter_id || '',
@@ -541,8 +568,9 @@ export function AdminEvents() {
                     <Input
                       type="number"
                       value={formData.max_attendees}
-                      onChange={(e) => setFormData({ ...formData, max_attendees: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, max_attendees: e.target.value })}
                       min="1"
+                      step="1"
                       required
                     />
                   </div>

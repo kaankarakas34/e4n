@@ -40,6 +40,9 @@ const has = text => nodes(render()).some(n => n.props?.children === text || n.pr
 const flush = () => new Promise(done => setImmediate(done));
 const runEffects = async () => { for (const e of effects.values()) if (e.pending) { e.cleanup?.(); e.cleanup = e.fn(); e.pending = false; } await flush(); };
 const setup = async () => { for (const e of effects.values()) e.cleanup?.(); state.length = 0; effects.clear(); deletes = []; reads = 0; user = { id: 'admin', role: 'ADMIN' }; render(); await runEffects(); };
+const fillDates = () => {
+  for (let index = 0; index < 2; index++) nodes(render()).filter(n => n.type === 'Input' && n.props?.type === 'datetime-local')[index].props.onChange({ target: { value: index === 0 ? '2026-10-03T12:00' : '2026-10-03T14:00' } });
+};
 const open = async () => { nodes(render()).find(n => n.props?.onClick?.toString().includes('handleViewParticipants(event)')).props.onClick(); render(); await runEffects(); };
 const remove = () => nodes(render()).find(n => n.props?.onClick?.toString().includes('handleRemoveParticipant(p.user_id)'));
 for (const failure of ['fail', 'null']) {
@@ -56,7 +59,7 @@ nodes(render()).find(n => n.props?.children === 'Kapat').props.onClick(); render
 await setup(); readMode = 'ok'; await open(); removeMode = new Promise(done => { resolve = done; }); const old = remove().props.onClick; const pending = old(); user = { id: 'member', role: 'MEMBER' }; render(); await old(); assert.equal(deletes.length, 1); resolve({ success: true }); await pending; assert.equal(has('Katılımcı çıkarma işlemi sunucu tarafından onaylandı.'), false);
 console.log('Admin participant real component: read failure/null/retry/empty, single pending removal, strict ACK and refresh error separation, closed read and changed-role removal ignored. No network.');
 await setup();
-nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates();
 const submitForm = () => nodes(render()).find(n => n.type === 'form');
 await submitForm().props.onSubmit({ preventDefault() {} });
 assert.ok(submitForm()); assert.ok(has('Etkinlik kayıt sonucu doğrulanamadı. Yeniden göndermeden önce kayıtları kontrol edin.'));
@@ -68,7 +71,7 @@ await nodes(render()).find(n => n.props?.onClick?.toString().includes('handleSta
 assert.ok(has('Etkinlik durumu güncellenemedi. Kayıtları kontrol edin.'));
 console.log('Admin event mutation failures: create/update form remains open, delete/status error visible.');
 await setup(); mutationCalls = 0;
-nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates();
 operationMode = new Promise(done => { resolve = done; });
 const submit = submitForm().props.onSubmit; const pendingCreate = submit({ preventDefault() {} }); await submit({ preventDefault() {} });
 assert.equal(mutationCalls, 1); assert.equal(nodes(render()).find(n => n.props?.type === 'submit').props.disabled, true);
@@ -80,10 +83,10 @@ const pendingDelete = deleteHandler(); await deleteHandler(); assert.equal(mutat
 operationMode = 'fail';
 console.log('Admin event writes: same-tick create/delete single request, disabled submit, stale role handler/result ignored.');
 await setup(); operationMode = new Promise(done => { resolve = done; });
-nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates();
 const closedCreate = submitForm().props.onSubmit({ preventDefault() {} });
 nodes(render()).find(n => n.props?.children === 'İptal').props.onClick(); render();
-nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); render();
+nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates(); render();
 resolve(); await closedCreate; assert.ok(submitForm()); operationMode = 'fail';
 console.log('A closed/reopened create form is not reset by the previous request.');
 const edit = () => nodes(render()).find(n => n.props?.onClick?.toString().includes('handleEdit(event)')).props.onClick();
@@ -112,3 +115,27 @@ const beforeBlank = mutationCalls; await submitForm().props.onSubmit({ preventDe
 priceInput().props.onChange({ target: { value: '0' } });
 await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(payloads.at(-1).price, 0);
 console.log('Admin price form: missing/invalid edit source stays blank and sends no write; numeric/decimal price and original currency preserved; cleared price blocked until explicit zero.');
+const capacityInput = () => nodes(render()).find(n => n.type === 'Input' && n.props?.min === '1');
+const dateInput = index => nodes(render()).filter(n => n.type === 'Input' && n.props?.type === 'datetime-local')[index];
+for (const invalid of [undefined, null, '', ' ', 0, -1, 1.5, '12.5', '12x', NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+  event.max_attendees = invalid; await setup(); edit();
+  assert.equal(capacityInput().props.value, '');
+  const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, before);
+  assert.ok(has('Maksimum katılımcı için pozitif bir tam sayı girin.'));
+}
+event.max_attendees = 10;
+for (const [start, end] of [['', '2026-10-03T14:00'], ['2026-10-03T12:00', ''], ['bad', '2026-10-03T14:00'], ['2026-02-30T12:00', '2026-03-01T14:00'], ['2026-10-03T12:00', '2026-10-03T11:59']]) {
+  await setup(); edit();
+  dateInput(0).props.onChange({ target: { value: start } }); dateInput(1).props.onChange({ target: { value: end } });
+  const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, before);
+  assert.ok(has('Başlangıç ve bitiş tarihlerini doğrulayın. Bitiş başlangıçtan önce olamaz.'));
+}
+await setup(); edit(); capacityInput().props.onChange({ target: { value: '12.5' } });
+const beforeFraction = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(mutationCalls, beforeFraction, 'fraction is not truncated');
+capacityInput().props.onChange({ target: { value: '12' } });
+dateInput(0).props.onChange({ target: { value: '2026-10-03T12:00' } }); dateInput(1).props.onChange({ target: { value: '2026-10-03T14:00' } });
+await submitForm().props.onSubmit({ preventDefault() {} });
+assert.equal(payloads.at(-1).max_attendees, 12);
+assert.equal(payloads.at(-1).start_at, new Date('2026-10-03T12:00').toISOString());
+assert.equal(payloads.at(-1).end_at, new Date('2026-10-03T14:00').toISOString());
+console.log('Admin capacity/date form: invalid capacity source blank/no write, fraction not truncated, empty/malformed/calendar/reversed dates blocked, valid numeric capacity and local-to-ISO payload passed.');

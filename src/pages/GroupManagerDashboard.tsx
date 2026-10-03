@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -33,6 +33,53 @@ export function GroupManagerDashboard() {
     const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
     const [viewingMeeting, setViewingMeeting] = useState<any>(null);
     const [meetingAttendance, setMeetingAttendance] = useState<any[]>([]);
+    const [attendancePending, setAttendancePending] = useState(false);
+    const [attendanceNotice, setAttendanceNotice] = useState<{ context: string; text: string } | null>(null);
+    const attendanceBusy = useRef(false);
+    const attendanceContext = `${user?.id}:${user?.role}:${selectedGroup?.id}`;
+    const currentAttendanceContext = useRef(attendanceContext);
+    currentAttendanceContext.current = attendanceContext;
+    const mounted = useRef(true);
+    useEffect(() => {
+        mounted.current = true;
+        return () => { mounted.current = false; };
+    }, []);
+
+    const handleAttendanceSubmit = async () => {
+        if (attendanceBusy.current || !mounted.current || currentAttendanceContext.current !== attendanceContext || !user?.id || !selectedGroup?.id) return;
+        if (!confirm('Yoklamayı kaydetmek istiyor musunuz?')) return;
+        const context = attendanceContext;
+        const isCurrent = () => mounted.current && currentAttendanceContext.current === context;
+        attendanceBusy.current = true;
+        setAttendancePending(true);
+        setAttendanceNotice(null);
+        try {
+            const result = await api.submitAttendance({
+                group_id: selectedGroup.id,
+                meeting_date: new Date().toISOString(),
+                topic: (document.getElementById('meeting-topic') as HTMLInputElement)?.value || '',
+                items: members.filter(m => m.status === 'ACTIVE').map(m => ({ user_id: m.id, status: attendanceData[m.id] })),
+            });
+            if (!isCurrent()) return;
+            if (result?.success !== true || typeof result.eventId !== 'string' || !result.eventId.trim()) {
+                throw new Error('Unconfirmed attendance response');
+            }
+            setAttendanceNotice({ context, text: 'Yoklama kaydı sunucu tarafından onaylandı.' });
+            setActiveTab('ATTENDANCE');
+            try {
+                const updatedMeetings = await api.getGroupMeetings(selectedGroup.id);
+                if (!Array.isArray(updatedMeetings)) throw new Error('Invalid meetings response');
+                if (isCurrent()) setMeetings(updatedMeetings);
+            } catch {
+                if (isCurrent()) setAttendanceNotice({ context, text: 'Yoklama kaydı onaylandı; toplantı listesi yenilenemedi. Yeniden kayıt göndermeyin.' });
+            }
+        } catch {
+            if (isCurrent()) setAttendanceNotice({ context, text: 'Kayıt sonucu doğrulanamadı. Yeniden göndermeden önce toplantı kayıtlarını kontrol edin.' });
+        } finally {
+            attendanceBusy.current = false;
+            if (mounted.current) setAttendancePending(false);
+        }
+    };
 
 
 
@@ -173,10 +220,10 @@ export function GroupManagerDashboard() {
     const visitorsThisMonthCount = visitors ? visitors.filter(v => isThisMonth(v.visited_at)).length : 0;
 
     // Attendance Rate
-    let attendanceRate = 0;
-    if (meetings && meetings.length > 0) {
-        const totalPossible = meetings.reduce((acc, m) => acc + (m.total_members || 0), 0);
-        const totalPresent = meetings.reduce((acc, m) => acc + (m.attendees_count || 0), 0);
+    let attendanceRate: number | null = null;
+    if (meetings.length > 0 && meetings.every(m => Number.isSafeInteger(m.total_members) && m.total_members >= 0 && Number.isSafeInteger(m.attendees_count) && m.attendees_count >= 0 && m.attendees_count <= m.total_members)) {
+        const totalPossible = meetings.reduce((acc, m) => acc + m.total_members, 0);
+        const totalPresent = meetings.reduce((acc, m) => acc + m.attendees_count, 0);
         if (totalPossible > 0) attendanceRate = Math.round((totalPresent / totalPossible) * 100);
     }
 
@@ -190,6 +237,7 @@ export function GroupManagerDashboard() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {attendanceNotice?.context === attendanceContext && <p role="status" className="mb-4">{attendanceNotice.text}</p>}
                 {/* Header Section */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center">
@@ -420,7 +468,7 @@ export function GroupManagerDashboard() {
                                 </Button>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-gray-500 mb-4">Son toplantıların katılım oranları:</p>
+                                <p className="text-gray-500 mb-4">Kayıtlı katılım / güncel aktif üye oranları:</p>
                                 <div className="space-y-4">
                                     {meetings.map((m: any) => (
                                         <div key={m.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -430,7 +478,7 @@ export function GroupManagerDashboard() {
                                             </div>
                                             <div className="flex items-center">
                                                 <div className="mr-4 text-right">
-                                                    <span className="block text-2xl font-bold text-gray-900">%{Math.round((m.attendees_count / m.total_members) * 100)}</span>
+                                                    <span className="block text-2xl font-bold text-gray-900">{m.attendees_count != null && m.total_members > 0 && m.attendees_count <= m.total_members ? `%${Math.round((m.attendees_count / m.total_members) * 100)}` : 'Veri yok'}</span>
                                                     <span className="text-xs text-gray-500">Katılım</span>
                                                 </div>
                                                 <Button size="sm" variant="outline" onClick={async () => {
@@ -588,32 +636,7 @@ export function GroupManagerDashboard() {
                                 </table>
                             </div>
                             <div className="mt-6 flex justify-end">
-                                <Button variant="primary" onClick={async () => {
-                                    if (confirm('Yoklamayı kaydetmek istiyor musunuz?')) {
-                                        try {
-                                            const topic = (document.getElementById('meeting-topic') as HTMLInputElement).value;
-
-                                            // Send to API
-                                            await api.submitAttendance({
-                                                group_id: selectedGroup.id,
-                                                meeting_date: new Date().toISOString(),
-                                                topic: topic,
-                                                items: Object.entries(attendanceData).map(([uid, status]) => ({ user_id: uid, status }))
-                                            });
-
-                                            alert('Yoklama başarıyla kaydedildi.');
-                                            setActiveTab('ATTENDANCE');
-
-                                            // Refresh meetings list if possible
-                                            const updatedMeetings = await api.getGroupMeetings(selectedGroup.id);
-                                            setMeetings(updatedMeetings);
-
-                                        } catch (e: any) {
-                                            alert('Kaydedilirken hata oluştu: ' + (e.message || e));
-                                            console.error(e);
-                                        }
-                                    }
-                                }}>
+                                <Button variant="primary" disabled={attendancePending} onClick={handleAttendanceSubmit}>
                                     Yoklamayı Kaydet
                                 </Button>
                             </div>

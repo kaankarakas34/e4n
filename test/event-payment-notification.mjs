@@ -57,7 +57,10 @@ for (const nextRole of ['MEMBER', 'PRESIDENT', 'ADMIN']) {
   await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick(); commit();
   assert.equal(registered(), false);
 }
-for (const bad of [null, { id: 'other-event' }, { id: 'event-a', attendees: {} }]) {
+for (const bad of [null, { id: 'other-event' }, { id: 'event-a', attendees: {} },
+  { ...fixture(), attendees: [null] }, { ...fixture(), attendees: [{ id: '' }] },
+  { ...fixture(), title: null }, { ...fixture(), start_at: 'not-a-date' },
+  { ...fixture(), is_public: 'true' }, { ...fixture(), description: {} }, { ...fixture(), location: 1 }]) {
   await mount(); response = async () => bad; await notify(); commit();
   assert.ok(nodes(render()).some(node => node.props?.role === 'alert'));
 }
@@ -111,5 +114,39 @@ const beforeUnmountedResult = stateWrites;
 resolveRegistration({ success: true }); await pendingUnmount;
 assert.equal(stateWrites, beforeUnmountedResult);
 for (const cleanup of cleanups) cleanup?.();
+// Render context changes must hide the old record before effect cleanup runs.
+for (const change of ['route', 'user', 'role']) {
+  await freeMount();
+  const oldTree = nodes(render());
+  const oldRegister = oldTree.find(node => node.props?.onClick?.name === 'handleRegister').props.onClick;
+  const oldPayment = oldTree.find(node => node.type === 'PaymentModal').props.onSuccess;
+  if (change === 'route') id = 'event-b';
+  if (change === 'user') user = { id: 'other-member', role: 'MEMBER' };
+  if (change === 'role') user = { ...user, role: 'PRESIDENT' };
+  const changed = nodes(render());
+  assert.ok(changed.some(node => node.props?.role === 'status'));
+  assert.equal(changed.some(node => node.type === 'PaymentModal'), false);
+  const beforeCalls = calls, beforeWrites = writes;
+  await oldRegister(); await oldPayment();
+  assert.equal(calls, beforeCalls); assert.equal(writes, beforeWrites);
+}
+await mount(); let resolveRead;
+response = () => new Promise(resolve => { resolveRead = resolve; });
+const pendingRead = notify();
+user = { id: 'changed-before-cleanup', role: 'MEMBER' }; render();
+const beforeLateRead = stateWrites;
+resolveRead(fixture([{ id: 'fixture-member' }])); await pendingRead;
+assert.equal(stateWrites, beforeLateRead, 'read and payment finally ignored before effect cleanup');
+await mount(); response = async () => ({ ...fixture([], 0), attendees: undefined });
+await notify(); commit();
+assert.ok(nodes(render()).some(node => node.props?.role === 'alert'));
+const unknownButton = nodes(render()).find(node => node.props?.onClick?.name === 'handleRegister');
+assert.equal(unknownButton.props.disabled, true);
+const beforeUnknownWrite = writes; await unknownButton.props.onClick(); assert.equal(writes, beforeUnknownWrite);
+response = async () => fixture([], 0);
+await nodes(render()).find(node => node.props?.children === 'Tekrar dene').props.onClick(); commit();
+assert.equal(nodes(render()).find(node => node.props?.onClick?.name === 'handleRegister').props.disabled, false);
+for (const cleanup of cleanups) cleanup?.();
 console.log('Event payment notification: three roles, no second registration write, fresh attendees only, read error/retry, malformed/wrong-id response, stale route read ignored; explicit free registration preserved. No payment/network/mail calls.');
 console.log('FREE event registration: explicit success true including repeat, malformed/rejected result never registered; no email claim, duplicate submit one call, old route/user/role and unmounted results ignored.');
+console.log('Detail reads: malformed row/text/date rejected; old route/user/role hidden before cleanup and old callbacks inert; late read ignored; unknown attendance blocks repeat until confirmed retry.');

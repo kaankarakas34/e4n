@@ -22,11 +22,16 @@ export function EventDetail() {
     const contextSequence = useRef(0);
     const pageActive = useRef(true);
     const [registrationError, setRegistrationError] = useState<string | null>(null);
+    const [loadedContext, setLoadedContext] = useState<string | null>(null);
+    const pageContext = `${id}:${user?.id}:${user?.role}`;
+    const latestContext = useRef(pageContext);
+    latestContext.current = pageContext;
 
     useEffect(() => {
         pageActive.current = true;
         setRegistrationError(null);
         setIsPaymentModalOpen(false);
+        setRegistering(false);
         if (id) {
             loadEvent(id);
         }
@@ -34,15 +39,22 @@ export function EventDetail() {
     }, [id, user?.id, user?.role]);
 
     const loadEvent = async (eventId: string) => {
+        if (!pageActive.current || latestContext.current !== pageContext || eventId !== id) return;
         const sequence = ++loadSequence.current;
+        const isCurrent = () => pageActive.current && latestContext.current === pageContext && sequence === loadSequence.current;
         setLoading(true);
         setLoadError(null);
         setEvent(null);
         setRegistered(false);
         try {
             const data = await api.getEvent(eventId);
-            if (sequence !== loadSequence.current) return;
-            if (!data || data.id !== eventId || (data.attendees != null && !Array.isArray(data.attendees))) {
+            if (!isCurrent()) return;
+            if (!data || typeof data !== 'object' || Array.isArray(data) || data.id !== eventId
+                || typeof data.title !== 'string' || !data.title.trim()
+                || typeof data.start_at !== 'string' || !Number.isFinite(Date.parse(data.start_at))
+                || typeof data.is_public !== 'boolean'
+                || ['description', 'location', 'city'].some(key => data[key] != null && typeof data[key] !== 'string')
+                || (data.attendees != null && (!Array.isArray(data.attendees) || data.attendees.some((att: any) => !att || typeof att !== 'object' || Array.isArray(att) || typeof att.id !== 'string' || !att.id.trim())))) {
                 throw new Error('Invalid event response');
             }
             setEvent(data);
@@ -52,9 +64,9 @@ export function EventDetail() {
                 setRegistered(false);
             }
         } catch (e) {
-            if (sequence === loadSequence.current) setLoadError('Etkinlik bilgileri yüklenemedi.');
+            if (isCurrent()) setLoadError('Etkinlik bilgileri yüklenemedi.');
         } finally {
-            if (sequence === loadSequence.current) setLoading(false);
+            if (isCurrent()) { setLoadedContext(pageContext); setLoading(false); }
         }
     };
 
@@ -68,7 +80,7 @@ export function EventDetail() {
     }, [event, user]);
 
     const handlePaymentSuccess = async () => {
-        if (!id || !user) return;
+        if (!id || !user || !pageActive.current || latestContext.current !== pageContext) return;
         setIsPaymentModalOpen(false);
         setRegistering(true);
         alert('Ödeme bildirimi alındı. Güncel etkinlik kaydınızı kontrol edin.');
@@ -76,12 +88,14 @@ export function EventDetail() {
             // The recorded payment action is applied by the server callback.
             await loadEvent(id);
         } finally {
-            setRegistering(false);
+            if (pageActive.current && latestContext.current === pageContext) setRegistering(false);
         }
     };
 
     const handleRegister = async () => {
-        if (registrationPending.current || registering || loading || !event || event.id !== id || registered) return;
+        if (!pageActive.current || latestContext.current !== pageContext || loadedContext !== pageContext
+            || registrationPending.current || registering || loading || !event || event.id !== id || registered
+            || (user && !Array.isArray(event.attendees))) return;
         if (!user) {
             navigate('/auth/login', { state: { from: `/event/${id}` } });
             return;
@@ -100,21 +114,21 @@ export function EventDetail() {
         setRegistrationError(null);
         try {
             const result = await api.registerForEvent(id!);
-            if (!pageActive.current || context !== contextSequence.current) return;
+            if (!pageActive.current || latestContext.current !== pageContext || context !== contextSequence.current) return;
             if (!result || result.success !== true) throw new Error('Invalid event registration response');
             setRegistered(true);
             alert('Etkinlik kaydınız doğrulandı.');
         } catch {
-            if (pageActive.current && context === contextSequence.current) {
+            if (pageActive.current && latestContext.current === pageContext && context === contextSequence.current) {
                 setRegistrationError('Kayıt sonucu doğrulanamadı. Yeniden göndermeden mevcut kaydınızı kontrol edin.');
             }
         } finally {
             registrationPending.current = false;
-            if (pageActive.current) setRegistering(false);
+            if (pageActive.current && latestContext.current === pageContext) setRegistering(false);
         }
     };
 
-    if (loading) {
+    if (id && (loading || loadedContext !== pageContext)) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div role="status" aria-label="Etkinlik yükleniyor" className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -314,6 +328,9 @@ export function EventDetail() {
                                     <span className="font-bold text-gray-900">Ücretsiz</span>
                                 </div>
 
+                                {user && !Array.isArray(event.attendees) && !registered && (
+                                    <div role="alert"><p>Etkinlik kaydınız doğrulanamadı.</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>
+                                )}
                                 {registered ? (
                                     <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
                                         <CheckCircle className="h-4 w-4 mr-2" /> Kayıtlısınız
@@ -323,7 +340,7 @@ export function EventDetail() {
                                         variant="primary"
                                         className="w-full shadow-md shadow-red-200"
                                         onClick={handleRegister}
-                                        disabled={registering}
+                                        disabled={registering || (!!user && !Array.isArray(event.attendees))}
                                     >
                                         {registering ? 'İşleniyor...' : (user ? 'Hemen Kayıt Ol' : 'Giriş Yap ve Kayıt Ol')}
                                     </Button>

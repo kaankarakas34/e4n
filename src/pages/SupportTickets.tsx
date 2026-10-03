@@ -8,6 +8,7 @@ import { Modal } from '../shared/Modal';
 
 interface Ticket {
     id: string;
+    user_id: string;
     subject: string;
     status: 'OPEN' | 'ANSWERED' | 'CLOSED';
     created_at: string;
@@ -17,12 +18,19 @@ interface Ticket {
 
 interface Message {
     id: string;
+    ticket_id: string;
     message: string;
     sender_name: string;
     sender_role: string;
     created_at: string;
     sender_id: string;
 }
+
+const isTicket = (value: any): value is Ticket => value && typeof value === 'object' && !Array.isArray(value)
+    && ['id', 'user_id'].every(key => typeof value[key] === 'string' && !!value[key].trim())
+    && typeof value.subject === 'string' && typeof value.status === 'string'
+    && ['created_at', 'updated_at'].every(key => typeof value[key] === 'string' && Number.isFinite(Date.parse(value[key])))
+    && ['user_name', 'user_email', 'last_message'].every(key => value[key] == null || typeof value[key] === 'string');
 
 export function SupportTickets() {
     const { user } = useAuthStore();
@@ -35,6 +43,21 @@ export function SupportTickets() {
     const [newTicketSubject, setNewTicketSubject] = useState('');
     const [newTicketMessage, setNewTicketMessage] = useState('');
 
+    const [listError, setListError] = useState<string | null>(null);
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
+    const [requestedTicket, setRequestedTicket] = useState<string | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState<string | null>(null);
+    const context = `${user?.id}:${user?.role}`;
+    const currentContext = useRef(context);
+    currentContext.current = context;
+    const active = useRef(true);
+    const listSequence = useRef(0);
+    const detailSequence = useRef(0);
+    const detailTarget = useRef<string | null>(null);
+    const isCurrentContext = () => active.current && currentContext.current === context && !!user?.id;
+    const renderedDetailSequence = detailSequence.current;
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -42,39 +65,70 @@ export function SupportTickets() {
     };
 
     useEffect(() => {
-        loadTickets();
-    }, []);
+        active.current = true;
+        setSelectedTicket(null); setMessages([]); setNewMessage('');
+        setShowNewTicketModal(false); setNewTicketSubject(''); setNewTicketMessage('');
+        detailTarget.current = null; setRequestedTicket(null); setDetailLoading(false); setDetailError(null);
+        if (user?.id) void loadTickets();
+        return () => { active.current = false; listSequence.current++; detailSequence.current++; detailTarget.current = null; };
+    }, [user?.id, user?.role]);
 
     useEffect(() => {
         scrollToBottom();
     }, [messages, selectedTicket]);
 
     const loadTickets = async () => {
+        if (!isCurrentContext()) return;
+        const sequence = ++listSequence.current;
+        const isCurrent = () => isCurrentContext() && sequence === listSequence.current;
+        setLoading(true); setListError(null);
         try {
             const data = await api.getTickets();
-            setTickets(data);
-        } catch (error) {
-            console.error('Failed to load tickets', error);
+            if (!Array.isArray(data) || !data.every(ticket => isTicket(ticket) && (user?.role === 'ADMIN' || ticket.user_id === user?.id))) throw new Error('Invalid tickets response');
+            if (isCurrent()) { setTickets(data); setLoadedFor(context); }
+        } catch {
+            if (isCurrent()) { setListError('Destek talepleri yüklenemedi.'); setLoadedFor(context); }
         } finally {
-            setLoading(false);
+            if (isCurrent()) setLoading(false);
         }
     };
 
     const loadTicketDetails = async (ticketId: string) => {
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || !tickets.some(ticket => ticket.id === ticketId)) return;
+        const owner = tickets.find(ticket => ticket.id === ticketId)!.user_id;
+        if (detailTarget.current !== ticketId) { setNewMessage(''); }
+        detailTarget.current = ticketId;
+        const sequence = ++detailSequence.current;
+        const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
+        setRequestedTicket(ticketId); setDetailLoading(true); setDetailError(null); setSelectedTicket(null); setMessages([]);
         try {
             const data = await api.getTicketDetails(ticketId);
+            if (!isTicket(data?.ticket) || data.ticket.id !== ticketId || data.ticket.user_id !== owner
+                || !Array.isArray(data.messages) || data.messages.some((message: any) => !message || typeof message !== 'object' || Array.isArray(message)
+                    || message.ticket_id !== ticketId || ['id', 'sender_id'].some(key => typeof message[key] !== 'string' || !message[key].trim())
+                    || typeof message.message !== 'string' || typeof message.sender_role !== 'string'
+                    || (message.sender_name != null && typeof message.sender_name !== 'string')
+                    || typeof message.created_at !== 'string' || !Number.isFinite(Date.parse(message.created_at)))) throw new Error('Invalid ticket details');
+            if (!isCurrent()) return;
             setMessages(data.messages);
-            // Update selected ticket info as well in case status changed
             setSelectedTicket(data.ticket);
-        } catch (error) {
-            console.error('Failed to load ticket details', error);
+        } catch {
+            if (isCurrent()) setDetailError('Talep detayları yüklenemedi.');
+        } finally {
+            if (isCurrent()) setDetailLoading(false);
         }
     };
 
+    const closeDetails = () => {
+        detailSequence.current++; detailTarget.current = null;
+        setRequestedTicket(null); setSelectedTicket(null); setMessages([]); setNewMessage(''); setDetailError(null); setDetailLoading(false);
+    };
+
     const handleCreateTicket = async () => {
-        if (!newTicketSubject.trim() || !newTicketMessage.trim()) return;
+        if (!isCurrentContext() || !newTicketSubject.trim() || !newTicketMessage.trim()) return;
         try {
             await api.createTicket({ subject: newTicketSubject, message: newTicketMessage });
+            if (!isCurrentContext()) return;
             setShowNewTicketModal(false);
             setNewTicketSubject('');
             setNewTicketMessage('');
@@ -85,9 +139,11 @@ export function SupportTickets() {
     };
 
     const handleSendMessage = async () => {
-        if (!selectedTicket || !newMessage.trim()) return;
+        if (!isCurrentContext() || loading || listError || loadedFor !== context || detailLoading || detailError || !selectedTicket || detailTarget.current !== selectedTicket.id || renderedDetailSequence !== detailSequence.current || !newMessage.trim()) return;
+        const sequence = detailSequence.current;
         try {
             await api.replyTicket(selectedTicket.id, newMessage);
+            if (!isCurrentContext() || sequence !== detailSequence.current || detailTarget.current !== selectedTicket.id) return;
             setNewMessage('');
             loadTicketDetails(selectedTicket.id);
             // Refresh list to update "last updated" sort or status
@@ -102,9 +158,12 @@ export function SupportTickets() {
             case 'OPEN': return <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">Açık</span>;
             case 'ANSWERED': return <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">Cevaplandı</span>;
             case 'CLOSED': return <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full font-medium">Kapalı</span>;
-            default: return null;
+            default: return <span>Bilinmeyen durum</span>;
         }
     };
+
+    if (!user?.id) return <p>Destek talepleri için giriş yapın.</p>;
+    if (loadedFor !== context) return <p role="status">Destek talepleri yükleniyor...</p>;
 
     return (
         <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-100px)] flex flex-col">
@@ -120,12 +179,14 @@ export function SupportTickets() {
 
             <div className="flex-1 flex gap-6 overflow-hidden">
                 {/* Ticket List */}
-                <div className={`${selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
+                <div className={`${requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
                     <div className="p-4 border-b border-gray-100 bg-gray-50">
                         <h2 className="font-semibold text-gray-700">Talepler</h2>
                     </div>
                     <div className="flex-1 overflow-y-auto">
-                        {loading ? (
+                        {listError ? (
+                            <div role="alert" className="p-4"><p>{listError}</p><Button onClick={() => loadTickets()}>Tekrar dene</Button></div>
+                        ) : loading ? (
                             <div className="p-4 text-center text-gray-500">Yükleniyor...</div>
                         ) : tickets.length === 0 ? (
                             <div className="p-8 text-center text-gray-500 flex flex-col items-center">
@@ -154,12 +215,17 @@ export function SupportTickets() {
                 </div>
 
                 {/* Ticket Detail & Chat */}
-                <div className={`${!selectedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
-                    {selectedTicket ? (
+                <div className={`${!requestedTicket ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden`}>
+                    {requestedTicket && (detailLoading || detailError) ? (
+                        <div className="p-4">
+                            <Button onClick={closeDetails}>Listeye dön</Button>
+                            {detailLoading ? <p role="status">Talep detayları yükleniyor...</p> : <div role="alert"><p>{detailError}</p><Button onClick={() => loadTicketDetails(requestedTicket)}>Tekrar dene</Button></div>}
+                        </div>
+                    ) : selectedTicket && !loading && !listError ? (
                         <>
                             <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="sm" onClick={() => setSelectedTicket(null)} className="md:hidden mr-2">
+                                    <Button variant="ghost" size="sm" onClick={closeDetails} className="md:hidden mr-2">
                                         ←
                                     </Button>
                                     <div>
@@ -173,6 +239,7 @@ export function SupportTickets() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                                {messages.length === 0 && <p>Bu talepte henüz mesaj bulunmuyor.</p>}
                                 {messages.map(msg => {
                                     const isMe = msg.sender_id === user?.id;
                                     const isAdmin = msg.sender_role === 'ADMIN';

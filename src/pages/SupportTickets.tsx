@@ -57,6 +57,7 @@ export function SupportTickets() {
     const detailTarget = useRef<string | null>(null);
     const isCurrentContext = () => active.current && currentContext.current === context && !!user?.id;
     const mutationLock = useRef<object | null>(null);
+    const mutationAttempt = useRef<{signature:string;key:string} | null>(null);
     const modalSequence = useRef(0);
     const [pendingFor, setPendingFor] = useState<string | null>(null);
     const [mutationNotice, setMutationNotice] = useState<{ context: string; text: string; error: boolean; ticketId?: string; modalVersion?: number } | null>(null);
@@ -149,17 +150,21 @@ export function SupportTickets() {
         const ticketId = selectedTicket?.id;
         const detailVersion = detailSequence.current;
         const modalVersion = modalSequence.current;
+        const signature = JSON.stringify([context,kind,kind==='create'?null:ticketId,kind==='create'?newTicketSubject.trim():null,kind==='create'?newTicketMessage.trim():newMessage.trim()]);
         const token = {};
         mutationLock.current = token; setPendingFor(context); setMutationNotice(null);
         const isCurrent = () => isCurrentContext() && (kind === 'create' ? modalVersion === modalSequence.current
             : detailVersion === detailSequence.current && detailTarget.current === ticketId);
         try {
+            if (mutationAttempt.current?.signature !== signature) mutationAttempt.current = {signature,key:crypto.randomUUID()};
+            const requestKey = mutationAttempt.current.key;
             const result = kind === 'create'
-                ? await api.createTicket({ subject: newTicketSubject.trim(), message: newTicketMessage.trim() })
-                : await api.replyTicket(ticketId!, newMessage.trim());
+                ? await api.createTicket({ subject: newTicketSubject.trim(), message: newTicketMessage.trim(), requestKey })
+                : await api.replyTicket(ticketId!, newMessage.trim(), requestKey);
             if (!isCurrent()) return;
             if (kind === 'create' ? !isTicket(result) || result.user_id !== user?.id
                 || result.subject !== newTicketSubject.trim() || result.status !== 'OPEN' : result?.success !== true) throw new Error('Unconfirmed mutation');
+            if (mutationAttempt.current?.key === requestKey) mutationAttempt.current = null;
             if (kind === 'create') {
                 setShowNewTicketModal(false); setNewTicketSubject(''); setNewTicketMessage('');
             } else setNewMessage('');

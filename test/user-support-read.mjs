@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0, write, writes = [];
+let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0, write, writes = [], requestKeys = [];
 globalThis.supportListHooks = {
   useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { stateWrites++; slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
   useEffect(fn, dependencies) { const i = cursor++; const old = effects.get(i); if (!old || dependencies.some((value, j) => value !== old.dependencies[j])) effects.set(i, { fn, dependencies, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.supportListAuth = () => ({ user });
-globalThis.supportListAPI = { createTicket: payload => { writes.push({ create: payload }); return write(); }, replyTicket: (id, message) => { writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status) => { writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
+globalThis.supportListAPI = { createTicket: payload => { requestKeys.push(payload.requestKey); writes.push({ create: payload }); return write(); }, replyTicket: (id, message, key) => { requestKeys.push(key); writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status, key) => { requestKeys.push(key); writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/SupportTickets.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
@@ -27,7 +27,7 @@ const render = () => { cursor = 0; return SupportTickets(); };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const flush = async () => { for (const effect of effects.values()) if (effect.pending) { effect.cleanup?.(); effect.cleanup = effect.fn(); effect.pending = false; } await settle(); };
 const cleanup = () => { for (const effect of effects.values()) effect.cleanup?.(); };
-const reset = () => { cleanup(); writes = []; write = async () => ({ success: true }); slots = []; effects = new Map(); user = { id: 'member', role: 'MEMBER' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
+const reset = () => { cleanup(); writes = []; requestKeys = []; write = async () => ({ success: true }); slots = []; effects = new Map(); user = { id: 'member', role: 'MEMBER' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 
 
@@ -158,3 +158,14 @@ const replyPending = send().props.onClick(); await row('other').props.onClick();
 lateReply.resolve({ success: true }); await replyPending;
 assert.equal(nodes(render()).find(node => node.props?.placeholder === 'Bir mesaj yazın...').props.value, 'Other draft');
 console.log('User support writes: ticket-row ACK versus reply ACK, drafts, shared same-tick lock, refresh-only retries, modal reopen and session/unmount/target boundaries passed.');
+for (const kind of ['create','reply']) {
+  await mountDetail();if(kind==='create')fillCreate();
+  write=async()=>{throw new Error('Synthetic lost response');};
+  await (kind==='create'?create():send()).props.onClick();
+  const key=requestKeys[0];assert.match(key,/^[a-f0-9-]{36}$/);
+  write=async()=>kind==='create'?fixture():{success:true};
+  await (kind==='create'?create():send()).props.onClick();assert.equal(requestKeys[1],key);
+  if(kind==='create')fillCreate();else change('Bir mesaj yazın...','Reply fixture');
+  await (kind==='create'?create():send()).props.onClick();assert.notEqual(requestKeys[2],key);
+}
+console.log('User support keyed create/reply: ambiguous retry preserves key; confirmed ACK gives next intentional write a new key.');

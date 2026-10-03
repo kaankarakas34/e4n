@@ -176,17 +176,22 @@ export const api = {
   async getTickets() {
     return await request('/tickets');
   },
-  async createTicket(payload: { subject: string, message: string }) {
+  async createTicket(payload: { subject: string, message: string, requestKey?: string }) {
     return await request('/tickets', { method: 'POST', body: JSON.stringify(payload) });
   },
   async getTicketDetails(id: string) {
     return await request(`/tickets/${id}`);
   },
-  async replyTicket(id: string, message: string) {
-    return await request(`/tickets/${id}/messages`, { method: 'POST', body: JSON.stringify({ message }) });
+  async replyTicket(id: string, message: string, requestKey?: string) {
+    const result = await request(`/tickets/${id}/messages`, { method: 'POST', body: JSON.stringify({ message, requestKey }) });
+    if (result?.success !== true || result.ticket_id !== id || typeof result.message_id !== 'string' || !result.message_id
+      || !['OPEN','ANSWERED'].includes(result.status)) throw new Error('Destek yanıtı doğrulanamadı.');
+    return result;
   },
-  async updateTicketStatus(id: string, status: 'OPEN' | 'CLOSED') {
-    return await request(`/tickets/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+  async updateTicketStatus(id: string, status: 'OPEN' | 'CLOSED', requestKey?: string) {
+    const result = await request(`/tickets/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, requestKey }) });
+    if (result?.success !== true || result.ticket_id !== id || result.status !== status) throw new Error('Talep durumu doğrulanamadı.');
+    return result;
   },
 
   async getAdminGeoStats() {

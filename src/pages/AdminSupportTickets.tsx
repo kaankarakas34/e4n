@@ -55,6 +55,7 @@ export function AdminSupportTickets() {
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
     const mutationLock = useRef<object | null>(null);
+    const mutationAttempt = useRef<{signature:string;key:string} | null>(null);
     const [pendingFor, setPendingFor] = useState<string | null>(null);
     const [mutationNotice, setMutationNotice] = useState<{ context: string; ticketId: string; text: string; error: boolean } | null>(null);
     const renderedDetailSequence = detailSequence.current;
@@ -134,14 +135,18 @@ export function AdminSupportTickets() {
         const ticketId = selectedTicket.id;
         const sequence = detailSequence.current;
         const token = {};
+        const signature = JSON.stringify([context,kind,ticketId,kind==='reply'?newMessage.trim():status]);
         mutationLock.current = token;
         setPendingFor(context); setMutationNotice(null);
         const isCurrent = () => isCurrentContext() && sequence === detailSequence.current && detailTarget.current === ticketId;
         try {
-            const result = kind === 'reply' ? await api.replyTicket(ticketId, newMessage.trim())
-                : await api.updateTicketStatus(ticketId, status!);
+            if (mutationAttempt.current?.signature !== signature) mutationAttempt.current = {signature,key:crypto.randomUUID()};
+            const requestKey = mutationAttempt.current.key;
+            const result = kind === 'reply' ? await api.replyTicket(ticketId, newMessage.trim(), requestKey)
+                : await api.updateTicketStatus(ticketId, status!, requestKey);
             if (!isCurrent()) return;
             if (result?.success !== true) throw new Error('Unconfirmed mutation');
+            if (mutationAttempt.current?.key === requestKey) mutationAttempt.current = null;
             if (kind === 'reply') setNewMessage('');
             setMutationNotice({ context, ticketId, error: false, text: kind === 'reply'
                 ? 'Yanıt kaydedildi. Güncel bilgiler yükleniyor; yenileme hatasında yalnızca tekrar yükleyin.'

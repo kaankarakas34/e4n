@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0, write, writes = [];
+let cursor = 0, slots = [], effects = new Map(), user, read, detailRead, calls = 0, stateWrites = 0, detailCalls = 0, write, writes = [], requestKeys = [];
 globalThis.supportListHooks = {
   useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { stateWrites++; slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
   useEffect(fn, dependencies) { const i = cursor++; const old = effects.get(i); if (!old || dependencies.some((value, j) => value !== old.dependencies[j])) effects.set(i, { fn, dependencies, pending: true, cleanup: old?.cleanup }); },
 };
 globalThis.supportListAuth = () => ({ user });
-globalThis.supportListAPI = { replyTicket: (id, message) => { writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status) => { writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
+globalThis.supportListAPI = { replyTicket: (id, message, key) => { requestKeys.push(key); writes.push({ id, message }); return write(); }, updateTicketStatus: (id, status, key) => { requestKeys.push(key); writes.push({ id, status }); return write(); }, getTickets: () => { calls++; return read(); }, getTicketDetails: id => { detailCalls++; return detailRead(id); } };
 let code = ts.transpileModule(readFileSync(new URL('../src/pages/AdminSupportTickets.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 code = code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
   if (module === 'react/jsx-runtime') return line.replace(module, import.meta.resolve(module));
@@ -27,7 +27,7 @@ const render = () => { cursor = 0; return AdminSupportTickets(); };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const flush = async () => { for (const effect of effects.values()) if (effect.pending) { effect.cleanup?.(); effect.cleanup = effect.fn(); effect.pending = false; } await settle(); };
 const cleanup = () => { for (const effect of effects.values()) effect.cleanup?.(); };
-const reset = () => { cleanup(); writes = []; write = async () => ({ success: true }); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
+const reset = () => { cleanup(); writes = []; requestKeys = []; write = async () => ({ success: true }); slots = []; effects = new Map(); user = { id: 'admin', role: 'ADMIN' }; read = async () => []; detailRead = async id => ({ ticket: { ...fixture(), id }, messages: [] }); };
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const count = () => nodes(render()).find(node => node.type === 'span' && node.props?.className?.startsWith('bg-gray-200')).props.children;
 
@@ -136,3 +136,11 @@ for (const boundary of ['switch', 'close', 'session', 'unmount']) {
 }
 await mountDetail(); const staleSend = send().props.onClick; await row('other').props.onClick(); await staleSend(); assert.equal(writes.length, 0);
 console.log('Admin support writes: strict ACK/draft preservation, shared same-tick lock, confirmed write versus failed GET/retry, server status refresh, target/session/unmount boundaries passed.');
+for (const kind of ['reply','status']) {
+  await mountDetail();write=async()=>{throw new Error('Synthetic lost response');};
+  await (kind==='reply'?send():button('Talebi Kapat')).props.onClick();const key=requestKeys[0];assert.match(key,/^[a-f0-9-]{36}$/);
+  write=async()=>({success:true});await (kind==='reply'?send():button('Talebi Kapat')).props.onClick();assert.equal(requestKeys[1],key);
+  if(kind==='reply')draft('Reply fixture');
+  await (kind==='reply'?send():button('Talebi Kapat')).props.onClick();assert.notEqual(requestKeys[2],key);
+}
+console.log('Admin support keyed reply/status: lost response keeps key; ACK starts a new intent without replaying a later transition.');

@@ -2,6 +2,13 @@ import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 
 export const validInvoice = value => typeof value === 'string' && /^[a-zA-Z0-9-]{1,255}$/.test(value);
+export const validRequestKey = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])) : value;
+export const paymentFingerprint = (user, amount, action) => crypto.createHash('sha256')
+  .update(JSON.stringify(canonical({user:user || null,amount:Number(amount),action}))).digest('hex');
+export const paymentReceipt = (invoice,secret) => ({success:true,is3D:false,recoveryOnly:true,invoiceId:invoice,
+  receiptToken:jwt.sign({invoice},`${secret}:payment-receipt`,{audience:'e4n-payment-receipt',expiresIn:'24h'})});
 const fail = (message, status = 409) => Object.assign(new Error(message), { status });
 const paid = status => ['SUCCESS', 'PAID'].includes(status);
 const cents = value => { const n = Number(value); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null; };
@@ -70,6 +77,16 @@ async function applyAction(client, tx) {
 }
 
 export function installPaymentProcessing(app, { pool, secret, generateHash, onEventPaid }) {
+  app.post('/api/payment/resume',async(req,res)=>{
+    try {
+      if(!validRequestKey(req.body.requestKey))return res.status(400).json({error:'Geçersiz işlem anahtarı.'});
+      const row=(await pool.query('SELECT merchant_oid,user_id,action_type,initiation_state,status FROM payment_transactions WHERE request_key=$1',[req.body.requestKey])).rows[0];
+      let owner=null;
+      if(req.headers.authorization)try{owner=jwt.verify(req.headers.authorization.split(' ')[1],secret).id;}catch{return res.sendStatus(403);}
+      if(!row || (row.user_id ? row.user_id!==owner : row.action_type!=='visitor_registration'))return res.status(404).json({error:'İşlem bulunamadı.'});
+      res.json({...paymentReceipt(row.merchant_oid,secret),retryAllowed:row.initiation_state==='NOT_SENT' && row.status==='PENDING'});
+    }catch{res.status(500).json({error:'İşlem bilgisi yüklenemedi.'});}
+  });
   const reconcile = async invoice => {
     const before = (await pool.query('SELECT * FROM payment_transactions WHERE merchant_oid=$1',[invoice])).rows[0];
     if (!before) throw fail('İşlem kaydı bulunamadı.',404);

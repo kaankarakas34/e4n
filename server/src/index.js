@@ -21,7 +21,7 @@ import fs from 'fs';
 import os from 'os';
 import multer from 'multer';
 import adminRoutes from './routes/admin.js';
-import { installPaymentProcessing } from './payment-processing.js';
+import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -2152,9 +2152,10 @@ function generateSipayHash(parts, appSecret) {
 app.post('/api/payment/pay', async (req, res) => {
   const action = req.body.action;
   const amount = Number(req.body.total);
+  const requestKey = req.body.requestKey;
   if (!action || !['membership','event_registration','visitor_registration'].includes(action.type)
     || !action.data || typeof action.data !== 'object' || Array.isArray(action.data)
-    || !Number.isFinite(amount) || amount <= 0 || amount > 99999999.99 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+    || !validRequestKey(requestKey) || !Number.isFinite(amount) || amount <= 0 || amount > 99999999.99 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
     return res.status(400).json({error:'Geçersiz ödeme işlemi.'});
   }
   if (req.headers.authorization) {
@@ -2201,8 +2202,23 @@ app.post('/api/payment/pay', async (req, res) => {
   const sipayAppId = process.env.SIPAY_APP_ID;
   const sipayAppSecret = process.env.SIPAY_APP_SECRET;
   const sipayMerchantKey = process.env.SIPAY_MERCHANT_KEY;
-
+  let invoice_id;
+  let dispatched = false;
   try {
+    const userId = req.user?.id || null;
+    const planId = action.type === 'membership' ? action.data.plan : null;
+    const fingerprint = paymentFingerprint(userId,amount,action);
+    const reserved = await pool.query(`INSERT INTO payment_transactions
+      (merchant_oid,user_id,plan_id,amount,status,action_type,action_data,request_key,request_fingerprint,initiation_state)
+      VALUES($1,$2,$3,$4,'PENDING',$5,$6,$7,$8,'RESERVED') ON CONFLICT(request_key) DO NOTHING RETURNING *`,
+      ['INV-'+crypto.randomUUID(),userId,planId,amount,action.type,JSON.stringify(action.data),requestKey,fingerprint]);
+    const existing = reserved.rows[0] || (await pool.query('SELECT * FROM payment_transactions WHERE request_key=$1',[requestKey])).rows[0];
+    if (!existing || existing.request_fingerprint !== fingerprint || existing.user_id !== userId) return res.status(409).json({error:'Bu ödeme anahtarı başka bir işlemde kullanılmış.'});
+    invoice_id = existing.merchant_oid;
+    if (!reserved.rowCount) {
+      const claimed = await pool.query("UPDATE payment_transactions SET initiation_state='RESERVED' WHERE request_key=$1 AND initiation_state='NOT_SENT' AND status='PENDING' RETURNING merchant_oid",[requestKey]);
+      if (!claimed.rowCount) return res.json(paymentReceipt(invoice_id,SECRET_KEY));
+    }
     // 1. Generate token
     const tokenResponse = await fetch(`${sipayApiUrl}/api/token`, {
       method: 'POST',
@@ -2216,7 +2232,8 @@ app.post('/api/payment/pay', async (req, res) => {
     });
     
     const tokenData = await tokenResponse.json();
-    if (tokenData.status_code !== 100) {
+    if (!tokenResponse.ok || Number(tokenData.status_code) !== 100 || typeof tokenData.data?.token !== 'string' || !tokenData.data.token) {
+      await pool.query("UPDATE payment_transactions SET initiation_state='NOT_SENT' WHERE merchant_oid=$1 AND initiation_state='RESERVED'",[invoice_id]);
       return res.status(400).json({ 
         error: 'sipay_auth_failed', 
         message: 'Sipay kimlik doğrulama başarısız oldu: ' + tokenData.status_description 
@@ -2226,7 +2243,6 @@ app.post('/api/payment/pay', async (req, res) => {
     const sipayToken = tokenData.data.token;
 
     // 2. Generate Hash Signature
-    const invoice_id = "INV-" + crypto.randomUUID();
     
     // Sipay amount format is strictly string float with 2 decimal places in hash (e.g. "1000.00")
     const formattedTotal = parseFloat(total).toFixed(2);
@@ -2254,16 +2270,6 @@ app.post('/api/payment/pay', async (req, res) => {
     const surname = nameParts.length > 1 ? nameParts.pop() : 'User';
     const name = nameParts.join(' ') || 'Sipay';
 
-    // Save pending transaction to database
-    // Get user id if authenticated (req.user exists)
-    const userId = req.user?.id || null;
-    const planId = action?.type === 'membership' ? action.data.plan : null;
-
-    await pool.query(`
-      INSERT INTO payment_transactions (merchant_oid, user_id, plan_id, amount, status, action_type, action_data)
-      VALUES ($1, $2, $3, $4, 'PENDING', $5, $6)
-    `, [invoice_id, userId, planId, parseFloat(total), action?.type || null, action ? JSON.stringify(action.data) : null]);
-
     // Setup return URLs
     const clientOrigin = req.headers.origin || 'https://www.event4network.com';
     const protocol = req.headers['x-forwarded-proto'] || (req.get('host').includes('localhost') || req.get('host').includes('127.0.0.1') ? req.protocol : 'https');
@@ -2272,6 +2278,9 @@ app.post('/api/payment/pay', async (req, res) => {
 
     // 3. Make 3D POS Payment Request
     const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+    const dispatch = await pool.query("UPDATE payment_transactions SET initiation_state='DISPATCHED' WHERE merchant_oid=$1 AND initiation_state='RESERVED' RETURNING merchant_oid",[invoice_id]);
+    if (!dispatch.rowCount) return res.json(paymentReceipt(invoice_id,SECRET_KEY));
+    dispatched = true; // No retry can dispatch a second charge after this durable boundary.
     const payResponse = await fetch(`${sipayApiUrl}/api/paySmart3D`, {
       method: 'POST',
       signal: AbortSignal.timeout(10_000),
@@ -2334,6 +2343,9 @@ app.post('/api/payment/pay', async (req, res) => {
       return res.json({ success: true, is3D: true, html: payDataHTML, invoiceId: invoice_id, receiptToken });
     }
   } catch (err) {
+    if (invoice_id && !dispatched) {
+      try { await pool.query("UPDATE payment_transactions SET initiation_state='NOT_SENT' WHERE merchant_oid=$1 AND initiation_state='RESERVED'",[invoice_id]); } catch { /* Unknown state remains blocked from a new charge. */ }
+    }
     console.error('Sipay 3D POS Error:', err);
     res.status(500).json({ error: 'system_error', message: err.message });
   }

@@ -92,13 +92,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 7 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 8 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=7')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=8')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -110,6 +110,8 @@ async function main() {
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
   if (tableCount !== 35) throw new Error(`Repository schema bootstrap expected 35 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
+  await pool.query("DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
+  await pool.query('ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state');
   await pool.query("DELETE FROM schema_migrations WHERE version = '0007_meeting_requests'");
   await pool.query('DROP TABLE one_to_one_requests');
   await pool.query('ALTER TABLE one_to_ones DROP COLUMN updated_at');
@@ -124,9 +126,10 @@ async function main() {
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
   const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
-  if (visitorUpgrade.applied.length !== 3 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+  if (visitorUpgrade.applied.length !== 4 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
       || visitorUpgrade.applied[1] !== '0006_registration_consents'
       || visitorUpgrade.applied[2] !== '0007_meeting_requests'
+      || visitorUpgrade.applied[3] !== '0008_payment_initiation'
       || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null
       || Object.values(oldConsent).some(value => value !== null)) {
     throw new Error('Existing versioned visitor row was not preserved during 0005 upgrade');
@@ -200,7 +203,7 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 6
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 7
         || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 35 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }

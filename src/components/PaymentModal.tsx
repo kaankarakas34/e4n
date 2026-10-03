@@ -6,6 +6,7 @@ import { TextArea } from '../shared/TextArea';
 import { CreditCard, ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
 import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
+import { readPaymentAttempt, savePaymentAttempt, clearPaymentAttempt, type PaymentAttempt } from '../services/paymentAttempt';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -61,11 +62,26 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
     const popupCleanup = useRef<(() => void) | null>(null);
     const paymentContext = JSON.stringify([user?.id,user?.role,action,amount]);
     const currentContext = useRef(paymentContext); currentContext.current = paymentContext;
-    const receiptRef = useRef<{context:string;invoiceId:string;receiptToken:string} | null>(null);
-    const [receipt, setReceipt] = useState<{context:string;invoiceId:string;receiptToken:string} | null>(null);
+    const receiptRef = useRef<(PaymentAttempt & {context:string}) | null>(null);
+    const [receipt, setReceipt] = useState<(PaymentAttempt & {context:string}) | null>(null);
+    const [restoredFor, setRestoredFor] = useState<string | null>(null);
     const canCheck = receipt?.context === paymentContext;
 
     useEffect(() => {
+        setRestoredFor(null);
+        const version = ++attempt.current;
+        if (isOpen) {
+            void readPaymentAttempt(paymentContext).then(saved => {
+                if (attempt.current !== version || currentContext.current !== paymentContext) return;
+                const restored = saved ? {...saved,context:paymentContext} : null;
+                receiptRef.current = restored; setReceipt(restored);
+                if (saved) { setFinalAmount(saved.amount); setPromoApplied(saved.amount !== amount); }
+                setRestoredFor(paymentContext);
+            }).catch(() => {
+                if (attempt.current === version && currentContext.current === paymentContext)
+                    setError('Önceki ödeme kaydı okunamadı. Yeni ödeme başlatılamıyor.');
+            });
+        }
         if (!isOpen) {
             pending.current = false;
             setIsProcessing(false);
@@ -169,8 +185,8 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     const handlePaymentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isOpen || pending.current || currentContext.current !== paymentContext) return;
-        if (receiptRef.current?.context === paymentContext) {
+        if (!isOpen || pending.current || currentContext.current !== paymentContext || restoredFor !== paymentContext) return;
+        if (receiptRef.current?.context === paymentContext && receiptRef.current.invoiceId) {
             setError('Yeni ödeme başlatmadan önce mevcut işlemin durumunu kontrol edin.'); return;
         }
         pending.current = true;
@@ -181,16 +197,19 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             pending.current = false;
             setIsProcessing(false);
         };
-        const confirmPayment = async (payment: {invoiceId:string;receiptToken:string}) => {
+        const confirmPayment = async (payment: PaymentAttempt & {invoiceId:string;receiptToken:string}) => {
             try {
                 const status = await api.getPaymentStatus(payment.invoiceId,payment.receiptToken);
                 if (!isCurrent()) return;
-                if (status.invoice_id !== payment.invoiceId || status.action_type !== action.type || Math.round(status.amount*100) !== Math.round(finalAmount*100)) throw new Error('Ödeme eşleşmedi');
+                if (status.invoice_id !== payment.invoiceId || status.action_type !== action.type || Math.round(status.amount*100) !== Math.round(payment.amount*100)) throw new Error('Ödeme eşleşmedi');
                 if (status.status === 'FAILED') {
+                    await clearPaymentAttempt(paymentContext,payment.requestKey);
+                    if (!isCurrent()) return;
                     receiptRef.current = null; setReceipt(null); setError('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.'); return;
                 }
                 if (!['SUCCESS','PAID'].includes(status.status)) { setError('Ödeme henüz kesinleşmedi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.'); return; }
-                await onSuccess({ cardName: cardData.cardName, finalAmount, promoApplied, invoiceId:payment.invoiceId });
+                await onSuccess({ cardName: cardData.cardName, finalAmount:payment.amount, promoApplied, invoiceId:payment.invoiceId });
+                await clearPaymentAttempt(paymentContext,payment.requestKey);
             } catch {
                 if (isCurrent()) setError('Ödeme bildirimi işlenemedi. Tekrar ödeme yapmadan işlem durumunu kontrol edin.');
             } finally {
@@ -208,13 +227,19 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 return;
             }
             const [month, year] = expiryParts;
+            const previous = receiptRef.current?.context === paymentContext ? receiptRef.current : null;
+            const intent = {requestKey:previous?.requestKey || crypto.randomUUID(),amount:previous?.amount ?? finalAmount};
+            await savePaymentAttempt(paymentContext,intent);
+            if (!isCurrent()) return;
+            receiptRef.current = {...intent,context:paymentContext}; setReceipt(receiptRef.current);
             const res = await api.payWithSipay({
+                requestKey: intent.requestKey,
                 cardNumber: cardData.cardNumber.replace(/\s+/g, ''),
                 cardHolderName: cardData.cardName,
                 expiryMonth: month,
                 expiryYear: '20' + year,
                 cvv: cardData.cvv,
-                total: finalAmount,
+                total: intent.amount,
                 email: initialBillingData?.email || user?.email || '',
                 phone: initialBillingData?.phone || user?.phone || '',
                 company: billingData.company,
@@ -224,16 +249,19 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 action: action
             });
             if (!isCurrent()) return;
-            if (res?.success !== true || res.is3D !== true || typeof res.html !== 'string' || !res.html.trim()
+            if (res?.success !== true || !((res.is3D === true && typeof res.html === 'string' && res.html.trim()) || (res.is3D === false && res.recoveryOnly === true))
                 || typeof res.invoiceId !== 'string' || !res.invoiceId || typeof res.receiptToken !== 'string' || !res.receiptToken) throw new Error('Ödeme başlatma sonucu doğrulanamadı.');
-            const payment = {context:paymentContext,invoiceId:res.invoiceId,receiptToken:res.receiptToken};
+            const payment = {...intent,context:paymentContext,invoiceId:res.invoiceId,receiptToken:res.receiptToken};
+            await savePaymentAttempt(paymentContext,payment);
+            if (!isCurrent()) return;
             receiptRef.current = payment; setReceipt(payment);
+            if (res.recoveryOnly) { await confirmPayment(payment); return; }
 
             if (res.success && res.is3D) {
                 // Open a popup for 3D Secure Verification
                 const popup = window.open('', 'Sipay3DPayment', 'width=600,height=700,status=yes,resizable=yes,scrollbars=yes');
                 if (!popup) {
-                    setError('3D Secure doğrulama penceresi engellendi. Lütfen tarayıcınızın popup engelleyicisini kaldırıp tekrar deneyin.');
+                    setError('3D Secure doğrulama penceresi engellendi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.');
                     finish();
                     return;
                 }
@@ -278,18 +306,35 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
     };
 
     const checkExistingPayment = async () => {
-        const payment = receiptRef.current;
+        let payment = receiptRef.current;
         if (!isOpen || pending.current || !payment || payment.context !== paymentContext || currentContext.current !== paymentContext) return;
         pending.current = true; setIsProcessing(true); setError('');
         const version = ++attempt.current;
         const isCurrent = () => attempt.current === version && currentContext.current === paymentContext;
         try {
+            const recovered = await api.resumePayment(payment.requestKey);
+            if (!isCurrent()) return;
+            if (recovered.retryAllowed === true) {
+                payment = {context:paymentContext,requestKey:payment.requestKey,amount:payment.amount};
+                await savePaymentAttempt(paymentContext,payment);
+                if (!isCurrent()) return;
+                receiptRef.current = payment; setReceipt(payment);
+                setError('İşlem bankaya gönderilmedi. Aynı ödeme kaydıyla kart bilgilerini tekrar gönderebilirsiniz.');
+                return;
+            }
+            payment = {...payment,invoiceId:recovered.invoiceId,receiptToken:recovered.receiptToken};
+            await savePaymentAttempt(paymentContext,payment);
+            if (!isCurrent()) return;
+            receiptRef.current = payment; setReceipt(payment);
             const result = await api.getPaymentStatus(payment.invoiceId,payment.receiptToken);
             if (!isCurrent()) return;
-            if (result.invoice_id !== payment.invoiceId || result.action_type !== action.type || Math.round(result.amount*100) !== Math.round(finalAmount*100)) throw new Error('Ödeme eşleşmedi');
+            if (result.invoice_id !== payment.invoiceId || result.action_type !== action.type || Math.round(result.amount*100) !== Math.round(payment.amount*100)) throw new Error('Ödeme eşleşmedi');
             if (['SUCCESS','PAID'].includes(result.status)) {
-                await onSuccess({cardName:cardData.cardName,finalAmount,promoApplied,invoiceId:payment.invoiceId});
+                await onSuccess({cardName:cardData.cardName,finalAmount:payment.amount,promoApplied,invoiceId:payment.invoiceId});
+                await clearPaymentAttempt(paymentContext,payment.requestKey);
             } else if (result.status === 'FAILED') {
+                await clearPaymentAttempt(paymentContext,payment.requestKey);
+                if (!isCurrent()) return;
                 receiptRef.current = null; setReceipt(null); setError('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.');
             } else setError('Ödeme henüz kesinleşmedi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.');
         } catch { if (isCurrent()) setError('Ödeme sonucu doğrulanamadı. Tekrar ödeme yapmadan işlem durumunu kontrol edin.'); }
@@ -387,7 +432,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                                         type="button"
                                         variant="outline"
                                         onClick={handleApplyPromo}
-                                        disabled={!promoCode.trim()}
+                                        disabled={!promoCode.trim() || canCheck}
                                     >
                                         Uygula
                                     </Button>
@@ -479,7 +524,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                                 <Button
                                     type="submit"
                                     className="flex-[2] h-12 text-base font-bold"
-                                    disabled={isProcessing || cardData.cardNumber.length < 19 || cardData.expiryDate.length < 5 || cardData.cvv.length < 3 || !cardData.cardName}
+                                    disabled={isProcessing || restoredFor !== paymentContext || (canCheck && !!receipt?.invoiceId) || cardData.cardNumber.length < 19 || cardData.expiryDate.length < 5 || cardData.cvv.length < 3 || !cardData.cardName}
                                 >
                                     {isProcessing ? 'Ödeme İşleniyor...' : `₺${finalAmount.toLocaleString('tr-TR')} Öde`}
                                 </Button>

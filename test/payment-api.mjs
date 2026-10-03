@@ -11,6 +11,12 @@ for(const bad of [null,{success:true},{success:true,is3D:false},{success:true,is
   response=new Response(JSON.stringify(bad));await assert.rejects(api.payWithSipay({}));
 }
 response=new Response(JSON.stringify({success:true,is3D:true,html:'x',invoiceId:'id',receiptToken:'receipt'}));assert.equal((await api.payWithSipay({})).invoiceId,'id');
+const recovered={success:true,is3D:false,recoveryOnly:true,invoiceId:'id',receiptToken:'receipt'};
+response=new Response(JSON.stringify(recovered));assert.equal((await api.payWithSipay({})).recoveryOnly,true);
+response=new Response(JSON.stringify(recovered));assert.equal((await api.resumePayment('key')).invoiceId,'id');
+for(const bad of [null,{}, {...recovered,is3D:true},{...recovered,receiptToken:''},{...recovered,recoveryOnly:false}]) {
+  response=new Response(JSON.stringify(bad));await assert.rejects(api.resumePayment('key'));
+}
 for(const bad of [null,{}, {invoice_id:'other',status:'SUCCESS',amount:100,action_type:'membership'},
   {invoice_id:'id',status:'SUCCESS',amount:'100',action_type:'membership'}, {invoice_id:'id',status:'unknown',amount:100,action_type:'membership'}]) {
   response=new Response(JSON.stringify(bad));await assert.rejects(api.getPaymentStatus('id','receipt'));

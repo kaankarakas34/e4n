@@ -90,20 +90,22 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,7);
+  assert.equal((await applyVersionedSchema()).applied.length,8);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids=[randomUUID(),randomUUID()];
   for(const [i,id] of ids.entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,'Fixture','fixture','MEMBER','PENDING')",[id,`payment-${i}@example.invalid`,`Payment ${i}`]);
-  const results=new Map(); let providerCalls=0;
+  const results=new Map(); let providerCalls=0,dispatches=0,tokenRejectNext=false,payRejectNext=false;
   gateway=createServer(async(req,res)=>{
     let raw=''; for await(const part of req)raw+=part;
     const body=JSON.parse(raw);providerCalls++;
     if(req.url==='/api/paySmart3D') {
+      dispatches++;
       results.set(body.invoice_id,{status_code:69,transaction_status:'Pending',transaction_type:'Auth',invoice_id:body.invoice_id,transaction_amount:body.total});
+      if(payRejectNext){payRejectNext=false;res.writeHead(502,{'Content-Type':'text/plain'});res.end('Synthetic lost response');return;}
       res.setHeader('Content-Type','text/html');res.end('<form>Local synthetic 3DS</form>');return;
     }
     res.setHeader('Content-Type','application/json');
-    if(req.url==='/api/token'){res.end(JSON.stringify({status_code:100,data:{token:'synthetic-provider-token'}}));return;}
+    if(req.url==='/api/token'){if(tokenRejectNext){tokenRejectNext=false;res.end(JSON.stringify({status_code:1,status_description:'Synthetic rejection'}));return;}res.end(JSON.stringify({status_code:100,data:{token:'synthetic-provider-token'}}));return;}
     assert.equal(req.url,'/api/checkstatus');assert.equal(req.headers.authorization,'Bearer synthetic-provider-token');
     // Independently decrypt the status request hash and check documented field order.
     const [iv,salt,ciphertext]=body.hash_key.replaceAll('__','/').split(':');
@@ -119,13 +121,48 @@ async function main() {
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');
   const base=`http://127.0.0.1:${appServer.address().port}/api`;
   const call=async(path,user,body,method='POST')=>fetch(base+path,{method,headers:{'Content-Type':'application/json',...(user?{Authorization:`Bearer ${jwt.sign({id:user,role:'MEMBER'},process.env.JWT_SECRET)}`}:{})},...(method==='GET'?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)});
-  const payload=(type='membership',data={user_id:ids[0],plan:'1_MONTH',amount:1})=>({cardNumber:'1111111111111111',cardHolderName:'Synthetic Fixture',expiryMonth:'12',expiryYear:'2030',cvv:'111',total:100,action:{type,data}});
+  const payload=(type='membership',data={user_id:ids[0],plan:'1_MONTH',amount:1})=>({requestKey:randomUUID(),cardNumber:'1111111111111111',cardHolderName:'Synthetic Fixture',expiryMonth:'12',expiryYear:'2030',cvv:'111',total:100,action:{type,data}});
   const create=async(type,data)=>{const r=await call('/payment/pay',type==='visitor_registration'?null:ids[0],payload(type,data));assert.equal(r.status,200);const json=await r.json();assert.ok(json.receiptToken);assert.ok(json.invoiceId);return json;};
   const beforeCalls=providerCalls;
   assert.equal((await call('/payment/pay',null,payload())).status,401);
   assert.equal((await call('/payment/pay',ids[0],payload('membership',{user_id:ids[1],plan:'1_MONTH'}))).status,403);
   assert.equal((await call('/payment/pay',ids[0],{...payload(),total:-1})).status,400);
   assert.equal(providerCalls,beforeCalls);
+  assert.equal((await call('/payment/pay',ids[0],{...payload(),requestKey:undefined})).status,400);
+  // Concurrent initiations reserve one invoice and dispatch to the bank once.
+  const repeated=payload(),dispatchBefore=dispatches;
+  const repeatedResponses=await Promise.all([0,1,2].map(()=>call('/payment/pay',ids[0],repeated)));
+  assert.ok(repeatedResponses.every(r=>r.status===200));
+  const initiated=await Promise.all(repeatedResponses.map(r=>r.json()));
+  assert.equal(new Set(initiated.map(r=>r.invoiceId)).size,1);
+  assert.equal(initiated.filter(r=>r.is3D===true).length,1);
+  assert.equal(initiated.filter(r=>r.recoveryOnly===true).length,2);
+  assert.equal(dispatches,dispatchBefore+1);
+  assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM payment_transactions WHERE request_key=$1',[repeated.requestKey])).rows[0].count,1);
+  assert.equal((await call('/payment/pay',ids[0],{...repeated,total:101})).status,409);
+  assert.equal((await call('/payment/pay',ids[1],{...repeated,action:{type:'membership',data:{user_id:ids[1],plan:'1_MONTH'}}})).status,409);
+  assert.equal(dispatches,dispatchBefore+1);
+  const reordered={...repeated,action:{data:{amount:1,plan:'1_MONTH',user_id:ids[0]},type:'membership'}};
+  assert.equal((await (await call('/payment/pay',ids[0],reordered)).json()).recoveryOnly,true);
+  assert.equal((await call('/payment/resume',ids[1],{requestKey:repeated.requestKey})).status,404);
+  assert.equal((await call('/payment/resume',null,{requestKey:repeated.requestKey})).status,404);
+  assert.equal((await (await call('/payment/resume',ids[0],{requestKey:repeated.requestKey})).json()).invoiceId,initiated[0].invoiceId);
+  // A token failure is known to precede dispatch and can retry the same invoice.
+  const notSent=payload();tokenRejectNext=true;const noDispatch=dispatches;
+  assert.equal((await call('/payment/pay',ids[0],notSent)).status,400);
+  const reservedInvoice=(await pool.query('SELECT merchant_oid,initiation_state FROM payment_transactions WHERE request_key=$1',[notSent.requestKey])).rows[0];
+  assert.equal(reservedInvoice.initiation_state,'NOT_SENT');assert.equal(dispatches,noDispatch);
+  assert.equal((await (await call('/payment/resume',ids[0],{requestKey:notSent.requestKey})).json()).retryAllowed,true);
+  const retried=await (await call('/payment/pay',ids[0],notSent)).json();assert.equal(retried.invoiceId,reservedInvoice.merchant_oid);assert.equal(dispatches,noDispatch+1);
+  // A lost bank response never permits a second dispatch. Reconciliation still works.
+  const lost=payload();payRejectNext=true;const lostBefore=dispatches;
+  assert.equal((await call('/payment/pay',ids[0],lost)).status,502);
+  const recoveredLost=await (await call('/payment/pay',ids[0],lost)).json();assert.equal(recoveredLost.recoveryOnly,true);assert.equal(dispatches,lostBefore+1);
+  assert.equal((await (await call('/payment/status',null,{invoiceId:recoveredLost.invoiceId,receiptToken:recoveredLost.receiptToken})).json()).status,'PENDING');
+  results.set(recoveredLost.invoiceId,{...results.get(recoveredLost.invoiceId),status_code:100,transaction_status:'Completed'});
+  assert.equal((await (await call('/payment/status',null,{invoiceId:recoveredLost.invoiceId,receiptToken:recoveredLost.receiptToken})).json()).status,'SUCCESS');
+  assert.equal(dispatches,lostBefore+1);
+  await pool.query('UPDATE users SET subscription_end_date=NULL,last_membership_payment_amount=NULL WHERE id=$1',[ids[0]]);
   const payment=await create();const invoice=payment.invoiceId;
   const row=() =>pool.query('SELECT * FROM payment_transactions WHERE merchant_oid=$1',[invoice]).then(r=>r.rows[0]);
   assert.equal((await row()).user_id,ids[0]);assert.equal((await row()).action_data.amount,100);
@@ -190,9 +227,20 @@ async function main() {
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM attendance WHERE event_id=$1 AND user_id=$2',[event,ids[0]])).rows[0].count,1);
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM event_tickets WHERE event_id=$1 AND user_id=$2',[event,ids[0]])).rows[0].count,1);
   const visitor=await create('visitor_registration',{name:'Visitor Fixture',email:'visitor@example.invalid'});results.set(visitor.invoiceId,{...results.get(visitor.invoiceId),status_code:100,transaction_status:'Completed'});
+  const guestKey=(await pool.query('SELECT request_key FROM payment_transactions WHERE merchant_oid=$1',[visitor.invoiceId])).rows[0].request_key;
+  assert.equal((await (await call('/payment/resume',null,{requestKey:guestKey})).json()).invoiceId,visitor.invoiceId);
+  assert.equal((await call('/payment/resume',null,{requestKey:randomUUID()})).status,404);
   await Promise.all([0,1,2].map(()=>call('/payment/status',null,{invoiceId:visitor.invoiceId,receiptToken:visitor.receiptToken})));
   assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM public_visitors WHERE email='visitor@example.invalid' AND event_id IS NULL")).rows[0].count,1);
   const otherUser=(await pool.query('SELECT subscription_end_date FROM users WHERE id=$1',[ids[1]])).rows[0];assert.equal(otherUser.subscription_end_date,null);
+  // Adopt 0008 onto the existing seven-version schema without changing old payment data.
+  const oldBefore=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
+  await pool.query("ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state; DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
+  assert.equal((await applyVersionedSchema()).applied.length,1);assert.equal((await applyVersionedSchema()).applied.length,0);
+  const oldAfter=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data,request_key,request_fingerprint,initiation_state FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
+  const {request_key,request_fingerprint,initiation_state,...preserved}=oldAfter;
+  assert.deepEqual(preserved,oldBefore);assert.deepEqual([request_key,request_fingerprint,initiation_state],[null,null,null]);
+  await assert.rejects(pool.query('UPDATE payment_transactions SET request_key=$1 WHERE merchant_oid=$2',[randomUUID(),orphan]),e=>e.code==='23514');
   console.log('Local gateway + Express + PostgreSQL: ownership, receipt boundary, provider proof/hash/amount/preauth, callback race/repeat/late-fail, rollback/retry, membership/event/guest effects passed. No real provider, payment or email.');
 }
 let exitCode=0;

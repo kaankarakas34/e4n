@@ -56,8 +56,15 @@ export const api = {
 
   async payWithSipay(payload: any) {
     const result = await request('/payment/pay', { method: 'POST', body: JSON.stringify(payload) });
-    if (result?.success !== true || result.is3D !== true || typeof result.html !== 'string' || !result.html.trim()
+    if (result?.success !== true || !(result.is3D === true && typeof result.html === 'string' && !!result.html.trim()
+        || result.is3D === false && result.recoveryOnly === true)
       || typeof result.invoiceId !== 'string' || !result.invoiceId || typeof result.receiptToken !== 'string' || !result.receiptToken) throw new Error('Ödeme başlatma sonucu doğrulanamadı.');
+    return result;
+  },
+  async resumePayment(requestKey: string) {
+    const result = await request('/payment/resume',{method:'POST',body:JSON.stringify({requestKey})});
+    if (result?.success !== true || result.recoveryOnly !== true || result.is3D !== false
+      || typeof result.invoiceId !== 'string' || !result.invoiceId || typeof result.receiptToken !== 'string' || !result.receiptToken) throw new Error('Ödeme işlem bilgisi doğrulanamadı.');
     return result;
   },
   async getPaymentStatus(invoiceId: string, receiptToken: string) {

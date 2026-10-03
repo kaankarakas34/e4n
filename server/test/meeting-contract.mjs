@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,7);
+  assert.equal((await applyVersionedSchema()).applied.length,8);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids = [randomUUID(),randomUUID(),randomUUID()];
   for (const [i,id] of ids.entries()) await pool.query("INSERT INTO users (id,email,name,profession,password_hash,role) VALUES ($1,$2,$3,'Fixture','fixture-only','MEMBER')",[id,`meeting-${i}@example.invalid`,`Fixture ${i}`]);
@@ -97,9 +97,11 @@ async function main() {
   const before=await snapshot();
   const scoresBefore=(await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows;
   // Rehearse the already-versioned six-migration state with a preserved activity.
+  await pool.query("DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
+  await pool.query('ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state');
   await pool.query("DELETE FROM schema_migrations WHERE version='0007_meeting_requests'");
   await pool.query('DROP TABLE one_to_one_requests'); await pool.query('ALTER TABLE one_to_ones DROP COLUMN updated_at');
-  assert.deepEqual((await applyVersionedSchema()).applied,['0007_meeting_requests']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0007_meeting_requests','0008_payment_initiation']);
   assert.equal((await applyVersionedSchema()).applied.length,0); assert.deepEqual(await snapshot(),before);
   const {default:app}=await import('../src/index.js');
   appServer=app.listen(0,'127.0.0.1'); await once(appServer,'listening');
@@ -146,7 +148,7 @@ async function main() {
     await assert.rejects(api.getMyMeetingRequests(ids[1]),/isolated meeting read failure/);
   }finally{pool.query=originalQuery;}
   assert.deepEqual(await snapshot(),before);assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
-  console.log(JSON.stringify({isolated:true,migrations:7,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
+  console.log(JSON.stringify({isolated:true,migrations:8,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
 
 }
 let exitCode = 0;

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
+import jwt from 'jsonwebtoken';
 import { readPublicSchemaCatalog } from '../src/config/schema-catalog.js';
 
 const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -334,6 +335,39 @@ async function main() {
   const loginBody = await login.json();
   if (login.status !== 200 || !loginBody.token) throw new Error(`Fixture login failed: ${login.status}`);
   const authHeaders = { Authorization: `Bearer ${loginBody.token}` };
+  const inviteSnapshot = (await pool.query('SELECT id, name, email FROM users ORDER BY id')).rows;
+  const invitePayload = { type: 'visitor_invite', email: 'invite@example.invalid', inviter_id: userId };
+  const signInvite = (payload, options = {}) => jwt.sign(payload, process.env.JWT_SECRET, options);
+  const probeInvite = async token => {
+    const response = await fetch(`${base}/api/visitor-invite/verify${token === undefined ? '' : `?token=${encodeURIComponent(token)}`}`, { signal: AbortSignal.timeout(10_000) });
+    return { status: response.status, body: await response.json() };
+  };
+  const inviteValid = await probeInvite(signInvite(invitePayload));
+  const inviteInvalid = [];
+  for (const token of [undefined, 'invalid.fixture', signInvite(invitePayload, { expiresIn: -1 }),
+    signInvite({ ...invitePayload, type: 'membership' }), signInvite({ ...invitePayload, inviter_id: 'invalid-id' }),
+    signInvite({ ...invitePayload, email: null })]) {
+    inviteInvalid.push(await probeInvite(token));
+  }
+  const originalInviteQuery = pool.query;
+  let inviteDatabaseFailure;
+  try {
+    pool.query = function (sql, ...args) {
+      if (sql === 'SELECT name FROM users WHERE id = $1') return Promise.reject(new Error('Fixture invite lookup unavailable'));
+      return originalInviteQuery.call(this, sql, ...args);
+    };
+    inviteDatabaseFailure = await probeInvite(signInvite(invitePayload));
+  } finally { pool.query = originalInviteQuery; }
+  const inviteRecovery = await probeInvite(signInvite(invitePayload));
+  const inviteSnapshotAfter = (await pool.query('SELECT id, name, email FROM users ORDER BY id')).rows;
+  if (inviteValid.status !== 200 || inviteValid.body.valid !== true || inviteValid.body.email !== invitePayload.email
+      || inviteValid.body.inviter_id !== userId || inviteInvalid.some(result => result.status !== 400 || result.body.valid !== false || result.body.code !== 'INVALID_INVITE' || Object.hasOwn(result.body, 'email'))
+      || inviteDatabaseFailure.status !== 500 || inviteDatabaseFailure.body.code !== 'INVITE_CHECK_FAILED' || Object.hasOwn(inviteDatabaseFailure.body, 'valid')
+      || Object.hasOwn(inviteDatabaseFailure.body, 'message') || inviteRecovery.status !== 200
+      || JSON.stringify(inviteSnapshot) !== JSON.stringify(inviteSnapshotAfter)) {
+    throw new Error('Invite validation must distinguish invalid credentials from failed database lookup without writes');
+  }
+  const inviteVerification = { valid: inviteValid.status, invalid: inviteInvalid.map(result => result.status), databaseFailure: inviteDatabaseFailure.status, recovery: inviteRecovery.status, usersUnchanged: true };
   const adminLogin = await fetch(`${base}/api/auth/login`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'admin-fixture@example.invalid', password: 'fixture-password' }),
@@ -1319,6 +1353,7 @@ async function main() {
     membershipGateBaseline,
     openPowerTeamBaseline,
     paymentCallbackBaseline,
+    inviteVerification,
     professionConflictBaseline,
     capacityBaseline,
     interviewApprovalBaseline,

@@ -2648,16 +2648,23 @@ app.post('/api/visitor-invite', authenticateToken, async (req, res) => {
 // Verify Visitor Invite Token (Public)
 app.get('/api/visitor-invite/verify', async (req, res) => {
   const { token } = req.query;
-  if (!token) {
-    return res.status(400).json({ valid: false, error: 'Token gereklidir.' });
+  if (typeof token !== 'string' || !token) {
+    return res.status(400).json({ valid: false, code: 'INVALID_INVITE', error: 'Token gereklidir.' });
   }
-  
+
+  let decoded;
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    if (decoded.type !== 'visitor_invite') {
-      return res.status(400).json({ valid: false, error: 'Geçersiz davetiye tipi.' });
+    decoded = jwt.verify(token, SECRET_KEY);
+    if (!decoded || typeof decoded !== 'object' || decoded.type !== 'visitor_invite' ||
+        typeof decoded.email !== 'string' || !decoded.email.trim() ||
+        typeof decoded.inviter_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded.inviter_id)) {
+      return res.status(400).json({ valid: false, code: 'INVALID_INVITE', error: 'Geçersiz davetiye tipi veya içeriği.' });
     }
-    
+  } catch {
+    return res.status(400).json({ valid: false, code: 'INVALID_INVITE', error: 'Davetiyenin süresi dolmuş veya geçersiz.' });
+  }
+
+  try {
     // Get inviter details
     const { rows } = await pool.query('SELECT name FROM users WHERE id = $1', [decoded.inviter_id]);
     const inviterName = rows.length > 0 ? rows[0].name : 'E4N Üyesi';
@@ -2669,8 +2676,8 @@ app.get('/api/visitor-invite/verify', async (req, res) => {
       inviter_name: inviterName
     });
   } catch (err) {
-    console.error('Token verify error:', err);
-    res.status(400).json({ valid: false, error: 'Davetiyenin süresi dolmuş veya geçersiz.', message: err.message });
+    console.error('Invite lookup failed:', err);
+    res.status(500).json({ code: 'INVITE_CHECK_FAILED', error: 'Davetiye kontrol edilemedi.' });
   }
 });
 

@@ -30,7 +30,10 @@ async function request(path: string, options?: RequestInit) {
     ...options,
     headers,
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const responseBody = await res.text();
+    throw Object.assign(new Error(responseBody), { status: res.status, responseBody });
+  }
   return res.json();
 }
 
@@ -578,7 +581,16 @@ export const api = {
     return await request('/visitor-invite', { method: 'POST', body: JSON.stringify(payload) });
   },
   async verifyVisitorInvite(token: string) {
-    return await request(`/visitor-invite/verify?token=${encodeURIComponent(token)}`);
+    try {
+      return await request(`/visitor-invite/verify?token=${encodeURIComponent(token)}`);
+    } catch (error: any) {
+      if (error?.status === 400 && typeof error.responseBody === 'string') {
+        let body;
+        try { body = JSON.parse(error.responseBody); } catch { /* Reject malformed error responses. */ }
+        if (body?.code === 'INVALID_INVITE' && body.valid === false && typeof body.error === 'string') return body;
+      }
+      throw error;
+    }
   },
   async getPublicVisitors() {
     return await request('/admin/public-visitors');

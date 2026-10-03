@@ -176,3 +176,12 @@ const beforeMissingType = mutationCalls; await submitForm().props.onSubmit({ pre
 typeSelect().props.onChange({ target: { value: 'WORKSHOP' } });
 await submitForm().props.onSubmit({ preventDefault() {} }); assert.equal(payloads.at(-1).type, 'education');
 console.log('Admin type payload: unchanged/missing subtype omits type across four server kinds; explicit selection uses existing map, invalid/new empty type never writes.');
+for (const groupId of ['existing-group', null, undefined]) {
+  event.group_id = groupId; event.chapter_id = 'different-legacy-chapter'; await setup(); edit();
+  await submitForm().props.onSubmit({ preventDefault() {} });
+  assert.equal(Object.hasOwn(payloads.at(-1), 'group_id'), false, 'edit does not clear or replace group association');
+}
+await setup(); nodes(render()).find(n => n.props?.onClick?.toString().includes('setShowForm(true)')).props.onClick(); fillDates();
+await submitForm().props.onSubmit({ preventDefault() {} });
+assert.equal(payloads.at(-1).group_id, null, 'new event preserves existing unassigned creation behavior');
+console.log('Admin group association: edit omits group_id for existing/null/missing source even with conflicting legacy chapter; new event remains unassigned.');

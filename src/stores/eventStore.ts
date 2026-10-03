@@ -17,6 +17,7 @@ export interface EventItem {
   price?: number;
   currency?: string;
   chapter_id?: string;
+  group_id?: string | null;
   attendees?: any[];
   has_equal_opportunity_badge?: boolean;
   city?: string;

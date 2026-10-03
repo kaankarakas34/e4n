@@ -38,7 +38,6 @@ interface EventFormData {
   max_attendees: number | string;
   event_type: '' | 'NETWORKING' | 'WORKSHOP' | 'SEMINAR' | 'CONFERENCE' | 'SOCIAL';
   status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
-  chapter_id?: string;
   price?: number | string;
   currency?: string;
   has_equal_opportunity_badge?: boolean;
@@ -135,7 +134,6 @@ export function AdminEvents() {
     max_attendees: 50,
     event_type: 'NETWORKING',
     status: 'PUBLISHED',
-    chapter_id: '',
     price: 0,
     currency: 'TRY',
     has_equal_opportunity_badge: false,
@@ -200,7 +198,7 @@ export function AdminEvents() {
         created_by: user?.id,
         is_public: formData.is_public,
         ...(changeType ? { type: selectedType } : {}),
-        group_id: formData.chapter_id || null,
+        ...(!editingEvent ? { group_id: null } : {}),
         member_id: null,
         has_equal_opportunity_badge: formData.has_equal_opportunity_badge,
         city: formData.city,
@@ -240,7 +238,6 @@ export function AdminEvents() {
       max_attendees: 50,
       event_type: 'NETWORKING',
       status: 'PUBLISHED',
-      chapter_id: '',
       price: 0,
       currency: 'TRY',
       has_equal_opportunity_badge: false,
@@ -280,7 +277,6 @@ export function AdminEvents() {
       max_attendees: readCapacity(event.max_attendees) !== null ? event.max_attendees : '',
       event_type: Object.prototype.hasOwnProperty.call(EVENT_TYPES, event.event_type) ? event.event_type : '',
       status: event.status,
-      chapter_id: event.chapter_id || '',
       price: readEventPrice(event.price) !== null ? event.price : '',
       currency: readEventCurrency(event.currency) ?? '',
       has_equal_opportunity_badge: event.has_equal_opportunity_badge || false,

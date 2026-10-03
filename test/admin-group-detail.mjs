@@ -4,7 +4,7 @@ import ts from 'typescript';
 const state = [];
 let cursor = 0, callback, cleanup, dependencies, pendingEffect;
 let user = { id: 'admin-fixture', role: 'ADMIN' }, id = 'group-fixture', team = false;
-let fail, malformed, deferred, emptyMembers = false, calls = [];
+let fail, malformed, deferred, emptyMembers = false, meetingRows = [], calls = [];
 globalThis.groupHooks = {
   useState(initial) {
     const index = cursor++;
@@ -27,6 +27,7 @@ globalThis.groupApi = new Proxy({}, { get: (_, method) => async requestedId => {
   if (malformed === method) return null;
   if (method === 'getGroup') return deferred ? deferred : { id: requestedId, name: 'Fixture detail', status: 'ACTIVE' };
   if (method === 'getPowerTeams') return [{ id, name: 'Fixture detail', status: 'ACTIVE' }];
+  if (method === 'getGroupMeetings') return meetingRows;
   if (/Members$/.test(method)) return emptyMembers ? [] : [{ id: 'active-fixture', full_name: 'Active Fixture', status: 'ACTIVE' }, { id: 'pending-fixture', full_name: 'Pending Fixture', status: 'REQUESTED' }];
   return [];
 } });
@@ -78,6 +79,24 @@ id = 'newer-fixture'; deferred = undefined; render(); await effects(); assert.ok
 resolve({ id: 'new-fixture', name: 'Late fixture' }); await flush(); assert.equal(has('Late fixture'), false);
 for (const role of ['MEMBER', 'VISITOR']) { reset(); user = { id: 'other-fixture', role }; render(); await effects(); assert.equal(calls.length, 0); assert.ok(has('Erişim Kısıtlı')); }
 for (const role of ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER']) { reset(); user = { id: 'allowed-fixture', role }; render(); await effects(); assert.ok(has('Fixture detail')); }
+user = { id: 'admin-fixture', role: 'ADMIN' }; reset(); render(); await effects();
+const attendanceTab = () => nodes(render()).find(node => node.type === 'button' && (node.props.children === 'Yoklama' || node.props.children?.includes?.('Yoklama')));
+attendanceTab().props.onClick();
+assert.ok(has('Toplantı Kaydı Yok')); assert.ok(has('Bu ekranda yoklama kaydı henüz kullanılamıyor.'));
+assert.equal(has('Yoklamayı Kaydet'), false); assert.equal(has('Yeni Yoklama'), false);
+meetingRows = [
+  { id: 'unknown-meeting', date: '2026-10-03', topic: 'Unknown counts', attendees_count: null, total_members: null },
+  { id: 'zero-meeting', date: '2026-10-03', topic: 'Empty denominator', attendees_count: 0, total_members: 0 },
+  { id: 'valid-meeting', date: '2026-10-03', topic: 'Valid count', attendees_count: 0, total_members: 2 },
+  { id: 'count-meeting', date: '2026-10-03', topic: 'Half count', attendees_count: 1, total_members: 2 },
+  { id: 'over-meeting', date: '2026-10-03', topic: 'Inconsistent count', attendees_count: 3, total_members: 2 },
+];
+cleanup?.(); cleanup = callback(); await flush();
+const hasRate = text => nodes(render()).some(node => Array.isArray(node.props?.children) && node.props.children.join('') === text);
+assert.ok(has('Veri yok')); assert.ok(hasRate('0%')); assert.ok(hasRate('50%'));
+assert.equal(hasRate('NaN%'), false); assert.equal(hasRate('Infinity%'), false); assert.equal(hasRate('150%'), false);
+assert.equal(has('Yoklamayı Kaydet'), false); assert.ok(calls.every(method => method.startsWith('get')));
+meetingRows = [];
 user = null; reset(); render(); await effects(); assert.equal(calls.length, 0);
 user = { id: 'admin-fixture', role: 'ADMIN' }; id = undefined; reset(); render(); await effects(); assert.equal(calls.length, 0); assert.ok(has('Geçersiz detay bağlantısı.'));
 console.log('Web group/team detail: per-source error/null/retry, unknown event metric, ACTIVE count, route/unmount stale results and existing role read guards verified. No network/writes.');

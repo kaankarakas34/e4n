@@ -294,12 +294,20 @@ export const api = {
 
   async getGroupMeetings(groupId: string) {
     const events = await request(`/groups/${groupId}/events`);
+    if (!Array.isArray(events) || events.some(e => !e || typeof e !== 'object' || Array.isArray(e))) {
+      throw new Error('Invalid group meetings response');
+    }
+    const count = (value: unknown): number | null => {
+      if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
+      const parsed = Number(value);
+      return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+    };
     return events.map((e: any) => ({
       ...e,
       topic: e.title,
       date: e.start_at,
-      attendees_count: parseInt(e.attendees_count || '0'),
-      total_members: parseInt(e.total_members || '0')
+      attendees_count: count(e.attendees_count),
+      total_members: count(e.total_members)
     }));
   },
 

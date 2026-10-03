@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
-import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, Clock, UserPlus, Trash2, Send } from 'lucide-react';
+import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, UserPlus, Trash2, Send } from 'lucide-react';
 
 export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();
@@ -35,8 +35,6 @@ export function AdminGroupDetail() {
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [targetRoleDef, setTargetRoleDef] = useState<any>(null);
     const [currentAssignee, setCurrentAssignee] = useState<any>(null);
-    const [attendanceSelectorModalOpen, setAttendanceSelectorModalOpen] = useState(false);
-    const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>('');
 
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -691,22 +689,10 @@ export function AdminGroupDetail() {
                 {activeTab === 'ATTENDANCE' && (
                     <Card>
                         <CardHeader className="flex items-center justify-between">
-                            <CardTitle>Toplantı Geçmişi</CardTitle>
-                            {isAdminView && (
-                                <Button size="sm" onClick={() => {
-                                    if (data?.meeting_dates && data.meeting_dates.length > 0) {
-                                        setAttendanceSelectorModalOpen(true);
-                                    } else {
-                                        setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
-                                        setActiveTab('TAKE_ATTENDANCE' as any);
-                                    }
-                                }}>
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Yeni Yoklama
-                                </Button>
-                            )}
+                            <CardTitle>Gruba Bağlı Etkinlikler</CardTitle>
                         </CardHeader>
                         <CardContent>
+                            <p role="status" className="mb-4 text-sm text-gray-600">Bu ekranda yoklama kaydı henüz kullanılamıyor.</p>
                             {loading ? (
                                 <div className="text-center py-4">Yükleniyor...</div>
                             ) : (meetings && meetings.length > 0) ? (
@@ -716,8 +702,8 @@ export function AdminGroupDetail() {
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konu</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Katılım</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Oran</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Katılım Kaydı / Aktif Üye</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kayıt Oranı</th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
                                             </tr>
                                         </thead>
@@ -729,15 +715,12 @@ export function AdminGroupDetail() {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meeting.topic}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {meeting.attendees_count} / {meeting.total_members}
+                                                        {meeting.attendees_count ?? 'Veri yok'} / {meeting.total_members ?? 'Veri yok'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex items-center">
-                                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2 max-w-[100px]">
-                                                                <div className="bg-green-600 h-2.5 rounded-full" style={{ width: `${(meeting.attendees_count / meeting.total_members) * 100}%` }}></div>
-                                                            </div>
+                                                        {meeting.attendees_count != null && meeting.total_members > 0 && meeting.attendees_count <= meeting.total_members ? (
                                                             <span className="text-xs text-gray-500">{Math.round((meeting.attendees_count / meeting.total_members) * 100)}%</span>
-                                                        </div>
+                                                        ) : <span className="text-xs text-gray-500">Veri yok</span>}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-900">
@@ -752,144 +735,14 @@ export function AdminGroupDetail() {
                             ) : (
                                 <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
                                     <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">Yoklama Kaydı Yok</h3>
-                                    <p className="mt-1 text-sm text-gray-500">Henüz bu grup için bir yoklama kaydı oluşturulmadı.</p>
-                                    <div className="mt-6">
-                                        <Button onClick={() => {
-                                            if (data?.meeting_dates && data.meeting_dates.length > 0) {
-                                                setAttendanceSelectorModalOpen(true);
-                                            } else {
-                                                setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
-                                                setActiveTab('TAKE_ATTENDANCE' as any);
-                                            }
-                                        }}>
-                                            <Calendar className="h-4 w-4 mr-2" />
-                                            Yeni Yoklama Başlat
-                                        </Button>
-                                    </div>
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900">Toplantı Kaydı Yok</h3>
+                                    <p className="mt-1 text-sm text-gray-500">Bu kayıt için toplantı bulunamadı.</p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
                 )}
 
-                {/* TAKE ATTENDANCE VIEW */}
-                {(activeTab as any) === 'TAKE_ATTENDANCE' && (
-                    <Card>
-                        <CardHeader className="flex items-center justify-between">
-                            <div>
-                                <CardTitle>Yeni Yoklama Al</CardTitle>
-                                <p className="text-sm text-gray-500 mt-1">{selectedAttendanceDate ? new Date(selectedAttendanceDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString()} Tarihli Toplantı</p>
-                            </div>
-                            <Button variant="ghost" onClick={() => setActiveTab('ATTENDANCE')}>İptal</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Toplantı Konusu</label>
-                                <input type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border" defaultValue="Haftalık Toplantı" />
-                            </div>
-                            <div className="overflow-x-auto border rounded-md">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Üye</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Var</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Yok</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Geç</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Yedek</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {members.map(member => (
-                                            <tr key={member.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.full_name}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <input type="radio" name={`status-${member.id}`} defaultChecked className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" />
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <input type="radio" name={`status-${member.id}`} className="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300" />
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <input type="radio" name={`status-${member.id}`} className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300" />
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <input type="radio" name={`status-${member.id}`} className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="mt-6 flex justify-end">
-                                <Button variant="primary" onClick={() => {
-                                    // Mock save
-                                    const newMeeting = {
-                                        id: Math.random().toString(),
-                                        group_id: id,
-                                        date: selectedAttendanceDate || new Date().toISOString(),
-                                        topic: 'Haftalık Toplantı',
-                                        attendees_count: members.length, // Mock all present
-                                        total_members: members.length
-                                    };
-                                    setMeetings([newMeeting, ...meetings]);
-                                    setActiveTab('ATTENDANCE');
-                                }}>
-                                    Yoklamayı Kaydet
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Attendance Date Selector Modal */}
-                {attendanceSelectorModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                Toplantı Seçin
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                Yoklamasını almak istediğiniz toplantı tarihini seçiniz.
-                            </p>
-
-                            <div className="space-y-3 max-h-60 overflow-y-auto mb-6">
-                                {data?.meeting_dates?.map((d: string) => (
-                                    <button
-                                        key={d}
-                                        onClick={() => {
-                                            setSelectedAttendanceDate(d);
-                                            setAttendanceSelectorModalOpen(false);
-                                            setActiveTab('TAKE_ATTENDANCE' as any);
-                                        }}
-                                        className="w-full text-left p-3 rounded-md border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-colors flex items-center justify-between group"
-                                    >
-                                        <span className="font-medium text-gray-900">
-                                            {new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}
-                                        </span>
-                                        <Calendar className="h-4 w-4 text-gray-400 group-hover:text-indigo-600" />
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => {
-                                        setSelectedAttendanceDate(new Date().toISOString().split('T')[0]);
-                                        setAttendanceSelectorModalOpen(false);
-                                        setActiveTab('TAKE_ATTENDANCE' as any);
-                                    }}
-                                    className="w-full text-left p-3 rounded-md border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-gray-50 transition-colors flex items-center justify-between text-gray-500"
-                                >
-                                    <span>Bugünün Tarihi ({new Date().toLocaleDateString('tr-TR')})</span>
-                                    <Clock className="h-4 w-4" />
-                                </button>
-                            </div>
-
-                            <div className="flex justify-end">
-                                <Button variant="ghost" onClick={() => setAttendanceSelectorModalOpen(false)}>İptal</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* VISITORS TAB */}
                 {activeTab === 'VISITORS' && (
                     <Card>
                         <CardHeader className="flex items-center justify-between">

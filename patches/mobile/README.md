@@ -1,5 +1,15 @@
 # Mobile changes awaiting repository integration
 
+## P32-A / E4N-128: support lifecycle
+
+`support-lifecycle.patch` is already applied to the local mobile source; do not apply it there again. It replaces the member and admin support routes with a shared workspace and typed service: owner list/detail/create/reply, ADMIN reply/close/reopen, visible read errors/retry/true empty, validated acknowledgements, one synchronous mutation lock and same-key retry after ambiguous failure. Session/target/unmount guards discard stale results; closed members cannot reply. Keys are held in memory; reload recovery is not included.
+
+The service requires the support API and migration 0009 from `a2823cb`. The direct `expo-modules-core` dependency uses the already installed Expo 54 version 3.0.29 for native UUIDs; no native SDK upgrade was performed.
+
+Verification passed: mobile TypeScript, `node test/mobile-support.mjs <mobile-root>`, `node server/test/support-flow.mjs <mobile-root>` with actual mobile transport/service against disposable Express/PostgreSQL 17, and offline Android Metro export (1398 modules, exit 0). Controlled component tests cover member/admin flows, pending/retry, invalid owner/target/ACK and stale responses. The scoped patch reverse-check passed against the edited source.
+
+Only this patch and reproducible tests are committed to the managed web branch. The separate mobile repository has no remote and contains prior changes; those changes and its gitlink are preserved. Authoritative mobile repository integration, device acceptance and release remain open. No live database writes, email, payments or production deployment were performed.
+
 `admin-payment-history.patch` is already applied to local mobile subscriptions. It consumes the new ADMIN read-only `/payments/history` recorded-transaction list: persistent error/retry, true empty, real zero, unavailable amount/date/owner and neutral pending status. Title describes payment transactions, not membership entitlement. TypeScript before/after, `node test/mobile-payment-history.mjs <subscriptions.tsx-path>` and reverse-check passed. The API links users only by recorded user_id and omits action_data. Production repository integration and device acceptance remain open.
 
 `admin-reports-load-error.patch` is already applied to local mobile reports. Persistent alert/retry replaces false zero metrics after failures; missing revenue/counts show unavailable, real zero remains zero. Mobile TypeScript before/after and `node test/mobile-admin-reports.mjs <admin/reports.tsx-path>` passed; reverse-check matches. It uses the existing reports API and does not change its role policy or financial formulas. Device and production repository integration remain open.

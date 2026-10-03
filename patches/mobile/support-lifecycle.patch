@@ -1,0 +1,384 @@
+diff --git a/app/features/support.tsx b/app/features/support.tsx
+index 03e0918..37c0418 100644
+--- a/app/features/support.tsx
++++ b/app/features/support.tsx
+@@ -1,83 +1,3 @@
+-import React, { useState } from 'react';
+-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+-import { Ionicons } from '@expo/vector-icons';
+-import { apiClient } from '@/utils/api-client';
+-
+-export default function SupportScreen() {
+-    const [subject, setSubject] = useState('');
+-    const [message, setMessage] = useState('');
+-    const [isSubmitting, setIsSubmitting] = useState(false);
+-
+-    const handleSubmit = async () => {
+-        if (!subject || !message) {
+-            Alert.alert('Hata', 'Lütfen konu ve mesaj alanlarını doldurunuz.');
+-            return;
+-        }
+-
+-        setIsSubmitting(true);
+-        try {
+-            await apiClient.post('/support', { subject, message });
+-            Alert.alert('Başarılı', 'Destek talebiniz yönetime iletildi. En kısa sürede dönüş sağlanacaktır.');
+-            setSubject('');
+-            setMessage('');
+-        } catch (error) {
+-            Alert.alert('Hata', 'Destek talebi iletilemedi.');
+-        } finally {
+-            setIsSubmitting(false);
+-        }
+-    };
+-
+-    return (
+-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+-            <View style={styles.header}>
+-                <Ionicons name="help-buoy" size={48} color="#64748b" />
+-                <Text style={styles.title}>Destek & İletişim</Text>
+-                <Text style={styles.desc}>Sorularınız, önerileriniz veya teknik sorunlarınız için bize ulaşabilirsiniz.</Text>
+-            </View>
+-
+-            <View style={styles.formCard}>
+-                <Text style={styles.label}>Konu</Text>
+-                <TextInput
+-                    style={styles.input}
+-                    placeholder="Talebinizin konusu"
+-                    value={subject}
+-                    onChangeText={setSubject}
+-                />
+-
+-                <Text style={styles.label}>Mesajınız</Text>
+-                <TextInput
+-                    style={styles.textArea}
+-                    multiline
+-                    placeholder="Nasıl yardımcı olabiliriz?"
+-                    value={message}
+-                    onChangeText={setMessage}
+-                />
+-
+-                <TouchableOpacity 
+-                    style={[styles.btn, isSubmitting && {opacity: 0.7}]} 
+-                    onPress={handleSubmit}
+-                    disabled={isSubmitting}
+-                >
+-                    <Ionicons name="send" size={20} color="white" />
+-                    <Text style={styles.btnText}>
+-                        {isSubmitting ? 'Gönderiliyor...' : 'Talebi İlet'}
+-                    </Text>
+-                </TouchableOpacity>
+-            </View>
+-        </ScrollView>
+-    );
+-}
+-
+-const styles = StyleSheet.create({
+-    container: { flex: 1, backgroundColor: '#f8fafc' },
+-    content: { padding: 24, alignItems: 'center' },
+-    header: { alignItems: 'center', marginBottom: 32 },
+-    title: { fontSize: 22, fontWeight: 'bold', color: '#1e293b', marginTop: 12 },
+-    desc: { fontSize: 14, color: '#64748b', textAlign: 'center', marginTop: 8 },
+-    formCard: { backgroundColor: 'white', width: '100%', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', elevation: 1 },
+-    label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8, marginTop: 16 },
+-    input: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 12, fontSize: 15 },
+-    textArea: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 12, height: 120, textAlignVertical: 'top', fontSize: 15 },
+-    btn: { backgroundColor: '#475569', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 32, gap: 8 },
+-    btnText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
+-});
++import React from 'react';
++import { SupportWorkspace } from '@/components/support-workspace';
++export default function SupportScreen() { return <SupportWorkspace />; }
+diff --git a/app/admin/tickets.tsx b/app/admin/tickets.tsx
+index de1e6f3..2041d1d 100644
+--- a/app/admin/tickets.tsx
++++ b/app/admin/tickets.tsx
+@@ -1,107 +1,3 @@
+-import React, { useState, useEffect } from 'react';
+-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+-import { SafeAreaView } from 'react-native-safe-area-context';
+-import { Ionicons } from '@expo/vector-icons';
+-import { useRouter } from 'expo-router';
+-import { apiClient } from '@/utils/api-client';
+-
+-export default function AdminTicketsScreen() {
+-    const router = useRouter();
+-    const [tickets, setTickets] = useState<any[]>([]);
+-    const [isLoading, setIsLoading] = useState(true);
+-
+-    useEffect(() => {
+-        loadData();
+-    }, []);
+-
+-    const loadData = async () => {
+-        setIsLoading(true);
+-        try {
+-            const data = await apiClient.get<any[]>('/support');
+-            setTickets(data || []);
+-        } catch (error) {
+-            Alert.alert('Hata', 'Destek talepleri yüklenemedi.');
+-        } finally {
+-            setIsLoading(false);
+-        }
+-    };
+-
+-    const handleUpdateStatus = async (id: string, newStatus: string) => {
+-        try {
+-            await apiClient.put(`/support/${id}/status`, { status: newStatus });
+-            loadData();
+-        } catch (error) {
+-            Alert.alert('Hata', 'Durum güncellenemedi.');
+-        }
+-    };
+-
+-    return (
+-        <SafeAreaView style={styles.container}>
+-            <View style={styles.header}>
+-                <TouchableOpacity onPress={() => router.back()}>
+-                    <Ionicons name="arrow-back" size={24} color="#111827" />
+-                </TouchableOpacity>
+-                <Text style={styles.headerTitle}>Destek Talepleri</Text>
+-            </View>
+-
+-            {isLoading ? (
+-                <View style={styles.center}>
+-                    <ActivityIndicator size="large" color="#f43f5e" />
+-                </View>
+-            ) : (
+-                <ScrollView contentContainerStyle={styles.list}>
+-                    {tickets.map(t => (
+-                        <View key={t.id} style={styles.card}>
+-                            <View style={styles.cardHeader}>
+-                                <Text style={styles.subject}>{t.subject}</Text>
+-                                <View style={[styles.badge, t.status === 'OPEN' ? styles.badgeRed : styles.badgeGreen]}>
+-                                    <Text style={[styles.badgeText, { color: t.status === 'OPEN' ? '#dc2626' : '#16a34a' }]}>{t.status}</Text>
+-                                </View>
+-                            </View>
+-                            <Text style={styles.message}>{t.message}</Text>
+-                            
+-                            <View style={styles.actions}>
+-                                {t.status === 'OPEN' ? (
+-                                    <TouchableOpacity style={styles.closeBtn} onPress={() => handleUpdateStatus(t.id, 'CLOSED')}>
+-                                        <Ionicons name="checkmark" size={16} color="white" />
+-                                        <Text style={styles.closeBtnText}>Talebi Kapat</Text>
+-                                    </TouchableOpacity>
+-                                ) : (
+-                                    <TouchableOpacity style={styles.reopenBtn} onPress={() => handleUpdateStatus(t.id, 'OPEN')}>
+-                                        <Ionicons name="refresh" size={16} color="#64748b" />
+-                                        <Text style={styles.reopenBtnText}>Yeniden Aç</Text>
+-                                    </TouchableOpacity>
+-                                )}
+-                            </View>
+-                        </View>
+-                    ))}
+-                    {tickets.length === 0 && (
+-                        <Text style={styles.emptyText}>Bekleyen destek talebi yok.</Text>
+-                    )}
+-                </ScrollView>
+-            )}
+-        </SafeAreaView>
+-    );
+-}
+-
+-const styles = StyleSheet.create({
+-    container: { flex: 1, backgroundColor: '#f8fafc' },
+-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+-    header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderColor: '#e2e8f0', gap: 12 },
+-    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+-    list: { padding: 16, gap: 12 },
+-    card: { backgroundColor: 'white', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9', elevation: 1 },
+-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+-    subject: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', flex: 1 },
+-    badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: '#f1f5f9' },
+-    badgeRed: { backgroundColor: '#fee2e2' },
+-    badgeGreen: { backgroundColor: '#dcfce7' },
+-    badgeText: { fontSize: 10, fontWeight: 'bold' },
+-    message: { fontSize: 14, color: '#64748b', marginBottom: 16 },
+-    actions: { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12, alignItems: 'flex-end' },
+-    closeBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f43f5e', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, gap: 4 },
+-    closeBtnText: { color: 'white', fontWeight: 'bold', fontSize: 13 },
+-    reopenBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, gap: 4 },
+-    reopenBtnText: { color: '#64748b', fontWeight: 'bold', fontSize: 13 },
+-    emptyText: { textAlign: 'center', marginTop: 40, color: '#94a3b8' }
+-});
++import React from 'react';
++import { SupportWorkspace } from '@/components/support-workspace';
++export default function AdminTicketsScreen() { return <SupportWorkspace adminOnly />; }
+diff --git a/components/support-workspace.tsx b/components/support-workspace.tsx
+new file mode 100644
+--- /dev/null
++++ b/components/support-workspace.tsx
+@@ -0,0 +1,99 @@
++import React, { useEffect, useRef, useState } from 'react';
++import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
++import { uuid } from 'expo-modules-core';
++import { useAuth } from '@/hooks/use-auth';
++import { supportApi, type SupportTicket, type SupportMessage } from '@/utils/support-api';
++
++const labels: Record<string,string> = {OPEN:'Açık',ANSWERED:'Cevaplandı',CLOSED:'Kapalı'};
++export function SupportWorkspace({adminOnly=false}: {adminOnly?:boolean}) {
++    const {user} = useAuth();
++    const admin = user?.role==='ADMIN';
++    const allowed = !!user?.id && (!adminOnly || admin);
++    const context = `${user?.id}:${user?.role}`;
++    const current = useRef(context); current.current=context;
++    const active = useRef(true), listSeq = useRef(0), detailSeq = useRef(0);
++    const target = useRef<SupportTicket|null>(null), lock = useRef<object|null>(null);
++    const intent = useRef<{signature:string;key:string}|null>(null);
++    const [list,setList] = useState<{context:string;rows:SupportTicket[]}|null>(null);
++    const [loading,setLoading] = useState(true), [listError,setListError] = useState('');
++    const [selection,setSelection] = useState<SupportTicket|null>(null);
++    const [detail,setDetail] = useState<{context:string;ticket:SupportTicket;messages:SupportMessage[]}|null>(null);
++    const [detailLoading,setDetailLoading] = useState(false), [detailError,setDetailError] = useState('');
++    const [subject,setSubject] = useState(''), [message,setMessage] = useState(''), [reply,setReply] = useState('');
++    const [pending,setPending] = useState(false), [notice,setNotice] = useState<{error:boolean;text:string}|null>(null);
++    const valid = () => allowed && active.current && current.current===context;
++    const loadList = async () => {
++        if(!valid())return;
++        const seq=++listSeq.current;setLoading(true);setListError('');
++        try{const rows=await supportApi.list(user.id,admin);if(valid() && seq===listSeq.current){setList({context,rows});if(target.current && !rows.some(row=>row.id===target.current?.id))close();}}
++        catch{if(valid() && seq===listSeq.current){setListError('Destek talepleri yüklenemedi.');setList({context,rows:[]});}}
++        finally{if(valid() && seq===listSeq.current)setLoading(false);}
++    };
++    const loadDetail = async (row:SupportTicket) => {
++        if(!valid())return;
++        if(target.current?.id!==row.id){setReply('');setNotice(null);}
++        target.current=row;setSelection(row);
++        const seq=++detailSeq.current;setDetailLoading(true);setDetailError('');setDetail(null);
++        try{const result=await supportApi.detail(row.id,row.user_id);if(valid() && seq===detailSeq.current && target.current?.id===row.id)setDetail({...result,context});}
++        catch{if(valid() && seq===detailSeq.current && target.current?.id===row.id)setDetailError('Talep detayları yüklenemedi.');}
++        finally{if(valid() && seq===detailSeq.current && target.current?.id===row.id)setDetailLoading(false);}
++    };
++    useEffect(()=>{
++        active.current=true;target.current=null;setSelection(null);setDetail(null);setReply('');setSubject('');setMessage('');setNotice(null);setPending(false);
++        if(allowed)void loadList();
++        return()=>{active.current=false;listSeq.current++;detailSeq.current++;target.current=null;};
++    },[context,allowed]);
++    const close = () => {detailSeq.current++;target.current=null;setSelection(null);setDetail(null);setReply('');setNotice(null);setDetailError('');setDetailLoading(false);};
++    const run = async (kind:'create'|'reply'|'status',status?:'OPEN'|'CLOSED') => {
++        if(!valid() || lock.current || (kind==='status' && !admin))return;
++        const row=detail?.context===context?detail.ticket:null;
++        if(kind!=='create' && (!row || detailLoading || detailError || loading || listError || target.current?.id!==row.id))return;
++        if(kind==='create' && (!subject.trim() || !message.trim()))return;
++        if(kind==='reply' && (!reply.trim() || !labels[row!.status] || (!admin && row!.status==='CLOSED')))return;
++        const version=detailSeq.current, token={};lock.current=token;setPending(true);setNotice(null);
++        const isCurrent=()=>valid() && (kind==='create' || (version===detailSeq.current && target.current?.id===row?.id));
++        const signature=JSON.stringify([context,kind,kind==='create'?null:row?.id,kind==='create'?subject.trim():null,kind==='status'?status:kind==='create'?message.trim():reply.trim()]);
++        try {
++            if(intent.current?.signature!==signature)intent.current={signature,key:uuid.v4()};
++            const key=intent.current.key;
++            if(kind==='create')await supportApi.create(user.id,subject.trim(),message.trim(),key);
++            else if(kind==='reply')await supportApi.reply(row!.id,reply.trim(),key);
++            else await supportApi.status(row!.id,status!,key);
++            if(!isCurrent())return;
++            if(intent.current?.key===key)intent.current=null;
++            if(kind==='create'){setSubject('');setMessage('');}else if(kind==='reply')setReply('');
++            setNotice({error:false,text:'İşlem kaydedildi. Yenileme hatasında yalnızca tekrar yükleyin.'});
++            await Promise.all([loadList(),...(kind==='create'?[]:[loadDetail(row!)])]);
++        }catch{if(isCurrent())setNotice({error:true,text:'İşlem sonucu doğrulanamadı. Tekrar göndermeden talepleri kontrol edin; aynı giriş aynı işlem anahtarını kullanır.'});}
++        finally{if(lock.current===token){lock.current=null;if(valid())setPending(false);}}
++    };
++    const button = (title:string,onPress:()=>void,disabled=false) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={title} onPress={onPress} disabled={disabled} style={[styles.button,disabled&&styles.disabled]}><Text style={styles.buttonText}>{title}</Text></TouchableOpacity>;
++    if(!allowed)return <Text>{user?.id?'Erişim reddedildi.':'Destek için giriş yapın.'}</Text>;
++    const fresh=list?.context===context;
++    const selected=fresh && detail?.context===context && detail.ticket.id===selection?.id?detail:null;
++    return <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
++        <Text style={styles.title}>{admin?'Destek Yönetimi':'Destek Taleplerim'}</Text>
++        {notice && fresh && <Text accessibilityRole={notice.error?'alert':'text'}>{notice.text}</Text>}
++        {!fresh || loading?<Text>Destek talepleri yükleniyor...</Text>:listError?<View><Text accessibilityRole="alert">{listError}</Text>{button('Talepleri tekrar yükle',()=>loadList(),pending)}</View>:<View>
++            {button('Talepleri tekrar yükle',()=>loadList(),pending)}
++            {!list.rows.length && <Text>Destek talebi bulunmuyor.</Text>}
++            {list.rows.map(row=><TouchableOpacity key={row.id} accessibilityRole="button" accessibilityLabel={`Talep: ${row.subject}`} disabled={pending} onPress={()=>loadDetail(row)} style={styles.card}><Text>{row.subject}</Text>{admin&&<Text>{row.user_name || 'İsim bilgisi yok'}</Text>}<Text>{labels[row.status] || 'Bilinmeyen durum'}</Text><Text>{row.last_message || 'Mesaj yok'}</Text></TouchableOpacity>)}
++        </View>}
++        {fresh && selection && !loading && !listError && <View style={styles.card}>
++            {button('Detayı kapat',close,pending)}
++            {detailLoading?<Text>Talep detayları yükleniyor...</Text>:detailError?<View><Text accessibilityRole="alert">{detailError}</Text>{button('Detayı tekrar yükle',()=>loadDetail(selection),pending)}</View>:selected&&<View>
++                <Text style={styles.title}>{selected.ticket.subject}</Text><Text>{labels[selected.ticket.status] || 'Bilinmeyen durum'}</Text>
++                {!selected.messages.length && <Text>Bu talepte henüz mesaj yok.</Text>}
++                {selected.messages.map(item=><View key={item.id} style={styles.message}><Text>{item.sender_name || 'İsim bilgisi yok'} · {item.sender_role}</Text><Text>{item.message}</Text><Text>{new Date(item.created_at).toLocaleString('tr-TR')}</Text></View>)}
++                {(admin || selected.ticket.status!=='CLOSED') && <View><TextInput accessibilityLabel="Yanıt" placeholder="Yanıtınız" multiline value={reply} onChangeText={setReply} editable={!pending} maxLength={10000} style={styles.input}/>{button('Yanıt gönder',()=>run('reply'),pending || !reply.trim() || !labels[selected.ticket.status])}</View>}
++                {admin && labels[selected.ticket.status] && button(selected.ticket.status==='CLOSED'?'Tekrar aç':'Talebi kapat',()=>run('status',selected.ticket.status==='CLOSED'?'OPEN':'CLOSED'),pending)}
++            </View>}
++        </View>}
++        {fresh && !admin && <View style={styles.card}><Text style={styles.title}>Yeni Destek Talebi</Text>
++            <TextInput accessibilityLabel="Konu" placeholder="Konu" value={subject} onChangeText={setSubject} editable={!pending} maxLength={255} style={styles.input}/>
++            <TextInput accessibilityLabel="Mesaj" placeholder="Mesajınız" multiline value={message} onChangeText={setMessage} editable={!pending} maxLength={10000} style={styles.input}/>
++            {button('Talep oluştur',()=>run('create'),pending || !subject.trim() || !message.trim())}
++        </View>}
++    </ScrollView>;
++}
++const styles=StyleSheet.create({container:{padding:20,gap:16,backgroundColor:'#f8fafc'},title:{fontSize:20,fontWeight:'bold',color:'#1e293b'},card:{padding:16,gap:10,backgroundColor:'white',borderRadius:12,marginVertical:6},message:{padding:12,backgroundColor:'#eff6ff',borderRadius:8,marginVertical:4},input:{borderWidth:1,borderColor:'#cbd5e1',padding:12,borderRadius:8,minHeight:48},button:{backgroundColor:'#475569',padding:14,borderRadius:8,marginVertical:6},buttonText:{color:'white',textAlign:'center'},disabled:{opacity:0.5}});
+diff --git a/utils/support-api.ts b/utils/support-api.ts
+new file mode 100644
+--- /dev/null
++++ b/utils/support-api.ts
+@@ -0,0 +1,45 @@
++import { apiClient } from './api-client';
++
++export interface SupportTicket {
++    id: string; user_id: string; subject: string; status: string; created_at: string; updated_at: string;
++    user_name?: string; user_email?: string; last_message?: string;
++}
++export interface SupportMessage {
++    id: string; ticket_id: string; sender_id: string; message: string; sender_role: string; created_at: string; sender_name?: string;
++}
++const nonempty = (value: unknown) => typeof value === 'string' && !!value.trim();
++const date = (value: unknown) => typeof value === 'string' && Number.isFinite(Date.parse(value));
++const ticket = (row: any): row is SupportTicket => row && !Array.isArray(row)
++    && nonempty(row.id) && nonempty(row.user_id) && typeof row.subject === 'string' && nonempty(row.status)
++    && date(row.created_at) && date(row.updated_at)
++    && ['user_name','user_email','last_message'].every(key=>row[key]==null || typeof row[key]==='string');
++export const supportApi = {
++    async list(userId: string, admin: boolean) {
++        const rows = await apiClient.get<unknown>('/tickets');
++        if (!Array.isArray(rows) || !rows.every(row=>ticket(row) && (admin || row.user_id===userId))) throw new Error('Destek listesi doğrulanamadı.');
++        return rows as SupportTicket[];
++    },
++    async detail(id: string, owner: string) {
++        const result = await apiClient.get<any>(`/tickets/${id}`);
++        if (!ticket(result?.ticket) || result.ticket.id!==id || result.ticket.user_id!==owner || !Array.isArray(result.messages)
++            || !result.messages.every((row: any)=>row && !Array.isArray(row) && row.ticket_id===id && nonempty(row.id) && nonempty(row.sender_id)
++                && typeof row.message==='string' && nonempty(row.sender_role) && date(row.created_at) && (row.sender_name==null || typeof row.sender_name==='string')))
++            throw new Error('Destek detayı doğrulanamadı.');
++        return result as {ticket:SupportTicket;messages:SupportMessage[]};
++    },
++    async create(userId: string, subject: string, message: string, requestKey: string) {
++        const result = await apiClient.post<any>('/tickets',{subject,message,requestKey});
++        if (!ticket(result) || result.user_id!==userId || result.subject!==subject || result.status!=='OPEN') throw new Error('Talep oluşturma sonucu doğrulanamadı.');
++        return result;
++    },
++    async reply(id: string, message: string, requestKey: string) {
++        const result = await apiClient.post<any>(`/tickets/${id}/messages`,{message,requestKey});
++        if (result?.success!==true || result.ticket_id!==id || !nonempty(result.message_id) || !['OPEN','ANSWERED'].includes(result.status)) throw new Error('Yanıt doğrulanamadı.');
++        return result;
++    },
++    async status(id: string, status: 'OPEN'|'CLOSED', requestKey: string) {
++        const result = await apiClient.put<any>(`/tickets/${id}/status`,{status,requestKey});
++        if (result?.success!==true || result.ticket_id!==id || result.status!==status) throw new Error('Durum doğrulanamadı.');
++        return result;
++    }
++};
+diff --git a/package.json b/package.json
+index 2f6b3e1..f0558d6 100644
+--- a/package.json
++++ b/package.json
+@@ -22,6 +22,7 @@
+     "expo-haptics": "~15.0.8",
+     "expo-image": "~3.0.11",
+     "expo-linking": "~8.0.11",
++    "expo-modules-core": "^3.0.29",
+     "expo-router": "~6.0.21",
+     "expo-secure-store": "~15.0.8",
+     "expo-splash-screen": "~31.0.13",
+diff --git a/package-lock.json b/package-lock.json
+index e053828..2b516d6 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -19,6 +19,7 @@
+         "expo-haptics": "~15.0.8",
+         "expo-image": "~3.0.11",
+         "expo-linking": "~8.0.11",
++        "expo-modules-core": "^3.0.29",
+         "expo-router": "~6.0.21",
+         "expo-secure-store": "~15.0.8",
+         "expo-splash-screen": "~31.0.13",

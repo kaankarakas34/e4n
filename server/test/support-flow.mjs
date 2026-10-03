@@ -132,6 +132,26 @@ async function main() {
   const apiSource=ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/api.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ emailService \} from ['"]\.\.\/services\/emailService['"];?/,'const emailService = {};').replace(/const BASE_URL = .*?;/,`const BASE_URL = ${JSON.stringify(base)};`);
   let actor=0;globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:jwt.sign({id:ids[actor],role:roles[actor]},process.env.JWT_SECRET)}})};
   const {api}=await import(`data:text/javascript;base64,${Buffer.from(apiSource).toString('base64')}`);
+  if(process.argv[2]) {
+    // Real mobile transport and service target this same disposable loopback API.
+    const mobileRoot=path.resolve(process.argv[2]);
+    const compileMobile=file=>ts.transpileModule(readFileSync(path.join(mobileRoot,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+    let transport=compileMobile('utils/api-client.ts').replace(/import \{ API_CONFIG \} from ['"]@\/constants\/api['"];?/,`const API_CONFIG={BASE_URL:${JSON.stringify(base)}};`)
+      .replace(/import \{ SecureStorage \} from ['"]\.\/secure-storage['"];?/,'const SecureStorage={getToken:async()=>globalThis.mobileSupportToken()};');
+    globalThis.mobileSupportToken=()=>jwt.sign({id:ids[actor],role:roles[actor]},process.env.JWT_SECRET);
+    const {apiClient}=await import(`data:text/javascript;base64,${Buffer.from(transport).toString('base64')}`);
+    globalThis.mobileSupportRealClient=apiClient;
+    const service=compileMobile('utils/support-api.ts').replace(/import \{ apiClient \} from ['"]\.\/api-client['"];?/,'const apiClient=globalThis.mobileSupportRealClient;');
+    const {supportApi:mobile}=await import(`data:text/javascript;base64,${Buffer.from(service).toString('base64')}`);
+    assert.equal((await mobile.create(ids[0],intent.subject,intent.message,intent.requestKey)).id,id);
+    assert.equal((await mobile.reply(id,reply.message,reply.requestKey)).message_id,acks[0].message_id);
+    assert.equal((await mobile.detail(id,ids[0])).messages.length,2);
+    actor=1;assert.equal((await mobile.list(ids[1],false)).length,0);await assert.rejects(mobile.detail(id,ids[0]));
+    actor=2;assert.equal((await mobile.list(ids[2],true)).length,1);
+    const mobileCloseKey=randomUUID();await mobile.status(id,'CLOSED',mobileCloseKey);await mobile.status(id,'OPEN',randomUUID());
+    await mobile.status(id,'CLOSED',mobileCloseKey);assert.equal((await mobile.detail(id,ids[0])).ticket.status,'OPEN');
+    actor=0;
+  }
   assert.equal((await api.createTicket(intent)).id,id);assert.equal((await api.replyTicket(id,reply.message,reply.requestKey)).message_id,acks[0].message_id);
   actor=2;const adminKey=randomUUID();assert.equal((await api.replyTicket(id,'Admin answer',adminKey)).status,'ANSWERED');
   const detail=await api.getTicketDetails(id);assert.equal(detail.ticket.status,'ANSWERED');assert.equal(detail.messages.length,3);assert.equal(detail.messages.find(m=>m.sender_id===ids[2]).sender_role,'ADMIN');

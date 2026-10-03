@@ -1,0 +1,114 @@
+diff --git a/app/admin/groups.tsx b/app/admin/groups.tsx
+index 9076fb1..332044f 100644
+--- a/app/admin/groups.tsx
++++ b/app/admin/groups.tsx
+@@ -1,16 +1,21 @@
+-import React, { useState, useEffect } from 'react';
++import React, { useState, useEffect, useRef } from 'react';
+ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+ import { SafeAreaView } from 'react-native-safe-area-context';
+ import { Ionicons } from '@expo/vector-icons';
+ import { useRouter } from 'expo-router';
+ import { apiClient } from '@/utils/api-client';
++import { useAuth } from '@/hooks/use-auth';
+ 
+ export default function AdminGroupsScreen() {
+     const router = useRouter();
++    const { user } = useAuth();
++    const isAdmin = user?.role === 'ADMIN';
+     const [activeTab, setActiveTab] = useState<'GROUPS' | 'TEAMS'>('GROUPS');
+     const [groups, setGroups] = useState<any[]>([]);
+     const [teams, setTeams] = useState<any[]>([]);
+     const [isLoading, setIsLoading] = useState(true);
++    const [error, setError] = useState<string | null>(null);
++    const requestSequence = useRef(0);
+     
+     // Modal State
+     const [showModal, setShowModal] = useState(false);
+@@ -18,26 +23,34 @@ export default function AdminGroupsScreen() {
+     const [isSubmitting, setIsSubmitting] = useState(false);
+ 
+     useEffect(() => {
+-        loadData();
+-    }, []);
++        setShowModal(false);
++        if (isAdmin) loadData();
++        return () => { requestSequence.current++; };
++    }, [user?.id, user?.role]);
+ 
+     const loadData = async () => {
++        if (!isAdmin) return;
++        const sequence = ++requestSequence.current;
+         setIsLoading(true);
++        setError(null);
+         try {
+             const [g, t] = await Promise.all([
+                 apiClient.get<any[]>('/groups'),
+                 apiClient.get<any[]>('/power-teams')
+             ]);
+-            setGroups(g || []);
+-            setTeams(t || []);
++            if (sequence !== requestSequence.current) return;
++            if (!Array.isArray(g) || !Array.isArray(t)) throw new Error('Invalid group list response');
++            setGroups(g);
++            setTeams(t);
+         } catch (error) {
+-            console.error('Error fetching groups/teams', error);
++            if (sequence === requestSequence.current) setError('Grup ve lonca bilgileri yüklenemedi.');
+         } finally {
+-            setIsLoading(false);
++            if (sequence === requestSequence.current) setIsLoading(false);
+         }
+     };
+ 
+     const handleCreate = async () => {
++        if (!isAdmin || isLoading || error || isSubmitting) return;
+         if (!newItemName.trim()) return Alert.alert('Hata', 'Lütfen bir isim giriniz.');
+         setIsSubmitting(true);
+         try {
+@@ -58,6 +71,8 @@ export default function AdminGroupsScreen() {
+         }
+     };
+ 
++    if (!isAdmin) return <SafeAreaView style={styles.container}><Text>Grup yönetimi için yönetici yetkisi gerekiyor.</Text></SafeAreaView>;
++
+     return (
+         <SafeAreaView style={styles.container}>
+             <View style={styles.header}>
+@@ -65,7 +80,7 @@ export default function AdminGroupsScreen() {
+                     <Ionicons name="arrow-back" size={24} color="#111827" />
+                 </TouchableOpacity>
+                 <Text style={styles.headerTitle}>Grup Yönetimi</Text>
+-                <TouchableOpacity onPress={() => setShowModal(true)} style={styles.addButton}>
++                <TouchableOpacity disabled={isLoading || !!error} onPress={() => setShowModal(true)} style={styles.addButton}>
+                     <Ionicons name="add" size={20} color="white" />
+                 </TouchableOpacity>
+             </View>
+@@ -89,6 +104,11 @@ export default function AdminGroupsScreen() {
+                 <View style={styles.center}>
+                     <ActivityIndicator size="large" color={activeTab === 'GROUPS' ? '#4f46e5' : '#9333ea'} />
+                 </View>
++            ) : error ? (
++                <View style={styles.center} accessibilityRole="alert">
++                    <Text>{error}</Text>
++                    <TouchableOpacity accessibilityRole="button" onPress={loadData}><Text>Tekrar dene</Text></TouchableOpacity>
++                </View>
+             ) : (
+                 <ScrollView contentContainerStyle={styles.listContent}>
+                     {activeTab === 'GROUPS' ? (
+@@ -101,12 +121,12 @@ export default function AdminGroupsScreen() {
+                                         <View style={[styles.iconBox, {backgroundColor: '#e0e7ff'}]}>
+                                             <Ionicons name="layers" size={20} color="#4f46e5" />
+                                         </View>
+-                                        <View style={[styles.badge, g.current_month >= 4 ? styles.badgeRed : styles.badgeGreen]}>
+-                                            <Text style={styles.badgeText}>{g.current_month || 1}. Dönem Ayı</Text>
++                                        <View style={[styles.badge, typeof g.current_month === 'number' && g.current_month >= 4 ? styles.badgeRed : styles.badgeGreen]}>
++                                            <Text style={styles.badgeText}>{typeof g.current_month === 'number' && Number.isFinite(g.current_month) ? `${g.current_month}. Dönem Ayı` : 'Dönem bilgisi yok'}</Text>
+                                         </View>
+                                     </View>
+                                     <Text style={styles.cardTitle}>{g.name}</Text>
+-                                    <Text style={styles.cardDesc}>{g.member_count || 0} Üye</Text>
++                                    <Text style={styles.cardDesc}>{typeof g.member_count === 'number' && Number.isFinite(g.member_count) ? `${g.member_count} Üye Kaydı` : 'Üye sayısı bilinmiyor'}</Text>
+                                 </TouchableOpacity>
+                             ))
+                         )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useEventStore } from '../stores/eventStore';
@@ -65,6 +65,35 @@ export function AdminEvents() {
   const [participants, setParticipants] = useState<any[]>([]);
   const [viewingEventTitle, setViewingEventTitle] = useState('');
   const [viewingEventId, setViewingEventId] = useState<string | null>(null);
+  const [participantLoading, setParticipantLoading] = useState(false);
+  const [participantError, setParticipantError] = useState<string | null>(null);
+  const [participantNotice, setParticipantNotice] = useState<string | null>(null);
+  const [participantNoticeFor, setParticipantNoticeFor] = useState<string | null>(null);
+  const [participantRetry, setParticipantRetry] = useState(0);
+  const [participantsLoadedFor, setParticipantsLoadedFor] = useState<string | null>(null);
+  const [removePending, setRemovePending] = useState(false);
+  const removeBusy = useRef(false);
+  const participantContext = `${user?.id}:${user?.role}:${viewingEventId}:${showParticipants}`;
+  const currentParticipantContext = useRef(participantContext);
+  currentParticipantContext.current = participantContext;
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => {
+    let cancelled = false;
+    if (!showParticipants || !viewingEventId || user?.role !== 'ADMIN') return;
+    setParticipantLoading(true); setParticipantError(null); setParticipantsLoadedFor(null); setParticipants([]);
+    const load = async () => {
+      try {
+        const rows = await api.getMeetingAttendance(viewingEventId);
+        if (!Array.isArray(rows) || rows.some(row => !row || row.event_id !== viewingEventId)) throw new Error('Invalid participants');
+        if (!cancelled) { setParticipants(rows); setParticipantsLoadedFor(participantContext); }
+      } catch {
+        if (!cancelled) setParticipantError('Katılımcı listesi yüklenemedi.');
+      } finally { if (!cancelled) setParticipantLoading(false); }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [showParticipants, viewingEventId, user?.id, user?.role, participantContext, participantRetry]);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -229,36 +258,38 @@ export function AdminEvents() {
     }
   };
 
-  const handleViewParticipants = async (event: any) => {
-    try {
-      setViewingEventId(event.id);
-      setViewingEventTitle(event.title);
-      // Backend route exists at /events/:id/attendance
-      const data = await api.getMeetingAttendance(event.id);
-      setParticipants(data);
-      setShowParticipants(true);
-    } catch (error) {
-      console.error('Katılımcılar yüklenirken hata:', error);
-      alert('Katılımcı listesi yüklenemedi.');
-    }
+  const handleViewParticipants = (event: any) => {
+    if (user?.role !== 'ADMIN') return;
+    setParticipants([]); setParticipantError(null); setParticipantNotice(null);
+    setParticipantLoading(true); setParticipantsLoadedFor(null);
+    setViewingEventId(event.id); setViewingEventTitle(event.title); setShowParticipants(true);
   };
 
   const handleRemoveParticipant = async (userId: string) => {
-    if (!viewingEventId) return;
+    if (removeBusy.current || !alive.current || currentParticipantContext.current !== participantContext || user?.role !== 'ADMIN' || !viewingEventId || participantsLoadedFor !== participantContext || !participants.some(p => p.user_id === userId)) return;
     if (!window.confirm('Bu katılımcıyı etkinlikten çıkarmak istediğinize emin misiniz?')) return;
-    
+    const context = participantContext;
+    const isCurrent = () => alive.current && currentParticipantContext.current === context;
+    removeBusy.current = true; setRemovePending(true); setParticipantNotice(null); setParticipantNoticeFor(context);
     try {
-      await api.removeEventParticipant(viewingEventId, userId);
-      // Refresh the participant list
-      const data = await api.getMeetingAttendance(viewingEventId);
-      setParticipants(data);
-      // Also fetch events list to refresh user count on dashboard
-      fetchEvents();
-      alert('Katılımcı etkinlikten başarıyla çıkarıldı.');
-    } catch (error) {
-      console.error('Katılımcı silinirken hata:', error);
-      alert('Katılımcı çıkarılamadı.');
-    }
+      const result = await api.removeEventParticipant(viewingEventId, userId);
+      if (!isCurrent()) return;
+      if (result?.success !== true) throw new Error('Unconfirmed remove');
+      setParticipantNotice('Katılımcı çıkarma işlemi sunucu tarafından onaylandı.');
+      setParticipants([]); setParticipantsLoadedFor(null); setParticipantLoading(true);
+      try {
+        const rows = await api.getMeetingAttendance(viewingEventId);
+        if (!Array.isArray(rows) || rows.some(row => !row || row.event_id !== viewingEventId)) throw new Error('Invalid participants');
+        if (isCurrent()) { setParticipants(rows); setParticipantsLoadedFor(context); }
+      } catch {
+        if (isCurrent()) { setParticipantError('Katılımcı listesi yüklenemedi.'); setParticipantNotice('Çıkarma işlemi onaylandı; liste yenilenemedi. Çıkarma işlemini yeniden göndermeyin.'); }
+      } finally { if (isCurrent()) setParticipantLoading(false); }
+      if (isCurrent()) {
+        try { await fetchEvents(); } catch { if (isCurrent()) setParticipantNotice('Çıkarma işlemi onaylandı; etkinlik özeti yenilenemedi.'); }
+      }
+    } catch {
+      if (isCurrent()) setParticipantNotice('Çıkarma sonucu doğrulanamadı. Yeniden göndermeden önce listeyi kontrol edin.');
+    } finally { removeBusy.current = false; if (alive.current) setRemovePending(false); }
   };
 
   const getStatusColor = (status: string) => {
@@ -739,11 +770,13 @@ export function AdminEvents() {
           </div>
 
           <Modal
-            open={showParticipants}
+            open={showParticipants && user?.role === 'ADMIN'}
             onClose={() => setShowParticipants(false)}
             title={`${viewingEventTitle} - Katılımcı Listesi`}
           >
             <div className="space-y-4">
+              {participantNotice && participantNoticeFor === participantContext && <p role="status">{participantNotice}</p>}
+              {participantError ? <div role="alert"><p>{participantError}</p><Button onClick={() => { setParticipantError(null); setParticipantLoading(true); setParticipantRetry(count => count + 1); }}>Tekrar dene</Button></div> : participantLoading || participantsLoadedFor !== participantContext ? <p role="status">Katılımcılar yükleniyor...</p> : <>
               <div className="text-sm text-gray-500 mb-4">
                 Toplam Katılımcı: <span className="font-bold text-gray-900">{participants.length}</span>
               </div>
@@ -784,6 +817,7 @@ export function AdminEvents() {
                         <Button
                           size="sm"
                           variant="destructive"
+                          disabled={removePending}
                           onClick={() => handleRemoveParticipant(p.user_id)}
                           className="h-7 px-2 text-xs flex items-center gap-1 rounded-lg"
                         >
@@ -795,6 +829,7 @@ export function AdminEvents() {
                   ))}
                 </div>
               )}
+              </>}
               <div className="flex justify-end pt-4 border-t">
                 <Button onClick={() => setShowParticipants(false)}>Kapat</Button>
               </div>

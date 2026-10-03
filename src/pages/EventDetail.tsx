@@ -18,13 +18,20 @@ export function EventDetail() {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const loadSequence = useRef(0);
+    const registrationPending = useRef(false);
+    const contextSequence = useRef(0);
+    const pageActive = useRef(true);
+    const [registrationError, setRegistrationError] = useState<string | null>(null);
 
     useEffect(() => {
+        pageActive.current = true;
+        setRegistrationError(null);
+        setIsPaymentModalOpen(false);
         if (id) {
             loadEvent(id);
         }
-        return () => { loadSequence.current++; };
-    }, [id, user]);
+        return () => { loadSequence.current++; contextSequence.current++; pageActive.current = false; };
+    }, [id, user?.id, user?.role]);
 
     const loadEvent = async (eventId: string) => {
         const sequence = ++loadSequence.current;
@@ -74,6 +81,7 @@ export function EventDetail() {
     };
 
     const handleRegister = async () => {
+        if (registrationPending.current || registering || loading || !event || event.id !== id || registered) return;
         if (!user) {
             navigate('/auth/login', { state: { from: `/event/${id}` } });
             return;
@@ -86,20 +94,23 @@ export function EventDetail() {
 
         if (!window.confirm('Bu etkinliğe kayıt olmak istiyor musunuz?')) return;
 
+        registrationPending.current = true;
+        const context = contextSequence.current;
         setRegistering(true);
+        setRegistrationError(null);
         try {
             const result = await api.registerForEvent(id!);
+            if (!pageActive.current || context !== contextSequence.current) return;
+            if (!result || result.success !== true) throw new Error('Invalid event registration response');
             setRegistered(true);
-            
-            if (result.ticket_needed) {
-                alert('Kayıt başarılı! Ücretsiz biletiniz e-posta adresinize gönderildi.');
-            } else {
-                alert('Etkinliğe başarıyla kayıt oldunuz!');
+            alert('Etkinlik kaydınız doğrulandı.');
+        } catch {
+            if (pageActive.current && context === contextSequence.current) {
+                setRegistrationError('Kayıt sonucu doğrulanamadı. Yeniden göndermeden mevcut kaydınızı kontrol edin.');
             }
-        } catch (error: any) {
-            alert('Kayıt başarısız: ' + (error.error || error.message));
         } finally {
-            setRegistering(false);
+            registrationPending.current = false;
+            if (pageActive.current) setRegistering(false);
         }
     };
 
@@ -182,6 +193,7 @@ export function EventDetail() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
+            {registrationError && <div role="alert" className="p-4 bg-red-50 text-red-700">{registrationError}</div>}
             <SEO
                 title={`${event.title} | Event4Network Etkinlik`}
                 description={event.description ? event.description.slice(0, 150) : event.title}

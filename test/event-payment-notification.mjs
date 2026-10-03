@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-let cursor = 0, id = 'event-a', role = 'MEMBER', calls = 0, writes = 0, response;
+let cursor = 0, id = 'event-a', role = 'MEMBER', calls = 0, writes = 0, stateWrites = 0, response, registrationResponse = async () => ({ success: true, ticket_needed: false });
 const state = [], dependencies = [], cleanups = [], effects = [], alerts = [];
 const fixture = (attendees = [], price = 100) => ({ id, title: 'Fixture Event', price, is_public: true, start_at: '2030-01-01', end_at: '2030-01-02', attendees });
 globalThis.eventPaymentHooks = {
-  useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], value => { state[i] = typeof value === 'function' ? value(state[i]) : value; }]; },
+  useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], value => { stateWrites++; state[i] = typeof value === 'function' ? value(state[i]) : value; }]; },
   useRef(initial) { const i = cursor++; return state[i] ??= { current: initial }; },
   useEffect(callback, deps) { const i = cursor++; if (!dependencies[i] || deps.some((value, j) => value !== dependencies[i][j])) { dependencies[i] = deps; effects.push(() => { cleanups[i]?.(); cleanups[i] = callback(); }); } },
 };
 let user = { id: 'fixture-member', role };
 globalThis.eventPaymentAuth = () => ({ user });
 globalThis.eventPaymentRouter = { useParams: () => ({ id }), useNavigate: () => () => {} };
-globalThis.eventPaymentApi = { getEvent: () => { calls++; return response(); }, registerForEvent: async () => { writes++; return { ticket_needed: false }; } };
+globalThis.eventPaymentApi = { getEvent: () => { calls++; return response(); }, registerForEvent: async () => { writes++; return registrationResponse(); } };
 globalThis.alert = text => alerts.push(text);
 globalThis.window = { confirm: () => true };
 let compiled = ts.transpileModule(readFileSync(new URL('../src/pages/EventDetail.tsx', import.meta.url), 'utf8'), {
@@ -73,5 +73,43 @@ await mount(); response = async () => fixture([], 0); await notify(); commit();
 const beforeFree = writes;
 await nodes(render()).find(node => node.type === 'Button' && node.props?.onClick?.name === 'handleRegister').props.onClick();
 assert.equal(writes, beforeFree + 1);
+const clickRegister = () => nodes(render()).find(node => node.type === 'Button' && node.props?.onClick?.name === 'handleRegister').props.onClick();
+async function freeMount() { await mount(); response = async () => fixture([], 0); await notify(); commit(); alerts.length = 0; }
+for (const bad of [null, {}, { success: false }, { success: 'true' }]) {
+  await freeMount(); registrationResponse = async () => bad;
+  await clickRegister();
+  assert.equal(registered(), false);
+  assert.ok(nodes(render()).some(node => node.props?.role === 'alert'));
+  assert.deepEqual(alerts, []);
+}
+await freeMount(); registrationResponse = async () => { throw new Error('Fixture registration rejected'); };
+await clickRegister(); assert.equal(registered(), false);
+assert.ok(nodes(render()).some(node => node.props?.role === 'alert'));
+registrationResponse = async () => ({ success: true, ticket_needed: true });
+await clickRegister(); assert.equal(registered(), true);
+assert.deepEqual(alerts, ['Etkinlik kaydınız doğrulandı.']);
+await freeMount(); registrationResponse = async () => ({ success: true, message: 'Already registered' });
+await clickRegister(); assert.equal(registered(), true);
+await freeMount(); let resolveRegistration;
+registrationResponse = () => new Promise(resolve => { resolveRegistration = resolve; });
+const beforeDouble = writes, firstSubmit = clickRegister();
+await clickRegister(); assert.equal(writes, beforeDouble + 1);
+resolveRegistration({ success: true }); await firstSubmit; assert.equal(registered(), true);
+for (const change of ['route', 'user', 'role']) {
+  await freeMount(); const pending = clickRegister();
+  if (change === 'route') id = 'event-b';
+  if (change === 'user') user = { id: 'other-member', role: 'MEMBER' };
+  if (change === 'role') user = { ...user, role: 'PRESIDENT' };
+  response = async () => fixture([], 0); commit(); await flush(); commit();
+  const beforeResult = alerts.length;
+  resolveRegistration({ success: true }); await pending; commit();
+  assert.equal(registered(), false); assert.equal(alerts.length, beforeResult);
+}
+await freeMount(); const pendingUnmount = clickRegister();
+for (const cleanup of cleanups) cleanup?.();
+const beforeUnmountedResult = stateWrites;
+resolveRegistration({ success: true }); await pendingUnmount;
+assert.equal(stateWrites, beforeUnmountedResult);
 for (const cleanup of cleanups) cleanup?.();
 console.log('Event payment notification: three roles, no second registration write, fresh attendees only, read error/retry, malformed/wrong-id response, stale route read ignored; explicit free registration preserved. No payment/network/mail calls.');
+console.log('FREE event registration: explicit success true including repeat, malformed/rejected result never registered; no email claim, duplicate submit one call, old route/user/role and unmounted results ignored.');

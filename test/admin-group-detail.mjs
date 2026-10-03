@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 const state = [];
+const memberScreen = process.argv[2] === 'member';
 let cursor = 0, callback, cleanup, dependencies, pendingEffect;
 let user = { id: 'admin-fixture', role: 'ADMIN' }, id = 'group-fixture', team = false;
 let fail, malformed, deferred, emptyMembers = false, meetingRows = [], calls = [];
@@ -31,7 +32,7 @@ globalThis.groupApi = new Proxy({}, { get: (_, method) => async requestedId => {
   if (/Members$/.test(method)) return emptyMembers ? [] : [{ id: 'active-fixture', full_name: 'Active Fixture', status: 'ACTIVE' }, { id: 'pending-fixture', full_name: 'Pending Fixture', status: 'REQUESTED' }];
   return [];
 } });
-let compiled = ts.transpileModule(readFileSync(new URL('../src/pages/AdminGroupDetail.tsx', import.meta.url), 'utf8'), {
+let compiled = ts.transpileModule(readFileSync(new URL(memberScreen ? '../src/pages/GroupDetail.tsx' : '../src/pages/AdminGroupDetail.tsx', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, module) => {
@@ -42,7 +43,8 @@ compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line
   if (module === 'react-router-dom') return 'const useParams = globalThis.groupParams; const useLocation = globalThis.groupLocation; const useNavigate = () => () => {};';
   return names.split(',').map(name => `const ${name.trim()} = '${name.trim()}';`).join('\n');
 });
-const { AdminGroupDetail } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const loadedModule = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const AdminGroupDetail = memberScreen ? loadedModule.GroupDetail : loadedModule.AdminGroupDetail;
 const render = () => { cursor = 0; return AdminGroupDetail(); };
 const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === 'object' ? [tree, ...nodes(tree.props?.children)] : [];
 const has = text => nodes(render()).some(node => node.props?.children === text || (Array.isArray(node.props?.children) && node.props.children.includes(text)));
@@ -77,8 +79,8 @@ resolve({ id, name: 'Late fixture' }); await flush(); assert.equal(has('Late fix
 reset(); deferred = new Promise(done => { resolve = done; }); render(); await effects();
 id = 'newer-fixture'; deferred = undefined; render(); await effects(); assert.ok(has('Fixture detail'));
 resolve({ id: 'new-fixture', name: 'Late fixture' }); await flush(); assert.equal(has('Late fixture'), false);
-for (const role of ['MEMBER', 'VISITOR']) { reset(); user = { id: 'other-fixture', role }; render(); await effects(); assert.equal(calls.length, 0); assert.ok(has('Erişim Kısıtlı')); }
-for (const role of ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER']) { reset(); user = { id: 'allowed-fixture', role }; render(); await effects(); assert.ok(has('Fixture detail')); }
+if (!memberScreen) for (const role of ['MEMBER', 'VISITOR']) { reset(); user = { id: 'other-fixture', role }; render(); await effects(); assert.equal(calls.length, 0); assert.ok(has('Erişim Kısıtlı')); }
+for (const role of ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', ...(memberScreen ? ['MEMBER', 'VISITOR'] : [])]) { reset(); user = { id: 'allowed-fixture', role }; render(); await effects(); assert.ok(has('Fixture detail')); }
 user = { id: 'admin-fixture', role: 'ADMIN' }; reset(); render(); await effects();
 const attendanceTab = () => nodes(render()).find(node => node.type === 'button' && (node.props.children === 'Yoklama' || node.props.children?.includes?.('Yoklama')));
 attendanceTab().props.onClick();
@@ -99,4 +101,4 @@ assert.equal(has('Yoklamayı Kaydet'), false); assert.ok(calls.every(method => m
 meetingRows = [];
 user = null; reset(); render(); await effects(); assert.equal(calls.length, 0);
 user = { id: 'admin-fixture', role: 'ADMIN' }; id = undefined; reset(); render(); await effects(); assert.equal(calls.length, 0); assert.ok(has('Geçersiz detay bağlantısı.'));
-console.log('Web group/team detail: per-source error/null/retry, unknown event metric, ACTIVE count, route/unmount stale results and existing role read guards verified. No network/writes.');
+console.log(`${memberScreen ? 'Member' : 'Admin'} web group/team detail: per-source error/null/retry, unknown event metric, ACTIVE count, route/unmount stale results, attendance counts/no fake save and existing role read guards verified. No network/writes.`);

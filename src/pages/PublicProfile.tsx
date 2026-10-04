@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { connectionsApi, type ConnectionProfile } from '../api/connections';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
 import {
@@ -30,98 +31,67 @@ export function PublicProfile() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user: currentUser } = useAuthStore();
-    const [profileUser, setProfileUser] = useState<any>(null);
-    const [friendshipStatus, setFriendshipStatus] = useState<'NONE' | 'PENDING_SENT' | 'PENDING_RECEIVED' | 'FRIEND' | 'SELF'>('NONE');
+    const { token } = useAuthStore();
+    const scope = `${currentUser?.id ?? ''}:${token ?? ''}:${id ?? ''}`;
+    const liveScope = useRef(scope); liveScope.current = scope;
+    const generation = useRef(0);
+    const lock = useRef(false);
+    const [snapshot, setSnapshot] = useState<{ scope: string; data: ConnectionProfile } | null>(null);
     const [loading, setLoading] = useState(true);
-    const [commonGroups, setCommonGroups] = useState<string[]>([]);
-    const [connectNote, setConnectNote] = useState('');
-    const [showConnectModal, setShowConnectModal] = useState(false);
-
-    // Edit State
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [retry, setRetry] = useState(0);
+    const [showMeetingModal, setShowMeetingModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
-
-    const [showMeetingModal, setShowMeetingModal] = useState(false);
-    const [activeTab, setActiveTab] = useState<'ABOUT' | 'STATS' | 'BADGES'>('ABOUT');
-
     useEffect(() => {
-        const loadProfile = async () => {
-            if (!id || !currentUser) return;
-            setLoading(true);
-            try {
-                let u;
-                if (id === currentUser.id) {
-                    // Refresh current user data to ensure we have latest tax info
-                    const freshMe = await api.getMe();
-                    u = freshMe || currentUser;
-                    setFriendshipStatus('SELF');
-                } else {
-                    u = await api.getUserById(id);
-                    const status = await api.checkFriendship(currentUser.id, id);
-                    setFriendshipStatus(status as any);
-
-                    const myGroups = await api.getUserGroups(currentUser.id);
-                    const targetGroups = await api.getUserGroups(id);
-                    const common = myGroups.filter(g => targetGroups.some(tg => tg.id === g.id)).map(g => g.name);
-                    setCommonGroups(common);
-                }
-                setProfileUser(u);
-                setEditForm(u);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadProfile();
-    }, [id, currentUser]);
-
-    const handleSendRequest = async () => {
-        if (!currentUser || !profileUser) return;
+        const epoch = ++generation.current;
+        lock.current = false; setBusy(false); setSnapshot(null); setError(''); setLoading(true);
+        setShowMeetingModal(false); setShowEditModal(false);
+        const owner = currentUser?.id;
+        if (!owner || !id || !token) { setLoading(false); setError('Profili görmek için giriş yapın.'); return; }
+        connectionsApi.profile(owner, id).then(data => {
+            if (epoch !== generation.current || liveScope.current !== scope) return;
+            setSnapshot({ scope, data }); setEditForm(data.profile);
+        }).catch(() => { if (epoch === generation.current && liveScope.current === scope) setError('Profil yüklenemedi. Tekrar deneyin.'); })
+          .finally(() => { if (epoch === generation.current && liveScope.current === scope) setLoading(false); });
+        return () => { generation.current++; };
+    }, [scope, retry]);
+    const data = snapshot?.scope === scope ? snapshot.data : null;
+    const run = async (operation: () => Promise<unknown>) => {
+        if (lock.current || !data || !currentUser || !id) return;
+        const epoch = generation.current;
+        lock.current = true; setBusy(true); setError('');
         try {
-            await api.requestFriendship(currentUser.id, profileUser.id, connectNote);
-            setFriendshipStatus('PENDING_SENT');
-            setShowConnectModal(false);
-        } catch (error) {
-            alert('İstek gönderilemedi.');
-        }
+            await operation();
+            if (epoch !== generation.current || liveScope.current !== scope) return;
+            // Reload the profile and permissions from the committed server state.
+            setSnapshot(null); setLoading(true);
+            const updated = await connectionsApi.profile(currentUser.id, id);
+            if (epoch !== generation.current || liveScope.current !== scope) return;
+            setSnapshot({ scope, data: updated }); setEditForm(updated.profile); setShowEditModal(false);
+        } catch { if (epoch === generation.current && liveScope.current === scope) setError('İşlem veya güncel profil okunamadı. Durumu yenileyip tekrar deneyin.'); }
+        finally { if (epoch === generation.current && liveScope.current === scope) { lock.current = false; setBusy(false); setLoading(false); } }
     };
-
-    const handleAcceptRequest = async () => {
-        if (!currentUser || !profileUser) return;
-        try {
-            await api.acceptFriendship(currentUser.id, profileUser.id);
-            setFriendshipStatus('FRIEND');
-        } catch (error) {
-            alert('İşlem başarısız.');
-        }
-    };
-
-    const handleUpdateProfile = async () => {
-        try {
-            const updated = await api.updateMe(editForm);
-            setProfileUser(updated);
-            setEditForm(updated);
-            setShowEditModal(false);
-            alert('Profil güncellendi.');
-        } catch (e) {
-            alert('Güncelleme başarısız. Lütfen tekrar deneyin.');
-        }
-    };
-
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-500">Yükleniyor...</div></div>;
-    if (!profileUser) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-500">Kullanıcı bulunamadı.</div></div>;
-
-    const isFriend = friendshipStatus === 'FRIEND';
+    const handleSendRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'create'));
+    const handleAcceptRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'accept'));
+    const handleRejectRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'reject'));
+    const handleUpdateProfile = () => run(() => api.updateMe(editForm));
+    const profileUser = data?.profile;
+    const friendshipStatus = data?.status;
     const isSelf = friendshipStatus === 'SELF';
-    const isAdmin = currentUser?.role === 'ADMIN';
-    const canSeeContactInfo = isFriend || isSelf || isAdmin;
-
-    // Company Info Locking Logic
-    const isCompanyLocked = !!(profileUser.company || profileUser.tax_number || profileUser.tax_id);
+    const isFriend = friendshipStatus === 'FRIEND';
+    const isAdmin = !!data?.billingVisible;
+    const canSeeContactInfo = !!data?.contactVisible;
+    const isCompanyLocked = !!(profileUser?.company || profileUser?.tax_number);
+    if (!profileUser) return <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p role={error ? 'alert' : 'status'}>{error || (loading ? 'Yükleniyor...' : 'Profil yüklenemedi.')}</p>
+        {error && <Button onClick={() => setRetry(n => n + 1)}>Tekrar Dene</Button>}
+    </div>;
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {error && <div role="alert" className="p-4 bg-red-50 text-red-700">{error} <Button onClick={() => setRetry(n => n + 1)}>Durumu Yenile</Button></div>}
             {/* Cover Image */}
             <div className="h-64 w-full bg-gradient-to-r from-indigo-800 to-blue-600 relative overflow-hidden">
                 <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -152,7 +122,7 @@ export function PublicProfile() {
                                             <User className="h-16 w-16 text-gray-400" />
                                         )}
                                     </div>
-                                    <div className="absolute bottom-1 right-1 h-6 w-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
+
                                 </div>
 
                                 <h1 className="text-xl font-bold text-gray-900 mt-4">{profileUser.name}</h1>
@@ -162,11 +132,12 @@ export function PublicProfile() {
                                 {/* Action Buttons */}
                                 <div className="mt-6 flex flex-col gap-2">
                                     {friendshipStatus === 'NONE' && (
-                                        <Button onClick={() => setShowConnectModal(true)} className="w-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+                                        <Button disabled={busy} onClick={handleSendRequest} className="w-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                                             <UserPlus className="h-4 w-4 mr-2" />
                                             Bağlantı Kur
                                         </Button>
                                     )}
+                                    {friendshipStatus === 'REJECTED' && <p className="text-sm text-gray-500">Bağlantı isteği reddedilmiş.</p>}
                                     {/* 1-on-1 Meeting Button */}
                                     {(!isSelf) && (
                                         <Button onClick={() => setShowMeetingModal(true)} variant="outline" className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50">
@@ -182,9 +153,10 @@ export function PublicProfile() {
                                     )}
                                     {friendshipStatus === 'PENDING_RECEIVED' && (
                                         <div className="flex gap-2">
-                                            <Button onClick={handleAcceptRequest} className="flex-1 bg-green-600 text-white hover:bg-green-700">
+                                            <Button disabled={busy} onClick={handleAcceptRequest} className="flex-1 bg-green-600 text-white hover:bg-green-700">
                                                 Kabul Et
                                             </Button>
+                                            <Button disabled={busy} variant="outline" onClick={handleRejectRequest}>Reddet</Button>
                                         </div>
                                     )}
                                     {(isFriend || isSelf) && !isSelf && (
@@ -220,7 +192,7 @@ export function PublicProfile() {
                                         </div>
                                         <div className="flex items-center text-sm text-gray-700">
                                             <MapPin className="h-4 w-4 text-gray-400 mr-3" />
-                                            <span>{profileUser.city || 'İstanbul, TR'}</span>
+                                            <span>{profileUser.city || 'Belirtilmemiş'}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -240,34 +212,15 @@ export function PublicProfile() {
                         {/* Tabs Navigation */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
                             <div className="flex border-b border-gray-100">
-                                <button
-                                    onClick={() => setActiveTab('ABOUT')}
-                                    className={`flex-1 py-4 text-sm font-medium text-center transition-colors relative ${activeTab === 'ABOUT' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    Hakkında
-                                    {activeTab === 'ABOUT' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600"></div>}
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('STATS')}
-                                    className={`flex-1 py-4 text-sm font-medium text-center transition-colors relative ${activeTab === 'STATS' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    İstatistikler
-                                    {activeTab === 'STATS' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600"></div>}
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('BADGES')}
-                                    className={`flex-1 py-4 text-sm font-medium text-center transition-colors relative ${activeTab === 'BADGES' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    Rozetler & Başarılar
-                                    {activeTab === 'BADGES' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600"></div>}
-                                </button>
+                                <h2 className="p-4 font-medium text-indigo-600">Hakkında</h2>
                             </div>
 
                             <div className="p-6">
-                                {activeTab === 'ABOUT' && (
+                                {(
                                     <div className="space-y-6">
                                         <div>
                                             <h3 className="text-lg font-bold text-gray-900 mb-3">Biyografi</h3>
+                                            {data?.commonGroups.length ? <p className="text-sm text-indigo-600 mb-3">Ortak gruplar: {data.commonGroups.map(g => g.name).join(', ')}</p> : null}
                                             <p className="text-gray-600 leading-relaxed">
                                                 {profileUser.bio || 'Bu kullanıcı henüz biyografi eklememiş.'}
                                             </p>
@@ -289,10 +242,10 @@ export function PublicProfile() {
                                                             <h4 className="text-sm font-medium text-gray-500">Sektör</h4>
                                                             <p className="text-gray-900">{profileUser.profession}</p>
                                                         </div>
-                                                        <div>
+                                                        {data?.billingVisible && <div>
                                                             <h4 className="text-sm font-medium text-gray-500">Vergi No</h4>
                                                             <p className="text-gray-900">{profileUser.tax_number || '---'}</p>
-                                                        </div>
+                                                        </div>}
                                                     </div>
                                                     {(isSelf || isAdmin) && (
                                                         <>
@@ -313,9 +266,6 @@ export function PublicProfile() {
                                         </div>
                                     </div>
                                 )}
-                                {/* Other tabs content kept simple or omitted for brevity if irrelevant to task, but I will include empty/mock */}
-                                {activeTab === 'STATS' && <div>İstatistikler (Mock)</div>}
-                                {activeTab === 'BADGES' && <div>Rozetler (Mock)</div>}
                             </div>
                         </div>
                     </div>
@@ -437,7 +387,7 @@ export function PublicProfile() {
 
                         <div className="mt-8 flex justify-end gap-3">
                             <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
-                            <Button className="bg-indigo-600 text-white" onClick={handleUpdateProfile}>Kaydet</Button>
+                            <Button className="bg-indigo-600 text-white" disabled={busy} onClick={handleUpdateProfile}>Kaydet</Button>
                         </div>
                     </div>
                 </div>

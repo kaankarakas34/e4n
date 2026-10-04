@@ -23,6 +23,7 @@ import multer from 'multer';
 import adminRoutes from './routes/admin.js';
 import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
+import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 // import paymentRoutes from './routes/payment.js';
@@ -1601,68 +1602,7 @@ app.delete('/api/admin/events/:eventId/attendance/:userId', authenticateToken, a
   }
 });
 
-// 3. Friend Requests
-app.get('/api/user/friends/requests', authenticateToken, async (req, res) => {
-  try {
-    const { type } = req.query; // 'incoming' or 'outgoing'
-    let query = '';
-    let params = [];
-
-    if (type === 'incoming') {
-      query = `
-                SELECT fr.*, u.name as sender_name, u.profession as sender_profession 
-                FROM friend_requests fr
-                JOIN users u ON fr.sender_id = u.id
-                WHERE fr.receiver_id = $1 AND fr.status = 'PENDING'
-            `;
-      params = [req.user.id];
-    } else {
-      query = `
-                SELECT fr.*, u.name as receiver_name, u.profession as receiver_profession 
-                FROM friend_requests fr
-                JOIN users u ON fr.receiver_id = u.id
-                WHERE fr.sender_id = $1
-            `;
-      params = [req.user.id];
-    }
-
-    const { rows } = await pool.query(query, params);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/user/friends/request', authenticateToken, async (req, res) => {
-  const { targetId } = req.body;
-  try {
-    // Check if already exists
-    const existing = await pool.query('SELECT * FROM friend_requests WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)', [req.user.id, targetId]);
-    if (existing.rows.length > 0) return res.status(400).json({ error: 'Request already exists' });
-
-    await pool.query('INSERT INTO friend_requests (sender_id, receiver_id) VALUES ($1, $2)', [req.user.id, targetId]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/user/friends/request/:id/accept', authenticateToken, async (req, res) => { // Sender ID passed usually or Request ID? API.ts passes SenderID?
-  // api.ts: request(`/user/friends/request/${senderId}/accept`)
-  // So :id here is the SENDER_ID (The person who sent the request to ME)
-  const senderId = req.params.id;
-  const myId = req.user.id;
-  try {
-    await pool.query("UPDATE friend_requests SET status = 'ACCEPTED' WHERE sender_id = $1 AND receiver_id = $2 AND status = 'PENDING'", [senderId, myId]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/user/friends/request/:id/reject', authenticateToken, async (req, res) => {
-  const senderId = req.params.id;
-  const myId = req.user.id;
-  try {
-    await pool.query("UPDATE friend_requests SET status = 'REJECTED' WHERE sender_id = $1 AND receiver_id = $2", [senderId, myId]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
+// Connection routes are installed below by installConnections.
 
 app.get('/api/users', authenticateToken, async (req, res) => {
   const { name, profession, city } = req.query;
@@ -3783,6 +3723,7 @@ const calculateFixedTermEndDate = (startDate, monthsToAdd) => {
 installSupportProcessing(app, { pool, authenticateToken });
 installPersonalReports(app, { pool, authenticateToken });
 installAdminReports(app, { pool, authenticateToken });
+installConnections(app, { pool, authenticateToken });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

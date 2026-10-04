@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api/api';
+import { useEffect, useState, useRef } from 'react';
+import { connectionsApi, type ConnectionRequest } from '../api/connections';
 import { Card, CardContent, CardHeader, CardTitle } from './Card';
 import { UserPlus, Check, X, User } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
@@ -7,49 +7,43 @@ import { Button } from './Button';
 import { useNavigate } from 'react-router-dom';
 
 export function FriendRequestsWidget() {
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
     const navigate = useNavigate();
-    const [requests, setRequests] = useState<any[]>([]);
+    const scope = `${user?.id ?? ''}:${token ?? ''}`;
+    const current = useRef(scope); current.current = scope;
+    const generation = useRef(0), lock = useRef(false);
+    const [snapshot, setSnapshot] = useState<{ scope: string; rows: ConnectionRequest[] } | null>(null);
     const [loading, setLoading] = useState(true);
-
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [retry, setRetry] = useState(0);
     useEffect(() => {
-        const loadRequests = async () => {
-            if (!user?.id) return;
-            try {
-                const reqs = await api.getFriendRequests(user.id);
-                setRequests(reqs);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadRequests();
-    }, [user]);
-
-    const handleAccept = async (senderId: string) => {
-        if (!user?.id) return;
+        const epoch = ++generation.current;
+        lock.current = false; setBusy(false); setSnapshot(null); setError(''); setLoading(true);
+        if (!user?.id || !token) { setLoading(false); return; }
+        connectionsApi.incoming(user.id).then(rows => {
+            if (epoch === generation.current && current.current === scope) setSnapshot({ scope, rows });
+        }).catch(() => { if (epoch === generation.current && current.current === scope) setError('Bağlantı istekleri yüklenemedi.'); })
+          .finally(() => { if (epoch === generation.current && current.current === scope) setLoading(false); });
+        return () => { generation.current++; };
+    }, [scope, retry]);
+    const requests = snapshot?.scope === scope ? snapshot.rows : [];
+    const decide = async (senderId: string, action: 'accept' | 'reject') => {
+        if (!user?.id || lock.current || snapshot?.scope !== scope) return;
+        const epoch = generation.current;
+        lock.current = true; setBusy(true); setError('');
         try {
-            await api.acceptFriendship(user.id, senderId);
-            setRequests(prev => prev.filter(r => r.sender_id !== senderId));
-            // Optional: Show toast
-        } catch (error) {
-            console.error('Accept error', error);
-        }
+            await connectionsApi.mutate(user.id, senderId, action);
+            if (epoch !== generation.current || current.current !== scope) return;
+            setSnapshot(null); setLoading(true);
+            const rows = await connectionsApi.incoming(user.id);
+            if (epoch === generation.current && current.current === scope) setSnapshot({ scope, rows });
+        } catch { if (epoch === generation.current && current.current === scope) setError('İşlem veya güncel istekler okunamadı. Durumu yenileyin.'); }
+        finally { if (epoch === generation.current && current.current === scope) { lock.current = false; setBusy(false); setLoading(false); } }
     };
-
-    const handleReject = async (senderId: string) => {
-        if (!user?.id) return;
-        try {
-            await api.rejectFriendship(user.id, senderId);
-            setRequests(prev => prev.filter(r => r.sender_id !== senderId));
-        } catch (error) {
-            console.error('Reject error', error);
-        }
-    };
-
-    if (!user) return null;
-    if (!loading && requests.length === 0) return null; // Don't show if empty
+    const handleAccept = (senderId: string) => decide(senderId, 'accept');
+    const handleReject = (senderId: string) => decide(senderId, 'reject');
+    if (!user || !token) return null;
 
     return (
         <Card className="border-indigo-100 bg-indigo-50/50">
@@ -61,38 +55,31 @@ export function FriendRequestsWidget() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
+                {loading && <p role="status">Yükleniyor...</p>}
+                {error && <div role="alert">{error} <Button disabled={busy} onClick={() => setRetry(n => n + 1)}>Tekrar Dene</Button></div>}
+                {!loading && !error && requests.length === 0 && <p className="text-sm text-gray-500">Bekleyen bağlantı isteği yok.</p>}
                 <div className="space-y-3">
                     {requests.map((req) => (
                         <div key={req.id} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate(`/profile/${req.sender_id}`)}>
                                     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100 flex-shrink-0">
-                                        {req.sender?.profile_image ? (
-                                            <img src={req.sender.profile_image} alt={req.sender.full_name} className="h-full w-full object-cover" />
-                                        ) : (
-                                            <User className="h-5 w-5 text-gray-400" />
-                                        )}
+                                        <User className="h-5 w-5 text-gray-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-gray-900 hover:text-indigo-600 hover:underline">
-                                            {req.sender?.full_name || 'Bilinmeyen Kullanıcı'}
+                                            {req.sender_name}
                                         </p>
-                                        <p className="text-xs text-gray-500 truncate">{req.sender?.profession}</p>
+                                        <p className="text-xs text-gray-500 truncate">{req.sender_profession}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {req.note && (
-                                <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded italic">
-                                    "{req.note}"
-                                </div>
-                            )}
-
                             <div className="flex gap-2 mt-3">
-                                <Button size="sm" onClick={() => handleAccept(req.sender_id)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs">
+                                <Button size="sm" disabled={busy || loading} onClick={() => handleAccept(req.sender_id)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs">
                                     <Check className="h-3 w-3 mr-1" /> Kabul Et
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => handleReject(req.sender_id)} className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50 h-8 text-xs">
+                                <Button size="sm" disabled={busy || loading} variant="outline" onClick={() => handleReject(req.sender_id)} className="flex-1 border-gray-300 text-gray-600 hover:bg-gray-50 h-8 text-xs">
                                     <X className="h-3 w-3 mr-1" /> Reddet
                                 </Button>
                             </div>

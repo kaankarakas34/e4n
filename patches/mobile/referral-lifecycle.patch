@@ -1,0 +1,470 @@
+diff --git a/app/features/referrals.tsx b/app/features/referrals.tsx
+index 3bf0a85..db15ed2 100644
+--- a/app/features/referrals.tsx
++++ b/app/features/referrals.tsx
+@@ -1,281 +1,125 @@
+-import React, { useEffect, useState } from 'react';
+-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Modal, ScrollView, TextInput } from 'react-native';
+-import { Ionicons } from '@expo/vector-icons';
+-import { apiClient } from '@/utils/api-client';
+-import { API_CONFIG } from '@/constants/api';
+-import { formatDate } from '@/utils/format';
+-
+-interface Referral {
+-    id: string;
+-    giver_id: string;
+-    receiver_id: string;
+-    status: 'PENDING' | 'SUCCESSFUL' | 'UNSUCCESSFUL';
+-    type: 'INTERNAL' | 'EXTERNAL';
+-    temperature: 'HOT' | 'WARM' | 'COLD';
+-    description: string;
+-    amount: number;
+-    created_at: string;
+-    giver_name: string;
+-    receiver_name: string;
+-}
+-
+-const STATUS_MAP = {
+-    PENDING: { label: 'Bekliyor', color: '#f59e0b' },
+-    SUCCESSFUL: { label: 'Tamamlandı', color: '#16a34a' },
+-    UNSUCCESSFUL: { label: 'Olumsuz', color: '#dc2626' }
+-};
+-
+-export default function ReferralsScreen() {
+-    const [referrals, setReferrals] = useState<Referral[]>([]);
+-    const [isLoading, setIsLoading] = useState(true);
+-    const [refreshing, setRefreshing] = useState(false);
+-
+-    const [showModal, setShowModal] = useState(false);
+-    const [users, setUsers] = useState<any[]>([]);
+-    const [isSubmitting, setIsSubmitting] = useState(false);
+-    const [formData, setFormData] = useState({
+-        receiver_id: '',
+-        type: 'INTERNAL',
+-        temperature: 'HOT',
+-        description: ''
+-    });
+-
+-    useEffect(() => {
+-        fetchReferrals();
+-        fetchUsers();
+-    }, []);
+-
+-    const fetchUsers = async () => {
+-        try {
+-            const data = await apiClient.get<any[]>('/users');
+-            setUsers(data || []);
+-        } catch (error) {
+-           console.error(error);
+-        }
++import React, { useEffect, useRef, useState } from 'react';
++import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
++import { uuid } from 'expo-modules-core';
++import { useAuth } from '@/hooks/use-auth';
++import { referralsApi, referralRevenue, type ReferralRow, type ReferralInput, type ReferralScope } from '@/utils/referrals-api';
++
++const labels={PENDING:'Bekliyor',SUCCESSFUL:'Başarılı',UNSUCCESSFUL:'Olumsuz'};
++export default function ReferralsScreen(){
++    const {user}=useAuth(),context=`${user?.id}:${user?.role}`;
++    const current=useRef(context),generation=useRef(0),active=useRef(true);
++    if(current.current!==context){current.current=context;generation.current++;}
++    const version=generation.current,valid=()=>active.current && current.current===context && generation.current===version && !!user?.id;
++    const scopeSeq=useRef(0),listSeq=useRef(0),peopleSeq=useRef(0),lock=useRef<object|null>(null),intent=useRef<{signature:string;id:string}|null>(null);
++    const [list,setList]=useState<{context:string;rows:ReferralRow[]}|null>(null);
++    const [people,setPeople]=useState<{context:string;rows:{id:string;name:string}[]}|null>(null);
++    const [scopes,setScopes]=useState<{context:string;rows:ReferralScope[]}|null>(null),[scopeKey,setScopeKey]=useState('');
++    const [scopeError,setScopeError]=useState<string|null>(null),[scopeLoading,setScopeLoading]=useState(false);
++    const [loading,setLoading]=useState(false),[peopleLoading,setPeopleLoading]=useState(false);
++    const [error,setError]=useState<string|null>(null),[peopleError,setPeopleError]=useState<string|null>(null);
++    const [notice,setNotice]=useState<{context:string;text:string}|null>(null),[pendingFor,setPendingFor]=useState<string|null>(null);
++    const [receiver,setReceiver]=useState(''),[type,setType]=useState<ReferralInput['type']>('INTERNAL');
++    const [temperature,setTemperature]=useState<ReferralInput['temperature']>('HOT'),[description,setDescription]=useState('');
++    const [estimate,setEstimate]=useState('');
++    const [amounts,setAmounts]=useState<Record<string,string>>({});
++    const [view,setView]=useState<'all'|'sent'|'received'>('all'),[search,setSearch]=useState('');
++    const pending=pendingFor===context;
++    const load=async()=>{
++        if(!valid())return;const seq=++listSeq.current;setLoading(true);setError(null);
++        try{const rows=await referralsApi.list(user.id);if(valid()&&seq===listSeq.current)setList({context,rows});}
++        catch{if(valid()&&seq===listSeq.current){setList(null);setError('Referanslar yüklenemedi.');}}
++        finally{if(valid()&&seq===listSeq.current)setLoading(false);}
+     };
+-
+-    const fetchReferrals = async () => {
+-        try {
+-            const data = await apiClient.get<Referral[]>(API_CONFIG.ENDPOINTS.REFERRALS.LIST);
+-            setReferrals(data);
+-        } catch (error) {
+-            console.error('Fetch referrals error:', error);
+-        } finally {
+-            setIsLoading(false);
+-            setRefreshing(false);
+-        }
++    const peopleContext=`${context}:${type}:${scopeKey}`,peopleCurrent=useRef(peopleContext);
++    const peopleGeneration=useRef(0);
++    if(peopleCurrent.current!==peopleContext){peopleCurrent.current=peopleContext;peopleGeneration.current++;}
++    const peopleVersion=peopleGeneration.current;
++    const loadScopes=async()=>{
++        if(!valid())return;const seq=++scopeSeq.current;setScopeLoading(true);setScopeError(null);
++        try{const rows=await referralsApi.scopes(user.id);if(valid()&&seq===scopeSeq.current){setScopes({context,rows});if(!rows.some(s=>`${s.kind}:${s.id}`===scopeKey))setScopeKey('');}}
++        catch{if(valid()&&seq===scopeSeq.current){setScopes(null);setScopeError('Grup ve loncalar yüklenemedi.');}}
++        finally{if(valid()&&seq===scopeSeq.current)setScopeLoading(false);}
+     };
+-
+-    const handleAddReferral = () => {
+-        setFormData({ receiver_id: '', type: 'INTERNAL', temperature: 'HOT', description: '' });
+-        setShowModal(true);
++    const loadPeople=async()=>{
++        if(!valid())return;const seq=++peopleSeq.current;setPeopleLoading(true);setPeopleError(null);
++        const scope=type==='INTERNAL'?scopes?.rows.find(s=>`${s.kind}:${s.id}`===scopeKey):undefined;
++        if(type==='INTERNAL'&&!scope){setPeople(null);setPeopleLoading(false);return;}
++        try{const rows=await referralsApi.people(user.id,scope);if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current){setPeople({context:peopleContext,rows});if(!rows.some(r=>r.id===receiver))setReceiver('');}}
++        catch{if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current){setPeople(null);setPeopleError('Üyeler yüklenemedi.');}}
++        finally{if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current)setPeopleLoading(false);}
+     };
+-
+-    const handleSave = async () => {
+-        if (!formData.receiver_id || !formData.description) {
+-            Alert.alert('Hata', 'Lütfen alıcıyı ve açıklamayı giriniz.');
+-            return;
+-        }
+-
+-        setIsSubmitting(true);
+-        try {
+-            await apiClient.post(API_CONFIG.ENDPOINTS.REFERRALS.CREATE, formData);
+-            setShowModal(false);
+-            Alert.alert('Başarılı', 'Referansınız eklendi.');
+-            fetchReferrals();
+-        } catch (error) {
+-            Alert.alert('Hata', 'Referans gönderilemedi.');
+-        } finally {
+-            setIsSubmitting(false);
+-        }
++    useEffect(()=>{
++        active.current=true;setList(null);setPeople(null);setScopes(null);setScopeKey('');setReceiver('');setDescription('');setEstimate('');setAmounts({});setNotice(null);setPendingFor(null);intent.current=null;
++        void load();void loadScopes();return()=>{active.current=false;scopeSeq.current++;listSeq.current++;peopleSeq.current++;};
++    },[context]);
++    useEffect(()=>{setReceiver('');setPeople(null);void loadPeople();return()=>{peopleSeq.current++;};},[peopleContext,scopes]);
++    const ready=list?.context===context&&!loading&&!error,peopleReady=people?.context===peopleContext&&!peopleLoading&&!peopleError&&(type==='EXTERNAL'||scopes?.context===context&&!scopeLoading&&!scopeError&&scopes.rows.some(s=>`${s.kind}:${s.id}`===scopeKey));
++    const mutate=async(row?:ReferralRow,status?:'SUCCESSFUL'|'UNSUCCESSFUL')=>{
++        if(!valid()||lock.current)return;
++        let amount:number|undefined;
++        if(status){
++            if(!ready || !row || row.receiver_id!==user.id || row.status!=='PENDING' || !list.rows.some(r=>r.id===row.id))return;
++            if(status==='SUCCESSFUL')try{amount=referralRevenue(amounts[row.id]||'');}catch(e){setNotice({context,text:(e as Error).message});return;}
++        }else if(peopleCurrent.current!==peopleContext || peopleGeneration.current!==peopleVersion || !peopleReady || !people.rows.some(r=>r.id===receiver) || !description.trim() || description.length>10000){setNotice({context,text:'Alıcı ve açıklamayı kontrol edin.'});return;}
++        let initialAmount:number|null=null;
++        if(!status&&estimate.trim())try{initialAmount=referralRevenue(estimate.trim(),false);}catch(e){setNotice({context,text:(e as Error).message});return;}
++        const token={};lock.current=token;setPendingFor(context);setNotice(null);
++        try{
++            if(status)await referralsApi.decide(user.id,row!.id,status,amount);
++            else{
++                const input={receiverId:receiver,type,temperature,description:description.trim(),amount:initialAmount},signature=JSON.stringify([context,input]);
++                if(intent.current?.signature!==signature)intent.current={signature,id:uuid.v4()};
++                await referralsApi.create(user.id,input,intent.current.id);
++            }
++            if(!valid())return;
++            if(!status){intent.current=null;setReceiver('');setDescription('');setEstimate('');}
++            setNotice({context,text:status?'Referans sonucu kaydedildi.':'Referans kaydedildi.'});await load();
++        }catch{if(valid())setNotice({context,text:'İşlem sonucu doğrulanamadı. Listeyi yenileyip kontrol edin; aynı bilgilerle yeniden deneyebilirsiniz.'});}
++        finally{if(lock.current===token){lock.current=null;if(valid())setPendingFor(null);}}
+     };
+-
+-    const onRefresh = () => {
+-        setRefreshing(true);
+-        fetchReferrals();
+-    };
+-
+-    return (
+-        <View style={styles.container}>
+-            <View style={styles.actionContainer}>
+-                <TouchableOpacity style={styles.addButton} onPress={handleAddReferral}>
+-                    <Ionicons name="add-circle" size={24} color="white" />
+-                    <Text style={styles.addButtonText}>Yeni Referans Ekle</Text>
+-                </TouchableOpacity>
+-            </View>
+-
+-            {isLoading && !refreshing ? (
+-                <ActivityIndicator color="#dc2626" style={{ marginTop: 40 }} />
+-            ) : (
+-                <FlatList
+-                    data={referrals}
+-                    keyExtractor={item => item.id}
+-                    contentContainerStyle={styles.listContent}
+-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#dc2626"]} />}
+-                    renderItem={({ item }) => (
+-                        <View style={styles.card}>
+-                            <View style={styles.cardHeader}>
+-                                <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
+-                                <View style={[styles.statusBadge, { backgroundColor: STATUS_MAP[item.status]?.color + '20' }]}>
+-                                    <Text style={[styles.statusText, { color: STATUS_MAP[item.status]?.color }]}>{STATUS_MAP[item.status]?.label}</Text>
+-                                </View>
+-                            </View>
+-                            <Text style={styles.description}>{item.description}</Text>
+-                            <View style={styles.footer}>
+-                                <View style={styles.personContainer}>
+-                                    <Ionicons name="arrow-up-circle-outline" size={16} color="#6b7280" />
+-                                    <Text style={styles.personText}>{item.giver_name || 'Gönderen'}</Text>
+-                                </View>
+-                                <Ionicons name="arrow-forward" size={16} color="#d1d5db" />
+-                                <View style={styles.personContainer}>
+-                                    <Ionicons name="arrow-down-circle-outline" size={16} color="#6b7280" />
+-                                    <Text style={styles.personText}>{item.receiver_name || 'Alan'}</Text>
+-                                </View>
+-                            </View>
+-                            {Number(item.amount) > 0 && (
+-                                <View style={styles.amountBadge}>
+-                                    <Text style={styles.amountText}>₺{Number(item.amount).toLocaleString('tr-TR')}</Text>
+-                                </View>
+-                            )}
+-                        </View>
+-                    )}
+-                    ListEmptyComponent={
+-                        <View style={styles.emptyState}>
+-                            <Ionicons name="share-social-outline" size={64} color="#d1d5db" />
+-                            <Text style={styles.emptyText}>Henüz referans kaydı bulunmuyor.</Text>
+-                        </View>
+-                    }
+-                />
+-            )}
+-
+-            {/* Create Referral Modal */}
+-            <Modal visible={showModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowModal(false)}>
+-                <View style={styles.modalContainer}>
+-                    <View style={styles.modalHeader}>
+-                        <Text style={styles.modalTitle}>Yeni Referans Bağlantısı</Text>
+-                        <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeBtn}>
+-                            <Ionicons name="close" size={24} color="#1f2937" />
+-                        </TouchableOpacity>
+-                    </View>
+-                    
+-                    <ScrollView contentContainerStyle={styles.modalForm}>
+-                        <Text style={styles.label}>Kime Referans Oluyorsunuz?</Text>
+-                        <View style={styles.pickerContainer}>
+-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+-                                {users.map(u => (
+-                                    <TouchableOpacity 
+-                                        key={u.id}
+-                                        style={[styles.userChip, formData.receiver_id === u.id && styles.userChipActive]}
+-                                        onPress={() => setFormData({...formData, receiver_id: u.id})}
+-                                    >
+-                                        <Text style={[styles.userChipText, formData.receiver_id === u.id && {color: 'white'}]}>{u.name || u.full_name}</Text>
+-                                    </TouchableOpacity>
+-                                ))}
+-                            </ScrollView>
+-                        </View>
+-
+-                        <Text style={styles.label}>Referans Türü</Text>
+-                        <View style={styles.rowGroup}>
+-                            <TouchableOpacity 
+-                                style={[styles.typeBtn, formData.type === 'INTERNAL' && styles.typeBtnActive]}
+-                                onPress={() => setFormData({...formData, type: 'INTERNAL'})}
+-                            >
+-                                <Text style={[styles.typeBtnText, formData.type === 'INTERNAL' && {color: 'white'}]}>Grup İçi</Text>
+-                            </TouchableOpacity>
+-                            <TouchableOpacity 
+-                                style={[styles.typeBtn, formData.type === 'EXTERNAL' && styles.typeBtnActive]}
+-                                onPress={() => setFormData({...formData, type: 'EXTERNAL'})}
+-                            >
+-                                <Text style={[styles.typeBtnText, formData.type === 'EXTERNAL' && {color: 'white'}]}>Grup Dışı</Text>
+-                            </TouchableOpacity>
+-                        </View>
+-
+-                        <Text style={styles.label}>Sıcaklık (Hazırlık Durumu)</Text>
+-                        <View style={styles.rowGroup}>
+-                            <TouchableOpacity 
+-                                style={[styles.tempBtn, formData.temperature === 'HOT' && {backgroundColor: '#ef4444'}]}
+-                                onPress={() => setFormData({...formData, temperature: 'HOT'})}
+-                            >
+-                                <Text style={[styles.typeBtnText, formData.temperature === 'HOT' && {color: 'white'}]}>Sıcak (Hazır)</Text>
+-                            </TouchableOpacity>
+-                            <TouchableOpacity 
+-                                style={[styles.tempBtn, formData.temperature === 'WARM' && {backgroundColor: '#f59e0b'}]}
+-                                onPress={() => setFormData({...formData, temperature: 'WARM'})}
+-                            >
+-                                <Text style={[styles.typeBtnText, formData.temperature === 'WARM' && {color: 'white'}]}>Ilık</Text>
+-                            </TouchableOpacity>
+-                            <TouchableOpacity 
+-                                style={[styles.tempBtn, formData.temperature === 'COLD' && {backgroundColor: '#3b82f6'}]}
+-                                onPress={() => setFormData({...formData, temperature: 'COLD'})}
+-                            >
+-                                <Text style={[styles.typeBtnText, formData.temperature === 'COLD' && {color: 'white'}]}>Soğuk</Text>
+-                            </TouchableOpacity>
+-                        </View>
+-
+-                        <Text style={styles.label}>Açıklama / Detaylar</Text>
+-                        <TextInput
+-
+-                            style={styles.textArea}
+-                            multiline
+-                            placeholder="Müşteri ne istiyor? İletişim bilgileri nedir?"
+-                            value={formData.description}
+-                            onChangeText={t => setFormData({...formData, description: t})}
+-                        />
+-
+-                        <TouchableOpacity 
+-                            style={[styles.saveBtn, isSubmitting && {opacity: 0.7}]} 
+-                            onPress={handleSave}
+-                            disabled={isSubmitting}
+-                        >
+-                            <Text style={styles.saveBtnText}>
+-                                {isSubmitting ? 'Gönderiliyor...' : 'Referansı Gönder'}
+-                            </Text>
+-                        </TouchableOpacity>
+-                    </ScrollView>
+-                </View>
+-            </Modal>
+-        </View>
+-    );
++    const button=(label:string,action:()=>void,disabled=false)=><TouchableOpacity accessibilityRole="button" accessibilityLabel={label} disabled={pending||disabled} onPress={action} style={[styles.button,(pending||disabled)&&{opacity:0.5}]}><Text>{label.startsWith('Başarılı:')?'Başarılı':label.startsWith('Olumsuz:')?'Olumsuz':label}</Text></TouchableOpacity>;
++    const rows=ready?list.rows:[],shown=rows.filter(row=>view==='all'||(view==='sent'?row.giver_id===user?.id:row.receiver_id===user?.id))
++        .filter(row=>[row.description,row.giver_name,row.receiver_name].some(value=>value?.toLocaleLowerCase('tr-TR').includes(search.toLocaleLowerCase('tr-TR'))));
++    if(!user?.id)return <Text>Referanslar için giriş yapın.</Text>;
++    return <ScrollView contentContainerStyle={styles.container}>
++        <Text style={styles.title}>Yeni referans</Text>
++        {type==='INTERNAL'&&<View>
++            {scopeLoading&&<Text>Grup ve loncalar yükleniyor…</Text>}
++            {scopeError&&<Text accessibilityRole="alert">{scopeError}</Text>}
++            {button('Grup ve loncaları yenile',()=>loadScopes())}
++            {scopes?.context===context&&scopes.rows.map(scope=><View key={`${scope.kind}:${scope.id}`}>{button(`Grup/lonca: ${scope.name}${scopeKey===`${scope.kind}:${scope.id}`?' ✓':''}`,()=>setScopeKey(`${scope.kind}:${scope.id}`))}</View>)}
++            {scopes?.context===context&&scopes.rows.length===0&&<Text>Üyesi olduğunuz grup/lonca yok.</Text>}
++        </View>}
++        {peopleLoading&&<Text>Üyeler yükleniyor…</Text>}
++        {peopleError&&<Text accessibilityRole="alert">{peopleError}</Text>}
++        {button('Üyeleri yeniden yükle',()=>loadPeople())}
++        {peopleReady&&people.rows.length===0&&<Text>Seçilebilir üye yok.</Text>}
++        {peopleReady&&people.rows.map(person=><View key={person.id}>{button(`Üye: ${person.name}${receiver===person.id?' ✓':''}`,()=>setReceiver(person.id))}</View>)}
++        <View style={styles.row}>{button('Grup içi',()=>setType('INTERNAL'))}{button('Grup dışı',()=>setType('EXTERNAL'))}</View><Text>Tür: {type==='INTERNAL'?'Grup içi':'Grup dışı'}</Text>
++        <View style={styles.row}>{button('Sıcak',()=>setTemperature('HOT'))}{button('Ilık',()=>setTemperature('WARM'))}{button('Soğuk',()=>setTemperature('COLD'))}</View><Text>Sıcaklık: {{HOT:'Sıcak',WARM:'Ilık',COLD:'Soğuk'}[temperature]}</Text>
++        <TextInput accessibilityLabel="Referans açıklaması" style={styles.input} multiline maxLength={10000} editable={!pending} value={description} onChangeText={setDescription} placeholder="Açıklama"/>
++        <TextInput accessibilityLabel="Tahmini iş hacmi" style={styles.input} keyboardType="decimal-pad" editable={!pending} value={estimate} onChangeText={setEstimate} placeholder="Tahmini iş hacmi (isteğe bağlı)"/>
++        {button('Referansı gönder',()=>mutate(),!peopleReady)}
++        {notice?.context===context&&<Text accessibilityRole="alert">{notice.text}</Text>}
++        <Text style={styles.title}>Gelen ve giden referanslar</Text>{button('Referansları yenile',()=>load())}
++        <View style={styles.card}><Text>Başarılı: {ready?rows.filter(r=>r.status==='SUCCESSFUL').length:'Bilinmiyor'}</Text><Text>Beklemede: {ready?rows.filter(r=>r.status==='PENDING').length:'Bilinmiyor'}</Text><Text>Olumsuz: {ready?rows.filter(r=>r.status==='UNSUCCESSFUL').length:'Bilinmiyor'}</Text><Text>Toplam Hacim: {ready&&!rows.some(r=>r.status==='SUCCESSFUL'&&r.amount==null)?rows.filter(r=>r.status==='SUCCESSFUL').reduce((sum,r)=>sum+Number(r.amount),0).toLocaleString('tr-TR')+' ₺':'Bilinmiyor'}</Text></View>
++        <View style={styles.row}>{button('Tümü',()=>setView('all'))}{button('Gönderdiklerim',()=>setView('sent'))}{button('Aldıklarım',()=>setView('received'))}</View>
++        <TextInput accessibilityLabel="Referans ara" style={styles.input} value={search} onChangeText={setSearch} placeholder="Referans ara"/>
++        {loading&&<Text>Referanslar yükleniyor…</Text>}
++        {error&&<View><Text accessibilityRole="alert">{error}</Text>{button('Referansları yeniden yükle',()=>load())}</View>}
++        {ready&&list.rows.length===0&&<Text>Henüz referans kaydı yok.</Text>}
++        {ready&&list.rows.length>0&&shown.length===0&&<Text>Bu görünümde referans bulunmuyor.</Text>}
++        {ready&&shown.map(row=><View style={styles.card} key={row.id}>
++            <Text>{row.giver_id===user.id?'Giden':'Gelen'} · {labels[row.status]}</Text>
++            <Text>{row.giver_name||'Gönderen adı bulunamadı'} → {row.receiver_name||'Alıcı adı bulunamadı'}</Text>
++            <Text>{row.description}</Text><Text>{row.type==='INTERNAL'?'Grup içi':'Grup dışı'} · {{HOT:'Sıcak',WARM:'Ilık',COLD:'Soğuk'}[row.temperature]}</Text>
++            <Text>{new Date(row.created_at).toLocaleString('tr-TR')}</Text>
++            <Text>Ciro: {row.amount==null?'Girilmedi':Number(row.amount).toLocaleString('tr-TR')+' ₺'}</Text>
++            {row.receiver_id===user.id&&row.status==='PENDING'&&<View>
++                <TextInput accessibilityLabel={`Ciro: ${row.id}`} style={styles.input} keyboardType="decimal-pad" editable={!pending} value={amounts[row.id]||''} onChangeText={value=>setAmounts(previous=>({...previous,[row.id]:value}))} placeholder="Ciro (ör. 1500.50)"/>
++                {button(`Başarılı: ${row.id}`,()=>mutate(row,'SUCCESSFUL'))}{button(`Olumsuz: ${row.id}`,()=>mutate(row,'UNSUCCESSFUL'))}
++            </View>}
++        </View>)}
++    </ScrollView>;
+ }
+-
+-// Needed to fix TextInput error dynamically without updating imports explicitly from react-native if not already there 
+-// Actually I'll just change `import_TextInput` with the native one via multi_replace later if missing. Wait, I should add TextInput to imports!
+-
+-const styles = StyleSheet.create({
+-    container: { flex: 1, backgroundColor: '#f9fafb' },
+-    actionContainer: { padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+-    addButton: { backgroundColor: '#dc2626', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 12 },
+-    addButtonText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
+-    listContent: { padding: 16 },
+-    card: { backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 2, elevation: 1 },
+-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+-    dateText: { color: '#6b7280', fontSize: 12 },
+-    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+-    statusText: { fontSize: 10, fontWeight: 'bold' },
+-    description: { fontSize: 16, fontWeight: '600', color: '#1f2937', marginBottom: 12 },
+-    footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f9fafb' },
+-    personContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+-    personText: { fontSize: 13, color: '#374151', fontWeight: '500' },
+-    amountBadge: { position: 'absolute', top: 40, right: 16, backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+-    amountText: { color: '#166534', fontSize: 12, fontWeight: 'bold' },
+-    emptyState: { alignItems: 'center', marginTop: 80 },
+-    emptyText: { marginTop: 16, color: '#6b7280', fontSize: 16 },
+-    modalContainer: { flex: 1, backgroundColor: 'white' },
+-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+-    modalTitle: { fontSize: 18, fontWeight: 'bold' },
+-    closeBtn: { padding: 4 },
+-    modalForm: { padding: 16 },
+-    label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
+-    pickerContainer: { marginBottom: 8 },
+-    userChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6', marginRight: 8 },
+-    userChipActive: { backgroundColor: '#dc2626' },
+-    userChipText: { fontSize: 14, color: '#374151' },
+-    rowGroup: { flexDirection: 'row', gap: 8 },
+-    typeBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, backgroundColor: '#f3f4f6' },
+-    typeBtnActive: { backgroundColor: '#111827' },
+-    typeBtnText: { fontWeight: 'bold', color: '#374151' },
+-    tempBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, backgroundColor: '#f3f4f6' },
+-    textArea: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, height: 100, textAlignVertical: 'top', marginTop: 8 },
+-    saveBtn: { backgroundColor: '#16a34a', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 32 },
+-    saveBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
+-});
++const styles=StyleSheet.create({container:{padding:16,gap:12},title:{fontSize:20,fontWeight:'bold'},row:{flexDirection:'row',flexWrap:'wrap',gap:8},button:{padding:12,backgroundColor:'#e5e7eb',borderRadius:8},input:{padding:12,borderWidth:1,borderColor:'#d1d5db',borderRadius:8},card:{padding:16,gap:8,backgroundColor:'white',borderRadius:12}});
+diff --git a/utils/referrals-api.ts b/utils/referrals-api.ts
+new file mode 100644
+index 0000000..daefc38
+--- /dev/null
++++ b/utils/referrals-api.ts
+@@ -0,0 +1,58 @@
++import { apiClient } from './api-client';
++
++export interface ReferralRow {
++  id:string; giver_id:string; receiver_id:string; type:'INTERNAL'|'EXTERNAL'; temperature:'HOT'|'WARM'|'COLD';
++  status:'PENDING'|'SUCCESSFUL'|'UNSUCCESSFUL'; description:string; amount:string|number|null; created_at:string;
++  giver_name?:string; receiver_name?:string;
++}
++export interface ReferralInput {receiverId:string;type:ReferralRow['type'];temperature:ReferralRow['temperature'];description:string;amount?:number|null}
++export interface ReferralScope {id:string;name:string;kind:'group'|'team'}
++const text=(v:unknown)=>typeof v==='string' && !!v.trim();
++export const validReferral=(r:any):r is ReferralRow=>r && !Array.isArray(r) && ['id','giver_id','receiver_id'].every(k=>text(r[k]))
++  && ['INTERNAL','EXTERNAL'].includes(r.type) && ['HOT','WARM','COLD'].includes(r.temperature)
++  && ['PENDING','SUCCESSFUL','UNSUCCESSFUL'].includes(r.status) && typeof r.description==='string'
++  && typeof r.created_at==='string' && Number.isFinite(Date.parse(r.created_at))
++  && (r.amount==null || (typeof r.amount==='string' && /^\d+(?:\.\d{1,2})?$/.test(r.amount) || typeof r.amount==='number') && Number.isFinite(Number(r.amount)) && Number(r.amount)>=0)
++  && ['giver_name','receiver_name'].every(k=>r[k]==null || typeof r[k]==='string');
++export function referralRevenue(value:string,positive=true) {
++  if(!/^\d+(?:\.\d{1,2})?$/.test(value) || Number(value)<0 || positive && Number(value)===0 || Number(value)>99999999.99) throw new Error('Ciroyu en fazla iki ondalık basamakla girin; başarılı sonuç için pozitif tutar gerekir.');
++  return Number(value);
++}
++const peopleRows=(rows:unknown,owner:string)=>{
++  if(!Array.isArray(rows) || !rows.every(r=>r && text(r.id) && text(r.name || r.full_name))) throw new Error('Üye listesi doğrulanamadı.');
++  return [...new Map(rows.filter(r=>r.id!==owner).map(r=>[r.id,{id:r.id as string,name:(r.name||r.full_name) as string}])).values()];
++};
++export const referralsApi={
++  async list(owner:string){
++    const rows=await apiClient.get<unknown>('/referrals');
++    if(!Array.isArray(rows) || !rows.every(r=>validReferral(r) && (r.giver_id===owner || r.receiver_id===owner))) throw new Error('Referans listesi doğrulanamadı.');
++    return rows as ReferralRow[];
++  },
++  async scopes(owner:string){
++    const [groups,teams]=await Promise.all([apiClient.get<unknown>(`/user/groups?userId=${encodeURIComponent(owner)}`),apiClient.get<unknown>(`/user/power-teams?userId=${encodeURIComponent(owner)}`)]);
++    const result:ReferralScope[]=[];
++    for(const [kind,rows] of [['group',groups],['team',teams]] as const){
++      if(!Array.isArray(rows) || !rows.every(r=>r && text(r.id) && text(r.name))) throw new Error('Grup/lonca listesi doğrulanamadı.');
++      for(const row of rows)result.push({id:row.id,name:row.name,kind});
++    }
++    return result;
++  },
++  async people(owner:string,scope?:ReferralScope){
++    const endpoint=scope?`/${scope.kind==='group'?'groups':'power-teams'}/${encodeURIComponent(scope.id)}/members`:'/user/friends';
++    return peopleRows(await apiClient.get<unknown>(endpoint),owner);
++  },
++  async create(owner:string,input:ReferralInput,requestId:string){
++    if(!text(owner) || !text(requestId) || !text(input.receiverId) || input.receiverId===owner || !input.description.trim() || input.description.length>10000) throw new Error('Referans bilgilerini kontrol edin.');
++    const row=await apiClient.post<unknown>('/referrals',{...input,description:input.description.trim(),requestId});
++    if(!validReferral(row) || row.id!==requestId || row.giver_id!==owner || row.receiver_id!==input.receiverId || row.type!==input.type
++      || row.temperature!==input.temperature || row.description!==input.description.trim()
++      || (row.amount==null?null:Number(row.amount))!==(input.amount??null)) throw new Error('Referans kaydı doğrulanamadı.');
++    return row;
++  },
++  async decide(owner:string,id:string,status:'SUCCESSFUL'|'UNSUCCESSFUL',amount?:number){
++    if(!['SUCCESSFUL','UNSUCCESSFUL'].includes(status) || status==='SUCCESSFUL' && !(amount!==undefined && amount>0)) throw new Error('Referans sonucunu kontrol edin.');
++    const row=await apiClient.put<unknown>(`/referrals/${encodeURIComponent(id)}`,{status,...(amount===undefined?{}:{amount})});
++    if(!validReferral(row) || row.id!==id || row.receiver_id!==owner || row.status!==status || amount!==undefined && Number(row.amount)!==amount) throw new Error('Referans sonucu doğrulanamadı.');
++    return row;
++  }
++};

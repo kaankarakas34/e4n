@@ -43,6 +43,12 @@ async function request(path: string, options?: RequestInit) {
   return res.json();
 }
 
+export const referralTransport = {
+  get: <T>(path: string): Promise<T> => request(path),
+  post: <T>(path: string, body: unknown): Promise<T> => request(path, { method: 'POST', body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown): Promise<T> => request(path, { method: 'PUT', body: JSON.stringify(body) }),
+};
+
 export const api = {
   // Auth mocks (extend later)
   // Auth
@@ -658,6 +664,12 @@ export const api = {
   },
   async createReferral(payload: any) {
     return await request('/referrals', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  async updateReferral(id: string, payload: { status?: string; amount?: number }) {
+    const row = await request(`/referrals/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (!row || row.id !== id || row.status !== payload.status || typeof row.receiver_id !== 'string'
+        || payload.amount !== undefined && Number(row.amount) !== payload.amount) throw new Error('Referans sonucu doğrulanamadı.');
+    return row;
   },
   // System Settings
   async getSystemSettings() {

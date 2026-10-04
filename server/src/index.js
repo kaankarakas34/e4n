@@ -1467,99 +1467,74 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
 });
 
 // 5. Referrals (Updated)
+const referralUuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+const referralAmount = value => (typeof value === 'number' || typeof value === 'string' && /^\d+(?:\.\d{1,2})?$/.test(value))
+  && Number.isFinite(Number(value)) && Number(value)>=0 && Number(value)<=99999999.99 && Math.abs(Number(value)*100-Math.round(Number(value)*100))<0.00001;
 app.get('/api/referrals', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT r.*, u.name as receiver_name, u.profession 
-       FROM referrals r JOIN users u ON r.receiver_id = u.id 
-       WHERE r.giver_id = $1 OR r.receiver_id = $1 
-       ORDER BY r.created_at DESC`,
-      [req.user.id]
-    );
+      `SELECT r.*, receiver.name as receiver_name, receiver.profession, giver.name as giver_name
+       FROM referrals r JOIN users receiver ON r.receiver_id=receiver.id JOIN users giver ON r.giver_id=giver.id
+       WHERE r.giver_id=$1 OR r.receiver_id=$1 ORDER BY r.created_at DESC`, [req.user.id]);
     res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error:e.message }); }
 });
 
 app.post('/api/referrals', authenticateToken, async (req, res) => {
-  const { receiverId: webReceiverId, receiver_id: mobileReceiverId, type, temperature, description, amount } = req.body || {};
-  if (webReceiverId !== undefined && mobileReceiverId !== undefined && webReceiverId !== mobileReceiverId) {
-    return res.status(400).json({ error: 'Alıcı alanları birbiriyle uyuşmuyor.' });
-  }
-  const receiverId = webReceiverId ?? mobileReceiverId;
-  if (typeof receiverId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(receiverId)) {
-    return res.status(400).json({ error: 'Geçerli bir alıcı seçiniz.' });
-  }
+  const {receiverId:webId,receiver_id:mobileId,type,temperature,description,amount,requestId}=req.body || {};
+  const receiverId=typeof (webId ?? mobileId)==='string'?(webId ?? mobileId).toLowerCase():webId ?? mobileId;
+  if (webId!==undefined && mobileId!==undefined && webId!==mobileId || !referralUuid(receiverId) || receiverId===req.user.id
+      || requestId!==undefined && !referralUuid(requestId) || !['INTERNAL','EXTERNAL'].includes(type)
+      || !['HOT','WARM','COLD'].includes(temperature) || typeof description!=='string' || !description.trim() || description.length>10000
+      || amount!=null && !referralAmount(amount)) return res.status(400).json({error:'Referans bilgilerini kontrol edin.'});
+  const initialAmount=amount==null?null:Number(amount), content=description.trim();
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO referrals(giver_id, receiver_id, type, temperature, status, description, amount)
-    VALUES($1, $2, $3, $4, 'PENDING', $5, $6) RETURNING * `,
-      [req.user.id, receiverId, type, temperature, description, amount]
-    );
-    // Recalculate Score
-    await calculateMemberScore(req.user.id);
-
-    res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/referrals/:id', authenticateToken, async (req, res) => {
-  const { status, amount, notes } = req.body;
-  const { id } = req.params;
-
-  try {
-    const client = await pool.connect();
+    const client=await pool.connect();
     try {
       await client.query('BEGIN');
-
-      // 1. Check current referral
-      const checkRes = await client.query('SELECT * FROM referrals WHERE id = $1', [id]);
-      if (checkRes.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Referral not found' });
+      await client.query('SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',[req.user.id]);
+      if (!(await client.query('SELECT id FROM users WHERE id=$1',[receiverId])).rowCount) {
+        await client.query('ROLLBACK');return res.status(404).json({error:'Alıcı bulunamadı.'});
       }
-      const referral = checkRes.rows[0];
-
-      // 2. Validate Ciro Rule
-      // "Elden ciro girilmediği sürece iş yönlendirmesi onaylanmamış olur"
-      // If status is becoming 'SUCCESSFUL' (or checks related to approval), amount must be present.
-      let newAmount = amount !== undefined ? amount : referral.amount;
-
-      if (status === 'SUCCESSFUL') {
-        if (!newAmount || parseFloat(newAmount) <= 0) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'İş yönlendirmesini onaylamak için ciro (tutar) girişi zorunludur.' });
+      const inserted=await client.query(`INSERT INTO referrals(id,giver_id,receiver_id,type,temperature,status,description,amount)
+        VALUES(COALESCE($1::uuid,gen_random_uuid()),$2,$3,$4,$5,'PENDING',$6,$7) ON CONFLICT(id) DO NOTHING RETURNING *`,
+        [requestId??null,req.user.id,receiverId,type,temperature,content,initialAmount]);
+      let row=inserted.rows[0];
+      if (!row) {
+        row=(await client.query('SELECT * FROM referrals WHERE id=$1',[requestId])).rows[0];
+        if (!row || row.giver_id!==req.user.id || row.receiver_id!==receiverId || row.type!==type || row.temperature!==temperature
+          || row.description!==content || (row.amount==null?null:Number(row.amount))!==initialAmount) {
+          await client.query('ROLLBACK');return res.status(409).json({error:'Bu işlem anahtarı farklı bir kayıt veya sonuç için kullanılmış.'});
         }
+      } else await calculateMemberScore(req.user.id,client);
+      await client.query('COMMIT');res.status(inserted.rowCount?201:200).json(row);
+    } catch(e) {await client.query('ROLLBACK');throw e;} finally {client.release();}
+  } catch(e) {res.status(500).json({error:e.message});}
+});
+
+app.put('/api/referrals/:id', authenticateToken, async (req,res)=>{
+  const {status,amount}=req.body || {}, {id}=req.params;
+  if(!referralUuid(id) || !['SUCCESSFUL','UNSUCCESSFUL'].includes(status) || amount!==undefined && !referralAmount(amount))
+    return res.status(400).json({error:'Referans sonucunu kontrol edin.'});
+  try {
+    const client=await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const giver=(await client.query('SELECT giver_id FROM referrals WHERE id=$1 AND receiver_id=$2',[id,req.user.id])).rows[0];
+      if(giver)await client.query('SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',[giver.giver_id]);
+      const row=(await client.query('SELECT * FROM referrals WHERE id=$1 AND receiver_id=$2 FOR UPDATE',[id,req.user.id])).rows[0];
+      if(!row){await client.query('ROLLBACK');return res.status(404).json({error:'Referans bulunamadı.'});}
+      const newAmount=amount===undefined?(row.amount==null?null:Number(row.amount)):Number(amount);
+      if(status==='SUCCESSFUL' && !(newAmount>0)){await client.query('ROLLBACK');return res.status(400).json({error:'Başarılı sonuç için pozitif ciro girin.'});}
+      if(row.status!=='PENDING') {
+        if(row.status!==status || (row.amount==null?null:Number(row.amount))!==newAmount){await client.query('ROLLBACK');return res.status(409).json({error:'Bu referans zaten sonuçlandırılmış.'});}
+        await client.query('COMMIT');return res.json(row);
       }
-
-      // 3. Update
-      const { rows } = await client.query(`
-        UPDATE referrals 
-        SET status = COALESCE($1, status), 
-            amount = COALESCE($2, amount),
-            notes = COALESCE($3, notes),
-            updated_at = NOW()
-        WHERE id = $4
-        RETURNING *
-      `, [status, amount, notes, id]);
-
-      await client.query('COMMIT');
-
-      // 4. Recalculate Scores
-      // Score affects the GIVER (who gave the referral)
-      if (rows[0].giver_id) {
-        await calculateMemberScore(rows[0].giver_id);
-      }
-
-      res.json(rows[0]);
-    } catch (e) {
-      await client.query('ROLLBACK');
-      throw e;
-    } finally {
-      client.release();
-    }
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+      const result=await client.query('UPDATE referrals SET status=$1,amount=$2,updated_at=NOW() WHERE id=$3 RETURNING *',[status,newAmount,id]);
+      await calculateMemberScore(row.giver_id,client);
+      await client.query('COMMIT');res.json(result.rows[0]);
+    } catch(e){await client.query('ROLLBACK');throw e;} finally{client.release();}
+  } catch(e){res.status(500).json({error:e.message});}
 });
 
 // Health & General

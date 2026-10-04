@@ -1,0 +1,3 @@
+# Review patches preserve deleted/context source lines, including historic trailing spaces.
+# Keep normal whitespace checks on application sources; disable only end-of-line checks for patch artifacts.
+patches/mobile/*.patch whitespace=-blank-at-eol

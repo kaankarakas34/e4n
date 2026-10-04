@@ -90,3 +90,9 @@ response = new Response(JSON.stringify([{...meetingRow,status:'COMPLETED',reques
 const [mapped] = await api.getMyMeetingRequests('sender'); assert.equal(mapped.status,'COMPLETED'); assert.equal(mapped.receiverName,'Recipient');
 response = new Response('Unavailable', {status:503}); await assert.rejects(api.getMyMeetingRequests('sender'), /Unavailable/);
 console.log('Meeting request API: malformed/wrong-target write ACK rejected, decided-key retries allowed, owner and legacy status preserved, read failures reject.');
+
+response=new Response(JSON.stringify([{...meetingRow,record_kind:'REQUEST'}, {...meetingRow,id:'done',record_kind:'ACTIVITY',status:'COMPLETED'}, {...meetingRow,id:'legacy-pending',record_kind:'ACTIVITY'}]));
+assert.deepEqual((await api.getOneToOnes('sender')).map(row=>row.id),['done']);
+await assert.rejects(api.getOneToOnes(''));
+for(const bad of [null,[null],[{...meetingRow,requester_id:'foreign'}]]){response=new Response(JSON.stringify(bad));await assert.rejects(api.getOneToOnes('sender'));}
+console.log('Web completed activity adapter excludes requests/legacy pending, rejects malformed and foreign rows.');

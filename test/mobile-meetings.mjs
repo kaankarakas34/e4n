@@ -16,6 +16,8 @@ response=fixture;await actual.meetingsApi.request('sender','member','Fixture',fi
 response={...fixture,id:'wrong'};await assert.rejects(actual.meetingsApi.request('sender','member','Fixture',fixture.meeting_date,'request'));
 response={...fixture,status:'ACCEPTED'};await actual.meetingsApi.decide('member','request','ACCEPTED');await assert.rejects(actual.meetingsApi.decide('foreign','request','ACCEPTED'));
 response={...fixture,status:'REJECTED'};await assert.rejects(actual.meetingsApi.decide('member','request','ACCEPTED'));
+response={...fixture,status:'COMPLETED'};await actual.meetingsApi.log('sender','member','Fixture',fixture.meeting_date,'request');
+for(const fields of [{id:'wrong'},{partner_id:'wrong'},{requester_id:'wrong'},{notes:'wrong'},{status:'PENDING'},{meeting_date:'2026-10-07T00:00:00Z'}]){response={...fixture,status:'COMPLETED',...fields};await assert.rejects(actual.meetingsApi.log('sender','member','Fixture',fixture.meeting_date,'request'));}
 for(const [date,time] of [['2026-02-30','10:00'],['2026-13-01','10:00'],['2026-10-06','25:00'],['','10:00']])assert.throws(()=>actual.meetingTime(date,time));
 assert.ok(actual.meetingTime('2026-10-06','10:30').endsWith('Z'));assert.ok(actual.meetingCalendar(fixture).includes('20261006T100000Z/20261006T110000Z'));
 
@@ -26,7 +28,7 @@ globalThis.meetingHooks={
  useEffect(fn,deps){const i=cursor++,old=effects.get(i);if(!old || deps.some((x,j)=>x!==old.deps[j]))effects.set(i,{fn,deps,pending:true,cleanup:old?.cleanup});}
 };
 globalThis.meetingAuth=()=>({user});globalThis.meetingUUID=randomUUID;globalThis.meetingCalendar=actual.meetingCalendar;globalThis.meetingTime=actual.meetingTime;
-globalThis.meetingApi={list:()=>rowsRead(),people:()=>peopleRead(),request:(...args)=>{requests.push({kind:'request',args});return write();},decide:(...args)=>{requests.push({kind:'decide',args});return write();}};
+globalThis.meetingApi={list:()=>rowsRead(),people:()=>peopleRead(),log:(...args)=>{requests.push({kind:'log',args});return write();},request:(...args)=>{requests.push({kind:'request',args});return write();},decide:(...args)=>{requests.push({kind:'decide',args});return write();}};
 globalThis.meetingLinking={openURL:async url=>calendarCalls.push(url)};
 let code=compile('app/features/meeting-requests.tsx').replace(/import React, \{([^}]+)\} from ['"]react['"];?/,(_,names)=>`import React from '${import.meta.resolve('react')}';const {${names}}=globalThis.meetingHooks;`);
 code=code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g,(line,names,source)=>{
@@ -39,7 +41,7 @@ code=code.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g,(line,names,sour
 const {default:Screen}=await module(code);
 const nodes=tree=>Array.isArray(tree)?tree.flatMap(nodes):tree&&typeof tree==='object'?[tree,...nodes(tree.props?.children)]:[];
 const text=tree=>Array.isArray(tree)?tree.map(text).join(''):tree&&typeof tree==='object'?text(tree.props?.children):typeof tree==='string'?tree:'';
-const render=()=>{cursor=0;return Screen();};
+let mode='request';const render=()=>{cursor=0;return Screen({mode});};
 const flush=async()=>{for(const effect of effects.values())if(effect.pending){effect.cleanup?.();effect.cleanup=effect.fn();effect.pending=false;}await new Promise(r=>setImmediate(r));};
 const cleanup=()=>{for(const effect of effects.values())effect.cleanup?.();};
 const reset=()=>{cleanup();slots=[];effects=new Map();requests=[];user={id:'member',role:'MEMBER'};rowsRead=async()=>[fixture];peopleRead=async()=>[{id:'sender',name:'Partner'}];write=async()=>fixture;};
@@ -64,4 +66,8 @@ await mount();const late=deferred();rowsRead=()=>late.promise;const reading=butt
 await mount();const old=button('Kabul et: request').props.onPress;user={id:'other',role:'MEMBER'};render();await flush();user={id:'member',role:'MEMBER'};render();await flush();await old();assert.equal(requests.length,0);
 await mount();form();const lateWrite=deferred();write=()=>lateWrite.promise;const saving=button('Toplantı talebi gönder').props.onPress();cleanup();const beforeUnmount=stateWrites;lateWrite.resolve(fixture);await saving;assert.equal(stateWrites,beforeUnmount);
 assert.ok(readFileSync(path.join(root,'app/(tabs)/menu.tsx'),'utf8').includes("route: '/features/meeting-requests'"));
+await mount();mode='activity';rowsRead=async()=>[fixture,{...fixture,id:'completed',status:'COMPLETED',record_kind:'ACTIVITY'}];render();await flush();assert.ok(text(render()).includes('Tamamlanmış Birebir'));assert.ok(!button('Kabul et: request'));assert.ok(!text(render()).includes('Bekliyor'));
+button('Üye: Partner').props.onPress();input('Toplantı tarihi','2026-10-06');input('Toplantı saati','10:30');write=async()=>{throw new Error('Lost activity ACK');};await button('Görüşmeyi kaydet').props.onPress();assert.equal(requests.at(-1).kind,'log');const logKey=requests.at(-1).args.at(-1);
+write=async()=>fixture;await button('Görüşmeyi kaydet').props.onPress();assert.equal(requests.at(-1).args.at(-1),logKey);assert.ok(text(render()).includes('Görüşme kaydedildi.'));
+assert.ok(readFileSync(path.join(root,'app/features/activities.tsx'),'utf8').includes('mode="activity"'));
 console.log('Actual mobile meeting screen/service: incoming/outgoing/activity separation, date/no-write, keyed retry, pending lock, read errors, target/owner ACK, calendar URL, session ABA/unmount and menu route passed. Controlled RN; no device/network.');

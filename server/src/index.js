@@ -298,7 +298,7 @@ scheduleCron('59 23 31 12 *', async () => {
 
 
 /* --- HELPER: SCORING ENGINE --- */
-const calculateMemberScore = async (userId) => {
+const calculateMemberScore = async (userId, transactionClient = null) => {
   // Scoring Weights
   const SCORES = {
     ATTENDANCE: 10,
@@ -313,7 +313,7 @@ const calculateMemberScore = async (userId) => {
     SUCCESSFUL_BUSINESS: 5 // Ciro girişi
   };
 
-  const client = await pool.connect();
+  const client = transactionClient || await pool.connect();
   try {
     // 1. Attendance Score - Last 6 months
     const sixMonthsAgo = new Date();
@@ -405,9 +405,10 @@ const calculateMemberScore = async (userId) => {
     return { score: finalScore, color };
 
   } catch (e) {
+    if (transactionClient) throw e;
     console.error('Scoring error:', e);
   } finally {
-    client.release();
+    if (!transactionClient) client.release();
   }
 };
 
@@ -1049,17 +1050,35 @@ app.post('/api/one-to-ones/request', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/one-to-ones', authenticateToken, async (req, res) => {
-  const { partnerId, meetingDate, notes } = req.body;
+  const { partnerId, meetingDate, notes = '', requestId } = req.body;
+  const day=typeof meetingDate==='string'?meetingDate.split('T')[0]:'';
+  const calendarDay=/^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isFinite(Date.parse(`${day}T00:00:00Z`))
+      && new Date(`${day}T00:00:00Z`).toISOString().slice(0,10)===day;
+  if (!meetingUuid(partnerId) || partnerId===req.user.id || typeof meetingDate!=='string' || !Number.isFinite(Date.parse(meetingDate))
+      || !calendarDay || typeof notes!=='string' || notes.length>10000 || (requestId!==undefined && !meetingUuid(requestId))) return res.status(400).json({error:'Invalid completed meeting'});
+  const id=requestId || crypto.randomUUID(), client=await pool.connect();
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO one_to_ones(requester_id, partner_id, meeting_date, notes) VALUES($1, $2, $3, $4) RETURNING * `,
-      [req.user.id, partnerId, meetingDate, notes]
-    );
-    // Recalculate Score
-    await calculateMemberScore(req.user.id);
-
-    res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    await client.query('BEGIN');
+    // Serialize this requester's activity+score snapshots without blocking partner foreign-key checks.
+    if (!(await client.query('SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',[req.user.id])).rowCount) {
+      await client.query('ROLLBACK');return res.status(404).json({error:'Member not found'});
+    }
+    if (!(await client.query('SELECT id FROM users WHERE id=$1',[partnerId])).rowCount) {
+      await client.query('ROLLBACK');return res.status(404).json({error:'Partner not found'});
+    }
+    if ((await client.query('SELECT id FROM one_to_one_requests WHERE id=$1',[id])).rowCount) {
+      await client.query('ROLLBACK');return res.status(409).json({error:'Record key already used by a request'});
+    }
+    const inserted=await client.query("INSERT INTO one_to_ones(id,requester_id,partner_id,meeting_date,notes,status) VALUES($1,$2,$3,$4,$5,'COMPLETED') ON CONFLICT(id) DO NOTHING RETURNING *",[id,req.user.id,partnerId,meetingDate,notes.trim()]);
+    const row=inserted.rows[0] || (await client.query('SELECT * FROM one_to_ones WHERE id=$1',[id])).rows[0];
+    if (!row || row.requester_id!==req.user.id || row.partner_id!==partnerId || row.notes!==notes.trim() || row.status!=='COMPLETED'
+        || new Date(row.meeting_date).getTime()!==Date.parse(meetingDate)) {
+      await client.query('ROLLBACK');return res.status(409).json({error:'Record key already used'});
+    }
+    if(inserted.rowCount)await calculateMemberScore(req.user.id,client);
+    await client.query('COMMIT');res.status(inserted.rowCount?201:200).json(row);
+  } catch (e) { await client.query('ROLLBACK');res.status(500).json({ error: e.message }); }
+  finally {client.release();}
 });
 
 app.put('/api/one-to-ones/:id/status', authenticateToken, async (req, res) => {

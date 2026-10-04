@@ -1,5 +1,13 @@
 # Mobile changes awaiting repository integration
 
+## P32-C / E4N-130: completed activity records
+
+`completed-activities.patch` is already applied locally and depends on P32-B. The existing activities route now uses the shared workspace in activity mode: selected partner, actual local date/time, optional notes, keyed `/one-to-ones` write, validated ACK, same-key retry and owner-scoped completed ACTIVITY history. Scheduling requests remain separate. This fixes the prior `/activities` path/body mismatch. Device, authoritative mobile repository integration and release remain open.
+
+The active server writes activity, requester score and history in one transaction; the existing formula and requester-only attribution remain. Replaying the same ID/content does not recalculate or append history. Migration 0010 creates the previously missing history table used by the existing calculator; requires migration before the changed server is used. No history backfill or new points policy is implied. Web completed activity reads now exclude requests/pending rows; the existing web create modal still needs its own write implementation. Legacy clients without requestId have no deduplication guarantee.
+
+Verification covers real mobile service/transport against disposable Express/PostgreSQL, concurrent replay/one history, score-history failure rollback, owner/conflict/recipient boundaries, preserved formula and migration upgrade; actual mobile TSX/service and web read adapter tests, mobile TypeScript, web build, Android Metro export and patch reverse-check. Keys remain in memory; no reload recovery or production deployment.
+
 ## P32-B / E4N-129: meeting requests
 
 `meeting-requests-lifecycle.patch` is already applied locally; do not reapply it there. It adds a reachable menu route and typed service for incoming/outgoing meeting requests, keyed request creation with validated local date/time, recipient-only pending accept/reject, validated ACKs, list/people error-retry-empty states and context/generation/unmount boundaries. Existing ACTIVITY rows are labelled separately from REQUEST rows; this package does not implement completed activity recording or scores. The existing `/activities` recording screen remains an open contract item.

@@ -39,7 +39,7 @@ export function ActivitySummary() {
           activities.push({
             type: 'one-to-one',
             title: 'Birebir Görüşme',
-            description: `${o.partner_name} ile görüşme yapıldı.`,
+            description: `${(o.partner_id === user.id ? o.requester_name : o.partner_name) || 'İsim bilgisi yok'} ile görüşme yapıldı.`,
             date: new Date(o.meeting_date),
             status: 'success',
             icon: TrendingUp,

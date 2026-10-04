@@ -497,7 +497,11 @@ export const api = {
     return await request(`/users/${id}`);
   },
   async getOneToOnes(userId: string) {
-    return await request(`/one-to-ones?userId=${encodeURIComponent(userId)}`);
+    if(!userId?.trim()) throw new Error('Missing activity user');
+    const rows = await request('/one-to-ones');
+    if (!Array.isArray(rows) || rows.some((row: any)=>!validMeetingRow(row) || (row.requester_id!==userId && row.partner_id!==userId))) throw new Error('Invalid activity list');
+    // Requests are scheduling intent, not completed performance/report activities.
+    return rows.filter((row: any)=>row.record_kind==='ACTIVITY' && row.status==='COMPLETED');
   },
   async getEducationByUser(userId: string) {
     return await request(`/users/${userId}/education`);

@@ -1,0 +1,305 @@
+diff --git a/app/features/activities.tsx b/app/features/activities.tsx
+index 1bde3b1..de5a2da 100644
+--- a/app/features/activities.tsx
++++ b/app/features/activities.tsx
+@@ -1,199 +1,3 @@
+-import React, { useEffect, useState } from 'react';
+-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, ScrollView, TextInput, RefreshControl } from 'react-native';
+-import { Ionicons } from '@expo/vector-icons';
+-import { apiClient } from '@/utils/api-client';
+-
+-export default function ActivitiesScreen() {
+-    const [activities, setActivities] = useState<any[]>([]);
+-    const [users, setUsers] = useState<any[]>([]);
+-    const [isLoading, setIsLoading] = useState(true);
+-    const [refreshing, setRefreshing] = useState(false);
+-    const [showModal, setShowModal] = useState(false);
+-    const [isSubmitting, setIsSubmitting] = useState(false);
+-
+-    const [formData, setFormData] = useState({
+-        user_id_2: '',
+-        status: 'TAMAMLANDI',
+-        notes: ''
+-    });
+-
+-    useEffect(() => {
+-        fetchActivities();
+-        fetchUsers();
+-    }, []);
+-
+-    const fetchUsers = async () => {
+-        try {
+-            const data = await apiClient.get<any[]>('/users');
+-            setUsers(data || []);
+-        } catch (error) {
+-            console.error(error);
+-        }
+-    };
+-
+-    const fetchActivities = async () => {
+-        try {
+-            const data = await apiClient.get<any[]>('/activities');
+-            setActivities(data || []);
+-        } catch (error) {
+-            console.error("fetch activities error:", error);
+-        } finally {
+-            setIsLoading(false);
+-            setRefreshing(false);
+-        }
+-    };
+-
+-    const handleSave = async () => {
+-        if (!formData.user_id_2) {
+-            Alert.alert('Hata', 'Lütfen görüştüğünüz üyeyi seçin.');
+-            return;
+-        }
+-
+-        setIsSubmitting(true);
+-        try {
+-            await apiClient.post('/activities', formData);
+-            setShowModal(false);
+-            Alert.alert('Başarılı', 'Birebir görüşme kaydedildi.');
+-            fetchActivities();
+-        } catch (error) {
+-            Alert.alert('Hata', 'Görüşme kaydedilemedi.');
+-        } finally {
+-            setIsSubmitting(false);
+-        }
+-    };
+-
+-    const onRefresh = () => {
+-        setRefreshing(true);
+-        fetchActivities();
+-    };
+-
+-    return (
+-        <View style={styles.container}>
+-            <View style={styles.actionContainer}>
+-                <TouchableOpacity style={styles.addButton} onPress={() => {
+-                    setFormData({ user_id_2: '', status: 'TAMAMLANDI', notes: '' });
+-                    setShowModal(true);
+-                }}>
+-                    <Ionicons name="people" size={24} color="white" />
+-                    <Text style={styles.addButtonText}>Yeni Birebir Görüşme</Text>
+-                </TouchableOpacity>
+-            </View>
+-
+-            {isLoading && !refreshing ? (
+-                <ActivityIndicator color="#10b981" style={{ marginTop: 40 }} />
+-            ) : (
+-                <FlatList
+-                    data={activities}
+-                    keyExtractor={item => item.id}
+-                    contentContainerStyle={styles.listContent}
+-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#10b981"]} />}
+-                    renderItem={({ item }) => (
+-                        <View style={styles.card}>
+-                            <View style={styles.cardHeader}>
+-                                <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString('tr-TR')}</Text>
+-                                <View style={styles.statusBadge}>
+-                                    <Text style={styles.statusText}>{item.status}</Text>
+-                                </View>
+-                            </View>
+-                            <View style={styles.content}>
+-                                <Ionicons name="person-circle-outline" size={24} color="#6b7280" />
+-                                <Text style={styles.partnerText}>
+-                                    {item.partner_name || 'Bilinmiyor'} ile görüştünüz
+-                                </Text>
+-                            </View>
+-                            {item.notes ? (
+-                                <Text style={styles.notes}>{item.notes}</Text>
+-                            ) : null}
+-                        </View>
+-                    )}
+-                    ListEmptyComponent={
+-                        <View style={styles.emptyState}>
+-                            <Ionicons name="people-outline" size={64} color="#d1d5db" />
+-                            <Text style={styles.emptyText}>Henüz birebir görüşme kaydı bulunmuyor.</Text>
+-                        </View>
+-                    }
+-                />
+-            )}
+-
+-            {/* Create Activity Modal */}
+-            <Modal visible={showModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowModal(false)}>
+-                <View style={styles.modalContainer}>
+-                    <View style={styles.modalHeader}>
+-                        <Text style={styles.modalTitle}>Birebir Görüşme Kaydı</Text>
+-                        <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeBtn}>
+-                            <Ionicons name="close" size={24} color="#1f2937" />
+-                        </TouchableOpacity>
+-                    </View>
+-                    
+-                    <ScrollView contentContainerStyle={styles.modalForm}>
+-                        <Text style={styles.label}>Kiminle Görüştünüz?</Text>
+-                        <View style={styles.pickerContainer}>
+-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+-                                {users.map(u => (
+-                                    <TouchableOpacity 
+-                                        key={u.id}
+-                                        style={[styles.userChip, formData.user_id_2 === u.id && styles.userChipActive]}
+-                                        onPress={() => setFormData({...formData, user_id_2: u.id})}
+-                                    >
+-                                        <Text style={[styles.userChipText, formData.user_id_2 === u.id && {color: 'white'}]}>{u.name || u.full_name}</Text>
+-                                    </TouchableOpacity>
+-                                ))}
+-                            </ScrollView>
+-                        </View>
+-
+-                        <Text style={styles.label}>Toplantı Notları (İsteğe bağlı)</Text>
+-                        <TextInput
+-                            style={styles.textArea}
+-                            multiline
+-                            placeholder="Görüşülen konular, aksiyonlar..."
+-                            value={formData.notes}
+-                            onChangeText={t => setFormData({...formData, notes: t})}
+-                        />
+-
+-                        <TouchableOpacity 
+-                            style={[styles.saveBtn, isSubmitting && {opacity: 0.7}]} 
+-                            onPress={handleSave}
+-                            disabled={isSubmitting}
+-                        >
+-                            <Text style={styles.saveBtnText}>
+-                                {isSubmitting ? 'Kaydediliyor...' : 'Görüşmeyi Kaydet'}
+-                            </Text>
+-                        </TouchableOpacity>
+-                    </ScrollView>
+-                </View>
+-            </Modal>
+-        </View>
+-    );
+-}
+-
+-const styles = StyleSheet.create({
+-    container: { flex: 1, backgroundColor: '#f9fafb' },
+-    actionContainer: { padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+-    addButton: { backgroundColor: '#10b981', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 12 },
+-    addButtonText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
+-    listContent: { padding: 16 },
+-    card: { backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 2, elevation: 1 },
+-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+-    dateText: { color: '#6b7280', fontSize: 13, fontWeight: '500' },
+-    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#dcfce7' },
+-    statusText: { fontSize: 10, fontWeight: 'bold', color: '#166534' },
+-    content: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+-    partnerText: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
+-    notes: { fontSize: 14, color: '#4b5563', backgroundColor: '#f9fafb', padding: 12, borderRadius: 8 },
+-    emptyState: { alignItems: 'center', marginTop: 80 },
+-    emptyText: { marginTop: 16, color: '#6b7280', fontSize: 16 },
+-    // Modal
+-    modalContainer: { flex: 1, backgroundColor: 'white' },
+-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+-    modalTitle: { fontSize: 18, fontWeight: 'bold' },
+-    closeBtn: { padding: 4 },
+-    modalForm: { padding: 16 },
+-    label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 16 },
+-    pickerContainer: { marginBottom: 8 },
+-    userChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6', marginRight: 8 },
+-    userChipActive: { backgroundColor: '#10b981' },
+-    userChipText: { fontSize: 14, color: '#374151' },
+-    textArea: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, height: 100, textAlignVertical: 'top', marginTop: 8 },
+-    saveBtn: { backgroundColor: '#10b981', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 32 },
+-    saveBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
+-});
++import React from 'react';
++import MeetingRequestsScreen from './meeting-requests';
++export default function ActivitiesScreen() { return <MeetingRequestsScreen mode="activity" />; }
+diff --git a/app/features/meeting-requests.tsx b/app/features/meeting-requests.tsx
+index 2af8ea3..476094d 100644
+--- a/app/features/meeting-requests.tsx
++++ b/app/features/meeting-requests.tsx
+@@ -5,8 +5,8 @@ import { useAuth } from '@/hooks/use-auth';
+ import { meetingsApi, meetingTime, meetingCalendar, type MeetingRow, type MeetingPerson } from '@/utils/meetings-api';
+
+ const labels: Record<string,string> = {PENDING:'Bekliyor',ACCEPTED:'Onaylandı',REJECTED:'Reddedildi',COMPLETED:'Tamamlandı'};
+-export default function MeetingRequestsScreen() {
+-    const {user} = useAuth(), context = `${user?.id}:${user?.role}`;
++export default function MeetingRequestsScreen({mode='request'}:{mode?:'request'|'activity'}={}) {
++    const {user} = useAuth(), context = `${user?.id}:${user?.role}:${mode}`;
+     const current = useRef(context), generation = useRef(0), active = useRef(true);
+     if (current.current!==context) { current.current=context; generation.current++; }
+     const version = generation.current, valid = ()=>active.current && current.current===context && generation.current===version && !!user?.id;
+@@ -22,7 +22,7 @@ export default function MeetingRequestsScreen() {
+     const load = async()=>{
+         if(!valid())return;
+         const seq=++listSeq.current;setLoading(true);setError(null);
+-        try { const rows=await meetingsApi.list(user.id);if(valid()&&seq===listSeq.current)setList({context,rows}); }
++        try { const rows=await meetingsApi.list(user.id);if(valid()&&seq===listSeq.current)setList({context,rows:mode==='activity'?rows.filter(row=>row.record_kind==='ACTIVITY'&&row.status==='COMPLETED'):rows}); }
+         catch {if(valid()&&seq===listSeq.current){setList({context,rows:[]});setError('Toplantı talepleri yüklenemedi.');}}
+         finally {if(valid()&&seq===listSeq.current)setLoading(false);}
+     };
+@@ -44,7 +44,7 @@ export default function MeetingRequestsScreen() {
+     const run = async(status?:'ACCEPTED'|'REJECTED',row?:MeetingRow)=>{
+         if(!valid() || lock.current)return;
+         if(status && (!ready || listVersion!==listSeq.current || !row || row.partner_id!==user.id || row.status!=='PENDING'))return;
+-        if(!status && (!peopleReady || !receiver || !people!.rows.some(person=>person.id===receiver) || !topic.trim()))return;
++        if(!status && (!peopleReady || !receiver || !people!.rows.some(person=>person.id===receiver) || (mode==='request'&&!topic.trim())))return;
+         let proposedTime='';
+         if(!status){try{proposedTime=meetingTime(date,time);}catch{setNotice({context,text:'Konu, tarih ve saati kontrol edin.'});return;}}
+         const token={};lock.current=token;setPendingFor(context);setNotice(null);
+@@ -53,13 +53,14 @@ export default function MeetingRequestsScreen() {
+             else {
+                 const signature=JSON.stringify([context,receiver,topic.trim(),proposedTime]);
+                 if(intent.current?.signature!==signature)intent.current={signature,id:uuid.v4()};
+-                await meetingsApi.request(user.id,receiver,topic.trim(),proposedTime,intent.current.id);
++                if(mode==='activity')await meetingsApi.log(user.id,receiver,topic.trim(),proposedTime,intent.current.id);
++                else await meetingsApi.request(user.id,receiver,topic.trim(),proposedTime,intent.current.id);
+             }
+             if(!valid())return;
+             if(!status){intent.current=null;setReceiver('');setTopic('');setDate('');setTime('');}
+-            setNotice({context,text:status?(status==='ACCEPTED'?'Talep onaylandı.':'Talep reddedildi.'):'Toplantı talebi gönderildi.'});
++            setNotice({context,text:status?(status==='ACCEPTED'?'Talep onaylandı.':'Talep reddedildi.'):mode==='activity'?'Görüşme kaydedildi.':'Toplantı talebi gönderildi.'});
+             await load();
+-        } catch {if(valid())setNotice({context,text:'İşlem sonucu doğrulanamadı. Listeyi yenileyip kontrol edin; aynı talep bilgileriyle yeniden deneyebilirsiniz.'});}
++        } catch {if(valid())setNotice({context,text:mode==='activity'?'Kayıt sonucu doğrulanamadı. Listeyi yenileyip kontrol edin; aynı görüşme bilgileriyle yeniden deneyebilirsiniz.':'İşlem sonucu doğrulanamadı. Listeyi yenileyip kontrol edin; aynı talep bilgileriyle yeniden deneyebilirsiniz.'});}
+         finally {if(lock.current===token){lock.current=null;if(valid())setPendingFor(null);}}
+     };
+     const calendar = async(row:MeetingRow)=>{
+@@ -69,7 +70,7 @@ export default function MeetingRequestsScreen() {
+     const button=(label:string,onPress:()=>void,disabled=false)=><TouchableOpacity accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} style={[styles.button,disabled&&styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
+     if(!user?.id)return <Text>Toplantı talepleri için giriş yapın.</Text>;
+     return <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+-        <Text style={styles.title}>Toplantı Talepleri</Text>
++        <Text style={styles.title}>{mode==='activity'?'Tamamlanmış Birebir Görüşmeler':'Toplantı Talepleri'}</Text>
+         {notice?.context===context&&<Text accessibilityRole="alert">{notice.text}</Text>}
+         {button('Talepleri yenile',load,pending||loading)}
+         {loading||list?.context!==context?<Text>Talepler yükleniyor...</Text>:error?<Text accessibilityRole="alert">{error}</Text>:<View>
+@@ -83,16 +84,16 @@ export default function MeetingRequestsScreen() {
+                 {row.status==='ACCEPTED'&&button(`Takvime ekle: ${row.id}`,()=>calendar(row),pending)}
+             </View>)}
+         </View>}
+-        <View style={styles.card}><Text style={styles.title}>Yeni Toplantı Talebi</Text>
++        <View style={styles.card}><Text style={styles.title}>{mode==='activity'?'Görüşme Kaydı':'Yeni Toplantı Talebi'}</Text>
+             {button('Üyeleri yenile',loadPeople,pending||peopleLoading)}
+             {peopleLoading||people?.context!==context?<Text>Üyeler yükleniyor...</Text>:peopleError?<Text accessibilityRole="alert">{peopleError}</Text>:<View>
+                 {!people.rows.length&&<Text>Talep gönderilebilecek üye bulunmuyor.</Text>}
+                 {people.rows.map(person=><TouchableOpacity key={person.id} accessibilityRole="button" accessibilityLabel={`Üye: ${person.name}`} accessibilityState={{selected:receiver===person.id}} disabled={pending} onPress={()=>{if(valid()&&!lock.current)setReceiver(person.id);}} style={styles.person}><Text>{receiver===person.id?'✓ ':''}{person.name}</Text></TouchableOpacity>)}
+             </View>}
+-            <TextInput accessibilityLabel="Toplantı konusu" placeholder="Toplantı konusu" value={topic} onChangeText={setTopic} editable={!pending} maxLength={10000} style={styles.input}/>
++            <TextInput accessibilityLabel="Toplantı konusu" placeholder={mode==='activity'?'Görüşme notları (isteğe bağlı)':'Toplantı konusu'} value={topic} onChangeText={setTopic} editable={!pending} maxLength={10000} style={styles.input}/>
+             <TextInput accessibilityLabel="Toplantı tarihi" placeholder="Tarih: YYYY-AA-GG" value={date} onChangeText={setDate} editable={!pending} maxLength={10} style={styles.input}/>
+             <TextInput accessibilityLabel="Toplantı saati" placeholder="Yerel saat: SS:DD" value={time} onChangeText={setTime} editable={!pending} maxLength={5} style={styles.input}/>
+-            {button('Toplantı talebi gönder',()=>run(),pending||!peopleReady||!receiver||!topic.trim()||!date||!time)}
++            {button(mode==='activity'?'Görüşmeyi kaydet':'Toplantı talebi gönder',()=>run(),pending||!peopleReady||!receiver||(mode==='request'&&!topic.trim())||!date||!time)}
+         </View>
+     </ScrollView>;
+ }
+diff --git a/utils/meetings-api.ts b/utils/meetings-api.ts
+index b47eced..55fd395 100644
+--- a/utils/meetings-api.ts
++++ b/utils/meetings-api.ts
+@@ -24,6 +24,13 @@ export function meetingCalendar(row: MeetingRow) {
+     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(row.notes || 'Birebir Görüşme')}&dates=${stamp(start)}/${stamp(end)}&details=${encodeURIComponent('Event 4 Network Toplantısı')}`;
+ }
+ export const meetingsApi = {
++    async log(userId: string, partnerId: string, notes: string, meetingDate: string, requestId: string) {
++        if (!text(userId) || !text(partnerId) || userId===partnerId || !Number.isFinite(Date.parse(meetingDate))) throw new Error('Görüşme bilgilerini kontrol edin.');
++        const row=await apiClient.post<any>('/one-to-ones',{requestId,partnerId,notes:notes.trim(),meetingDate});
++        if(!valid(row) || row.id!==requestId || row.requester_id!==userId || row.partner_id!==partnerId || row.status!=='COMPLETED'
++            || row.notes!==notes.trim() || Date.parse(row.meeting_date)!==Date.parse(meetingDate)) throw new Error('Görüşme kaydı doğrulanamadı.');
++        return row;
++    },
+     async list(userId: string) {
+         const rows = await apiClient.get<unknown>('/one-to-ones');
+         if (!Array.isArray(rows) || !rows.every(row=>valid(row) && (row.requester_id===userId || row.partner_id===userId))) throw new Error('Toplantı listesi doğrulanamadı.');

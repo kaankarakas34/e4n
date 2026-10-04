@@ -89,7 +89,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,9);
+  assert.equal((await applyVersionedSchema()).applied.length,10);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids=[randomUUID(),randomUUID(),randomUUID()];
   for(const [i,id] of ids.entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,'Fixture','fixture','MEMBER','PENDING')",[id,`payment-${i}@example.invalid`,`Payment ${i}`]);
@@ -174,8 +174,9 @@ async function main() {
   // Existing unkeyed callers retain their shape; keyed dedup is not falsely promised for them.
   const legacy=await call('/support',1,{subject:'Legacy caller',message:'Legacy message'});assert.equal(legacy.status,201);
   const snapshot=async()=>({tickets:(await pool.query('SELECT * FROM tickets ORDER BY id')).rows,messages:(await pool.query('SELECT * FROM ticket_messages ORDER BY id')).rows});
-  const beforeUpgrade=await snapshot();await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0009_support_mutations']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual(await snapshot(),beforeUpgrade);
+  const beforeUpgrade=await snapshot();
+  await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0009_support_mutations','0010_score_history']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual(await snapshot(),beforeUpgrade);
   console.log('Support flow: real Express/api.ts/PostgreSQL17 create/read/reply/status, aliases, role/owner/target validation, concurrent keyed repeats, replay without later-status mutation, rollback/retry and 8→9 existing-data upgrade passed. No live DB/email.');
 }
 let exitCode=0;

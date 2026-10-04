@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,9);
+  assert.equal((await applyVersionedSchema()).applied.length,10);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids = [randomUUID(),randomUUID(),randomUUID()];
   for (const [i,id] of ids.entries()) await pool.query("INSERT INTO users (id,email,name,profession,password_hash,role) VALUES ($1,$2,$3,'Fixture','fixture-only','MEMBER')",[id,`meeting-${i}@example.invalid`,`Fixture ${i}`]);
@@ -97,12 +97,13 @@ async function main() {
   const before=await snapshot();
   const scoresBefore=(await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows;
   // Rehearse the already-versioned six-migration state with a preserved activity.
+  await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");
   await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
   await pool.query("DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
   await pool.query('ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state');
   await pool.query("DELETE FROM schema_migrations WHERE version='0007_meeting_requests'");
   await pool.query('DROP TABLE one_to_one_requests'); await pool.query('ALTER TABLE one_to_ones DROP COLUMN updated_at');
-  assert.deepEqual((await applyVersionedSchema()).applied,['0007_meeting_requests','0008_payment_initiation','0009_support_mutations']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0007_meeting_requests','0008_payment_initiation','0009_support_mutations','0010_score_history']);
   assert.equal((await applyVersionedSchema()).applied.length,0); assert.deepEqual(await snapshot(),before);
   const {default:app}=await import('../src/index.js');
   appServer=app.listen(0,'127.0.0.1'); await once(appServer,'listening');
@@ -148,6 +149,32 @@ async function main() {
     loggedIn=ids[1];assert.equal((await call('/one-to-ones',ids[1])).status,500);
     await assert.rejects(api.getMyMeetingRequests(ids[1]),/isolated meeting read failure/);
   }finally{pool.query=originalQuery;}
+  assert.deepEqual(await snapshot(),before);assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
+  const activityId=randomUUID(),activity={requestId:activityId,partnerId:ids[1],meetingDate:new Date().toISOString(),notes:'Completed fixture'};
+  const histories=async()=>(await pool.query('SELECT count(*)::int AS count FROM user_score_history')).rows[0].count;
+  const historyBefore=await histories();
+  const duplicate=await Promise.all([call('/one-to-ones',ids[0],activity),call('/one-to-ones',ids[0],activity)]);
+  assert.deepEqual(duplicate.map(r=>r.status).sort(),[200,201]);assert.equal(await histories(),historyBefore+1);
+  assert.equal((await pool.query('SELECT count(*)::int AS count FROM one_to_ones WHERE id=$1',[activityId])).rows[0].count,1);
+  assert.equal((await call('/one-to-ones',ids[0],{...activity,notes:'Different'})).status,409);
+  assert.equal((await call('/one-to-ones',ids[2],activity)).status,409);
+  for(const fields of [{partnerId:ids[0]},{meetingDate:'bad'},{meetingDate:'2026-02-30T10:00:00Z'},{requestId:'bad'},{notes:null}])assert.equal((await call('/one-to-ones',ids[0],{...activity,...fields})).status,400);
+  assert.equal((await call('/one-to-ones',ids[0],{...activity,partnerId:randomUUID()})).status,404);
+  assert.equal((await call('/one-to-ones',null,activity)).status,401);
+  assert.equal((await call('/one-to-ones',ids[0],{...activity,requestId})).status,409,'a request key cannot become an activity');
+  const failId=randomUUID(),atomicBefore=await snapshot(),usersBefore=(await pool.query('SELECT id,performance_score,performance_color FROM users ORDER BY id')).rows;
+  await pool.query("CREATE FUNCTION fixture_score_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'isolated history failure'; END $$; CREATE TRIGGER fixture_score_failure BEFORE INSERT ON user_score_history FOR EACH ROW EXECUTE FUNCTION fixture_score_failure()");
+  try {assert.equal((await call('/one-to-ones',ids[0],{...activity,requestId:failId})).status,500);}
+  finally {await pool.query('DROP TRIGGER fixture_score_failure ON user_score_history; DROP FUNCTION fixture_score_failure()');}
+  assert.deepEqual(await snapshot(),atomicBefore);assert.deepEqual((await pool.query('SELECT id,performance_score,performance_color FROM users ORDER BY id')).rows,usersBefore);assert.equal(await histories(),historyBefore+1);
+  assert.equal((await call('/one-to-ones',ids[0],{...activity,requestId:failId})).status,201);
+  const parallel=await Promise.all(Array.from({length:3},()=>call('/one-to-ones',ids[0],{...activity,requestId:randomUUID()})));
+  assert.ok(parallel.every(r=>r.status===201));assert.equal(await histories(),historyBefore+5);
+  const completed=(await snapshot()).filter(row=>row.requester_id===ids[0]);
+  assert.equal((await pool.query('SELECT performance_score FROM users WHERE id=$1',[ids[0]])).rows[0].performance_score,Math.min(completed.length*10,100));
+  assert.equal((await pool.query('SELECT performance_score FROM users WHERE id=$1',[ids[1]])).rows[0].performance_score,scoresBefore.find(row=>row.id===ids[1]).performance_score);
+  loggedIn=ids[0];assert.ok((await api.getOneToOnes(ids[0])).every(row=>row.record_kind==='ACTIVITY'&&row.status==='COMPLETED'));
+  assert.equal((await api.getOneToOnes(ids[0])).length,completed.length);
   if(process.argv[2]) {
     // Actual mobile client/service use only this disposable loopback server and fixture tokens.
     const mobileRoot=path.resolve(process.argv[2]);
@@ -171,10 +198,16 @@ async function main() {
     loggedIn=ids[1];assert.equal((await mobile.decide(ids[1],mobileId,'ACCEPTED')).status,'ACCEPTED');
     await mobile.decide(ids[1],mobileId,'ACCEPTED');await assert.rejects(mobile.decide(ids[1],mobileId,'REJECTED'));
     assert.equal((await mobile.list(ids[1])).find(row=>row.id===mobileId).status,'ACCEPTED');
+    loggedIn=ids[0];const logId=randomUUID(),historyCount=await histories();
+    assert.equal((await mobile.log(ids[0],ids[1],'Mobile activity',schedule,logId)).status,'COMPLETED');
+    await mobile.log(ids[0],ids[1],'Mobile activity',schedule,logId);assert.equal(await histories(),historyCount+1);
+    assert.equal((await mobile.list(ids[0])).find(row=>row.id===logId).record_kind,'ACTIVITY');
+    await assert.rejects(mobile.log(ids[0],ids[1],'Changed',schedule,logId));
     console.log('Actual mobile transport/service → isolated HTTP/PG: users/self exclusion, request replay, recipient decision, foreign rejection and activity/request separation passed.');
   }
-  assert.deepEqual(await snapshot(),before);assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
-  console.log(JSON.stringify({isolated:true,migrations:9,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
+  assert.deepEqual((await snapshot()).find(row=>row.id===meetingId),before[0]);
+  console.log('Completed activity: concurrent keyed replay/one history, strict owner/field/conflict boundaries, activity+score+history rollback, requester concurrency and existing formula preserved.');
+  console.log(JSON.stringify({isolated:true,migrations:10,existingUpgrade:true,legacyRowsAndScoresPreserved:true,createAndSameKeyRetry:true,recipientOnly:true,atomicOppositeRace:race.map(r=>r.status),readErrorsReject:true},null,2));
 
 }
 let exitCode = 0;

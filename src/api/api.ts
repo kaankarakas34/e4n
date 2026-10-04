@@ -503,6 +503,13 @@ export const api = {
     // Requests are scheduling intent, not completed performance/report activities.
     return rows.filter((row: any)=>row.record_kind==='ACTIVITY' && row.status==='COMPLETED');
   },
+  async logCompletedMeeting(payload: {requestId:string;senderId:string;partnerId:string;meetingDate:string;notes:string}) {
+    const {senderId,...body}=payload;
+    const row=await request('/one-to-ones',{method:'POST',body:JSON.stringify(body)});
+    if(!validMeetingRow(row) || row.id!==payload.requestId || row.requester_id!==senderId || row.partner_id!==payload.partnerId
+        || row.status!=='COMPLETED' || row.notes!==payload.notes.trim() || Date.parse(row.meeting_date)!==Date.parse(payload.meetingDate)) throw new Error('Unconfirmed completed activity');
+    return row;
+  },
   async getEducationByUser(userId: string) {
     return await request(`/users/${userId}/education`);
   },

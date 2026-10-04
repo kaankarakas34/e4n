@@ -9,20 +9,24 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 
-export function ActivitySummary() {
+export function ActivitySummary({refreshVersion=0}:{refreshVersion?:number}={}) {
   const { user } = useAuthStore();
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error,setError]=useState<string|null>(null),[retry,setRetry]=useState(0),[loadedFor,setLoadedFor]=useState<string|null>(null);
+  const context=`${user?.id}:${user?.role}`,current=useRef(context);current.current=context;
 
   useEffect(() => {
     if (!user) return;
+    let active=true;const valid=()=>active&&current.current===context;
 
     const loadActivities = async () => {
       setLoading(true);
+      setError(null);
       try {
         const [oneToOnes, referrals, visitors, education, attendance] = await Promise.all([
           api.getOneToOnes(user.id),
@@ -31,6 +35,7 @@ export function ActivitySummary() {
           api.getEducationByUser(user.id),
           api.getUserAttendance(user.id)
         ]);
+        if([oneToOnes,referrals,visitors,education,attendance].some(rows=>!Array.isArray(rows)||rows.some((row:any)=>!row||Array.isArray(row))))throw new Error('Invalid activity rows');
 
         const activities: any[] = [];
 
@@ -76,7 +81,7 @@ export function ActivitySummary() {
             type: 'education',
             title: 'Eğitim Tamamlama',
             description: `${e.course_name} eğitimini tamamladınız.`,
-            date: new Date(e.completed_at),
+            date: new Date(e.completed_at || e.completed_date),
             status: 'success',
             icon: BookOpen,
           });
@@ -97,16 +102,18 @@ export function ActivitySummary() {
         // Sort by date descending
         activities.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-        setRecentActivities(activities.slice(0, 10)); // Top 10
+        if(activities.some(row=>!Number.isFinite(row.date.getTime())))throw new Error('Invalid activity date');
+        if(valid())setRecentActivities(activities.slice(0, 10)); // Top 10
       } catch (error) {
-        console.error('Error loading activities:', error);
+        if(valid()){setRecentActivities([]);setError('Aktivite özeti yüklenemedi.');}
       } finally {
-        setLoading(false);
+        if(valid()){setLoading(false);setLoadedFor(context);}
       }
     };
 
     loadActivities();
-  }, [user]);
+    return()=>{active=false;};
+  }, [context,refreshVersion,retry]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -145,7 +152,9 @@ export function ActivitySummary() {
     return date.toLocaleDateString('tr-TR');
   };
 
-  if (loading) {
+  if(!user?.id)return <p>Aktiviteler için giriş yapın.</p>;
+  if(error&&loadedFor===context&&!loading)return <div><p role="alert">{error}</p><button onClick={()=>setRetry(value=>value+1)}>Özeti tekrar yükle</button></div>;
+  if (loading||loadedFor!==context) {
     return (
       <Card>
         <CardHeader>

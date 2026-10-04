@@ -96,3 +96,8 @@ assert.deepEqual((await api.getOneToOnes('sender')).map(row=>row.id),['done']);
 await assert.rejects(api.getOneToOnes(''));
 for(const bad of [null,[null],[{...meetingRow,requester_id:'foreign'}]]){response=new Response(JSON.stringify(bad));await assert.rejects(api.getOneToOnes('sender'));}
 console.log('Web completed activity adapter excludes requests/legacy pending, rejects malformed and foreign rows.');
+
+const logged={...meetingRow,id:'activity',status:'COMPLETED'},record={requestId:'activity',senderId:'sender',partnerId:'recipient',meetingDate:meetingRow.meeting_date,notes:'Topic'};
+globalThis.fetch=async(url,options)=>{assert.equal(url,'http://localhost:4005/api/one-to-ones');assert.deepEqual(JSON.parse(options.body),{requestId:'activity',partnerId:'recipient',meetingDate:meetingRow.meeting_date,notes:'Topic'});return response;};
+for(const fields of [{id:'wrong'},{requester_id:'wrong'},{partner_id:'wrong'},{status:'PENDING'},{notes:'wrong'},{meeting_date:'invalid'}]){response=new Response(JSON.stringify({...logged,...fields}));await assert.rejects(api.logCompletedMeeting(record));}
+response=new Response(JSON.stringify(logged));assert.equal((await api.logCompletedMeeting(record)).id,'activity');

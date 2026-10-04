@@ -155,6 +155,10 @@ async function main() {
   const historyBefore=await histories();
   const duplicate=await Promise.all([call('/one-to-ones',ids[0],activity),call('/one-to-ones',ids[0],activity)]);
   assert.deepEqual(duplicate.map(r=>r.status).sort(),[200,201]);assert.equal(await histories(),historyBefore+1);
+  loggedIn=ids[0];assert.equal((await api.logCompletedMeeting({...activity,senderId:ids[0]})).id,activityId);assert.equal(await histories(),historyBefore+1);
+  assert.equal((await call(`/calendar?userId=${ids[1]}`,ids[0])).status,403);
+  assert.equal((await call('/calendar')).status,401);
+  assert.ok((await api.getCalendar(ids[0])).some(row=>row.id===activityId));
   assert.equal((await pool.query('SELECT count(*)::int AS count FROM one_to_ones WHERE id=$1',[activityId])).rows[0].count,1);
   assert.equal((await call('/one-to-ones',ids[0],{...activity,notes:'Different'})).status,409);
   assert.equal((await call('/one-to-ones',ids[2],activity)).status,409);

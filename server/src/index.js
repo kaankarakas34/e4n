@@ -1192,8 +1192,8 @@ app.post('/api/education', authenticateToken, async (req, res) => {
 // Calendar endpoint - returns all scheduled items (meetings, visitors, education)
 app.get('/api/calendar', authenticateToken, async (req, res) => {
   try {
-    let userId = req.query.userId || req.user.id;
-    if (userId === 'mock-user-id') userId = req.user.id;
+    const userId=req.user.id;
+    if(req.query.userId && req.query.userId!=='mock-user-id' && req.query.userId!==userId) return res.status(403).json({error:'Calendar owner mismatch'});
 
     console.log('GET /api/calendar for userId:', userId);
 

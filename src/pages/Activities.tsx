@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
-import { Input } from '../shared/Input';
+
 import { Coffee, Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '../shared/Calendar';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
-import { Modal } from '../shared/Modal';
+
 import { ActivitySummary } from '../shared/ActivitySummary';
 import { TasksCard } from '../shared/TasksCard';
-import { Upload } from '../shared/Upload';
+
 import { MeetingRequestsList } from '../components/MeetingRequestsList';
+import { ActivityRecordForm } from '../components/ActivityRecordForm';
 
 import { Referrals } from './Referrals';
 import { UserEvents } from './UserEvents';
@@ -20,67 +21,37 @@ export function Activities() {
   const { user } = useAuthStore();
   const [calendarEvents, setCalendarEvents] = useState<Array<{ date: string; type: 'one_to_one' | 'visitor' | 'education' | 'meeting' }>>([]);
   const [openOneToOne, setOpenOneToOne] = useState(false);
-  const [partnerOptions, setPartnerOptions] = useState<any[]>([]);
-  const [partnerSearch, setPartnerSearch] = useState('');
-  const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
-  const [selectedPartnerId, setSelectedPartnerId] = useState('');
-
-  // ... (Keep existing useEffects for partners and calendar) ...
-
-  useEffect(() => {
-    if (!user) return;
-    const fetchPartners = async () => {
-      try {
-        const partnersMap = new Map();
-
-        // Get User Groups
-        const myGroups = await api.getUserGroups(user.id);
-        for (const group of myGroups) {
-          const members = await api.getGroupMembers(group.id);
-          members.forEach((m: any) => {
-            if (m.id !== user.id) partnersMap.set(m.id, m);
-          });
-        }
-        // Get Power Teams
-        try {
-          const myPowerTeams = await api.getUserPowerTeams(user.id);
-          for (const team of myPowerTeams) {
-            const members = await api.getPowerTeamMembers(team.id);
-            members.forEach((m: any) => {
-              if (m.id !== user.id) partnersMap.set(m.id, m);
-            });
-          }
-        } catch (e) { console.error('Lonca fetch error:', e); }
-
-        setPartnerOptions(Array.from(partnersMap.values()));
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchPartners();
-  }, [user]);
+  const [revision,setRevision]=useState(0),[calendarError,setCalendarError]=useState<string|null>(null),[calendarLoading,setCalendarLoading]=useState(false);
+  const context=`${user?.id}:${user?.role}`,current=useRef(context),sequence=useRef(0);
+  current.current=context;
+  const [calendarFor,setCalendarFor]=useState<string|null>(null);
+  useEffect(()=>{setOpenOneToOne(false);},[context]);
 
   useEffect(() => {
     if (!user) return;
 
     // Fetch Real Calendar Data from Backend
+    let active=true;const seq=++sequence.current;const valid=()=>active&&current.current===context&&sequence.current===seq;
     const fetchCalendar = async () => {
+      setCalendarLoading(true);setCalendarError(null);
       try {
         const apiEvents = await api.getCalendar(user.id);
+        if(!Array.isArray(apiEvents)||apiEvents.some((e:any)=>!e||typeof e.start_at!=='string'||!Number.isFinite(Date.parse(e.start_at))||typeof e.type!=='string'))throw new Error('Invalid calendar');
         const realEvents = apiEvents.map((e: any) => ({
-          date: new Date(e.start_at).toISOString().split('T')[0],
+          date: (()=>{const value=new Date(e.start_at);return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;})(),
           type: e.type,
           title: e.title
         }));
-        setCalendarEvents(realEvents as any);
+        if(valid())setCalendarEvents(realEvents as any);
       } catch (e) {
-        console.error(e);
-        setCalendarEvents([]);
+        if(valid()){setCalendarEvents([]);setCalendarError('Aktivite takvimi yüklenemedi.');}
+      }finally{if(valid()){setCalendarLoading(false);setCalendarFor(context);}
       }
     };
 
     fetchCalendar();
-  }, [user, user?.id]);
+    return()=>{active=false;};
+  }, [context, revision]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -150,7 +121,7 @@ export function Activities() {
                   </CardHeader>
                   <CardContent>
                     <div className="w-full">
-                      <Calendar events={calendarEvents} />
+                      {calendarLoading||calendarFor!==context?<p role="status">Takvim yükleniyor...</p>:calendarError?<div><p role="alert">{calendarError}</p><Button onClick={()=>setRevision(value=>value+1)}>Takvimi tekrar yükle</Button></div>:<Calendar events={calendarEvents} />}
                     </div>
                   </CardContent>
                 </Card>
@@ -169,7 +140,7 @@ export function Activities() {
               </div>
               <div className="space-y-6">
                 <div className="max-h-[800px] overflow-y-auto">
-                  <ActivitySummary />
+                  <ActivitySummary refreshVersion={revision} />
                 </div>
               </div>
             </div>
@@ -177,96 +148,7 @@ export function Activities() {
         )}
       </div>
 
-      <Modal open={openOneToOne} title="Yeni Birebir Görüşme" onClose={() => setOpenOneToOne(false)}>
-        <form className="space-y-4">
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Katılımcı Üye</label>
-
-            {/* Click outside handler */}
-            {showPartnerDropdown && (
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowPartnerDropdown(false)}
-              ></div>
-            )}
-
-            <div className="relative z-20">
-              <Input
-                type="text"
-                placeholder="İsim veya meslek ile ara..."
-                value={partnerSearch}
-                onChange={(e) => {
-                  setPartnerSearch(e.target.value);
-                  setShowPartnerDropdown(true);
-                }}
-                onFocus={() => setShowPartnerDropdown(true)}
-                className="w-full"
-              />
-              {showPartnerDropdown && (
-                <div className="absolute z-30 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                  {partnerOptions.filter(p =>
-                    (p.full_name || p.name).toLowerCase().includes(partnerSearch.toLowerCase()) ||
-                    (p.profession || '').toLowerCase().includes(partnerSearch.toLowerCase())
-                  ).length > 0 ? (
-                    partnerOptions
-                      .filter(p =>
-                        (p.full_name || p.name).toLowerCase().includes(partnerSearch.toLowerCase()) ||
-                        (p.profession || '').toLowerCase().includes(partnerSearch.toLowerCase())
-                      )
-                      .map((partner) => (
-                        <div
-                          key={partner.id}
-                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
-                          onClick={() => {
-                            setPartnerSearch(`${partner.full_name || partner.name} - ${partner.profession}`);
-                            setSelectedPartnerId(partner.id);
-                            setShowPartnerDropdown(false);
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <span className="font-medium block truncate text-gray-900">
-                              {partner.full_name || partner.name}
-                            </span>
-                            <span className="ml-2 text-gray-500 text-xs">
-                              {partner.profession}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500 italic">
-                      Sonuç bulunamadı.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Tarih</label>
-              <Input type="date" className="mt-1" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Süre (saat)</label>
-              <Input type="number" step="0.5" min="0.5" className="mt-1" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Lokasyon</label>
-            <Input type="text" placeholder="Toplantı yerini girin..." className="mt-1" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Notlar</label>
-            <textarea rows={3} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Toplantı notlarınız..." />
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button type="submit" variant="primary">Oluştur</Button>
-          </div>
-        </form>
-      </Modal>
+      <ActivityRecordForm open={openOneToOne} onClose={()=>setOpenOneToOne(false)} onSaved={()=>setRevision(value=>value+1)} />
     </div>
   );
 }

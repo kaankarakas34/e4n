@@ -23,6 +23,7 @@ import multer from 'multer';
 import adminRoutes from './routes/admin.js';
 import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
+import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
@@ -3781,6 +3782,7 @@ const calculateFixedTermEndDate = (startDate, monthsToAdd) => {
 // User: Gets only their tickets
 installSupportProcessing(app, { pool, authenticateToken });
 installPersonalReports(app, { pool, authenticateToken });
+installAdminReports(app, { pool, authenticateToken });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

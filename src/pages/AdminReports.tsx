@@ -1,344 +1,73 @@
-import { useState, useEffect } from 'react';
-import { api } from '../api/api';
-import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
-} from 'recharts';
-import {
-    Users, TrendingUp, DollarSign, Calendar, Target, Activity,
-    Building, FileText, CheckCircle
-} from 'lucide-react';
-import { Button } from '../shared/Button';
-
-export default function AdminReports() {
-    const [activeTab, setActiveTab] = useState('overview');
-    const [stats, setStats] = useState<any>(null);
-    const [charts, setCharts] = useState<any>(null);
-    const [groups, setGroups] = useState<any[]>([]);
-    const [geo, setGeo] = useState<any[]>([]);
-    const [trafficLights, setTrafficLights] = useState<any[]>([]);
-    const [attendanceStats, setAttendanceStats] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
-        setLoading(true);
-        setLoadError(null);
-        try {
-            const results = await Promise.allSettled([
-                api.getAdminStats(),
-                api.getAdminCharts(),
-                api.getAdminGroupStats(),
-                api.getAdminGeoStats(),
-                api.getTrafficLightReport(),
-                api.getAttendanceReport()
-            ]);
-            const failed = results.find(result => result.status === 'rejected');
-            if (failed?.status === 'rejected') throw failed.reason;
-
-            // Helper to get fulfilled value or default
-            const getVal = (idx: number, def: any) => results[idx].status === 'fulfilled' ? (results[idx] as any).value : def;
-
-            setStats(getVal(0, { totalRevenue: 0, internalRevenue: 0, externalRevenue: 0, totalMembers: 0, totalGroups: 0, totalEvents: 0 }));
-            setCharts(getVal(1, { revenue: [], growth: [] }));
-            setGroups(getVal(2, []));
-            setGeo(getVal(3, []));
-            setTrafficLights(getVal(4, []));
-            setAttendanceStats(getVal(5, []));
-
-        } catch (error) {
-            console.error('Failed to load reports:', error);
-            setLoadError('Raporlar yüklenemedi. Lütfen tekrar deneyin.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-        );
-    }
-
-    if (loadError) {
-        return (
-            <div className="p-6 space-y-4">
-                <p role="alert" className="text-red-700">{loadError}</p>
-                <Button onClick={() => void loadData()}>Tekrar dene</Button>
-            </div>
-        );
-    }
-
-    const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-
-    const renderOverview = () => (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard
-                    title="Toplam Ciro"
-                    value={stats.totalRevenue == null ? 'Veri yok' : `₺${stats.totalRevenue.toLocaleString()}`}
-                    subvalue={stats.internalRevenue == null || stats.externalRevenue == null
-                        ? 'Ciro kırılımı için veri yok'
-                        : `₺${stats.internalRevenue.toLocaleString()} İç / ₺${stats.externalRevenue.toLocaleString()} Dış`}
-                    icon={DollarSign}
-                    color="green"
-                />
-                <KPICard
-                    title="Toplam Üye"
-                    value={stats.totalMembers || 0}
-                    subvalue={stats.lostMembers == null ? 'Kayıp üye verisi yok' : `${stats.lostMembers} Kayıp (Son 30 Gün)`}
-                    icon={Users}
-                    color="indigo"
-                />
-                <KPICard
-                    title="Aktif Gruplar"
-                    value={stats.totalGroups || 0}
-                    subvalue={`${stats.totalPowerTeams || 0} Lonca`}
-                    icon={Building}
-                    color="blue"
-                />
-                <KPICard
-                    title="Toplam Etkinlik"
-                    value={stats.totalEvents || 0}
-                    subvalue={`${stats.totalVisitors || 0} Ziyaretçi`}
-                    icon={Calendar}
-                    color="purple"
-                />
-            </div>
-
-            {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Aylık Ciro Trendi</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-80">
-                        {charts?.availability?.revenue === false ? (
-                            <p className="text-gray-500">Veri yok</p>
-                        ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={charts?.revenue || []}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={(value: any) => `₺${value.toLocaleString()}`} />
-                                <Area type="monotone" dataKey="value" stroke="#10b981" fill="#d1fae5" name="Ciro" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Üye Büyümesi</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-80">
-                        {charts?.availability?.growth === false ? (
-                            <p className="text-gray-500">Veri yok</p>
-                        ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={charts?.growth || []}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={3} name="Yeni Üye" />
-                            </LineChart>
-                        </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Additional Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                    <CardContent className="p-6 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500">Ziyaretçi Dönüşüm Oranı</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.visitorConversionRate == null ? 'Veri yok' : `%${stats.visitorConversionRate}`}</h3>
-                            <p className="text-xs text-green-600 mt-1 font-medium">Hedef: %20</p>
-                        </div>
-                        <div className="p-3 bg-blue-100 rounded-full">
-                            <TrendingUp className="w-6 h-6 text-blue-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-6 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500">1-1 Toplantılar</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalOneToOnes || 0}</h3>
-                        </div>
-                        <div className="p-3 bg-purple-100 rounded-full">
-                            <Activity className="w-6 h-6 text-purple-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-6 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500">Ortalama Başarı Puanı</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">Veri yok</h3>
-                        </div>
-                        <div className="p-3 bg-yellow-100 rounded-full">
-                            <Target className="w-6 h-6 text-yellow-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
-
-    const renderTrafficLights = () => (
-        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <CardHeader>
-                <CardTitle>Trafik Işıkları Raporu</CardTitle>
-                <p className="text-sm text-gray-500">Üye performans puanları ve durumları.</p>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Üye</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meslek</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Puan</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {trafficLights.map((user: any) => {
-                                let colorClass = 'bg-gray-100 text-gray-800';
-                                if (user.color === 'GREEN') colorClass = 'bg-green-100 text-green-800';
-                                if (user.color === 'YELLOW') colorClass = 'bg-yellow-100 text-yellow-800';
-                                if (user.color === 'RED') colorClass = 'bg-red-100 text-red-800';
-
-                                return (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.profession}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">{user.score}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClass}`}>
-                                                {user.color}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </CardContent>
-        </Card>
-    );
-
-    const renderAttendanceStats = () => (
-        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <CardHeader>
-                <CardTitle>Katılım Raporu</CardTitle>
-                <p className="text-sm text-gray-500">Katılım ve yoklama özeti (Var, Yok, Geç, Sağlık, Yedek).</p>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Üye</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Present">P</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Absent">A</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Late">L</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Medical">M</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Substitute">S</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {attendanceStats.map((Stats: any) => (
-                                <tr key={Stats.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{Stats.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-green-600 font-bold">{Stats.present}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-red-600">{Stats.absent}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-yellow-600">{Stats.late}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-blue-600">{Stats.medical}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-purple-600">{Stats.substitute}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </CardContent>
-        </Card>
-    );
-
-    return (
-        <div className="min-h-screen bg-gray-50 p-8 space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Yönetici Raporları</h1>
-                    <p className="text-gray-500 mt-1">Sistem genelindeki performans metrikleri ve analizler.</p>
-                </div>
-                <div className="flex space-x-2 bg-white rounded-lg p-1 border shadow-sm">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        Genel Bakış
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('traffic')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'traffic' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        Trafik Işıkları
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('attendance')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'attendance' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                        Katılım Raporu
-                    </button>
-                </div>
-            </div>
-
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'traffic' && renderTrafficLights()}
-            {activeTab === 'attendance' && renderAttendanceStats()}
-        </div>
-    );
+import {useEffect,useRef,useState} from 'react';
+import {useAuthStore} from '../stores/authStore';
+import {adminReportsApi,AdminReport} from '../api/adminReports';
+import type {ReportRange,ReferralMetric} from '../api/personalReports';
+import {Card,CardHeader,CardContent,CardTitle} from '../shared/Card';
+import {Button} from '../shared/Button';
+const ranges:Record<ReportRange,string>={'7d':'Son 7 gün','30d':'Son 30 gün','90d':'Son 90 gün','1y':'Son 365 gün'};
+const colors:Record<string,string>={GREY:'Gri',GREEN:'Yeşil',YELLOW:'Sarı',RED:'Kırmızı'};
+const volume=(m:ReferralMetric)=>m.volume===null?`Bilinmiyor (${m.missingAmounts} eksik tutar; bilinen toplam ${m.knownVolume})`:m.volume;
+function DataTable({headers,rows}:{headers:string[];rows:(string|number)[][]}){
+  return <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr>{headers.map(h=><th key={h} scope="col" className="text-left p-3 border-b">{h}</th>)}</tr></thead><tbody>
+    {rows.map((r,i)=><tr key={i}>{r.map((v,j)=><td key={j} className="p-3 border-b">{v}</td>)}</tr>)}
+    {!rows.length&&<tr><td colSpan={headers.length} className="p-3">Kayıt yok.</td></tr>}
+  </tbody></table></div>;
 }
-
-function KPICard({ title, value, subvalue, icon: Icon, color }: any) {
-    const colorClasses = {
-        indigo: 'bg-indigo-50 text-indigo-600',
-        green: 'bg-green-50 text-green-600',
-        blue: 'bg-blue-50 text-blue-600',
-        purple: 'bg-purple-50 text-purple-600',
-    }[color as string] || 'bg-gray-50 text-gray-600';
-
-    return (
-        <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${colorClasses}`}>
-                        <Icon className="w-6 h-6" />
-                    </div>
-                </div>
-                <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-                <div className="mt-2 flex items-baseline">
-                    <span className="text-2xl font-bold text-gray-900">{value}</span>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">{subvalue}</p>
-            </CardContent>
-        </Card>
-    );
+export default function AdminReports(){
+  const {user,token}=useAuthStore();
+  const [range,setRange]=useState<ReportRange>('30d');
+  const [tab,setTab]=useState('overview');
+  const [revision,setRevision]=useState(0);
+  const [result,setResult]=useState<{key:string;data?:AdminReport;error?:string}|null>(null);
+  const generation=useRef(0);
+  const context=`${user?.id}:${user?.role}:${token}:${range}:${revision}`;
+  const scope=useRef({context,serial:0});
+  if(scope.current.context!==context){scope.current={context,serial:scope.current.serial+1};generation.current++;}
+  const key=`${context}:${scope.current.serial}`;
+  useEffect(()=>{
+    const current=++generation.current;
+    if(user?.role==='ADMIN')adminReportsApi.get(user.id,range)
+      .then(data=>{if(generation.current===current)setResult({key,data});})
+      .catch(()=>{if(generation.current===current)setResult({key,error:'Yönetici raporu yüklenemedi. Tekrar deneyin.'});});
+    return()=>{generation.current++;};
+  },[key]);
+  if(user?.role!=='ADMIN')return <p role="alert" className="p-6">Bu rapor yalnız yöneticiye açıktır.</p>;
+  const current=result?.key===key?result:null,data=current?.data;
+  const cards=data?[
+    ['Kayıtlı hesap',data.stock.accounts],['Aktif grup',data.stock.active_groups],['Aktif lonca',data.stock.active_teams],
+    ['Dönemde yeni hesap',data.activity.new_accounts],['Dönemde etkinlik',data.activity.events],['Tamamlanan birebir',data.activity.meetings],
+    ['Ziyaretçi kaydı',data.activity.visitor_records],['Katılmış ziyaretçi',data.activity.attended_visitors],['Üyeye dönüşmüş ziyaretçi kaydı',data.activity.joined_visitors],
+    ['Başarılı referans iş hacmi',volume(data.volumes.total)],['İç referans iş hacmi',volume(data.volumes.internal)],['Dış referans iş hacmi',volume(data.volumes.external)]
+  ]:[];
+  return <main className="max-w-7xl mx-auto p-6 space-y-6">
+    <h1 className="text-3xl font-bold">Yönetici Raporları</h1>
+    <div className="flex flex-wrap items-center gap-3"><label htmlFor="admin-report-range">Faaliyet dönemi</label>
+      <select id="admin-report-range" className="p-2 border rounded" value={range} onChange={e=>setRange(e.target.value as ReportRange)}>
+        {Object.entries(ranges).map(([v,label])=><option key={v} value={v}>{label}</option>)}
+      </select>
+      <nav aria-label="Rapor bölümleri" className="flex gap-2">{[['overview','Genel Bakış'],['traffic','Trafik Işıkları'],['attendance','Katılım Raporu']].map(([v,label])=><button key={v} aria-pressed={tab===v} onClick={()=>setTab(v)} className={tab===v?'p-2 bg-indigo-100 rounded':'p-2 rounded'}>{label}</button>)}</nav>
+    </div>
+    {!current&&<p role="status">Yönetici raporu yükleniyor…</p>}
+    {current?.error&&<div role="alert"><p>{current.error}</p><Button onClick={()=>setRevision(v=>v+1)}>Raporu tekrar yükle</Button></div>}
+    {data&&<>
+      <p className="text-sm text-gray-600">{ranges[range]} · {new Date(data.period.start).toLocaleString('tr-TR')} – {new Date(data.period.end).toLocaleString('tr-TR')}</p>
+      {tab==='overview'&&<>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">{cards.map(([title,value])=><Card key={title}><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent>{value}</CardContent></Card>)}</div>
+        {data.volumes.unclassified.count>0&&<p>Sınıflandırılmamış referans: {data.volumes.unclassified.count}; başarılı iş hacmi: {volume(data.volumes.unclassified)}.</p>}
+        <p className="text-sm text-gray-600">Mevcut hesap/grup/lonca sayıları seçilen dönemden bağımsızdır. İş hacmi başarılı referansların kayıtlı tutarıdır, tahsilat değildir. Ziyaretçiler kaydedilen durumlarıyla sayılır; bu kayıtlar üyelik hakkını göstermez.</p>
+        <Card><CardHeader><CardTitle>Aylık kayıt özeti (UTC)</CardTitle></CardHeader><CardContent>
+          <DataTable headers={['Ay','Dönemde yeni hesap','Referans kaydı','Başarılı referans','Kayıtlı başarılı iş hacmi']} rows={data.monthly.map(m=>[m.month,m.newAccounts,m.referrals.count,m.referrals.successful,volume(m.referrals)])}/>
+          <p className="text-sm text-gray-600 mt-3">İlk ve son ay seçilen dönemle sınırlıdır. Referans oluşturulma ayı ve güncel sonucu gösterilir; yeni hesap sayısı silinmemiş kayıtların oluşturulma tarihidir, net büyüme veya kayıp üye ölçümü değildir.</p>
+        </CardContent></Card>
+      </>}
+      {tab==='traffic'&&<Card><CardHeader><CardTitle>Güncel kayıtlı performans</CardTitle></CardHeader><CardContent>
+        <p className="mb-3 text-sm text-gray-600">Mevcut hesap puan ve renkleri; seçilen dönemin ortalaması değildir. Rapor okuması puan hesaplamaz.</p>
+        <DataTable headers={['Hesap','Meslek','Kayıtlı puan','Kayıtlı renk']} rows={data.performance.map(p=>[p.name,p.profession,p.score??'Bilinmiyor',p.color?colors[p.color]:'Bilinmiyor'])}/>
+      </CardContent></Card>}
+      {tab==='attendance'&&<Card><CardHeader><CardTitle>Kaydedilmiş yoklama</CardTitle></CardHeader><CardContent>
+        <p className="mb-3 text-sm text-gray-600">Etkinlik başlangıç tarihi seçilen dönemdedir. Kaydı olmayan yoklamalar devamsızlık sayılmaz; gelecek etkinlikler dahil değildir.</p>
+        <DataTable headers={['Hesap','Var','Yok','Geç','Sağlık','Yedek']} rows={data.attendance.map(a=>[a.name,a.present,a.absent,a.late,a.medical,a.substitute])}/>
+      </CardContent></Card>}
+    </>}
+  </main>;
 }

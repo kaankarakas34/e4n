@@ -22,6 +22,8 @@ const paymentInitiationSql = readFileSync(path.join(serverDir, 'migrations/0008_
 const supportMutationsSql = readFileSync(path.join(serverDir, 'migrations/0009_support_mutations.sql'), 'utf8');
 const scoreHistorySql = readFileSync(path.join(serverDir, 'migrations/0010_score_history.sql'), 'utf8');
 
+const directMessagesSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261004160911_direct_messages.sql'), 'utf8');
+
 function checksum(source) {
   return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
 }
@@ -37,6 +39,7 @@ const versions = [
   { version: '0008_payment_initiation', checksum: checksum(paymentInitiationSql), apply: client => client.query(paymentInitiationSql) },
   { version: '0009_support_mutations', checksum: checksum(supportMutationsSql), apply: client => client.query(supportMutationsSql) },
   { version: '0010_score_history', checksum: checksum(scoreHistorySql), apply: client => client.query(scoreHistorySql) },
+  { version: '0011_direct_messages', checksum: checksum(directMessagesSql), apply: client => client.query(directMessagesSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

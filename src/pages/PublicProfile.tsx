@@ -160,7 +160,7 @@ export function PublicProfile() {
                                         </div>
                                     )}
                                     {(isFriend || isSelf) && !isSelf && (
-                                        <Button onClick={() => navigate('/messages')} variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                                        <Button onClick={() => navigate(`/messages?recipient=${profileUser.id}`)} variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50">
                                             <MessageSquare className="h-4 w-4 mr-2" />
                                             Mesaj Gönder
                                         </Button>

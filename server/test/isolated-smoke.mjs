@@ -92,13 +92,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 10 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 11 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=10')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=11')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -108,8 +108,9 @@ async function main() {
   `);
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
-  if (tableCount !== 37) throw new Error(`Repository schema bootstrap expected 37 tables, found ${tableCount}`);
+  if (tableCount !== 38) throw new Error(`Repository schema bootstrap expected 38 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
+  await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
   await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");
   await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
   await pool.query("DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
@@ -128,11 +129,11 @@ async function main() {
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
   const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
-  if (visitorUpgrade.applied.length !== 6 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+  if (visitorUpgrade.applied.length !== 7 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
       || visitorUpgrade.applied[1] !== '0006_registration_consents'
       || visitorUpgrade.applied[2] !== '0007_meeting_requests'
       || visitorUpgrade.applied[3] !== '0008_payment_initiation'
-      || visitorUpgrade.applied[4] !== '0009_support_mutations' || visitorUpgrade.applied[5] !== '0010_score_history'
+      || visitorUpgrade.applied[4] !== '0009_support_mutations' || visitorUpgrade.applied[5] !== '0010_score_history' || visitorUpgrade.applied[6] !== '0011_direct_messages'
       || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null
       || Object.values(oldConsent).some(value => value !== null)) {
     throw new Error('Existing versioned visitor row was not preserved during 0005 upgrade');
@@ -206,8 +207,8 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 9
-        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 37 || !legacyRowsPreserved) {
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 10
+        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 38 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
   } finally { await legacyPool.end(); }

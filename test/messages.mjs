@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const alice='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',bob='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',third='cccccccc-cccc-cccc-cccc-cccccccccccc',key='dddddddd-dddd-dddd-dddd-dddddddddddd';
+let slots=[],cursor=0,effects=new Map(),user={id:alice},token='token',target=bob,writes=0;
+const storage=new Map();globalThis.sessionStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)};
+globalThis.messageHooks={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>{writes++;slots[i]=typeof v==='function'?v(slots[i]):v;}];},useRef(initial){const i=cursor++;return slots[i]??={current:initial};},useEffect(fn,deps){const i=cursor++,old=effects.get(i);if(!old||deps.some((v,j)=>v!==old.deps[j]))effects.set(i,{fn,deps,pending:true,cleanup:old?.cleanup});}};
+globalThis.messageAuth=()=>({user,token});globalThis.messageRouter={useSearchParams:()=>[{get:()=>target},v=>{target=v.recipient;}]};
+let read,listRead,send,calls=[];
+globalThis.messageApi={page:(...args)=>read(...args),conversations:o=>listRead(o),send:(...args)=>{calls.push(args);return send(...args);}};
+const compile=file=>ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+const mod=code=>import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const source=compile('../src/pages/MessagesPage.tsx').replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g,(line,names,path)=>{
+ if(path==='react')return `const {${names}}=globalThis.messageHooks;`;
+ if(path==='react/jsx-runtime')return line.replace(path,import.meta.resolve(path));
+ if(path==='react-router-dom')return `const {${names}}=globalThis.messageRouter;`;
+ if(path.includes('authStore'))return 'const useAuthStore=globalThis.messageAuth;';
+ if(path.includes('/messages'))return 'const messagesApi=globalThis.messageApi;';
+ return names.split(',').map(n=>`const ${n.trim()}='${n.trim()}';`).join('\n');
+});
+const {MessagesPage}=await mod(source);
+const nodes=t=>Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object'?[t,...nodes(t.props?.children)]:[];
+const text=t=>Array.isArray(t)?t.map(text).join(''):t&&typeof t==='object'?text(t.props?.children):typeof t==='string'||typeof t==='number'?String(t):'';
+const render=()=>{cursor=0;return MessagesPage();};
+const tick=()=>new Promise(r=>setImmediate(r));
+const flush=async()=>{for(const e of effects.values())if(e.pending){e.cleanup?.();e.cleanup=e.fn();e.pending=false;}await tick();};
+const cleanup=()=>{for(const e of effects.values())e.cleanup?.();};
+const reset=()=>{cleanup();slots=[];effects=new Map();user={id:alice};token='token';target=bob;};
+const row=(content='Metin',request_key=key)=>({id:third,sender_id:alice,receiver_id:bob,content,request_key,created_at:'2026-10-04T10:00:00.123456Z'});
+const page=(o=alice,t=bob,messages=[])=>({ownerId:o,targetId:t,friend:{id:t,full_name:'Gerçek Alıcı',profession:'Meslek'},messages,before:null});
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+const click=label=>nodes(render()).find(n=>n.type==='Button'&&text(n).includes(label)).props.onClick();
+const input=()=>nodes(render()).find(n=>n.type==='input');
+const type=value=>input().props.onChange({target:{value}});
+const submit=()=>nodes(render()).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+read=async(o,t)=>page(o,t);listRead=async()=>[];send=async(o,t,c,k)=>row(c.trim(),k);
+assert.ok(text(render()).includes('yükleniyor'));await flush();assert.ok(text(render()).includes('Henüz mesaj yok'));assert.ok(text(render()).includes('Gerçek Alıcı'));
+type('Kalıcı taslak');send=async()=>{throw Error('lost ACK');};await submit();assert.ok(text(render()).includes('Gönderim doğrulanamadı'));assert.equal(input().props.readOnly,true);
+const firstKey=calls[0][3];assert.ok(storage.size===1);
+reset();render();await flush();assert.equal(input().props.value,'Kalıcı taslak');const ack=deferred();send=()=>ack.promise;const sending=submit();submit();assert.equal(calls.length,2);assert.equal(calls[1][3],firstKey);
+read=async()=>page(alice,bob,[row('Kalıcı taslak',firstKey)]);ack.resolve(row('Kalıcı taslak',firstKey));await sending;assert.equal(input().props.value,'');assert.equal(storage.size,0);assert.ok(text(render()).includes('Kalıcı taslak'));
+// Read failure after confirmed write must not recreate the send intent.
+type('Yeni metin');send=async(o,t,c,k)=>row(c,k);read=async()=>{throw Error('read failure');};await submit();assert.ok(text(render()).includes('Mesaj kaydedildi;'));assert.equal(storage.size,0);
+read=async()=>page();click('Mesajları Yenile');render();await flush();assert.equal(input().props.value,'');
+// Reload recovers a committed send whose HTTP response was lost.
+storage.set(`e4n-message-pending:${alice}:${bob}`,JSON.stringify({key,content:'Kurtarılan mesaj'}));reset();read=async()=>page(alice,bob,[row('Kurtarılan mesaj')]);render();await flush();assert.equal(storage.size,0);assert.equal(input().props.value,'');assert.ok(text(render()).includes('Önceki gönderim kaydedilmiş'));
+const late=deferred(),next=deferred();read=(o,t)=>t===bob?late.promise:next.promise;click('Mesajları Yenile');render();await flush();target=third;assert.ok(!text(render()).includes('Kurtarılan mesaj'));assert.equal(input().props.value,'');await flush();const before=writes;late.resolve(page());await tick();assert.equal(writes,before);
+reset();read=async()=>{throw Error('offline');};listRead=async()=>{throw Error('offline');};render();await flush();assert.ok(text(render()).includes('Konuşmalar yüklenemedi'));assert.ok(!text(render()).includes('Henüz konuşmanız yok'));
+reset();read=async(o,t)=>page(o,t);listRead=async()=>[];render();await flush();type('Eski sahibin taslağı');const lateSend=deferred();send=()=>lateSend.promise;const oldAction=submit();
+user={id:third};assert.equal(input().props.value,'');await flush();const ownerChanged=writes;lateSend.resolve(row());await oldAction;assert.equal(writes,ownerChanged);assert.equal(input().props.value,'');
+reset();const tokenRead=deferred();read=()=>tokenRead.promise;render();await flush();token='new-token';render();await flush();cleanup();const tokenEnded=writes;tokenRead.resolve(page());await tick();assert.equal(writes,tokenEnded);
+reset();const unmount=deferred();read=()=>unmount.promise;listRead=()=>unmount.promise;render();await flush();cleanup();const ended=writes;unmount.resolve(page());await tick();assert.equal(writes,ended);
+globalThis.transport={get:async()=>page(alice,bob,[row()]),post:async()=>({ownerId:alice,targetId:bob,message:row(),replay:false})};
+const {messagesApi}=await mod(compile('../src/api/messages.ts').replace(/import \{ referralTransport \} from ['"]\.\/api['"];?/,'const referralTransport=globalThis.transport;'));
+await messagesApi.page(alice,bob);await messagesApi.send(alice,bob,'Metin',key);
+for(const bad of [null,{...page(),ownerId:third},{...page(),messages:[{...row(),receiver_id:third}]},{...page(),messages:[row(),row()]},{...page(),before:key},{...page(),messages:[{...row(),created_at:'bad'}]}]){globalThis.transport.get=async()=>bad;await assert.rejects(messagesApi.page(alice,bob));}
+globalThis.transport.post=async()=>({ownerId:alice,targetId:bob,message:{...row(),request_key:third},replay:false});await assert.rejects(messagesApi.send(alice,bob,'Metin',key));
+console.log('Messages TSX/API PASS: real actions, loading/empty/error, same-key lost-ACK reload retry, double-click, committed refresh/read failure, recovery, route/unmount late response, owner/row/cursor/ACK validation. Controlled hooks; browser verification separate.');

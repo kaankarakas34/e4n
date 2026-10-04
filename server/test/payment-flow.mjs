@@ -90,7 +90,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,10);
+  assert.equal((await applyVersionedSchema()).applied.length,11);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids=[randomUUID(),randomUUID()];
   for(const [i,id] of ids.entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,'Fixture','fixture','MEMBER','PENDING')",[id,`payment-${i}@example.invalid`,`Payment ${i}`]);
@@ -235,10 +235,11 @@ async function main() {
   const otherUser=(await pool.query('SELECT subscription_end_date FROM users WHERE id=$1',[ids[1]])).rows[0];assert.equal(otherUser.subscription_end_date,null);
   // Adopt 0008 onto the existing seven-version schema without changing old payment data.
   const oldBefore=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
+  await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
   await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");
   await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
   await pool.query("ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state; DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
-  assert.equal((await applyVersionedSchema()).applied.length,3);assert.equal((await applyVersionedSchema()).applied.length,0);
+  assert.equal((await applyVersionedSchema()).applied.length,4);assert.equal((await applyVersionedSchema()).applied.length,0);
   const oldAfter=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data,request_key,request_fingerprint,initiation_state FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
   const {request_key,request_fingerprint,initiation_state,...preserved}=oldAfter;
   assert.deepEqual(preserved,oldBefore);assert.deepEqual([request_key,request_fingerprint,initiation_state],[null,null,null]);

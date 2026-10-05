@@ -43,6 +43,11 @@ async function request(path: string, options?: RequestInit, binary = false) {
   return binary ? res.blob() : res.json();
 }
 
+export const invoiceTransport = {
+ upload:(type:string,id:string,body:FormData)=>request(`/admin/accounting/${type}/${id}/upload-invoice`,{method:'POST',body}),
+ download:(id:string):Promise<Blob>=>request(`/invoices/${id}`,undefined,true),
+};
+
 export const documentTransport = {
  get: (path:string) => request(path),
  upload: (body:FormData) => request('/documents',{method:'POST',body}),

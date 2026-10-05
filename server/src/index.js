@@ -23,6 +23,7 @@ import multer from 'multer';
 import adminRoutes from './routes/admin.js';
 import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
+import { installInvoices } from './invoices.js';
 import { installDocuments } from './documents.js';
 import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
@@ -3487,7 +3488,10 @@ app.get('/api/payments/history', authenticateToken, async (req, res) => {
 // Accounting: Get Payments (Visitors & Members)
 app.get('/api/admin/accounting/payments', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
+  res.set('Cache-Control','private, no-store');
   try {
+    const currentAdmin=(await pool.query('SELECT role FROM users WHERE id=$1',[req.user.id])).rows[0];
+    if(currentAdmin?.role!=='ADMIN')return res.sendStatus(403);
     const visitorsQuery = `
       SELECT 
         pv.id, 
@@ -3553,6 +3557,7 @@ app.delete('/api/admin/accounting/payments/:type/:id', authenticateToken, async 
   const { type, id } = req.params;
 
   try {
+    if((await pool.query('SELECT role FROM users WHERE id=$1',[req.user.id])).rows[0]?.role!=='ADMIN')return res.sendStatus(403);
     if (type === 'VISITOR') {
       await pool.query('DELETE FROM public_visitors WHERE id = $1', [id]);
       res.json({ success: true, message: 'Ziyaretçi ödeme kaydı başarıyla silindi.' });
@@ -3572,61 +3577,6 @@ app.delete('/api/admin/accounting/payments/:type/:id', authenticateToken, async 
       res.status(400).json({ error: 'Geçersiz ödeme türü.' });
     }
   } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Accounting: Upload Invoice and Email User
-app.post('/api/admin/accounting/:type/:id/upload-invoice', authenticateToken, upload.single('invoice'), async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { type, id } = req.params;
-
-  if (!req.file) {
-    return res.status(400).json({ error: 'Lütfen bir fatura dosyası yükleyiniz.' });
-  }
-
-  try {
-    const fileUrl = `/uploads/${req.file.filename}`;
-    const filePath = req.file.path;
-    let user = null;
-
-    if (type === 'VISITOR') {
-      const { rows } = await pool.query('SELECT name, email FROM public_visitors WHERE id = $1', [id]);
-      if (rows.length === 0) return res.status(404).json({ error: 'Ziyaretçi kaydı bulunamadı.' });
-      user = rows[0];
-      await pool.query('UPDATE public_visitors SET invoice_url = $1, invoice_issued = true WHERE id = $2', [fileUrl, id]);
-    } else if (type === 'MEMBER') {
-      const { rows } = await pool.query('SELECT name, email FROM users WHERE id = $1', [id]);
-      if (rows.length === 0) return res.status(404).json({ error: 'Üye kaydı bulunamadı.' });
-      user = rows[0];
-      await pool.query('UPDATE users SET subscription_invoice_url = $1, subscription_invoice_issued = true WHERE id = $2', [fileUrl, id]);
-    } else {
-      return res.status(400).json({ error: 'Geçersiz kayıt tipi.' });
-    }
-
-    // Send email with attachment
-    const emailHtml = `
-      <div style="font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; rounded: 12px;">
-        <h2 style="color: #4f46e5; margin-bottom: 20px;">Faturanız Hazır</h2>
-        <p>Sayın <strong>${user.name}</strong>,</p>
-        <p>Event4Network üzerinden yapmış olduğunuz ödemenize ait faturanız kesilmiştir. Fatura belgeniz bu e-postanın ekinde yer almaktadır.</p>
-        <p>Bizimle iş birliği yaptığınız için teşekkür ederiz.</p>
-        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;" />
-        <p style="font-size: 11px; color: #94a3b8; text-align: center;">Bu e-posta otomatik bir bildirimdir, lütfen cevap vermeyiniz.</p>
-      </div>
-    `;
-
-    const cleanName = user.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-    await sendEmail(user.email, 'Event4Network - Ödeme Faturanız', emailHtml, [
-      {
-        filename: `fatura-${cleanName}-${Date.now()}.pdf`,
-        path: filePath
-      }
-    ]);
-
-    res.json({ success: true, invoice_url: fileUrl });
-  } catch (e) {
-    console.error('Invoice Upload/Email Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -3728,6 +3678,7 @@ installAdminReports(app, { pool, authenticateToken });
 installConnections(app, { pool, authenticateToken });
 installMessages(app, { pool, authenticateToken });
 installDocuments(app, { pool, authenticateToken });
+installInvoices(app, { pool, authenticateToken, sendEmail });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

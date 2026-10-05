@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
+import {invoicesApi,invoiceId,type InvoiceTarget} from '../api/invoices';
 import { Card, CardContent } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Modal } from '../shared/Modal';
@@ -51,7 +52,13 @@ const totalAmount = (records: PaymentRecord[]) => records.every(p => typeof p.am
 
 export function AdminAccounting() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user,token } = useAuthStore();
+  const scope=`${user?.id}:${user?.role}:${token}`;const currentScope=useRef(scope);currentScope.current=scope;const active=useRef(true);const epoch=useRef(0);const readSeq=useRef(0);const opLock=useRef(false);
+  const [loadedFor,setLoadedFor]=useState<string|null>(null);
+  const [invoiceError,setInvoiceError]=useState('');
+  const pending=useRef<{scope:string;target:InvoiceTarget;file:File;key:string}|null>(null);
+  const [hasPending,setHasPending]=useState(false);
+  const current=(s:string,g:number)=>active.current&&currentScope.current===s&&epoch.current===g;
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -69,26 +76,31 @@ export function AdminAccounting() {
   const [uploadTarget, setUploadTarget] = useState<{ id: string; type: 'VISITOR' | 'MEMBER' } | null>(null);
 
   const fetchPayments = async () => {
+    if(!user||user.role!=='ADMIN')return;const context=scope,g=epoch.current,seq=++readSeq.current;
     try {
       setLoading(true);
       setLoadError(null);
       setSelectedRecord(null);
       const data = await api.getAccountingPayments();
-      if (!Array.isArray(data)) throw new Error('Invalid accounting response');
+      if (!Array.isArray(data)||data.some(p=>!p||typeof p.id!=='string'||!['MEMBER','VISITOR'].includes(p.type)||typeof p.name!=='string'||typeof p.invoice_issued!=='boolean'||(p.invoice_url!==null&&typeof p.invoice_url!=='string')||(p.amount!==null&&(typeof p.amount!=='number'||!Number.isFinite(p.amount))))) throw new Error('Invalid accounting response');
+      if(!current(context,g)||seq!==readSeq.current)return;
       setPayments(data);
     } catch (err) {
+      if(!current(context,g)||seq!==readSeq.current)return;
       console.error('Ödemeler yüklenirken hata oluştu:', err);
       setLoadError('Muhasebe kayıtları yüklenemedi. Tekrar deneyin.');
     } finally {
-      setLoading(false);
+      if(current(context,g)&&seq===readSeq.current){setLoading(false);setLoadedFor(context);}
     }
   };
 
   useEffect(() => {
-    fetchPayments();
-  }, []);
+    active.current=true;epoch.current++;readSeq.current++;opLock.current=false;pending.current=null;setHasPending(false);setInvoiceError('');setUploadTarget(null);setUploadingId(null);setSelectedRecord(null);setPayments([]);setLoadedFor(null);void fetchPayments();
+    return()=>{active.current=false;epoch.current++;readSeq.current++;};
+  }, [scope]);
 
   const handleUploadClick = (record: PaymentRecord) => {
+    if(opLock.current||pending.current||loadedFor!==scope)return;
     setUploadTarget({ id: record.id, type: record.type });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -96,42 +108,43 @@ export function AdminAccounting() {
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !uploadTarget) return;
-
-    // Check size limit (e.g. 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Dosya boyutu çok büyük. Maksimum 10MB yükleyebilirsiniz.');
-      return;
-    }
-
-    setUploadingId(uploadTarget.id);
-    try {
-      await api.uploadAccountingInvoice(uploadTarget.type, uploadTarget.id, file);
-      alert('Fatura başarıyla yüklendi ve kullanıcının e-posta adresine gönderildi.');
-      fetchPayments(); // Refresh list
-    } catch (err) {
-      console.error(err);
-      alert('Fatura yüklenirken veya gönderilirken bir hata oluştu.');
-    } finally {
-      setUploadingId(null);
-      setUploadTarget(null);
-    }
+  const submitInvoice=async()=>{
+    const intent=pending.current;if(!intent||intent.scope!==scope||!user||opLock.current)return;
+    const g=epoch.current,s=scope;opLock.current=true;setUploadingId(intent.target.id);setInvoiceError('');
+    try{const ack=await invoicesApi.upload(user.id,intent.target,intent.file,intent.key);if(!current(s,g))return;
+      pending.current=null;setHasPending(false);
+      alert(ack.emailState==='SENT'?'Fatura kalıcı olarak kaydedildi; e-posta gönderimi doğrulandı.':ack.emailState==='NO_ADDRESS'?'Fatura kaydedildi; e-posta adresi bulunmuyor.':'Fatura kaydedildi; e-posta teslimi doğrulanamadı. Yeniden yükleme veya otomatik e-posta tekrarı yapılmadı.');
+      await fetchPayments();
+    }catch(e){if(current(s,g)){const definitive=!!e&&typeof e==='object'&&'status' in e&&Number(e.status)>=400&&Number(e.status)<500;if(definitive){pending.current=null;setHasPending(false);}setInvoiceError(definitive?'Fatura hedefi, yetkiniz veya dosya doğrulanamadı. PDF dosyasını ve kaydı kontrol edin.':'Yükleme sonucu belirsiz. Aynı dosya ve anahtarla sonucu doğrulayın; yeniden dosya seçmeyin.');}}
+    finally{if(current(s,g)){opLock.current=false;setUploadingId(null);}}
+  };
+  const handleFileChange=async(e:React.ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0];if(!file||!uploadTarget||opLock.current||pending.current||loadedFor!==scope)return;
+    if(!file.size||file.size>3145728||!/\.pdf$/i.test(file.name)){setInvoiceError('Tek PDF dosyası seçin (en fazla 3 MB).');return;}
+    pending.current={scope,target:uploadTarget,file,key:crypto.randomUUID()};setHasPending(true);setUploadTarget(null);await submitInvoice();
+  };
+  const downloadInvoice=async(record:PaymentRecord)=>{
+    if(opLock.current||loadedFor!==scope)return;const s=scope,g=epoch.current;opLock.current=true;setUploadingId(record.id);setInvoiceError('');
+    try{const blob=await invoicesApi.download(record.invoice_url);if(!current(s,g))return;const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='fatura.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+    catch(e){if(current(s,g))setInvoiceError(e instanceof Error?e.message:'Fatura indirilemedi.');}
+    finally{if(current(s,g)){opLock.current=false;setUploadingId(null);}}
   };
 
   const handleDeletePayment = async (record: PaymentRecord) => {
+    if(opLock.current||pending.current||loadedFor!==scope)return;const s=scope,g=epoch.current;
     const confirmDelete = window.confirm(`${record.name} isimli kişiye ait bu ödeme kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`);
-    if (!confirmDelete) return;
+    if (!confirmDelete||!current(s,g)) return;opLock.current=true;setUploadingId(record.id);
 
     try {
       await api.deleteAccountingPayment(record.type, record.id);
+      if(!current(s,g))return;
       alert('Kayıt başarıyla silindi.');
       fetchPayments(); // Refresh list
     } catch (err: any) {
+      if(!current(s,g))return;
       console.error('Kayıt silinirken hata oluştu:', err);
       alert(err.error || err.message || 'Kayıt silinirken bir hata oluştu.');
-    }
+    }finally{if(current(s,g)){opLock.current=false;setUploadingId(null);}}
   };
 
   const getFilteredPayments = () => {
@@ -163,16 +176,19 @@ export function AdminAccounting() {
 
   if (!user || user.role !== 'ADMIN') return <div className="p-8 text-red-600 font-bold text-center">Erişim Yetkiniz Yok</div>;
 
+  if(loadedFor!==scope)return <div className="p-8" role="status">Muhasebe kayıtları yükleniyor…</div>;
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
+        {invoiceError&&<p role="alert" className="text-red-700">{invoiceError}</p>}
+        {hasPending&&<Button disabled={!!uploadingId} onClick={()=>void submitInvoice()}>Aynı fatura gönderimini doğrula</Button>}
         
         {/* Hidden File Input */}
         <input 
           type="file" 
           ref={fileInputRef} 
           onChange={handleFileChange} 
-          accept=".pdf,image/*" 
+          accept=".pdf"
           className="hidden" 
         />
 
@@ -367,20 +383,12 @@ export function AdminAccounting() {
                             </Button>
                             
                             {p.invoice_issued && p.invoice_url ? (
-                              <a 
-                                href={p.invoice_url.startsWith('http') ? p.invoice_url : `${api.getSystemSettings ? '/api' : 'http://localhost:4005'}${p.invoice_url}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-100 transition-colors"
-                              >
-                                <FileCheck className="w-3.5 h-3.5" />
-                                Faturayı Gör
-                              </a>
+                              <button type="button" disabled={!!uploadingId} onClick={()=>void downloadInvoice(p)} className="text-emerald-700 text-sm">{invoiceId(p.invoice_url)?'Faturayı İndir':'Eski fatura: geçiş bekliyor'}</button>
                             ) : (
                               <Button
                                 size="sm"
                                 onClick={() => handleUploadClick(p)}
-                                disabled={uploadingId === p.id}
+                                disabled={!!uploadingId||hasPending}
                                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs flex items-center gap-1.5 py-1.5"
                               >
                                 <Upload className="w-3.5 h-3.5" />
@@ -512,15 +520,7 @@ export function AdminAccounting() {
             {/* Modal Actions */}
             <div className="border-t border-slate-100 pt-5 flex justify-between gap-3">
               {selectedRecord.invoice_issued && selectedRecord.invoice_url ? (
-                <a 
-                  href={selectedRecord.invoice_url.startsWith('http') ? selectedRecord.invoice_url : `${api.getSystemSettings ? '/api' : 'http://localhost:4005'}${selectedRecord.invoice_url}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-100 transition-colors"
-                >
-                  <FileCheck className="w-4 h-4 text-emerald-600" />
-                  Faturayı Aç
-                </a>
+                <Button disabled={!!uploadingId} onClick={()=>void downloadInvoice(selectedRecord)}>{invoiceId(selectedRecord.invoice_url)?'Faturayı İndir':'Eski fatura: geçiş bekliyor'}</Button>
               ) : (
                 <Button
                   onClick={() => {
@@ -530,7 +530,7 @@ export function AdminAccounting() {
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs flex items-center gap-1.5 py-2 px-4"
                 >
                   <Upload className="w-4 h-4" />
-                  Fatura Yükle &amp; Gönder
+                  Fatura Yükle (PDF, 3 MB)
                 </Button>
               )}
               

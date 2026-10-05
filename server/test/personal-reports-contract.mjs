@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,12);
+  assert.equal((await applyVersionedSchema()).applied.length,13);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
   const ids=[randomUUID(),randomUUID(),randomUUID(),randomUUID()];

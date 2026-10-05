@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,12);
+  assert.equal((await applyVersionedSchema()).applied.length,13);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -124,7 +124,8 @@ async function main() {
   assert.equal((await pool.query('SELECT count(*)::int n FROM document_files')).rows[0].n,2);await assert.rejects(pool.query('DELETE FROM users WHERE id=$1',[president]),e=>e.code==='23503');
   await pool.query('CREATE ROLE anon; CREATE ROLE authenticated; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated');
   const before=(await pool.query('SELECT id FROM users ORDER BY id')).rows;
-  await pool.query("DROP TABLE document_files,document_library;DELETE FROM schema_migrations WHERE version='0012_document_library'");assert.deepEqual((await applyVersionedSchema()).applied,['0012_document_library']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT id FROM users ORDER BY id')).rows,before);
+  await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
+  await pool.query("DROP TABLE document_files,document_library;DELETE FROM schema_migrations WHERE version='0012_document_library'");assert.deepEqual((await applyVersionedSchema()).applied,['0012_document_library','0013_invoice_files']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT id FROM users ORDER BY id')).rows,before);
   for(const table of ['document_library','document_files']){assert.equal((await pool.query('SELECT has_table_privilege(\'anon\',$1,\'SELECT\') allowed',[table])).rows[0].allowed,false);assert.equal((await pool.query('SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',[table])).rows[0].relrowsecurity,true);}
   await pool.query('GRANT SELECT,INSERT ON document_library,document_files TO anon,authenticated');
   const unprivileged=await pool.connect();for(const role of ['anon','authenticated']){await unprivileged.query('BEGIN');await unprivileged.query(`SET LOCAL ROLE ${role}`);assert.equal((await unprivileged.query('SELECT * FROM document_files')).rows.length,0);await assert.rejects(unprivileged.query('INSERT INTO document_files(document_id,content) VALUES($1,$2)',[randomUUID(),bytes]),e=>e.code==='42501');await unprivileged.query('ROLLBACK');}unprivileged.release();
@@ -137,7 +138,7 @@ async function main() {
   const {documentsApi}=await import('data:text/javascript;base64,'+Buffer.from(compile(serviceSource)).toString('base64'));
   const saved=await documentsApi.upload(admin,form());assert.deepEqual(Buffer.from(await (await documentsApi.download(saved)).arrayBuffer()),bytes);assert.equal((await documentsApi.list(admin)).documents.length,1);await documentsApi.archive(admin,saved.id);assert.equal((await documentsApi.list(admin)).documents.length,0);
   const saved2=await documentsApi.upload(admin,form(randomUUID(),'Browser guide',[]));writeFileSync(path.join(root,'output/documents-browser.json'),JSON.stringify({owner:admin,library:await documentsApi.list(admin),document:saved2}));
-  console.log('Documents PASS: fresh 12/repeat/11→12, multipart bytes, role/owner boundary, demotion, race/replay/conflict, rollback/retry, archive retention, RLS/revoked default grants, actual typed web bearer transport.');
+  console.log('Documents PASS: fresh 13/repeat/11→13, multipart bytes, role/owner boundary, demotion, race/replay/conflict, rollback/retry, archive retention, RLS/revoked default grants, actual typed web bearer transport.');
 }
 let exitCode = 0;
 try {

@@ -1,0 +1,57 @@
+// Disposable full application fixture. Never loads production environment files.
+import {spawnSync} from 'node:child_process';
+import {randomUUID} from 'node:crypto';
+import {once} from 'node:events';
+import {createServer as createHttpServer} from 'node:http';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import bcrypt from 'bcryptjs';
+import nodemailer from 'nodemailer';
+import {createServer as createViteServer} from 'vite';
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const container='e4n-web-browser-'+randomUUID().slice(0,8),secret=randomUUID();
+const runDir=path.join(root,'output/web-browser',new Date().toISOString().replace(/[:.]/g,'-'));
+let pool,appServer,vite,control,timer,closing=false,containerStarted=false,mails=0;
+const docker=args=>{const r=spawnSync('docker',args,{encoding:'utf8',windowsHide:true,timeout:60000});if(r.status!==0||r.error)throw Error('Local Docker fixture failed: '+(r.error?.message||r.stderr));return r.stdout.trim();};
+async function close(){
+  if(closing)return;closing=true;clearTimeout(timer);
+  if(control)await new Promise(resolve=>control.close(resolve));
+  if(vite)await vite.close();
+  if(appServer){appServer.closeAllConnections();await new Promise(resolve=>appServer.close(resolve));}
+  if(pool)await pool.end();
+  if(containerStarted)docker(['rm','-f',container]);
+}
+try{
+  mkdirSync(runDir,{recursive:true});
+  docker(['run','--rm','-d','--pull=never','--name',container,'-e','POSTGRES_USER=e4n_isolated_test','-e','POSTGRES_PASSWORD=local_fixture_only','-e','POSTGRES_DB=e4n_isolated_test','-p','127.0.0.1::5432','postgres:17']);containerStarted=true;
+  let ready=false;for(let i=0;i<60;i++){const r=spawnSync('docker',['exec',container,'pg_isready','-U','e4n_isolated_test','-d','e4n_isolated_test'],{encoding:'utf8',windowsHide:true,timeout:5000});if(r.status===0){ready=true;break;}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Local PostgreSQL not ready');
+  const port=Number(docker(['port',container,'5432/tcp']).match(/127\.0\.0\.1:(\d+)/)?.[1]);if(!port)throw Error('No loopback port');
+  for(const key of ['DATABASE_URL','POSTGRES_URL','SUPABASE_DB_URL','SUPABASE_SERVICE_ROLE_KEY','SMTP_PASSWORD','SMTP_PASS'])delete process.env[key];
+  Object.assign(process.env,{DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:'e4n_isolated_test',DB_PASSWORD:'local_fixture_only',DB_NAME:'e4n_isolated_test',NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'web_browser_fixture_only',DOTENV_CONFIG_PATH:path.join(root,'server/test/.nonexistent-env'),SMTP_HOST:'127.0.0.1'});
+  nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'local-fake'};}});
+  ({default:pool}=await import('../src/config/db.js'));
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==15)throw Error('Unexpected schema version count');
+  const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event'].map(k=>[k,randomUUID()]));
+  const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
+  for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);
+  await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Browser Full Group','ACTIVE'),($2,'Browser Vacant Group','ACTIVE')",[ids.group,ids.emptyGroup]);
+  await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE'),($3,$2,'ACTIVE'),($4,$2,'REQUESTED')",[ids.member,ids.group,ids.president,ids.applicant]);
+  for(let i=0;i<34;i++){const id=randomUUID();await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,'MEMBER','ACTIVE')",[id,'seat-'+i+'@example.invalid','Browser seat '+i,hash]);await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')",[id,ids.group]);}
+  await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,max_attendees,created_by,group_id) VALUES($1,'Browser Participant Event',now()+interval '2 days','PUBLISHED',true,'social',0,50,$2,$3)",[ids.event,ids.admin,ids.group]);
+  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT'),($1,$3,'ABSENT')",[ids.event,ids.member,ids.president]);
+  await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED')",[ids.member,ids.president]);
+  const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const apiBase='http://127.0.0.1:'+appServer.address().port;
+  vite=await createViteServer({root,configFile:path.join(root,'vite.config.ts'),envDir:path.join(root,'server/test/.nonexistent-env-dir'),define:{'import.meta.env.VITE_SUPABASE_URL':JSON.stringify('https://fixture.example.invalid'),'import.meta.env.VITE_SUPABASE_ANON_KEY':JSON.stringify('fixture-public-key')},server:{host:'127.0.0.1',port:0,strictPort:true,open:false}});await vite.listen();const webBase='http://127.0.0.1:'+vite.httpServer.address().port;
+  control=createHttpServer(async(req,res)=>{
+    if(req.headers['x-fixture-key']!==secret){res.writeHead(403);res.end();return;}
+    if(req.url==='/stop'&&req.method==='POST'){res.end('stopping');setImmediate(()=>close().then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1);}));return;}
+    if(req.url!=='/state'||req.method!=='GET'){res.writeHead(404);res.end();return;}
+    try{const group=(await pool.query('SELECT user_id,status FROM group_members WHERE group_id=$1 ORDER BY user_id',[ids.group])).rows;const attendance=(await pool.query('SELECT user_id,status FROM attendance WHERE event_id=$1 ORDER BY user_id',[ids.event])).rows;const documents=(await pool.query("SELECT d.title,d.filename,d.size_bytes,encode(f.content,'hex') bytes FROM document_library d JOIN document_files f ON f.document_id=d.id")).rows;const messages=(await pool.query('SELECT sender_id,receiver_id,content FROM direct_messages')).rows;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({group,attendance,documents,messages,mails}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
+  });control.listen(0,'127.0.0.1');await once(control,'listening');
+  const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:15,productionWrites:false,realMail:false,realPayment:false};
+  writeFileSync(path.join(runDir,'fixture.json'),JSON.stringify(fixture,null,2));writeFileSync(path.join(root,'output/web-browser-current.json'),JSON.stringify(fixture,null,2));console.log('WEB_BROWSER_READY '+path.relative(root,path.join(runDir,'fixture.json')));
+  timer=setTimeout(()=>close().then(()=>process.exit(1)),20*60*1000);
+  process.once('SIGINT',()=>close().then(()=>process.exit(0)));
+}catch(e){console.error(e.message);await close();process.exitCode=1;}

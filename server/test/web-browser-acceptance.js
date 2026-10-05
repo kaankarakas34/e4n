@@ -1,0 +1,73 @@
+async page=>{
+  const f=/*E4N_BROWSER_FIXTURE*/null;
+  if(!f)throw Error('Inject the disposable fixture descriptor first');
+  const cases=[],requests=[],pageErrors=[],external=[];
+  await page.unroute('**/*');
+  page.on('pageerror',e=>pageErrors.push(e.message));
+  // CLI owns native dialogs; use deterministic confirmation in this local fixture.
+  await page.addInitScript(()=>{window.confirm=()=>true;window.alert=()=>{};});
+  await page.route('**/*',async route=>{
+    const req=route.request(),u=new URL(req.url());
+    if(u.origin==='http://localhost:4005'){
+      const r=await route.fetch({url:f.apiBase+u.pathname+u.search});
+      requests.push({method:req.method(),path:u.pathname,status:r.status()});
+      return route.fulfill({response:r});
+    }
+    if(u.origin===f.webBase)return route.continue();
+    external.push(u.origin+u.pathname);return route.abort();
+  });
+  const check=(condition,message)=>{if(!condition)throw Error(message);};
+  async function test(name,action){const start=requests.length,errorStart=pageErrors.length;try{await action();await page.waitForLoadState('networkidle');check(pageErrors.length===errorStart,'Uncaught page error: '+pageErrors.slice(errorStart).join(';'));check(!requests.slice(start).some(r=>r.status>=500),'Unexpected API 5xx');await page.screenshot({path:f.runDir+'/'+name+'.png',fullPage:true});cases.push({name,status:'PASS',requests:requests.slice(start)});}catch(e){cases.push({name,status:'FAIL',error:e.message,requests:requests.slice(start)});await page.screenshot({path:f.runDir+'/'+name+'-failed.png',fullPage:true}).catch(()=>{});}}
+  async function login(actor){await page.goto(f.webBase+'/auth/login');await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});await page.reload();await page.getByLabel('E-posta Adresi').fill(actor+'@example.invalid');await page.getByLabel('Şifre',{exact:true}).fill(f.password);await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');await page.getByText('Browser '+actor,{exact:true}).first().waitFor();}
+  async function visit(url,heading){await page.goto(f.webBase+url);await page.getByRole('heading',{name:heading,exact:true}).first().waitFor();}
+  await test('admin-login',()=>login('admin'));
+  for(const [name,url,heading] of [
+    ['admin-dashboard','/dashboard','Admin Panel'],['admin-reports','/admin/reports','Yönetici Raporları'],
+    ['admin-members','/admin/members','Üye Hesap Dizini'],['admin-visitors','/admin/visitors','Ziyaretçi Başvuruları'],
+    ['admin-accounting','/admin/accounting','Muhasebe & Fatura Yönetimi'],['admin-group-catalog','/admin/groups','Grup Yönetimi'],
+  ])await test(name,()=>visit(url,heading));
+  await test('admin-event-participant-count',async()=>{
+    await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('2 / 50 katılımcı',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
+  });
+  await test('admin-group-capacity-rejection',async()=>{
+    await page.goto(f.webBase+'/admin/groups/'+f.ids.group);await page.getByText('35 / 35 üye · 1 başkan',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Onayla',exact:true}).click();await page.getByRole('alert').filter({hasText:'Grup dolu:'}).waitFor();
+    check(await page.getByRole('button',{name:'Onayla',exact:true}).count()===1,'Failed admission hid applicant');
+    for(const tab of ['Yoklama','Ziyaretçiler','Yönlendirmeler','Genel Bakış'])await page.getByRole('button',{name:tab,exact:true}).click();
+    check(requests.some(r=>r.method==='PUT'&&r.status===409),'No real capacity rejection response');
+  });
+  await test('admin-document-upload',async()=>{
+    await visit('/documents','Doküman Merkezi');await page.getByRole('button',{name:'Doküman Yükle',exact:true}).click();
+    await page.getByLabel('Başlık',{exact:true}).fill('Browser Shared Contract');
+    await page.getByLabel(/Dosya \(PDF/).setInputFiles({name:'browser-contract.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nBrowser isolated contract\n%%EOF')});
+    await page.getByRole('button',{name:'Yükle',exact:true}).click();await page.getByRole('heading',{name:'Browser Shared Contract',exact:true}).waitFor();
+  });
+  await test('member-login',()=>login('member'));
+  for(const [name,url,heading] of [
+    ['member-reports','/reports','Kişisel Aktivite Raporu'],['member-groups','/chapter-management','Gruplarım ve Ağ'],
+    ['member-activities-calendar','/activities','Aktivite Merkezi'],['member-documents','/documents','Doküman Merkezi'],
+  ])await test(name,()=>visit(url,heading));
+  await test('member-calendar-event-data',async()=>{
+    await visit('/activities','Aktivite Merkezi');const calendar=page.getByRole('region',{name:'Aktivite takvimi'});
+    const day=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()+2);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');});
+    await calendar.getByRole('button',{name:day,exact:true}).click();await calendar.getByText('Browser Participant Event',{exact:true}).waitFor();
+  });
+  await test('member-event-registration-view',async()=>{
+    await page.goto(f.webBase+'/events');await page.getByText('Browser Participant Event',{exact:true}).waitFor();await page.getByText('Kayıtlısınız',{exact:true}).waitFor();
+    await page.getByRole('button',{name:/Katılacağım Etkinlikler/}).click();await page.getByText('Browser Participant Event',{exact:true}).waitFor();
+  });
+  await test('member-document-download',async()=>{
+    await visit('/documents','Doküman Merkezi');const card=page.getByRole('article').filter({hasText:'Browser Shared Contract'});await card.waitFor();
+    const download=page.waitForEvent('download');await card.getByRole('button',{name:'İndir',exact:true}).click();check((await download).suggestedFilename()==='browser-contract.pdf','Wrong download filename');
+  });
+  await test('member-message-send',async()=>{
+    await page.goto(f.webBase+'/messages?recipient='+f.ids.president);await page.getByLabel('Mesaj metni',{exact:true}).waitFor();
+    await page.getByLabel('Mesaj metni',{exact:true}).fill('Browser local message');await page.getByRole('button',{name:'Gönder',exact:true}).click();await page.getByText('Browser local message',{exact:true}).waitFor();
+  });
+  await test('member-admin-data-hidden',async()=>{
+    await page.goto(f.webBase+'/admin/groups');await page.getByRole('heading',{name:'Erişim Kısıtlı',exact:true}).waitFor();check(await page.getByRole('article').count()===0,'Previous admin catalog visible');
+  });
+  const failed=cases.filter(r=>r.status==='FAIL').length;
+  return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};
+}

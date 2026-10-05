@@ -80,3 +80,59 @@ Do not translate the suite PASS count into a web completion percentage.
   are unchanged in this acceptance bundle.
 - No fresh browser run or build was needed for these test/document-only changes.
   Whole browser acceptance and every gate listed above remain open.
+
+## Full application browser fixture
+
+A separate browser package now exercises the real application, rather than
+standalone component mocks. In one terminal, start
+`npm --prefix server run test:web-browser:fixture`. Wait for `WEB_BROWSER_READY`.
+In another terminal run `npm --prefix server run test:web-browser -- <path-to-playwright-cli.js>`.
+Use the installed Playwright CLI JavaScript entry (the CLI skill's cached
+installation is suitable). No `@playwright/test` framework is required.
+
+The fixture creates a disposable PostgreSQL 17 container, applies all 15 versions,
+seeds admin/member/president/applicant accounts, a full group, a vacant group, an
+event with two attendees, and an accepted connection. Vite loads the actual App
+router and components, with environment file loading disabled and synthetic
+Supabase client settings. Nodemailer is replaced with a local fake adapter.
+
+The browser redirects the existing localhost:4005 API transport to the fixture's
+actual loopback Express server. **Responses are not mocked.** Other network
+origins, including analytics/fonts, are blocked. Native confirmation/alert
+dialogs are deterministic in the fixture; native dialog behaviour itself is not
+accepted by this test. Real email, payment, Supabase and deployment are absent.
+
+The CLI driver records cases, method/path/status evidence, page errors and
+screenshots in `output/web-browser/<timestamp>/`, then reads the final database
+state through a secret-protected local control endpoint. It checks the applicant
+remains REQUESTED after 409, the group remains 35 members plus president, two
+attendance rows are preserved, uploaded PDF bytes match, and one message belongs
+to the member/president pair. It closes its browser and requests fixture cleanup;
+the fixture also has a 20-minute shutdown limit. Each run needs a fresh fixture.
+
+### Browser evidence, 5 October
+
+Final `2026-10-05T18-27-57-502Z/browser-report.json`: **21 PASS / 0 FAIL**.
+This covers real admin/member login, admin dashboard/reports/member directory/
+visitor queue/accounting/group catalog, event card **2 / 50** and participant
+modal, group rejection and tabs, document upload/member download, personal
+reports/groups/activities, selected-day calendar data, registered-event view,
+message send, role switch hiding admin data, and final database state.
+
+An initial browser setup stopped at a native confirmation dialog and used two
+obsolete heading locators. Its CLI log and screenshots were retained; it is not
+a complete test result. A subsequent rehearsal passed 20 cases; the final fresh
+fixture additionally checked selected-day event data and persisted PDF bytes.
+Base HEAD `b8058d4` identifies the base checkout; the browser helper additions are
+local changes delivered with this section. No runtime source was changed.
+
+**Remaining observation:** actual member navigation logs a caught SQL failure in
+the legacy `/api/users/:id` profile query: `one_to_ones.receiver_id` does not exist,
+so it falls back to a basic profile. A 200 and rendered page do not prove the
+profile metrics/last-meetings contract. Record this under P30/P40 and verify that
+whole profile/dashboard package separately. The new typed report/calendar flows
+passed their stated cases; they do not resolve that fallback.
+
+This fresh browser evidence advances P37's existing-flow gate. Remaining target
+rules, historical production data, profile metrics, all untested interactions
+and broad security/release acceptance keep `releaseReady=false` and P37 open.

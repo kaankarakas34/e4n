@@ -27,6 +27,7 @@ import {
 import { Modal } from '../shared/Modal';
 import { api } from '../api/api';
 import { readEventPrice, readEventCurrency } from '../utils/eventPrice';
+import { readParticipantCount } from '../utils/eventParticipants';
 
 interface EventFormData {
   title: string;
@@ -59,10 +60,6 @@ const readCapacity = (value: unknown): number | null => {
   if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
   const count = Number(value);
   return Number.isSafeInteger(count) && count > 0 ? count : null;
-};
-const readParticipantCount = (value: unknown): number | null => {
-  if (!Array.isArray(value) || value.some(row => !row || typeof row !== 'object' || Array.isArray(row) || typeof row.id !== 'string' || !row.id.trim())) return null;
-  return value.length;
 };
 const readLocalDate = (value: string): Date | null => {
   const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
@@ -766,7 +763,7 @@ export function AdminEvents() {
                     </div>
                     <div className="flex items-center text-gray-500">
                       <Users className="h-4 w-4 mr-2" />
-                      {readParticipantCount(event.attendees) ?? 'Bilinmiyor'} / {readCapacity(event.max_attendees) ?? 'Bilinmiyor'} katılımcı
+                      {readParticipantCount(event.attendees_count) ?? 'Bilinmiyor'} / {readCapacity(event.max_attendees) ?? 'Bilinmiyor'} katılımcı
                     </div>
                   </div>
 

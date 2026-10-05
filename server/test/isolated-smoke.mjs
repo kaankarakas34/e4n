@@ -1336,6 +1336,39 @@ async function main() {
       || shuffleApplyBaseline.presidentRoleAfter !== 'PRESIDENT' || shuffleApplyBaseline.notifyStatus !== 404) {
     throw new Error(`Shuffle apply baseline changed: ${JSON.stringify(shuffleApplyBaseline)}`);
   }
+  // Card summaries must count the same rows as the participant dialog, not only PRESENT.
+  const countEventResponse = await fetch(`${base}/api/events`, {
+    method: 'POST', headers: jsonAdminHeaders,
+    body: JSON.stringify({ title: 'Participant Count Fixture', start_at: '2099-01-01T20:00:00Z', is_public: true, type: 'meeting', max_attendees: 50 }),
+  });
+  const countEvent = await countEventResponse.json();
+  if (countEventResponse.status !== 201 || countEvent.attendees_count !== 0) throw new Error('New event count must be real zero');
+  const getCountEvent = async () => {
+    const response = await fetch(`${base}/api/events?mode=admin`, { headers: adminHeaders });
+    const rows = await response.json();
+    if (response.status !== 200) throw new Error('Count list failed');
+    return rows.find(row => row.id === countEvent.id);
+  };
+  if ((await getCountEvent()).attendees_count !== 0) throw new Error('Empty event list count failed');
+  await pool.query("INSERT INTO attendance (event_id, user_id, status) VALUES ($1, $2, 'PRESENT'), ($1, $3, 'ABSENT')", [countEvent.id, userId, otherUserId]);
+  const countList = await getCountEvent();
+  const countDetail = await (await fetch(`${base}/api/events/${countEvent.id}`)).json();
+  const countDialog = await (await fetch(`${base}/api/events/${countEvent.id}/attendance`, { headers: adminHeaders })).json();
+  const countPublic = await (await fetch(`${base}/api/events`)).json();
+  if (countList.attendees_count !== 2 || countDialog.length !== 2 || countDetail.attendees_count !== 2
+      || countDetail.attendees.length !== 2 || countPublic.find(row => row.id === countEvent.id)?.attendees_count !== 2
+      || Object.hasOwn(countList, 'attendees')) throw new Error('Participant count list/detail/dialog mismatch or list exposed identities');
+  const countEditResponse = await fetch(`${base}/api/events/${countEvent.id}`, {
+    method: 'PUT', headers: jsonAdminHeaders, body: JSON.stringify({ title: 'Participant Count Edited' }),
+  });
+  if (countEditResponse.status !== 200 || (await countEditResponse.json()).attendees_count !== 2) throw new Error('Editing erased participant count');
+  const countDenied = await fetch(`${base}/api/admin/events/${countEvent.id}/attendance/${otherUserId}`, { method: 'DELETE', headers: authHeaders });
+  if (countDenied.status !== 403 || (await getCountEvent()).attendees_count !== 2) throw new Error('Member altered participant count');
+  const countRemove = await fetch(`${base}/api/admin/events/${countEvent.id}/attendance/${otherUserId}`, { method: 'DELETE', headers: adminHeaders });
+  const countAfterRemove = await getCountEvent();
+  const countDialogAfter = await (await fetch(`${base}/api/events/${countEvent.id}/attendance`, { headers: adminHeaders })).json();
+  if (countRemove.status !== 200 || countAfterRemove.attendees_count !== 1 || countDialogAfter.length !== 1) throw new Error('Removal did not refresh participant count');
+  console.log('Participant count PASS: new/empty=0, mixed attendance=2, edit=2, denied removal=2, admin removal=1; no list identities.');
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',

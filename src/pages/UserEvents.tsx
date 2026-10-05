@@ -10,10 +10,11 @@ import { useAuthStore } from '../stores/authStore';
 
 import { useNavigate } from 'react-router-dom';
 import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
+import { readParticipantCount } from '../utils/eventParticipants';
 
 const hasAttendanceList = (event: EventItem) => Array.isArray(event.attendees)
     && event.attendees.every(att => att && typeof att === 'object' && !Array.isArray(att) && typeof att.id === 'string' && !!att.id.trim());
-const attendanceCount = (event: EventItem) => hasAttendanceList(event) ? event.attendees!.length : null;
+const attendanceCount = (event: EventItem) => readParticipantCount(event.attendees_count);
 const eventCapacity = (event: EventItem) => Number.isSafeInteger(event.max_attendees) && event.max_attendees! > 0 ? event.max_attendees! : null;
 
 export function UserEvents() {

@@ -1804,7 +1804,8 @@ app.get('/api/events', async (req, res) => {
   const { type, group_id, limit, mode } = req.query;
   try {
     let query = `
-      SELECT e.*, g.name as group_name 
+      SELECT e.*, g.name as group_name,
+        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE 1=1 
@@ -1870,7 +1871,8 @@ app.get('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { rows } = await pool.query(`
-      SELECT e.*, g.name as group_name 
+      SELECT e.*, g.name as group_name,
+        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE e.id = $1
@@ -1913,7 +1915,7 @@ app.post('/api/events', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency, online_link)
-       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING * `,
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *, 0::int AS attendees_count`,
       [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false, price || 0, currency || 'TRY', online_link || null]
     );
     res.status(201).json(rows[0]);
@@ -1953,7 +1955,8 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
 
     values.push(id);
     const { rows } = await pool.query(
-      `UPDATE events SET ${fields.join(', ')} WHERE id = $${idx} RETURNING * `,
+      `UPDATE events SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *,
+        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = events.id) AS attendees_count`,
       values
     );
     res.json(rows[0]);

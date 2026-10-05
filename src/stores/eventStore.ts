@@ -19,6 +19,7 @@ export interface EventItem {
   chapter_id?: string;
   group_id?: string | null;
   attendees?: any[];
+  attendees_count?: number;
   has_equal_opportunity_badge?: boolean;
   city?: string;
   district?: string;

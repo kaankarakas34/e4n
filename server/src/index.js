@@ -13,6 +13,7 @@ import pkg from 'pg';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
 import {scheduleEventCompletion} from './cron/event-completion.js';
+import {runChampionCalculation} from './cron/champion-calculation.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -185,67 +186,8 @@ app.use('/api/admin', adminRoutes);
 
 // --- CHAMPION CALCULATION LOGIC ---
 const calculateChampions = async (periodType, startDate, endDate) => {
-  const client = await pool.connect();
-  try {
-    const today = new Date().toISOString().split('T')[0];
-
-    // 1. Most Referrals
-    const refRes = await client.query(`
-      SELECT giver_id as user_id, COUNT(*) as value
-      FROM referrals
-      WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
-      GROUP BY giver_id
-      ORDER BY value DESC
-      LIMIT 1
-    `, [startDate, endDate]);
-
-    if (refRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REFERRAL_COUNT', $3, $4)",
-        [periodType, today, refRes.rows[0].user_id, refRes.rows[0].value]
-      );
-    }
-
-    // 2. Most Visitors
-    const visRes = await client.query(`
-      SELECT inviter_id as user_id, COUNT(*) as value
-      FROM visitors
-      WHERE visited_at BETWEEN $1 AND $2
-      GROUP BY inviter_id
-      ORDER BY value DESC
-      LIMIT 1
-    `, [startDate, endDate]);
-
-    if (visRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'VISITOR_COUNT', $3, $4)",
-        [periodType, today, visRes.rows[0].user_id, visRes.rows[0].value]
-      );
-    }
-
-    // 3. Highest Revenue
-    const revRes = await client.query(`
-      SELECT giver_id as user_id, SUM(amount) as value
-      FROM referrals
-      WHERE created_at BETWEEN $1 AND $2 AND status = 'SUCCESSFUL'
-      GROUP BY giver_id
-      ORDER BY value DESC
-      LIMIT 1
-    `, [startDate, endDate]);
-
-    if (revRes.rows.length > 0) {
-      await client.query(
-        "INSERT INTO champions (period_type, period_date, metric_type, user_id, value) VALUES ($1, $2, 'REVENUE', $3, $4)",
-        [periodType, today, revRes.rows[0].user_id, revRes.rows[0].value]
-      );
-    }
-
-    console.log(`✅ Champions calculated for ${periodType}`);
-  } catch (e) {
-    console.error(`Error calculating champions for ${periodType}:`, e);
-  } finally {
-    client.release();
-  }
+  try { return await runChampionCalculation(pool,{periodType,startDate,endDate}); }
+  catch { return undefined; } // The runner logs a redacted FAILED record; cron remains alive.
 };
 
 // --- CRON JOBS ---

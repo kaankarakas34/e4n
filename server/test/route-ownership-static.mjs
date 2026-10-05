@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {inspectOwnership,serverRoot,keyOf} from '../tools/route-ownership.mjs';
+const actual=inspectOwnership();assert.deepEqual(actual.errors,[]);assert.equal(actual.legacy.length,17);
+assert.ok(actual.active.some(r=>r.path==='/api/admin/group-catalog'&&r.provider==='src/admin-group-catalog.js'));
+assert.ok(actual.active.some(r=>r.path==='/api/support'&&r.provider==='src/support-processing.js'));
+assert.ok(actual.active.some(r=>r.path==='/api/admin/members'&&r.provider==='src/routes/admin.js'));
+const mutate=extra=>inspectOwnership({read:r=>fs.readFileSync(path.join(serverRoot,r),'utf8')+(r==='src/index.js'?extra:'')});
+assert.ok(mutate("\napp.get('/api/admin/groups/:differentParam/detail',()=>{});").errors.some(e=>e.startsWith('Duplicate GET')));
+assert.ok(mutate("\napp.use('/api/auth', authLegacy);\nimport authLegacy from './routes/auth.js';").errors.some(e=>e.includes('legacy provider mounted')));
+assert.ok(mutate("\ninstallAdminGroupCatalog(app,{});").errors.some(e=>e.includes('Repeated installer')));
+assert.ok(mutate("\napp.get(dynamicPath,()=>{});").errors.some(e=>e.includes('Unresolved route')));
+assert.equal(keyOf('get','/api/groups/:one'),'GET /api/groups/:param');
+console.log('Route ownership static PASS:',actual.active.length,'routes;',actual.providers.length,'providers;17 preserved legacy; shadow/mount/installer/unresolved guards.');

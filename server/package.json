@@ -7,7 +7,9 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "migrate": "node src/config/run-versioned-schema.js",
-    "test:isolated": "node test/isolated-smoke.mjs"
+    "test:isolated": "node test/isolated-smoke.mjs",
+    "routes:inspect": "node tools/route-ownership.mjs",
+    "test:routes": "node test/route-ownership-static.mjs && node test/route-ownership-contract.mjs"
   },
   "dependencies": {
     "@types/express": "^5.0.6",

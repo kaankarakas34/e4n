@@ -28,6 +28,8 @@ function checksum(source) {
   return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
 }
 
+const documentsSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261005055302_document_library.sql'), 'utf8');
+
 const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
@@ -40,6 +42,7 @@ const versions = [
   { version: '0009_support_mutations', checksum: checksum(supportMutationsSql), apply: client => client.query(supportMutationsSql) },
   { version: '0010_score_history', checksum: checksum(scoreHistorySql), apply: client => client.query(scoreHistorySql) },
   { version: '0011_direct_messages', checksum: checksum(directMessagesSql), apply: client => client.query(directMessagesSql) },
+  { version: '0012_document_library', checksum: checksum(documentsSql), apply: client => client.query(documentsSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

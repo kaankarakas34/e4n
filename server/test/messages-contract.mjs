@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,11);
+  assert.equal((await applyVersionedSchema()).applied.length,12);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -98,8 +98,9 @@ async function main() {
   await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED'),($1,$3,'PENDING'),($2,$4,'ACCEPTED')",[alice,bob,third,other]);
   await pool.query('CREATE ROLE anon; CREATE ROLE authenticated; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated');
   // Simulate adoption from the previously delivered 10-version database.
+  await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
   await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0011_direct_messages']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0011_direct_messages','0012_document_library']);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal((await pool.query('SELECT count(*)::int n FROM users')).rows[0].n,4);
   assert.equal((await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid='public.direct_messages'::regclass")).rows[0].relrowsecurity,true);
@@ -165,7 +166,7 @@ async function main() {
   await assert.rejects(pool.query('DELETE FROM users WHERE id=$1',[alice]),e=>e.code==='23503');
   const browserPage=await messagesApi.page(alice,bob),browserList=await messagesApi.conversations(alice);
   writeFileSync(path.join(serverDir,'../output/messages-browser.json'),JSON.stringify({owner:alice,target:bob,empty,page:browserPage,conversations:{ownerId:alice,conversations:browserList}}));
-  console.log('Messages PASS: 11-version install/upgrade/replay; actual web bearer/Express/isolated PG; participant/friend boundary, unrelated ADMIN denial, RLS client denial, sender-key race/single row/replay/conflict, separate conversations, 50-row cursor pagination, GET no writes, post-insert rollback/retry, history-preserving FK.');
+  console.log('Messages PASS: 12-version install/upgrade/replay; actual web bearer/Express/isolated PG; participant/friend boundary, unrelated ADMIN denial, RLS client denial, sender-key race/single row/replay/conflict, separate conversations, 50-row cursor pagination, GET no writes, post-insert rollback/retry, history-preserving FK.');
 }
 let exitCode = 0;
 try {

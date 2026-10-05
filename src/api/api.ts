@@ -8,7 +8,7 @@ const validMeetingRow = (row: any) => row && typeof row === 'object' && !Array.i
 const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';
 
 
-async function request(path: string, options?: RequestInit) {
+async function request(path: string, options?: RequestInit, binary = false) {
   // Get token from localStorage (zustand persist stores it there)
   const authStorage = localStorage.getItem('auth-storage');
   let token = null;
@@ -40,8 +40,15 @@ async function request(path: string, options?: RequestInit) {
     const responseBody = await res.text();
     throw Object.assign(new Error(responseBody), { status: res.status, responseBody });
   }
-  return res.json();
+  return binary ? res.blob() : res.json();
 }
+
+export const documentTransport = {
+ get: (path:string) => request(path),
+ upload: (body:FormData) => request('/documents',{method:'POST',body}),
+ archive: (id:string) => request(`/documents/${id}`,{method:'DELETE'}),
+ download: (id:string):Promise<Blob> => request(`/documents/${id}/download`,undefined,true),
+};
 
 export const referralTransport = {
   get: <T>(path: string): Promise<T> => request(path),

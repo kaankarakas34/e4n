@@ -12,6 +12,7 @@ import cors from 'cors';
 import pkg from 'pg';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
+import {scheduleEventCompletion} from './cron/event-completion.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -249,22 +250,7 @@ const calculateChampions = async (periodType, startDate, endDate) => {
 
 // --- CRON JOBS ---
 // Auto-complete past events every 10 minutes
-scheduleCron('*/10 * * * *', async () => {
-  console.log('Running cron to auto-complete past events...');
-  try {
-    const res = await pool.query(`
-      UPDATE events 
-      SET status = 'COMPLETED' 
-      WHERE status = 'PUBLISHED' 
-        AND COALESCE(end_at, start_at) < NOW()
-    `);
-    if (res.rowCount > 0) {
-      console.log(`Auto-completed ${res.rowCount} past events via cron.`);
-    }
-  } catch (e) {
-    console.error('Error in auto-complete past events cron job:', e);
-  }
-});
+scheduleEventCompletion(scheduleCron,pool);
 
 
 

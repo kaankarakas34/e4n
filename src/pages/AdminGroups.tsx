@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -11,7 +11,11 @@ import * as Dialog from '@radix-ui/react-dialog';
 
 export function AdminGroups() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const context = `${user?.id}:${user?.role}:${token}`;
+  const current = useRef(context); current.current = context;
+  const creationId = useRef(crypto.randomUUID());
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'GROUPS' | 'TEAMS' | 'SHUFFLE'>('GROUPS');
   const [groups, setGroups] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -25,20 +29,25 @@ export function AdminGroups() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    setIsGroupModalOpen(false); setIsTeamModalOpen(false); setIsSubmitting(false);
     loadData();
-  }, []);
+  }, [context]);
 
   const loadData = async () => {
-    setLoading(true); setError(null);
+    const scope = context;
+    setLoading(true); setError(null); setLoadedFor(null); setGroups([]); setTeams([]);
+    if (user?.role !== 'ADMIN') { setLoading(false); return; }
     try {
       const g = await api.getGroups();
       const t = await api.getPowerTeams();
-      setGroups(g || []);
+      if (current.current !== scope) return;
+      if (!Array.isArray(g) || !Array.isArray(t)) throw new Error('Invalid management lists');
+      setGroups(g);
       setTeams(t || []);
     } catch (e) {
-      setError('Veriler yüklenemedi');
+      if (current.current === scope) setError('Veriler yüklenemedi');
     } finally {
-      setLoading(false);
+      if (current.current === scope) { setLoading(false); setLoadedFor(scope); }
     }
   };
 
@@ -57,17 +66,19 @@ export function AdminGroups() {
   };
 
   const handleCreateGroup = async () => {
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || isSubmitting) return;
+    const scope = context;
     setIsSubmitting(true);
     try {
-      await api.createGroup({ name: newItemName });
+      await api.createGroup({ id: creationId.current, name: newItemName });
+      if (current.current !== scope) return;
       setIsGroupModalOpen(false);
       setNewItemName('');
       loadData(); // Refresh list
     } catch (e: any) {
-      alert('Hata: ' + (e.message || 'Grup oluşturulamadı'));
+      if (current.current === scope) alert('Hata: ' + (e.message || 'Grup oluşturulamadı'));
     } finally {
-      setIsSubmitting(false);
+      if (current.current === scope) setIsSubmitting(false);
     }
   };
 
@@ -123,14 +134,14 @@ export function AdminGroups() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Grup Listesi</CardTitle>
-              <Button onClick={() => { setNewItemName(''); setIsGroupModalOpen(true); }} className="flex items-center gap-2">
+              <Button onClick={() => { creationId.current = crypto.randomUUID(); setNewItemName(''); setIsGroupModalOpen(true); }} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" /> Grup Oluştur
               </Button>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {loading || loadedFor !== context ? (
                 <div className="text-center py-8 text-gray-500">Yükleniyor...</div>
-              ) : groups.length === 0 ? (
+              ) : error ? (<Button onClick={loadData}>Grupları tekrar yükle</Button>) : groups.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">Henüz hiç grup yok.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -169,7 +180,7 @@ export function AdminGroups() {
               </Button>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {loading || loadedFor !== context ? (
                 <div className="text-center py-8 text-gray-500">Yükleniyor...</div>
               ) : teams.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">Henüz hiç lonca yok.</div>

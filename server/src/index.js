@@ -27,6 +27,7 @@ import { installInvoices } from './invoices.js';
 import { installWebCalendar } from './web-calendar.js';
 import { installWebGroups } from './web-groups.js';
 import { installWebActivities } from './web-activities.js';
+import { installGroupSettings } from './group-settings.js';
 import { installDocuments } from './documents.js';
 import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
@@ -2763,34 +2764,6 @@ app.delete('/api/admin/visitors/:id', authenticateToken, async (req, res) => {
 
 // --- GROUP MANAGEMENT ENDPOINTS (ADDED) ---
 
-// Create Group
-app.post('/api/groups', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates } = req.body;
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO groups (name, meeting_day, meeting_time, meeting_link, status, meeting_dates) 
-       VALUES ($1, $2::varchar, $3, $4, $5::varchar, $6::jsonb) RETURNING *`,
-      [name, meeting_day, meeting_time, meeting_link, status || 'ACTIVE', JSON.stringify(meeting_dates || [])]
-    );
-    res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Update Group
-app.put('/api/groups/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, meeting_day, meeting_time, meeting_link, status, meeting_dates, visitor_email_subject, visitor_email_template } = req.body;
-  try {
-    const { rows } = await pool.query(
-      `UPDATE groups SET name = $1, meeting_day = $2::varchar, meeting_time = $3, meeting_link = $4, status = $5::varchar, meeting_dates = $6::jsonb, visitor_email_subject = $7, visitor_email_template = $8
-       WHERE id = $9 RETURNING *`,
-      [name, meeting_day, meeting_time, meeting_link, status, JSON.stringify(meeting_dates || []), visitor_email_subject, visitor_email_template, req.params.id]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 // Delete Group
 app.delete('/api/groups/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
@@ -3689,6 +3662,7 @@ installInvoices(app, { pool, authenticateToken, sendEmail });
 installWebCalendar(app, { pool, authenticateToken });
 installWebGroups(app, { pool, authenticateToken });
 installWebActivities(app, { pool, authenticateToken });
+installGroupSettings(app, { pool, authenticateToken });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { UserSelect } from '../components/UserSelect';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -11,7 +11,8 @@ export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
+    const [isSaving, setIsSaving] = useState(false);
     const [data, setData] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]); // Use 'members' to match rendering usage
     const [meetings, setMeetings] = useState<any[]>([]);
@@ -45,7 +46,10 @@ export function AdminGroupDetail() {
     const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
     const allowedRoles = ['ADMIN', 'PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER'];
     const canRead = !!user && allowedRoles.includes(user.role);
-    const readContext = `${user?.id}:${user?.role}:${isPowerTeam}:${id}`;
+    const readContext = `${user?.id}:${user?.role}:${token}:${isPowerTeam}:${id}`;
+
+    const currentContext = useRef(readContext); currentContext.current = readContext;
+    useEffect(() => { setShowEditModal(false); setIsSaving(false); }, [readContext]);
 
     // Dynamic Stats
     const stats = {
@@ -210,7 +214,7 @@ export function AdminGroupDetail() {
                         >
                             {typeLabel} Sil
                         </Button>
-                        <Button variant="primary" onClick={() => {
+                        <Button variant="primary" disabled={user.role !== 'ADMIN'} onClick={() => {
                             setEditForm({
                                 name: data.name || '',
                                 meeting_day: data.meeting_day || '',
@@ -229,7 +233,7 @@ export function AdminGroupDetail() {
                 {/* Edit Modal */}
                 {showEditModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 max-h-[calc(100vh-2rem)] overflow-y-auto">
                             <h2 className="text-xl font-bold mb-4">{typeLabel} Düzenle</h2>
                             <div className="space-y-4">
                                 <div>
@@ -348,21 +352,25 @@ export function AdminGroupDetail() {
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end space-x-3">
-                                <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
-                                <Button variant="primary" onClick={async () => {
+                                <Button variant="ghost" disabled={isSaving} onClick={() => setShowEditModal(false)}>İptal</Button>
+                                <Button variant="primary" disabled={isSaving} onClick={async () => {
+                                    if (isSaving) return;
+                                    const scope = readContext; setIsSaving(true);
                                     try {
+                                        let saved;
                                         if (isPowerTeam) {
-                                            await api.updatePowerTeam(data.id, editForm);
+                                            saved = await api.updatePowerTeam(data.id, editForm);
                                         } else {
-                                            await api.updateGroup(data.id, editForm);
+                                            saved = await api.updateGroup(data.id, { ...editForm, description: undefined });
                                         }
                                         // Update local data
-                                        setData({ ...data, ...editForm });
+                                        if (currentContext.current !== scope) return;
+                                        setData(isPowerTeam ? { ...data, ...editForm } : saved);
                                         setShowEditModal(false);
                                         alert('Güncelleme başarılı!');
                                     } catch (e: any) {
-                                        alert('Güncelleme başarısız: ' + e.message);
-                                    }
+                                        if (currentContext.current === scope) alert('Güncelleme başarısız: ' + e.message);
+                                    } finally { if (currentContext.current === scope) setIsSaving(false); }
                                 }}>Kaydet</Button>
                             </div>
                         </div>

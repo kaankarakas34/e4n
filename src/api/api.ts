@@ -65,6 +65,12 @@ export const referralTransport = {
   put: <T>(path: string, body: unknown): Promise<T> => request(path, { method: 'PUT', body: JSON.stringify(body) }),
 };
 
+const savedGroup = (value: any, expectedId?: string) => {
+  if (!value || typeof value.id !== 'string' || (expectedId && value.id !== expectedId) || typeof value.name !== 'string'
+    || !Array.isArray(value.meeting_dates) || value.meeting_dates.some((d: any) => typeof d !== 'string' || !Number.isFinite(Date.parse(d)))) throw new Error('Grup kayıt yanıtı geçersiz. Sonucu kontrol edip tekrar deneyin.');
+  return value;
+};
+
 export const api = {
   // Auth mocks (extend later)
   // Auth
@@ -263,13 +269,13 @@ export const api = {
     return await request('/power-teams');
   },
   async createGroup(payload: any) {
-    return await request('/groups', { method: 'POST', body: JSON.stringify(payload) });
+    return savedGroup(await request('/groups', { method: 'POST', body: JSON.stringify(payload) }), payload.id);
   },
   async deleteGroup(id: string) {
     return await request(`/groups/${id}`, { method: 'DELETE' });
   },
   async updateGroup(id: string, payload: any) {
-    return await request(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    return savedGroup(await request(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(payload) }), id);
   },
   async getGroupMembers(groupId: string) {
     return await request(`/groups/${groupId}/members`);

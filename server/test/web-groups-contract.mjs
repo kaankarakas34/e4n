@@ -87,13 +87,15 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,13);
+  assert.equal((await applyVersionedSchema()).applied.length,14);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
 
 
 
+  // Exercise the historical missing optional-column shape, then restore it below.
+  await pool.query('ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link');
   const [alice,bob,third,deleted]=Array.from({length:4},()=>randomUUID());
   for(const [i,id] of [alice,bob,third].entries())await pool.query('INSERT INTO users(id,name,email,password_hash,role,profession) VALUES($1,$2,$3,\'fixture\',\'MEMBER\',$4)',[id,`Member ${i}`,`fixture${i}@example.invalid`,`Fixture ${i}`]);
   const [first,second,requested,draft,privateGroup]=Array.from({length:5},()=>randomUUID());

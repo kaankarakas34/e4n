@@ -54,9 +54,16 @@ async function applyAction(client, tx) {
     const event = (await client.query('SELECT * FROM events WHERE id=$1 FOR UPDATE',[data.event_id])).rows[0];
     if (!event) throw fail('Etkinlik bulunamadı.');
     await client.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT') ON CONFLICT(event_id,user_id) DO NOTHING",[data.event_id,tx.user_id]);
-    if (event.generate_tickets && !(await client.query('SELECT 1 FROM event_tickets WHERE event_id=$1 AND user_id=$2',[data.event_id,tx.user_id])).rowCount) {
-      await client.query("INSERT INTO event_tickets(event_id,user_id,ticket_number,payment_status) VALUES($1,$2,$3,'PAID')",
-        [data.event_id,tx.user_id,`E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`]);
+    if (event.generate_tickets) {
+      const tickets = (await client.query('SELECT id,payment_status FROM event_tickets WHERE event_id=$1 AND user_id=$2 FOR UPDATE',[data.event_id,tx.user_id])).rows;
+      if (!tickets.length) {
+        await client.query("INSERT INTO event_tickets(event_id,user_id,ticket_number,payment_status) VALUES($1,$2,$3,'PAID')",
+          [data.event_id,tx.user_id,`E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`]);
+      } else if (tickets.length === 1 && tickets[0].payment_status === 'PENDING') {
+        // Only a verified settled payment promotes the single existing pending ticket.
+        await client.query("UPDATE event_tickets SET payment_status='PAID' WHERE id=$1 AND payment_status='PENDING'",[tickets[0].id]);
+      }
+      // Ambiguous legacy multiple-ticket history is not reinterpreted as one purchase.
     }
   } else if (tx.action_type === 'visitor_registration') {
     const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';

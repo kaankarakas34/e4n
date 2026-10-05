@@ -226,6 +226,22 @@ async function main() {
   await Promise.all([0,1,2].map(()=>call('/payment/status',null,{invoiceId:eventPayment.invoiceId,receiptToken:eventPayment.receiptToken})));
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM attendance WHERE event_id=$1 AND user_id=$2',[event,ids[0]])).rows[0].count,1);
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM event_tickets WHERE event_id=$1 AND user_id=$2',[event,ids[0]])).rows[0].count,1);
+  // Registration-created PENDING tickets settle in place only after verified payment.
+  const pendingEvent=randomUUID(),pendingTicket=randomUUID();
+  await pool.query("INSERT INTO events(id,title,start_at,type,price,generate_tickets,created_by) VALUES($1,'Pending fixture',NOW(),'social',100,true,$2)",[pendingEvent,ids[0]]);
+  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT')",[pendingEvent,ids[0]]);
+  await pool.query("INSERT INTO event_tickets(id,event_id,user_id,ticket_number,payment_status) VALUES($1,$2,$3,$4,'PENDING')",[pendingTicket,pendingEvent,ids[0],`T-${randomUUID()}`]);
+  const pendingPayment=await create('event_registration',{event_id:pendingEvent,user_id:ids[0]});
+  results.set(pendingPayment.invoiceId,{...results.get(pendingPayment.invoiceId),status_code:100,transaction_status:'Completed'});
+  await pool.query("CREATE FUNCTION fixture_ticket_settle_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Synthetic ticket settlement failure'; END; $$; CREATE TRIGGER fixture_ticket_settle_failure BEFORE UPDATE ON event_tickets FOR EACH ROW EXECUTE FUNCTION fixture_ticket_settle_failure()");
+  try {assert.equal((await call('/payment/status',null,{invoiceId:pendingPayment.invoiceId,receiptToken:pendingPayment.receiptToken})).status,502);}
+  finally {await pool.query('DROP TRIGGER fixture_ticket_settle_failure ON event_tickets; DROP FUNCTION fixture_ticket_settle_failure()');}
+  assert.equal((await pool.query('SELECT status FROM payment_transactions WHERE merchant_oid=$1',[pendingPayment.invoiceId])).rows[0].status,'PENDING');
+  assert.equal((await pool.query('SELECT payment_status FROM event_tickets WHERE id=$1',[pendingTicket])).rows[0].payment_status,'PENDING');
+  const settlements=await Promise.all([0,1,2].map(()=>call('/payment/status',null,{invoiceId:pendingPayment.invoiceId,receiptToken:pendingPayment.receiptToken})));
+  assert.ok(settlements.every(response=>response.status===200));
+  assert.deepEqual((await pool.query('SELECT id,payment_status FROM event_tickets WHERE event_id=$1 AND user_id=$2',[pendingEvent,ids[0]])).rows,[{id:pendingTicket,payment_status:'PAID'}]);
+  assert.equal((await pool.query('SELECT status FROM payment_transactions WHERE merchant_oid=$1',[pendingPayment.invoiceId])).rows[0].status,'SUCCESS');
   const visitor=await create('visitor_registration',{name:'Visitor Fixture',email:'visitor@example.invalid'});results.set(visitor.invoiceId,{...results.get(visitor.invoiceId),status_code:100,transaction_status:'Completed'});
   const guestKey=(await pool.query('SELECT request_key FROM payment_transactions WHERE merchant_oid=$1',[visitor.invoiceId])).rows[0].request_key;
   assert.equal((await (await call('/payment/resume',null,{requestKey:guestKey})).json()).invoiceId,visitor.invoiceId);
@@ -235,13 +251,14 @@ async function main() {
   const otherUser=(await pool.query('SELECT subscription_end_date FROM users WHERE id=$1',[ids[1]])).rows[0];assert.equal(otherUser.subscription_end_date,null);
   // Adopt 0008 onto the existing seven-version schema without changing old payment data.
   const oldBefore=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
+  await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
   await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
   await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");
   await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
   await pool.query("ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state; DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
-  assert.equal((await applyVersionedSchema()).applied.length,6);assert.equal((await applyVersionedSchema()).applied.length,0);
+  assert.equal((await applyVersionedSchema()).applied.length,7);assert.equal((await applyVersionedSchema()).applied.length,0);
   const oldAfter=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data,request_key,request_fingerprint,initiation_state FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
   const {request_key,request_fingerprint,initiation_state,...preserved}=oldAfter;
   assert.deepEqual(preserved,oldBefore);assert.deepEqual([request_key,request_fingerprint,initiation_state],[null,null,null]);

@@ -1344,24 +1344,40 @@ app.post('/api/events/attendance', authenticateToken, async (req, res) => {
 // Event Registration with Equal Opportunity Check (FE Badge)
 app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
   const eventId = req.params.id;
+  const eventUuid = value => typeof value === 'string' && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
+  if (!eventUuid(eventId) || !eventUuid(req.user.id)) return res.status(400).json({ error: 'Invalid registration identity' });
+  if (Object.keys(req.query).length || !req.body || Array.isArray(req.body) || Object.keys(req.body).length) return res.status(400).json({ error: 'Registration accepts no payment or owner fields' });
+  res.set('Cache-Control', 'private, no-store');
   try {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
+      const account = (await client.query('SELECT id FROM users WHERE id=$1 FOR SHARE', [req.user.id])).rows[0];
+      if (!account) { await client.query('ROLLBACK'); return res.sendStatus(401); }
+      // Serializes same-owner registration and existing FE checks with verified payment action.
       // 1. Get Event Details
-      const eventRes = await client.query('SELECT * FROM events WHERE id = $1', [eventId]);
+      const eventRes = await client.query('SELECT * FROM events WHERE id = $1 FOR UPDATE', [eventId]);
       if (eventRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Event not found' });
       }
       const event = eventRes.rows[0];
+      if (event.price == null || !Number.isFinite(Number(event.price)) || Number(event.price) < 0) {
+        await client.query('ROLLBACK'); return res.status(409).json({ error: 'Event price unavailable' });
+      }
+      const savedRegistration = async replayed => {
+        const ticketRows = (await client.query('SELECT payment_status FROM event_tickets WHERE event_id=$1 AND user_id=$2', [eventId,req.user.id])).rows;
+        return {version:1,success:true,eventId,ownerId:req.user.id,replayed,ticket_needed:event.generate_tickets === true,price:event.price,
+          ticket_payment_status:ticketRows.length===1 ? ticketRows[0].payment_status : null};
+      };
 
       // 2. Check if already registered
       const attCheck = await client.query('SELECT * FROM attendance WHERE event_id = $1 AND user_id = $2', [eventId, req.user.id]);
       if (attCheck.rows.length > 0) {
-        await client.query('ROLLBACK');
-        return res.json({ success: true, message: 'Already registered' });
+        const saved = await savedRegistration(true);
+        await client.query('COMMIT');
+        return res.json(saved);
       }
 
       // 3. Equal Opportunity Check
@@ -1397,11 +1413,11 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
 
       // 5. Generate Ticket if enabled
       if (event.generate_tickets) {
-        const ticketNumber = `E4N-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        const ticketNumber = `E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
         
         let paymentStatus = 'FREE';
         if (event.price > 0) {
-            paymentStatus = req.body.payment_status || 'PENDING';
+            paymentStatus = 'PENDING';
         }
 
         await client.query(`
@@ -1412,6 +1428,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
         console.log(`🎫 Ticket Generated: ${ticketNumber} for User ${req.user.id} - Event ${eventId}`);
       }
 
+      const saved = await savedRegistration(false);
       await client.query('COMMIT');
 
       // Send immediate registration confirmation email to attendee
@@ -1462,12 +1479,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
       // Recalculate Score
       calculateMemberScore(req.user.id).catch(console.error);
 
-      res.json({ 
-        success: true, 
-        message: 'Successfully registered',
-        ticket_needed: event.generate_tickets,
-        price: event.price
-      });
+      res.json(saved);
 
     } catch (e) {
       if (client) await client.query('ROLLBACK');
@@ -1889,7 +1901,11 @@ app.get('/api/events/:id', async (req, res) => {
         (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count,
         CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id = $2::uuid)
           THEN EXISTS (SELECT 1 FROM attendance own WHERE own.event_id = e.id AND own.user_id = $2::uuid)
-          ELSE NULL END AS is_registered
+          ELSE NULL END AS is_registered,
+        CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id=$2::uuid)
+          THEN (SELECT CASE WHEN count(*)=1 THEN min(t.payment_status) ELSE NULL END
+            FROM event_tickets t WHERE t.event_id=e.id AND t.user_id=$2::uuid)
+          ELSE NULL END AS ticket_payment_status
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE e.id = $1

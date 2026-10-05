@@ -129,12 +129,39 @@ async function main() {
   const mailAfterFirst=mails;assert.equal((await api.registerForEvent(two)).success,true);assert.equal(mails,mailAfterFirst);
   assert.equal((await pool.query('SELECT COUNT(*)::int count FROM attendance WHERE event_id=$1 AND user_id=$2',[two,bob])).rows[0].count,1);
   assert.equal((await detail(alice,two)).is_registered,false);
+
+  // Atomic owner registration + tickets, strict server payment state, and existing FE serialisation.
+  const [paidEvent,feEvent,rollbackEvent]=[randomUUID(),randomUUID(),randomUUID()];
+  for(const [id,price,fe]of [[paidEvent,100,false],[feEvent,0,true],[rollbackEvent,100,false]])await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,generate_tickets,has_equal_opportunity_badge,created_by) VALUES($1,'Integrity Fixture','2099-01-01','PUBLISHED',true,'social',$2,true,$3,$4)",[id,price,fe,alice]);
+  const post=(event,owner=bob,body={},query='')=>fetch(base+'/api/events/'+event+'/register'+query,{method:'POST',headers:{'Content-Type':'application/json',...(owner?{Authorization:'Bearer '+token(owner)}:{})},body:JSON.stringify(body)});
+  assert.equal((await post(paidEvent,bob,{payment_status:'PAID'})).status,400);
+  assert.equal((await post(paidEvent,bob,{user_id:alice})).status,400);
+  assert.equal((await post(paidEvent,bob,{},'?owner='+alice)).status,400);
+  assert.equal((await post(paidEvent,null)).status,401);assert.equal((await post(paidEvent,deleted)).status,401);
+  assert.equal((await post('bad-id')).status,400);assert.equal((await post(randomUUID())).status,404);
+  const concurrent=await Promise.all(Array.from({length:10},()=>post(paidEvent)));
+  assert(concurrent.every(r=>r.status===200));const replies=await Promise.all(concurrent.map(r=>r.json()));
+  assert.equal(replies.filter(r=>r.replayed===false).length,1);assert(replies.every(r=>r.ownerId===bob&&r.eventId===paidEvent&&r.ticket_payment_status==='PENDING'));
+  assert.equal((await pool.query('SELECT count(*)::int n FROM attendance WHERE event_id=$1',[paidEvent])).rows[0].n,1);
+  assert.deepEqual((await pool.query('SELECT payment_status FROM event_tickets WHERE event_id=$1',[paidEvent])).rows,[{payment_status:'PENDING'}]);
+  assert.equal((await detail(bob,paidEvent)).ticket_payment_status,'PENDING');assert.equal((await detail(alice,paidEvent)).ticket_payment_status,null);assert.equal((await detail(null,paidEvent)).ticket_payment_status,null);
+  const fe=await Promise.all([post(feEvent,alice),post(feEvent,bob)]);assert.deepEqual(fe.map(r=>r.status).sort(),[200,403]);assert.equal((await pool.query('SELECT count(*)::int n FROM attendance WHERE event_id=$1',[feEvent])).rows[0].n,1);
+  await pool.query("CREATE FUNCTION fixture_ticket_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'isolated ticket failure'; END; $$; CREATE TRIGGER fixture_ticket_fail BEFORE INSERT ON event_tickets FOR EACH ROW EXECUTE FUNCTION fixture_ticket_fail()");
+  try{assert.equal((await post(rollbackEvent)).status,500);}finally{await pool.query('DROP TRIGGER fixture_ticket_fail ON event_tickets; DROP FUNCTION fixture_ticket_fail()');}
+  assert.equal((await pool.query('SELECT count(*)::int n FROM attendance WHERE event_id=$1',[rollbackEvent])).rows[0].n,0);
+  assert.equal((await post(rollbackEvent)).status,200);
+  const ack=await api.registerForEvent(paidEvent);assert.equal(ack.replayed,true);assert.equal(ack.ticket_payment_status,'PENDING');
+  const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({...ack,eventId:one}),{status:200,headers:{'content-type':'application/json'}});
+  try{await assert.rejects(api.registerForEvent(paidEvent),/yanıtı geçersiz/);}finally{globalThis.fetch=originalFetch;}
+  writeFileSync(path.join(root,'output/event-integrity-browser.json'),JSON.stringify({owner:bob,other:alice,free:await detail(bob,rollbackEvent),paid:await detail(bob,paidEvent),ack,feStatus:fe.map(r=>r.status)}));
+  console.log('Event ticket integrity PASS: concurrent10 one registration/ticket; body/payment spoof rejection; current owner/auth; FE race one winner; rollback/retry; owner ticket read; real TS saved/replay/invalid ACK.');
+
   const stable=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
   const original=pool.query.bind(pool);pool.query=async(sql,args)=>{if(typeof sql==='string'&&sql.includes('AS is_registered'))throw new Error('isolated list unavailable');return original(sql,args);};
   assert.equal((await call('/events',bob)).status,500);pool.query=original;assert.equal((await list(bob)).find(e=>e.id===two).is_registered,true);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   writeFileSync(path.join(root,'output/event-registration-browser.json'),JSON.stringify({owner:bob,other:alice,event:await detail(bob,two),list:await list(bob)}));
-  console.log('Event registration PASS: fresh13/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
+  console.log('Event registration PASS: fresh14/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
 }
 let exitCode = 0;
 try {

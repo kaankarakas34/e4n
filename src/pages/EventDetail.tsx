@@ -74,7 +74,8 @@ export function EventDetail() {
                     setRegistrationError('Kayıt onaylandı ancak güncel kayıtta henüz görünmüyor. Yeniden göndermeden kaydı kontrol edin.');
                 } else {
                     setRegistrationUncertain(false); setRegistrationError(null);
-                    if (registrationAck.current && data.is_registered) setRegistrationNotice('Etkinlik kaydınız güncel kayıtta doğrulandı.');
+                    if (data.is_registered && data.ticket_payment_status === 'PENDING') setRegistrationNotice('Kaydınız alındı; bilet ödemesi bekliyor.');
+                    else if (registrationAck.current && data.is_registered) setRegistrationNotice('Etkinlik kaydınız güncel kayıtta doğrulandı.');
                 }
             }
         } catch (e) {
@@ -122,10 +123,10 @@ export function EventDetail() {
         try {
             const result = await api.registerForEvent(id!);
             if (!pageActive.current || latestContext.current !== pageContext || context !== contextSequence.current) return;
-            if (!result || result.success !== true) throw new Error('Invalid event registration response');
+            if (!result || result.success !== true || result.ownerId !== user.id) throw new Error('Invalid event registration response');
             registrationAck.current = true;
             setRegistrationUncertain(true);
-            setRegistrationNotice('Sunucu etkinlik kaydınızı onayladı. Güncel kayıt kontrol ediliyor.');
+            setRegistrationNotice(result.ticket_payment_status === 'PENDING' ? 'Kaydınız alındı; bilet ödemesi bekliyor. Güncel kayıt kontrol ediliyor.' : 'Sunucu etkinlik kaydınızı onayladı. Güncel kayıt kontrol ediliyor.');
             await loadEvent(id!);
         } catch {
             if (pageActive.current && latestContext.current === pageContext && context === contextSequence.current) {
@@ -346,9 +347,16 @@ export function EventDetail() {
                                     <div role="alert"><p>Etkinlik kaydınız doğrulanamadı.</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>
                                 )}
                                 {registered ? (
-                                    <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
-                                        <CheckCircle className="h-4 w-4 mr-2" /> Kayıtlısınız
-                                    </Button>
+                                    <>
+                                        <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
+                                            <CheckCircle className="h-4 w-4 mr-2" /> Kayıtlısınız
+                                        </Button>
+                                        {event.ticket_payment_status === 'PENDING' && paymentAvailable && price! > 0 && (
+                                            <Button className="w-full mt-3" onClick={() => setIsPaymentModalOpen(true)} disabled={registering || registrationUncertain}>
+                                                Ödemeyi tamamla
+                                            </Button>
+                                        )}
+                                    </>
                                 ) : (
                                     <Button
                                         variant="primary"

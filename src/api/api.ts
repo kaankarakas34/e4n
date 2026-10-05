@@ -254,10 +254,15 @@ export const api = {
     return await request(`/events/${id}`, { method: 'DELETE' });
   },
   async registerForEvent(eventId: string, payload?: any) {
-    return await request(`/events/${eventId}/register`, { 
-      method: 'POST', 
-      body: payload ? JSON.stringify(payload) : undefined 
+    const saved = await request(`/events/${eventId}/register`, {
+      method: 'POST', body: JSON.stringify(payload ?? {})
     });
+    if (!saved || saved.version !== 1 || saved.success !== true || saved.eventId !== eventId
+      || typeof saved.ownerId !== 'string' || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(saved.ownerId)
+      || typeof saved.replayed !== 'boolean' || typeof saved.ticket_needed !== 'boolean'
+      || saved.price == null || !['string','number'].includes(typeof saved.price) || !Number.isFinite(Number(saved.price)) || Number(saved.price) < 0
+      || !(saved.ticket_payment_status === null || typeof saved.ticket_payment_status === 'string')) throw new Error('Etkinlik kayıt yanıtı geçersiz. Mevcut kaydınızı kontrol edin.');
+    return saved;
   },
   async getGroups() {
     return await request('/groups');

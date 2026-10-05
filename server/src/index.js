@@ -7,6 +7,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 import 'dotenv/config';
+import {readUserDetailSnapshot} from './user-detail.js';
 import {beginGroupMutation,enforceGroupCapacity,requireCurrentAdmin,requireGroupManager,requirePowerTeamManager,isUuid,groupError,sendGroupMutationError,validShuffleAssignments} from './group-capacity.js';
 import express from 'express';
 import cors from 'cors';
@@ -891,71 +892,12 @@ app.get('/api/users/me', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
-  // Validate UUID format
-  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-
-
-  try {
-    try {
-      // Try fetching with all new fields
-      /*
-        QUERY IMPROVEMENT: Added subqueries for real-time stats (Performance Scorecard)
-        - metric_referrals: Count of referrals given
-        - metric_revenue: Sum of amount from referrals given
-        - metric_visitors: Count of visitors invited
-        - metric_one_to_ones: Count of 1-to-1s (requester or partner)
-      */
-      const { rows } = await pool.query(`
-        SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
-               u.company, u.tax_number, u.tax_office, u.billing_address, u.account_status,
-               g.name as group_name,
-               (SELECT COUNT(*)::int FROM referrals WHERE giver_id = u.id) as metric_referrals,
-               (SELECT COALESCE(SUM(amount), 0)::float FROM referrals WHERE giver_id = u.id AND status = 'SUCCESSFUL') as metric_revenue,
-                (SELECT COUNT(*)::int FROM visitors WHERE inviter_id = u.id) as metric_visitors,
-                (SELECT COUNT(*)::int FROM one_to_ones WHERE requester_id = u.id OR receiver_id = u.id) as metric_one_to_ones,
-                (
-                  SELECT COALESCE(json_agg(t), '[]'::json) FROM (
-                    SELECT ot.meeting_date, 
-                           CASE 
-                             WHEN ot.requester_id = u.id THEN (SELECT name FROM users WHERE id = ot.receiver_id)
-                             ELSE (SELECT name FROM users WHERE id = ot.requester_id)
-                           END as partner_name,
-                           ot.status
-                    FROM one_to_ones ot
-                    WHERE ot.requester_id = u.id OR ot.receiver_id = u.id
-                    ORDER BY ot.meeting_date DESC
-                    LIMIT 3
-                  ) t
-                ) as last_meetings
-        FROM users u
-        LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
-        LEFT JOIN groups g ON gm.group_id = g.id
-        WHERE u.id = $1
-      `, [id]);
-
-      if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-      return res.json(rows[0]);
-    } catch (fieldError) {
-      console.error('⚠️ New fields query failed (migrations might be pending), falling back to basic query:', fieldError.message);
-
-      // Fallback: Basic query (Old schema)
-      const { rows } = await pool.query(`
-        SELECT u.id, u.name, u.name as full_name, u.profession, u.email, u.phone, u.city, u.performance_score, u.performance_color,
-               g.name as group_name
-        FROM users u
-        LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
-        LEFT JOIN groups g ON gm.group_id = g.id
-        WHERE u.id = $1
-      `, [id]);
-
-      if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-      return res.json(rows[0]);
-    }
-  } catch (e) {
-    console.error('❌ GET /api/users/:id Critical Error:', e);
-    res.status(500).json({ error: e.message });
+app.get('/api/users/:id', authenticateToken, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { res.json(await readUserDetailSnapshot(pool,req.user.id,req.params.id,req.query)); }
+  catch(e) {
+    if(!e.status)console.error('User detail snapshot failed:',e.code||'UNKNOWN');
+    res.status(e.status||500).json({error:e.status?e.message:'Üye profili yüklenemedi. Tekrar deneyin.'});
   }
 });
 

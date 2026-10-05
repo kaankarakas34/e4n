@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
@@ -13,18 +13,23 @@ import { mailService, MAIL_TEMPLATES } from '../services/mailService';
 export function MemberProfile() {
   const { id } = useParams();
   const { items, fetchAll, renew, expire, create } = useMembershipStore();
-  const [user, setUser] = useState<any>(null);
+  const [storedUser, setUser] = useState<any>(null);
+  const [loadedFor,setLoadedFor]=useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [membershipReady, setMembershipReady] = useState(false);
   const [membershipError, setMembershipError] = useState<string | null>(null);
 
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser,token } = useAuthStore();
+  const context=`${currentUser?.id}:${currentUser?.role}:${token}:${id}`;
+  const live=useRef(context);live.current=context;
+  const generation=useRef(0);
+  const user=loadedFor===context?storedUser:null;
   const isMe = currentUser?.id === user?.id;
   const isAdmin = currentUser?.role === 'ADMIN';
   const isFriend = user?.friends?.includes(currentUser?.id || '') || false;
-  // Mock manager role for now, in real app check currentUser permissions
-  const isManager = true;
+  // Full private profile is available only to its owner or an administrator.
+  const isManager = isAdmin||isMe;
 
   // Edit State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -36,27 +41,35 @@ export function MemberProfile() {
 
   useEffect(() => {
     loadUser();
-  }, [id, fetchAll, currentUser?.id, currentUser?.role]);
+    return()=>{generation.current++;};
+  }, [context,fetchAll]);
 
   const loadUser = async () => {
+    const scope=context,epoch=++generation.current;
+    const current=()=>live.current===scope&&generation.current===epoch;
     setLoading(true); setError(null);
+    setUser(null);setLoadedFor('');setEditForm({});setShowEditModal(false);setShowSubscriptionModal(false);
     setMembershipReady(false); setMembershipError(null);
     try {
       if (id) {
         const u = await api.getUserById(id);
+        if(!current())return;
         setUser(u);
+        setLoadedFor(scope);
         setEditForm(u);
       }
       if (isAdmin) {
         await fetchAll();
+        if(!current())return;
         const fetchError = useMembershipStore.getState().error;
         if (fetchError) setMembershipError(fetchError);
         else setMembershipReady(true);
       }
     } catch (e) {
+      if(!current())return;
       setError('Üye bilgileri yüklenemedi');
     } finally {
-      setLoading(false);
+      if(current())setLoading(false);
     }
   };
 
@@ -102,12 +115,16 @@ export function MemberProfile() {
 
   const handleSave = async () => {
     if (!id) return;
+    const scope=context;
     try {
-      const updated = await api.updateUser(id, editForm);
-      setUser(updated);
+      if(isMe)await api.updateMe(editForm);else await api.updateUser(id, editForm);
+      const updated=await api.getUserById(id);
+      if(live.current!==scope)return;
+      setUser(updated);setLoadedFor(scope);
       setShowEditModal(false);
       alert('Profil güncellendi.');
     } catch (e) {
+      if(live.current!==scope)return;
       console.error(e);
       alert('Güncelleme sırasında bir hata oluştu.');
     }
@@ -118,7 +135,7 @@ export function MemberProfile() {
   }
 
   if (error) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-indigo-600">{error}</p></div>;
+    return <div className="min-h-screen bg-gray-50 flex flex-col gap-4 items-center justify-center"><p role="alert" className="text-indigo-600">{error}</p><Button onClick={()=>void loadUser()}>Tekrar Dene</Button></div>;
   }
 
   if (!user) {
@@ -211,7 +228,7 @@ export function MemberProfile() {
             <CardContent>
               <div className="mb-6 space-y-2">
                 <p className="text-gray-700"><strong>Meslek:</strong> {user.profession}</p>
-                <p className="text-gray-700"><strong>Grup:</strong> {'Liderler Global'}</p>
+                <p className="text-gray-700"><strong>Aktif gruplar:</strong> {user.groups.map((g:any)=>g.name).join(', ')||'Grup kaydı yok'}</p>
                 <p className="text-gray-700"><strong>Şirket:</strong> {user.company || 'Belirtilmemiş'}</p>
                 <p className="text-gray-700"><strong>İl:</strong> {user.city || 'Belirtilmemiş'}</p>
 
@@ -287,6 +304,8 @@ export function MemberProfile() {
                     <Award className="h-5 w-5 mr-2 text-indigo-600" />
                     Performans Karnesi
                   </h3>
+                  <p className="text-sm text-gray-600 mb-4">Aşağıdaki sayılar tüm kayıt geçmişini kapsar; aylık puan veya üyelik hakkı değildir.</p>
+                  <p className="text-sm text-gray-600 mb-4">Aktif grup kayıtları: {user.groups.map((g:any)=>g.name).join(', ')||'Grup kaydı yok'}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-xs text-blue-600 font-medium uppercase">Yönlendirme</p>

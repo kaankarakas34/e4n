@@ -1,4 +1,22 @@
 import { emailService } from '../services/emailService';
+import type {UserDetailSnapshot} from './userDetail';
+const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
+const nullableText=(v:unknown)=>v===null||typeof v==='string';
+export function validUserDetail(v:any,owner:string,target:string):v is UserDetailSnapshot {
+  return !!v&&v.profileVersion===1&&uuid(owner)&&uuid(target)&&v.ownerId===owner.toLowerCase()&&v.id===target.toLowerCase()
+    &&['GREEN','YELLOW','RED','GREY'].includes(v.performance_color)&&v.metricScope==='ALL_HISTORY'&&['name','full_name','email','role','performance_color'].every(k=>typeof v[k]==='string')
+    &&['profession','phone','city','company','tax_number','tax_office','billing_address','account_status','subscription_plan','group_name'].every(k=>nullableText(v[k]))
+    &&(v.subscription_end_date===null||typeof v.subscription_end_date==='string'&&Number.isFinite(Date.parse(v.subscription_end_date)))
+    &&['metric_referrals','metric_visitors','metric_one_to_ones'].every(k=>Number.isSafeInteger(v[k])&&v[k]>=0)
+    &&['metric_revenue','performance_score'].every(k=>typeof v[k]==='number'&&Number.isFinite(v[k]))
+    &&!('password_hash' in v)&&!('token' in v)
+    &&Array.isArray(v.groups)&&v.groups.every((g:any)=>uuid(g.id)&&typeof g.name==='string')&&new Set(v.groups.map((g:any)=>g.id)).size===v.groups.length
+    &&v.group_name===(v.groups.length===1?v.groups[0].name:null)
+    &&Array.isArray(v.last_meetings)&&v.last_meetings.length<=3&&v.last_meetings.length<=v.metric_one_to_ones
+    &&v.last_meetings.every((m:any)=>uuid(m.id)&&typeof m.meeting_date==='string'&&Number.isFinite(Date.parse(m.meeting_date))&&typeof m.status==='string'&&nullableText(m.partner_name))
+    &&new Set(v.last_meetings.map((m:any)=>m.id)).size===v.last_meetings.length;
+}
+
 const validMeetingRow = (row: any) => row && typeof row === 'object' && !Array.isArray(row)
   && ['id','requester_id','partner_id'].every(key => typeof row[key] === 'string' && !!row[key].trim())
   && typeof row.status === 'string' && !!row.status.trim()
@@ -530,8 +548,12 @@ export const api = {
   async getPowerTeamSynergy(teamId: string) {
     return await request(`/power-teams/${teamId}/synergy`);
   },
-  async getUserById(id: string) {
-    return await request(`/users/${id}`);
+  async getUserById(id: string):Promise<UserDetailSnapshot> {
+    const owner=JSON.parse(localStorage.getItem('auth-storage')||'null')?.state?.user?.id;
+    if(typeof owner!=='string'||!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))throw new Error('Geçersiz profil bağlamı');
+    const data=await request(`/users/${id}`);
+    if(!validUserDetail(data,owner,id))throw new Error('Profil yanıtı doğrulanamadı. Tekrar deneyin.');
+    return data;
   },
   async getOneToOnes(userId: string) {
     if(!userId?.trim()) throw new Error('Missing activity user');

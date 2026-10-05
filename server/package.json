@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "migrate": "node src/config/run-versioned-schema.js",
     "test:group-capacity": "node test/group-capacity-contract.mjs",
+    "test:user-detail": "node test/user-detail-contract.mjs && node test/performance-context-contract.mjs",
     "test:web-acceptance": "node test/web-acceptance.mjs",
     "test:web-browser:fixture": "node test/web-browser-fixture.mjs",
     "test:web-browser": "node test/run-web-browser-acceptance.mjs",

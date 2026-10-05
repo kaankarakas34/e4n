@@ -42,6 +42,8 @@ try{
   await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,max_attendees,created_by,group_id) VALUES($1,'Browser Participant Event',now()+interval '2 days','PUBLISHED',true,'social',0,50,$2,$3)",[ids.event,ids.admin,ids.group]);
   await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT'),($1,$3,'ABSENT')",[ids.event,ids.member,ids.president]);
   await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED')",[ids.member,ids.president]);
+  await pool.query("UPDATE users SET performance_score=73,performance_color='YELLOW' WHERE id=$1",[ids.member]);
+  for(let i=0;i<4;i++)await pool.query("INSERT INTO one_to_ones(requester_id,partner_id,meeting_date) VALUES($1,$2,now()-interval '1 day')",[i%2?ids.president:ids.member,i%2?ids.member:ids.president]);
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const apiBase='http://127.0.0.1:'+appServer.address().port;
   vite=await createViteServer({root,configFile:path.join(root,'vite.config.ts'),envDir:path.join(root,'server/test/.nonexistent-env-dir'),define:{'import.meta.env.VITE_SUPABASE_URL':JSON.stringify('https://fixture.example.invalid'),'import.meta.env.VITE_SUPABASE_ANON_KEY':JSON.stringify('fixture-public-key')},server:{host:'127.0.0.1',port:0,strictPort:true,open:false}});await vite.listen();const webBase='http://127.0.0.1:'+vite.httpServer.address().port;
   control=createHttpServer(async(req,res)=>{

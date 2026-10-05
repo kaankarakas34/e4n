@@ -2,7 +2,8 @@
 
 Run `npm --prefix server run test:web-acceptance` from the managed checkout.
 Node dependencies and Docker with PostgreSQL 17 are required. The runner executes
-26 contract suites sequentially, including the 15 delivered WEB packages, route
+28 contract suites sequentially, including private profile/session isolation,
+the 15 delivered WEB packages, route
 ownership, admission/transfer/capacity, payment, meetings, referrals, support,
 scheduled transactions and synthetic backup/restore. Referral verification uses
 the actual **web** transport; it does not require a mobile checkout.
@@ -32,7 +33,7 @@ routes, browsers, historical production records or future product rules passed.
 The isolated smoke suite deliberately retains documented unresolved defect
 baselines; a passing smoke run does not fix those defects.
 
-`releaseReady` remains false even if all 26 suites pass. The report records:
+`releaseReady` remains false even if all 28 suites pass. The report records:
 
 - BLOCKED: remaining scoring/removal/ban, service/admission/company/membership
   decisions and exact shuffle payment/grace/restriction/reopening policy.
@@ -126,7 +127,7 @@ fixture additionally checked selected-day event data and persisted PDF bytes.
 Base HEAD `b8058d4` identifies the base checkout; the browser helper additions are
 local changes delivered with this section. No runtime source was changed.
 
-**Remaining observation:** actual member navigation logs a caught SQL failure in
+**Observation at that run (resolved in the later profile package below):** actual member navigation logs a caught SQL failure in
 the legacy `/api/users/:id` profile query: `one_to_ones.receiver_id` does not exist,
 so it falls back to a basic profile. A 200 and rendered page do not prove the
 profile metrics/last-meetings contract. Record this under P30/P40 and verify that
@@ -136,3 +137,37 @@ passed their stated cases; they do not resolve that fallback.
 This fresh browser evidence advances P37's existing-flow gate. Remaining target
 rules, historical production data, profile metrics, all untested interactions
 and broad security/release acceptance keep `releaseReady=false` and P37 open.
+
+## Private profile and dashboard context package, 5 October
+
+The active `/api/users/:id` reader now uses canonical `one_to_ones.partner_id`,
+counts both directions, and returns the latest three meetings with stable date/id
+ordering and counterpart names. Metrics retain their existing all-history scope;
+no monthly scoring, money or rights policy is introduced. All ACTIVE groups are
+returned without choosing an arbitrary primary group. The profile header consumes
+those groups instead of displaying the hardcoded `Liderler Global` label.
+
+The read-only repeatable-read snapshot verifies the current database actor: only
+the owner or a current ADMIN receives the private profile. Anonymous, foreign,
+deleted and demoted actors are checked; SQL failure returns a redacted error,
+never a successful basic-profile fallback. The web transport validates owner,
+target, metrics, groups and latest-meeting fields. Profile and dashboard requests
+discard stale owner/role/token results; retry refreshes the current context.
+Profile edit responses are re-read through the complete DTO before display.
+
+`2026-10-05T18-46-10-332Z/report.json`: **28 PASS / 0 FAIL**. Two new suites
+exercise actual PostgreSQL/Express/web transport and the real Zustand store's
+delayed responses. The previous 26-suite evidence remains historical.
+Production build and final TypeScript checking passed. Base HEAD is `7687799`;
+runtime, consumers and test changes are the working tree delivered with this
+section. No migration is added; source remains 15 versions / 41 application
+tables plus its ledger. Broader membership/scoring/shuffle decisions and release
+gates remain open; P30/P40/P37 are not marked DONE from this package alone.
+
+Fresh final browser fixture `2026-10-05T18-52-51-923Z/browser-report.json`:
+**23 PASS / 0 FAIL**, including the actual admin member profile's four meetings,
+latest three counterpart rows, real ACTIVE group header, and rejection of a
+member reading somebody else's private profile. The earlier 23-case run
+`18-48-49-384Z` is preserved: its screenshot exposed the legacy hardcoded group
+header, which was corrected and asserted in the final fresh run. The browser,
+API, Vite and owned PostgreSQL fixture are closed after verification.

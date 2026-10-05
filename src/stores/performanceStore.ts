@@ -2,11 +2,16 @@ import { create } from 'zustand';
 import type { PerformanceReport } from '../types';
 import { PerformanceService } from '../utils/services/performanceService';
 import { api } from '../api/api';
+import {useAuthStore} from './authStore';
+
+let generation=0;
+export const performanceContext=()=>{const {user,token}=useAuthStore.getState();return `${user?.id}:${user?.role}:${token}`;};
 
 interface PerformanceState {
   performance: PerformanceReport | null;
   isLoading: boolean;
   error: string | null;
+  scope:string|null;
 
   fetchPerformance: (userId: string) => Promise<void>;
   refreshPerformance: (userId: string) => Promise<void>;
@@ -17,11 +22,16 @@ export const usePerformanceStore = create<PerformanceState>((set) => ({
   performance: null,
   isLoading: false,
   error: null,
+  scope:null,
 
   fetchPerformance: async (userId: string) => {
-    set({ isLoading: true, error: null });
+    const epoch=++generation,scope=performanceContext();
+    const owner=useAuthStore.getState();
+    const current=()=>generation===epoch&&performanceContext()===scope;
+    set({ performance:null,isLoading: true, error: null,scope });
 
     try {
+      if(!owner.token||owner.user?.id!==userId)throw new Error('Performans için güncel üye oturumu gerekli.');
       /*
       if (!import.meta.env.VITE_SUPABASE_URL) {
         const mockPerformance: PerformanceReport = {
@@ -61,6 +71,7 @@ export const usePerformanceStore = create<PerformanceState>((set) => ({
         api.getEducationByUser(userId),
         api.getUserAttendance(userId),
       ]);
+      if(!current())return;
 
       const calculated = await PerformanceService.calculateScore(
         userId,
@@ -70,6 +81,7 @@ export const usePerformanceStore = create<PerformanceState>((set) => ({
         education || [],
         attendances || []
       );
+      if(!current())return;
 
       // Override with server-side authoritative score if available
       if (userProfile && (userProfile.performance_score !== undefined)) {
@@ -79,6 +91,7 @@ export const usePerformanceStore = create<PerformanceState>((set) => ({
 
       set({ performance: calculated, isLoading: false });
     } catch (error) {
+      if(!current())return;
       set({
         error: error instanceof Error ? error.message : 'Performans verileri çekilirken hata oluştu',
         isLoading: false,
@@ -92,3 +105,10 @@ export const usePerformanceStore = create<PerformanceState>((set) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+useAuthStore.subscribe((state,previous)=>{
+  if(state.user?.id!==previous.user?.id||state.user?.role!==previous.user?.role||state.token!==previous.token){
+    generation++;
+    usePerformanceStore.setState({performance:null,isLoading:false,error:null,scope:null});
+  }
+});

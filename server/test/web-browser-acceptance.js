@@ -43,6 +43,14 @@ async page=>{
     await page.getByLabel(/Dosya \(PDF/).setInputFiles({name:'browser-contract.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nBrowser isolated contract\n%%EOF')});
     await page.getByRole('button',{name:'Yükle',exact:true}).click();await page.getByRole('heading',{name:'Browser Shared Contract',exact:true}).waitFor();
   });
+  await test('admin-member-profile-history',async()=>{
+    await page.goto(f.webBase+'/admin/members/'+f.ids.member);await page.getByText('Browser member',{exact:true}).last().waitFor();
+    await page.getByRole('heading',{name:'Son 1\'e 1 Görüşmeler',exact:true}).waitFor();
+    check(await page.getByText('Browser president ile Görüşme',{exact:true}).count()===3,'Latest meeting history missing');
+    await page.getByText(/Aşağıdaki sayılar tüm kayıt geçmişini kapsar/).waitFor();
+    await page.getByText('Aktif gruplar: Browser Full Group',{exact:true}).waitFor();
+    check(await page.getByText('Liderler Global',{exact:true}).count()===0,'Hardcoded group displayed');
+  });
   await test('member-login',()=>login('member'));
   for(const [name,url,heading] of [
     ['member-reports','/reports','Kişisel Aktivite Raporu'],['member-groups','/chapter-management','Gruplarım ve Ağ'],
@@ -67,6 +75,10 @@ async page=>{
   });
   await test('member-admin-data-hidden',async()=>{
     await page.goto(f.webBase+'/admin/groups');await page.getByRole('heading',{name:'Erişim Kısıtlı',exact:true}).waitFor();check(await page.getByRole('article').count()===0,'Previous admin catalog visible');
+  });
+  await test('member-private-profile-denied',async()=>{
+    await page.goto(f.webBase+'/admin/members/'+f.ids.president);await page.getByRole('alert').filter({hasText:'Üye bilgileri yüklenemedi'}).waitFor();
+    check(await page.getByRole('heading',{name:'Son 1\'e 1 Görüşmeler',exact:true}).count()===0,'Previous target private metrics visible');
   });
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
-import { usePerformanceStore } from '../stores/performanceStore';
+import { usePerformanceStore,performanceContext } from '../stores/performanceStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Alert, AlertTitle, AlertDescription } from '../shared/Alert';
@@ -33,16 +33,21 @@ import {
 import { useNotificationStore } from '../stores/notificationStore';
 
 export function Dashboard() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const navigate = useNavigate();
-  const { performance, isLoading, error, fetchPerformance } = usePerformanceStore();
+  const performanceState=usePerformanceStore();
+  const {fetchPerformance}=performanceState;
+  const fresh=performanceState.scope===performanceContext();
+  const performance=fresh?performanceState.performance:null;
+  const isLoading=fresh?performanceState.isLoading:true;
+  const error=fresh?performanceState.error:null;
 
 
   useEffect(() => {
     if (user && user.role !== 'COMMUNITY_MEMBER') {
       fetchPerformance(user.id);
     }
-  }, [user, fetchPerformance]);
+  }, [user, token, fetchPerformance]);
 
   if (!user) {
     return (
@@ -159,6 +164,7 @@ export function Dashboard() {
               performance={performance}
               isLoading={isLoading}
               userName={user.name}
+              onRefresh={()=>void fetchPerformance(user.id)}
             />
 
             {/* Tasks between performance and quick actions */}

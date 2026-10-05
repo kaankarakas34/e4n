@@ -718,3 +718,5 @@ export const api = {
 
 
 export default api;
+
+export const webGroupsTransport = { read: () => request('/me/web-groups') };

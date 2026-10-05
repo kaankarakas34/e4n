@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,14);
+  assert.equal((await applyVersionedSchema()).applied.length,15);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -127,7 +127,8 @@ async function main() {
   pool.connect=async()=>{const c=await original(),q=c.query.bind(c),release=c.release.bind(c);c.query=async(sql,args)=>{if(typeof sql==='string'&&sql.includes('FROM visitors v'))throw new Error('isolated detail failure');return q(sql,args);};c.release=()=>{c.query=q;c.release=release;release();};return c;};assert.equal((await call()).status,500);pool.connect=original;assert.equal((await call()).status,200);
   const root=path.join(serverDir,'..'),compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   const apiSource=readFileSync(path.join(root,'src/api/api.ts'),'utf8').replace("const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';",`const BASE_URL = '${base}/api';`);globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(admin)}})};const apiUrl='data:text/javascript;base64,'+Buffer.from(compile(apiSource)).toString('base64');
-  const serviceSource=readFileSync(path.join(root,'src/api/adminGroupDetail.ts'),'utf8').replace("from './api'",`from '${apiUrl}'`);const {adminGroupDetailApi,validAdminGroupDetail,groupMoney,groupRecordStatus}=await import('data:text/javascript;base64,'+Buffer.from(compile(serviceSource)).toString('base64'));
+  const capacitySource=readFileSync(path.join(root,'src/api/adminGroupCatalog.ts'),'utf8').replace("from './api'",`from '${apiUrl}'`);const capacityUrl='data:text/javascript;base64,'+Buffer.from(compile(capacitySource)).toString('base64');
+  const serviceSource=readFileSync(path.join(root,'src/api/adminGroupDetail.ts'),'utf8').replace("from './api'",`from '${apiUrl}'`).replace("from './adminGroupCatalog'",`from '${capacityUrl}'`);const {adminGroupDetailApi,validAdminGroupDetail,groupMoney,groupRecordStatus}=await import('data:text/javascript;base64,'+Buffer.from(compile(serviceSource)).toString('base64'));
   assert.equal((await adminGroupDetailApi.read(admin,group)).summary.knownVolume,'100.30');const empty=await adminGroupDetailApi.read(admin,emptyGroup);assert.equal(empty.summary.volume,'0');assert.equal(empty.summary.count,0);
   assert.equal(groupMoney('0'),'₺0,00');assert.equal(groupMoney('9007199254740993.20'),'₺9.007.199.254.740.993,20');assert.equal(groupMoney(null),'Bilinmiyor');assert.equal(groupRecordStatus('NO_SHOW','visitor'),'Gelmedi');assert.equal(groupRecordStatus('UNSUCCESSFUL','referral'),'Başarısız');
   for(const bad of [{...snapshot,ownerId:member},{...snapshot,group:{...snapshot.group,id:otherGroup}},{...snapshot,referrals:[...snapshot.referrals,snapshot.referrals[0]]},{...snapshot,summary:{...snapshot.summary,knownVolume:'999'}},{...snapshot,events:[{...snapshot.events[0],present_count:9}]}])assert.equal(validAdminGroupDetail(bad,admin,group),false);

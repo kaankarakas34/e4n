@@ -150,7 +150,9 @@ export const api = {
     return await request('/shuffle/save', { method: 'POST', body: JSON.stringify({ assignments }) });
   },
   async moveMember(userId: string, groupId: string) {
-    return await request('/admin/move-member', { method: 'POST', body: JSON.stringify({ userId, groupId }) });
+    const result=await request('/admin/move-member', { method: 'POST', body: JSON.stringify({ userId, groupId }) });
+    if(result?.success!==true)throw new Error('Taşıma sonucu doğrulanamadı.');
+    return result;
   },
   async assignRole(userId: string, role: string, groupTitle?: string, contextId?: string, type?: 'GROUP' | 'POWER_TEAM') {
     return await request('/admin/assign-role', { method: 'POST', body: JSON.stringify({ userId, role, groupTitle, contextId, type }) });
@@ -422,7 +424,9 @@ export const api = {
     const headers: any = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    return await request(`/groups/${groupId}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ status }), headers });
+    const result=await request(`/groups/${groupId}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ status }), headers });
+    if(result?.group_id!==groupId||result?.user_id!==userId||result?.status!==status)throw new Error('Grup üye sonucu doğrulanamadı.');
+    return result;
   },
 
   async updatePowerTeamMemberStatus(ptId: string, userId: string, status: string) {

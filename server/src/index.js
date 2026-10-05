@@ -7,6 +7,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 import 'dotenv/config';
+import {beginGroupMutation,enforceGroupCapacity,requireCurrentAdmin,requireGroupManager,requirePowerTeamManager,isUuid,groupError,sendGroupMutationError,validShuffleAssignments} from './group-capacity.js';
 import express from 'express';
 import cors from 'cors';
 import pkg from 'pg';
@@ -654,7 +655,8 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   try {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
+      await beginGroupMutation(client);
+      await requireCurrentAdmin(client,req.user.id);
 
       const currentRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
       if (currentRes.rows.length === 0) throw new Error('User not found');
@@ -682,6 +684,8 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
       if (updates.length > 0) {
         await client.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, [...values, id]);
       }
+
+      if(role){const ids=(await client.query('SELECT group_id FROM group_members WHERE user_id=$1',[id])).rows.map(r=>r.group_id);if(ids.length)await enforceGroupCapacity(client,ids);}
 
       // Check if activating and sending welcome email
       // Condition: Status becoming ACTIVE, and user might not have password or we just always send welcome on first activation?
@@ -768,7 +772,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
     }
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: e.message });
+    sendGroupMutationError(res,e);
   }
 });
 
@@ -2839,26 +2843,22 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
 
 // Join Group Request
 app.post('/api/groups/:id/join', authenticateToken, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  if(!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz grup başvurusu.'});
+  let client;
   try {
-    // Enforce Payment Check
-    const userCheck = await pool.query('SELECT account_status FROM users WHERE id = $1', [req.user.id]);
-    const status = userCheck.rows[0]?.account_status || 'PENDING';
-
-    if (status !== 'ACTIVE') {
-      return res.status(403).json({
-        error: 'Üyelik ödemesi tamamlanmadığı için gruplara katılım sağlayamazsınız. Lütfen ödeme yapınız.',
-        code: 'PAYMENT_REQUIRED'
-      });
-    }
-
-    const { rows } = await pool.query(
-      `INSERT INTO group_members(group_id, user_id, status) VALUES($1, $2, 'REQUESTED') 
-       ON CONFLICT(group_id, user_id) DO UPDATE SET status = 'REQUESTED'
-RETURNING * `,
-      [req.params.id, req.user.id]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    client=await pool.connect();await beginGroupMutation(client);
+    const actor=(await client.query('SELECT account_status FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
+    if(!actor)throw groupError('UNAUTHENTICATED','Oturum bulunamadı.',401);
+    if(actor.account_status!=='ACTIVE')throw groupError('PAYMENT_REQUIRED','Üyelik ödemesi tamamlanmadığı için gruplara katılım sağlayamazsınız. Lütfen ödeme yapınız.',403);
+    if(!(await client.query('SELECT id FROM groups WHERE id=$1',[req.params.id])).rows.length)throw groupError('GROUP_NOT_FOUND','Grup bulunamadı.',404);
+    let row=(await client.query('SELECT * FROM group_members WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
+    if(row){
+      if(!['ACTIVE','REQUESTED'].includes(row.status))row=(await client.query("UPDATE group_members SET status='REQUESTED' WHERE group_id=$1 AND user_id=$2 RETURNING *",[req.params.id,req.user.id])).rows[0];
+    }else row=(await client.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED') RETURNING *",[req.params.id,req.user.id])).rows[0];
+    await client.query('COMMIT');res.json(row);
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
+  finally{client?.release();}
 });
 
 // Get User's Pending Group Requests
@@ -2875,14 +2875,20 @@ app.get('/api/user/group-requests', authenticateToken, async (req, res) => {
 
 // Update Group Member Status (Approve/Reject)
 app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) => {
-  const { status } = req.body;
+  res.set('Cache-Control','private, no-store');
+  const {status}=req.body;
+  if(!isUuid(req.params.id)||!isUuid(req.params.userId)||!['ACTIVE','INACTIVE','REQUESTED'].includes(status)
+      ||Object.keys(req.body).some(key=>key!=='status'))return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
+  let client;
   try {
-    const { rows } = await pool.query(
-      `UPDATE group_members SET status = $1 WHERE group_id = $2 AND user_id = $3 RETURNING * `,
-      [status, req.params.id, req.params.userId]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    client=await pool.connect();await beginGroupMutation(client);
+    await requireGroupManager(client,req.user.id,req.params.id);
+    const {rows}=await client.query('UPDATE group_members SET status=$1 WHERE group_id=$2 AND user_id=$3 RETURNING *',[status,req.params.id,req.params.userId]);
+    if(!rows.length)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
+    if(status==='ACTIVE')await enforceGroupCapacity(client,[req.params.id]);
+    await client.query('COMMIT');res.json(rows[0]);
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
+  finally{client?.release();}
 });
 
 // Join Power Team Request
@@ -2973,10 +2979,13 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
 
   const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
-  const client = await pool.connect();
+  if(!validShuffleAssignments(assignments))return res.status(400).json({error:'Geçersiz shuffle dağıtımı.'});
+  let client;
 
   try {
-    await client.query('BEGIN');
+        client=await pool.connect();
+    await beginGroupMutation(client);
+    await requireCurrentAdmin(client,req.user.id);
 
     // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
     // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
@@ -2999,7 +3008,7 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
     // 3. Insert new group assignments
     const insertQuery = `
       INSERT INTO group_members(group_id, user_id, status, joined_at)
-VALUES($1, $2, 'ACTIVE', NOW())
+VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET status='ACTIVE',joined_at=NOW()
   `;
 
     for (const [groupId, memberIds] of Object.entries(assignments)) {
@@ -3009,14 +3018,15 @@ VALUES($1, $2, 'ACTIVE', NOW())
       }
     }
 
+    await enforceGroupCapacity(client, null);
     await client.query('COMMIT');
     res.json({ success: true, message: 'Shuffle applied successfully.' });
   } catch (e) {
-    await client.query('ROLLBACK');
+    if(client)await client.query('ROLLBACK').catch(()=>{});
     console.error('Shuffle save error:', e);
-    res.status(500).json({ error: e.message });
+    sendGroupMutationError(res,e);
   } finally {
-    client.release();
+    client?.release();
   }
 });
 
@@ -3103,45 +3113,28 @@ app.get('/api/champions', authenticateToken, async (req, res) => {
 // Assign Role
 app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
   const { userId, role, groupTitle, contextId, type } = req.body;
+  if(!isUuid(userId)||(contextId&&!isUuid(contextId)))return res.status(400).json({error:'Geçersiz rol isteği.'});
   
-  if (req.user.role !== 'ADMIN') {
-    if (!contextId) return res.sendStatus(403);
-    
-    // Check if the requester is the president of this context
-    if (type === 'POWER_TEAM') {
-      const checkPt = await pool.query("SELECT role FROM power_team_members WHERE user_id = $1 AND power_team_id = $2", [req.user.id, contextId]);
-      if (checkPt.rows.length === 0 || checkPt.rows[0].role !== 'PRESIDENT') {
-        return res.sendStatus(403);
-      }
-    } else {
-      // type === 'GROUP'
-      const checkGrp = await pool.query(`
-        SELECT u.role, u.group_title 
-        FROM group_members gm 
-        JOIN users u ON u.id = gm.user_id 
-        WHERE gm.group_id = $1 AND gm.user_id = $2 AND gm.status = 'ACTIVE'
-      `, [contextId, req.user.id]);
-      
-      if (checkGrp.rows.length === 0 || (checkGrp.rows[0].role !== 'PRESIDENT' && checkGrp.rows[0].group_title !== 'PRESIDENT')) {
-        return res.sendStatus(403);
-      }
-    }
-  }
-
+  let client;
   try {
+    client=await pool.connect();await beginGroupMutation(client);
+    if(!(await client.query('SELECT id FROM users WHERE id=$1',[userId])).rows.length)throw groupError('USER_NOT_FOUND','Üye bulunamadı.',404);
+    if(type==='POWER_TEAM'&&contextId)await requirePowerTeamManager(client,req.user.id,contextId);
+    else if(type==='GROUP'&&contextId)await requireGroupManager(client,req.user.id,contextId);
+    else await requireCurrentAdmin(client,req.user.id);
     if (type === 'POWER_TEAM' && contextId) {
       // 1. Check if member
-      const check = await pool.query('SELECT * FROM power_team_members WHERE user_id = $1 AND power_team_id = $2', [userId, contextId]);
+      const check = await client.query('SELECT * FROM power_team_members WHERE user_id = $1 AND power_team_id = $2', [userId, contextId]);
 
       if (check.rows.length === 0) {
         // Add member with role
-        await pool.query(
+        await client.query(
           'INSERT INTO power_team_members (user_id, power_team_id, status, role) VALUES ($1, $2, \'ACTIVE\', $3)',
           [userId, contextId, groupTitle]
         );
       } else {
         // Update existing
-        await pool.query(
+        await client.query(
           'UPDATE power_team_members SET role = $1 WHERE user_id = $2 AND power_team_id = $3',
           [groupTitle, userId, contextId]
         );
@@ -3154,10 +3147,10 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
       // ensure the user is a member of that group.
       if (type === 'GROUP' && contextId) {
         // Check membership
-        const checkMember = await pool.query('SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2', [contextId, userId]);
+        const checkMember = await client.query('SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2', [contextId, userId]);
         if (checkMember.rows.length === 0) {
           console.log(`[ASSIGN-ROLE] Adding user ${userId} to group ${contextId}`);
-          await pool.query(
+          await client.query(
             "INSERT INTO group_members (group_id, user_id, status, joined_at) VALUES ($1, $2, 'ACTIVE', NOW())",
             [contextId, userId]
           );
@@ -3165,25 +3158,28 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
           // If member exists but inactive, reactivate?
           if (checkMember.rows[0].status !== 'ACTIVE') {
             console.log(`[ASSIGN-ROLE] Reactivating user ${userId} in group ${contextId}`);
-            await pool.query("UPDATE group_members SET status = 'ACTIVE' WHERE group_id = $1 AND user_id = $2", [contextId, userId]);
+            await client.query("UPDATE group_members SET status = 'ACTIVE' WHERE group_id = $1 AND user_id = $2", [contextId, userId]);
           }
         }
       }
 
       if (groupTitle !== undefined) {
         console.log(`[ASSIGN-ROLE] Updating User Table: Role=${role}, Title=${groupTitle}`);
-        await pool.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
+        await client.query('UPDATE users SET role = $1, group_title = $2 WHERE id = $3', [role, groupTitle, userId]);
       } else {
         console.log(`[ASSIGN-ROLE] Updating User Table: Role=${role}`);
-        await pool.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
+        await client.query('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
       }
     }
 
+    if(type!=='POWER_TEAM'){const ids=(await client.query('SELECT group_id FROM group_members WHERE user_id=$1',[userId])).rows.map(r=>r.group_id);if(ids.length)await enforceGroupCapacity(client,ids);}
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (e) {
     console.error('[ASSIGN-ROLE] Error:', e);
-    res.status(500).json({ error: e.message });
-  }
+    if(client)await client.query('ROLLBACK').catch(()=>{});
+    sendGroupMutationError(res,e);
+  }finally{client?.release();}
 });
 
 /* --- MEMBERSHIP / SUBSCRIPTION ENDPOINTS --- */

@@ -220,7 +220,9 @@ export function AdminMembers() {
       fetchData();
     } catch (e) {
       console.error(e);
-      alert('Taşıma işlemi başarısız.');
+      let message='Taşıma işlemi başarısız. Mevcut grubu kontrol edip tekrar deneyin.';
+      try{const body=JSON.parse((e as any).responseBody);if(['GROUP_CAPACITY_FULL','GROUP_ROLE_AMBIGUOUS','GROUP_BUSY'].includes(body.code))message=body.error;}catch{}
+      alert(message);
     }
   };
 

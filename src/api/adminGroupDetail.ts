@@ -1,3 +1,5 @@
+import {validGroupCapacity} from './adminGroupCatalog';
+import type {GroupCapacity} from './adminGroupCatalog';
 import { referralTransport } from './api';
 import type { ReferralMetric } from './personalReports';
 export interface GroupDetailMember { id:string; full_name:string; profession:string|null; email:string|null; role:string|null; status:string|null; created_at:string|null; absence_count:number; performance_score:number|null; performance_color:string|null }
@@ -5,7 +7,7 @@ export interface GroupDetailEvent { id:string; topic:string; date:string; attend
 export interface GroupDetailVisitor { id:string; name:string; profession:string|null; company:string|null; email:string|null; visited_at:string; status:string|null; inviter_name:string|null }
 export interface GroupDetailReferral { id:string; status:string|null; amount:string|null; created_at:string; from_member_name:string; to_member_name:string }
 export interface AdminGroupDetailSnapshot {
-  version:1; ownerId:string; group: { id:string; name:string; meeting_dates:string[]; [key:string]:unknown };
+  version:1; ownerId:string; group: { id:string; name:string; meeting_dates:string[]; capacity:GroupCapacity; [key:string]:unknown };
   members:GroupDetailMember[]; events:GroupDetailEvent[]; visitors:GroupDetailVisitor[]; referrals:GroupDetailReferral[];
   summary:ReferralMetric & {activeMembers:number;upcomingEvents:number};
 }
@@ -40,6 +42,7 @@ export function validAdminGroupDetail(data:any,owner:string,id:string):data is A
     ||data.visitors.some((r:any)=>typeof r.name!=='string'||!date(r.visited_at)||['profession','company','email','status','inviter_name'].some(k=>!text(r[k])))
     ||data.referrals.some((r:any)=>!date(r.created_at)||typeof r.from_member_name!=='string'||typeof r.to_member_name!=='string'
       ||!text(r.status)||r.amount!==null&&(typeof r.amount!=='string'||! /^-?\d+(?:\.\d{1,2})?$/.test(r.amount))))return false;
+  if(!validGroupCapacity(data.group.capacity,id)||data.group.capacity.active_records!==data.summary?.activeMembers)return false;
   const s=data.summary;
   if(!s||!['activeMembers','upcomingEvents','count','successful','missingAmounts'].every(k=>count(s[k]))||!decimal(s.knownVolume)
     ||s.count!==data.referrals.length||s.activeMembers!==data.members.filter((r:any)=>r.status==='ACTIVE').length)return false;

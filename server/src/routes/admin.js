@@ -1,3 +1,4 @@
+import {beginGroupMutation,enforceGroupCapacity,requireCurrentAdmin,isUuid,groupError,sendGroupMutationError,validShuffleAssignments} from '../group-capacity.js';
 import express from 'express';
 import pool from '../config/db.js';
 import authenticateToken from '../middleware/auth.js';
@@ -71,32 +72,40 @@ router.post('/invite', async (req, res) => {
 router.post('/move-member', async (req, res) => {
     const { userId, groupId } = req.body;
 
-    const client = await pool.connect();
+    if(!isUuid(userId)||!isUuid(groupId)||Object.keys(req.body).some(k=>!['userId','groupId'].includes(k)))return res.status(400).json({error:'Geçersiz taşıma isteği.'});
+    let client;
     try {
-        await client.query('BEGIN');
+        client=await pool.connect();
+        await beginGroupMutation(client);
+        await requireCurrentAdmin(client,req.user.id);
 
         // Deactivate current active group
         await client.query(`
       UPDATE group_members 
       SET status = 'INACTIVE' 
-      WHERE user_id = $1 AND status = 'ACTIVE'
-  `, [userId]);
+      WHERE user_id = $1 AND status = 'ACTIVE' AND group_id<>$2
+  `, [userId,groupId]);
 
-        // Insert new active group (or update if exists)
-        await client.query(`
+        // UPDATE an existing membership before INSERT: legacy profession trigger fires
+        // before ON CONFLICT and otherwise rejects the same active user on replay.
+        const existing = await client.query(`UPDATE group_members SET status='ACTIVE',
+          joined_at=CASE WHEN status='ACTIVE' THEN joined_at ELSE NOW() END
+          WHERE group_id=$1 AND user_id=$2 RETURNING id`,[groupId,userId]);
+        if(!existing.rows.length)await client.query(`
         INSERT INTO group_members(group_id, user_id, status, joined_at)
         VALUES($1, $2, 'ACTIVE', NOW())
         ON CONFLICT (group_id, user_id) 
-        DO UPDATE SET status = 'ACTIVE', joined_at = NOW()
+        DO UPDATE SET status = 'ACTIVE', joined_at = CASE WHEN group_members.status='ACTIVE' THEN group_members.joined_at ELSE NOW() END
       `, [groupId, userId]);
 
+        await enforceGroupCapacity(client,[groupId]);
         await client.query('COMMIT');
         res.json({ success: true });
     } catch (e) {
-        await client.query('ROLLBACK');
-        res.status(500).json({ error: e.message });
+        if(client)await client.query('ROLLBACK').catch(()=>{});
+        sendGroupMutationError(res,e);
     } finally {
-        client.release();
+        client?.release();
     }
 });
 
@@ -301,10 +310,13 @@ router.post('/trigger-champions', async (req, res) => {
 // Shuffle Save
 router.post('/shuffle/save', async (req, res) => {
     const { assignments } = req.body;
-    const client = await pool.connect();
+    if(!validShuffleAssignments(assignments))return res.status(400).json({error:'Geçersiz shuffle dağıtımı.'});
+  let client;
 
     try {
-        await client.query('BEGIN');
+        client=await pool.connect();
+        await beginGroupMutation(client);
+        await requireCurrentAdmin(client,req.user.id);
 
         // 1. Reset LEADERSHIP roles
         await client.query(`
@@ -323,7 +335,7 @@ router.post('/shuffle/save', async (req, res) => {
         // 3. Insert new group assignments
         const insertQuery = `
       INSERT INTO group_members(group_id, user_id, status, joined_at)
-VALUES($1, $2, 'ACTIVE', NOW())
+VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET status='ACTIVE',joined_at=NOW()
   `;
 
         for (const [groupId, memberIds] of Object.entries(assignments)) {
@@ -333,14 +345,15 @@ VALUES($1, $2, 'ACTIVE', NOW())
             }
         }
 
+        await enforceGroupCapacity(client,null);
         await client.query('COMMIT');
         res.json({ success: true, message: 'Shuffle applied successfully.' });
     } catch (e) {
-        await client.query('ROLLBACK');
+        if(client)await client.query('ROLLBACK').catch(()=>{});
         console.error('Shuffle save error:', e);
-        res.status(500).json({ error: e.message });
+        sendGroupMutationError(res,e);
     } finally {
-        client.release();
+        client?.release();
     }
 });
 

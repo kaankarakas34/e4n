@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,14);
+  assert.equal((await applyVersionedSchema()).applied.length,15);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -100,8 +100,9 @@ async function main() {
   for(const [i,id,role] of [[0,admin,'ADMIN'],[1,member,'MEMBER']])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role) VALUES($1,$2,$3,'Fixture','x',$4)",[id,`settings-${i}@example.invalid`,`Member ${i}`,role]);
   const existing=randomUUID();await pool.query("INSERT INTO groups(id,name,status,meeting_time,meeting_link,meeting_dates) VALUES($1,'Existing draft','DRAFT','19:00','https://example.invalid/meeting','[\"2026-10-09\"]')",[existing]);
   // Existing-column upgrade variant: additive migration must preserve configured values.
+  await pool.query("ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0014_group_meeting_settings']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0014_group_meeting_settings','0015_group_membership_state']);
   const preserved=(await pool.query('SELECT name,status,meeting_time,meeting_link FROM groups WHERE id=$1',[existing])).rows[0];assert.equal(preserved.name,'Existing draft');assert.equal(preserved.status,'DRAFT');assert.equal(preserved.meeting_time,'19:00:00');assert.equal(preserved.meeting_link,'https://example.invalid/meeting');
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base=`http://127.0.0.1:${appServer.address().port}`;
   const token=(id,role='ADMIN')=>jwt.sign({id,role},process.env.JWT_SECRET);
@@ -116,7 +117,7 @@ async function main() {
   const root=path.join(serverDir,'..'),compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   const apiSource=readFileSync(path.join(root,'src/api/api.ts'),'utf8').replace("const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';",`const BASE_URL = '${base}/api';`);globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(admin)}})};const {api}=await import('data:text/javascript;base64,'+Buffer.from(compile(apiSource)).toString('base64'));assert.equal((await api.createGroup(payload)).id,id);assert.equal((await api.updateGroup(existing,{meeting_time:'22:00'})).status,'DRAFT');const readback=await api.getGroup(existing);assert.equal(readback.meeting_time,'22:00:00');assert.equal(readback.status,'DRAFT');
   writeFileSync(path.join(root,'output/group-settings-browser.json'),JSON.stringify({owner:admin,other:member,group:readback,created,groups:[readback,created]}));
-  console.log('WEB11 group settings PASS:14 migrations/repeat0; schema repair, current DB admin/stale role, create concurrent UUID replay/conflict, input validation, partial/status/date preservation, 404, injected rollback, real TS create/update/readback.');
+  console.log('WEB11 group settings PASS:15 migrations/repeat0; schema repair, current DB admin/stale role, create concurrent UUID replay/conflict, input validation, partial/status/date preservation, 404, injected rollback, real TS create/update/readback.');
 }
 let exitCode = 0;
 try {

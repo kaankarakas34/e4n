@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,14);
+  assert.equal((await applyVersionedSchema()).applied.length,15);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -98,10 +98,12 @@ async function main() {
   await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED'),($1,$3,'PENDING'),($2,$4,'ACCEPTED')",[alice,bob,third,other]);
   await pool.query('CREATE ROLE anon; CREATE ROLE authenticated; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated');
   // Simulate adoption from the previously delivered 10-version database.
+  await pool.query("ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
   await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0011_direct_messages','0012_document_library','0013_invoice_files']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0011_direct_messages','0012_document_library','0013_invoice_files','0014_group_meeting_settings','0015_group_membership_state']);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal((await pool.query('SELECT count(*)::int n FROM users')).rows[0].n,4);
   assert.equal((await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid='public.direct_messages'::regclass")).rows[0].relrowsecurity,true);

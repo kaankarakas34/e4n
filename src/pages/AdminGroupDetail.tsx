@@ -15,6 +15,7 @@ export function AdminGroupDetail() {
     const location = useLocation();
     const { user, token } = useAuthStore();
     const [isSaving, setIsSaving] = useState(false);
+    const [memberActionError,setMemberActionError]=useState('');
     const [data, setData] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]); // Use 'members' to match rendering usage
     const [meetings, setMeetings] = useState<any[]>([]);
@@ -53,7 +54,7 @@ export function AdminGroupDetail() {
     const readContext = `${user?.id}:${user?.role}:${token}:${isPowerTeam}:${id}`;
 
     const currentContext = useRef(readContext); currentContext.current = readContext;
-    useEffect(() => { setShowEditModal(false); setIsSaving(false); }, [readContext]);
+    useEffect(() => { setShowEditModal(false); setIsSaving(false); setMemberActionError(''); }, [readContext]);
 
     // Dynamic Stats
     const stats = {
@@ -607,11 +608,11 @@ export function AdminGroupDetail() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>{isPowerTeam ? 'Lonca Üyeleri' : 'Grup Üyeleri'}</CardTitle>
-                                <span className="text-sm text-gray-500">{members.length} Üye</span>
+                                <span className="text-sm text-gray-500">{snapshot ? `${snapshot.group.capacity.member_records} / 35 üye · ${snapshot.group.capacity.president_records} başkan` : `${members.length} Üye`}</span>
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
+                                    {memberActionError&&<p role="alert" className="text-red-700 p-3">{memberActionError}</p>}<table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
@@ -661,11 +662,16 @@ export function AdminGroupDetail() {
                                                             <div className="flex justify-end space-x-2">
                                                                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
                                                                     if (confirm('Üyeyi onaylamak istiyor musunuz?')) {
+                                                                        const operationContext=readContext;
+                                                                        setMemberActionError('');
+                                                                        try {
                                                                         if (isPowerTeam) await api.updatePowerTeamMemberStatus(id!, member.id, 'ACTIVE');
                                                                         else await api.updateGroupMemberStatus(id!, member.id, 'ACTIVE');
+                                                                        if(currentContext.current!==operationContext)return;
                                                                         // Optimistic update
                                                                         if (useSnapshot) setRetryCount(count => count + 1);
                                                                         setMembers(members.map(m => m.id === member.id ? { ...m, status: 'ACTIVE' } : m));
+                                                                        }catch(error:any){if(currentContext.current!==operationContext)return;let message='Üye kabulü tamamlanamadı. Listeyi yenileyip sonucu kontrol edin.';try{const body=JSON.parse(error.responseBody);if(['GROUP_CAPACITY_FULL','GROUP_ROLE_AMBIGUOUS','GROUP_BUSY','FORBIDDEN'].includes(body.code))message=body.error;}catch{}setMemberActionError(message);}
                                                                     }
                                                                 }}>
                                                                     Onayla

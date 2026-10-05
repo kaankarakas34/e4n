@@ -1,3 +1,4 @@
+import {readGroupCapacity} from './group-capacity.js';
 const uuid = v => typeof v === 'string' && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 export function installAdminGroupDetail(app, { pool, authenticateToken }) {
   app.get('/api/admin/groups/:id/detail', authenticateToken, async (req, res) => {
@@ -41,6 +42,8 @@ export function installAdminGroupDetail(app, { pool, authenticateToken }) {
         COALESCE(sum(r.amount) FILTER(WHERE r.status='SUCCESSFUL' AND r.amount>=0),0)::text AS known_volume
         FROM referrals r JOIN users g ON g.id=r.giver_id JOIN users u ON u.id=r.receiver_id
         WHERE EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=$1 AND gm.user_id=r.giver_id AND gm.status='ACTIVE')`, args)).rows[0];
+      const capacity=(await readGroupCapacity(client,[group.id]))[0];
+      group.capacity=capacity;
       await client.query('COMMIT');
       res.json({ version:1,ownerId:req.user.id,group,members,events,visitors,referrals,
         summary:{ activeMembers:summary.activemembers,upcomingEvents:summary.upcomingevents,

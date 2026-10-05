@@ -1,3 +1,4 @@
+import {readGroupCapacity} from './group-capacity.js';
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 export function installAdminGroupCatalog(app,{pool,authenticateToken}) {
   app.get('/api/admin/group-catalog',authenticateToken,async(req,res)=>{
@@ -20,6 +21,8 @@ export function installAdminGroupCatalog(app,{pool,authenticateToken}) {
           JOIN users u ON u.id=gm.user_id) m ON m.group_id=g.id
         GROUP BY g.id ORDER BY lower(g.name),g.id LIMIT 5001`)).rows;
       if(groups.length>5000){await client.query('ROLLBACK');return res.status(503).json({error:'Catalog exceeds supported size'});}
+      const capacities=new Map((await readGroupCapacity(client)).map(row=>[row.id,row]));
+      for(const group of groups)group.capacity=capacities.get(group.id);
       await client.query('COMMIT');res.json({version:1,ownerId:req.user.id,asOf:owner.as_of,groups});
     }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});console.error('Group catalog failed:',error.message);res.status(500).json({error:'Group catalog unavailable'});}
     finally{client?.release();}

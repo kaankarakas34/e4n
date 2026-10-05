@@ -5,6 +5,8 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
+import { adminGroupDetailApi, groupMoney, groupRecordStatus } from '../api/adminGroupDetail';
+import type { AdminGroupDetailSnapshot } from '../api/adminGroupDetail';
 import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, UserPlus, Trash2, Send } from 'lucide-react';
 
 export function AdminGroupDetail() {
@@ -18,6 +20,8 @@ export function AdminGroupDetail() {
     const [meetings, setMeetings] = useState<any[]>([]);
     const [visitors, setVisitors] = useState<any[]>([]);
     const [referrals, setReferrals] = useState<any[]>([]);
+    const [snapshot, setSnapshot] = useState<AdminGroupDetailSnapshot | null>(null);
+    const useSnapshot = user?.role === 'ADMIN' && !location.pathname.includes('power-teams');
     const [synergy, setSynergy] = useState<any[]>([]);
 
     const [showEditModal, setShowEditModal] = useState(false);
@@ -53,7 +57,7 @@ export function AdminGroupDetail() {
 
     // Dynamic Stats
     const stats = {
-        totalTurnover: referrals.reduce((acc, curr) => acc + (curr.amount || 0), 0),
+        totalTurnover: referrals.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0),
         totalReferrals: referrals.length,
         activeMembers: members.filter(m => m.status === 'ACTIVE').length,
     };
@@ -66,7 +70,15 @@ export function AdminGroupDetail() {
             setLoading(true);
             setLoadError(null);
             setLoadedFor(null);
+            setSnapshot(null);
             try {
+                if (useSnapshot) {
+                    const result = await adminGroupDetailApi.read(user!.id, id!);
+                    if (cancelled) return;
+                    setData(result.group); setMembers(result.members); setMeetings(result.events);
+                    setVisitors(result.visitors); setReferrals(result.referrals); setSynergy([]);
+                    setSnapshot(result); setLoadedFor(readContext); return;
+                }
                 let foundItem;
                 if (isPowerTeam) {
                     const teams = await api.getPowerTeams();
@@ -109,7 +121,7 @@ export function AdminGroupDetail() {
             loadData();
         }
         return () => { cancelled = true; };
-    }, [id, isPowerTeam, user?.id, user?.role, canRead, readContext, typeLabel, retryCount]);
+    }, [id, isPowerTeam, user?.id, user?.role, canRead, readContext, typeLabel, retryCount, useSnapshot]);
 
 
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
@@ -176,13 +188,13 @@ export function AdminGroupDetail() {
                             <span className="text-gray-500">ID: {data.id}</span>
                             <span className="text-gray-300">•</span>
                             <span className={`px-2 py-0.5 rounded-full ${data.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                {data.status || 'Aktif'}
+                                {data.status || 'Durum bilinmiyor'}
                             </span>
                             {!isPowerTeam && (
                                 <>
                                     <span className="text-gray-300">•</span>
-                                    <span className={`font-medium ${(data.current_month || 1) >= 4 ? 'text-red-600' : 'text-blue-600'}`}>
-                                        {data.current_month || 1}. Ay (Dönem Sonu: 4. Ay)
+                                    <span className="font-medium text-gray-500">
+                                        Dönem bilgisi bu ekranda hesaplanmıyor.
                                     </span>
                                 </>
                             )}
@@ -397,6 +409,11 @@ export function AdminGroupDetail() {
                     ))}
                 </div>
 
+                {snapshot && <div className="mb-4 text-sm text-gray-600" role="status">
+                    Yönlendirmeler, şu anda aktif üyelerin gönderdiği tüm geçmiş kayıtları içerir; tarihsel grup ataması değildir.
+                    {snapshot.summary.missingAmounts > 0 && <p>{snapshot.summary.missingAmounts} başarılı kaydın tutarı eksik veya geçersiz. Bilinen toplam: {groupMoney(snapshot.summary.knownVolume)}.</p>}
+                    <Button variant="ghost" onClick={() => setRetryCount(count => count + 1)}>Grup verilerini yenile</Button>
+                </div>}
                 {activeTab === 'OVERVIEW' && (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -405,8 +422,8 @@ export function AdminGroupDetail() {
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-indigo-600">Toplam Ciro</p>
-                                            <p className="text-2xl font-bold text-gray-900">₺{stats.totalTurnover.toLocaleString()}</p>
+                                            <p className="text-sm font-medium text-indigo-600">{useSnapshot ? 'Başarılı yönlendirme tutarı' : 'Toplam Ciro'}</p>
+                                            <p className="text-2xl font-bold text-gray-900">{snapshot ? (snapshot.summary.volume === null ? 'Bilinmiyor' : groupMoney(snapshot.summary.volume)) : groupMoney(String(stats.totalTurnover))}</p>
                                         </div>
                                         <div className="p-3 bg-indigo-100 rounded-full">
                                             <DollarSign className="h-6 w-6 text-indigo-600" />
@@ -420,7 +437,7 @@ export function AdminGroupDetail() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-blue-600">Aktif Üyeler</p>
-                                            <p className="text-2xl font-bold text-gray-900">{stats.activeMembers}</p>
+                                            <p className="text-2xl font-bold text-gray-900">{snapshot ? snapshot.summary.activeMembers : stats.activeMembers}</p>
                                         </div>
                                         <div className="p-3 bg-blue-100 rounded-full">
                                             <Users className="h-6 w-6 text-blue-600" />
@@ -434,7 +451,7 @@ export function AdminGroupDetail() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-purple-600">İş Yönlendirmeleri</p>
-                                            <p className="text-2xl font-bold text-gray-900">{stats.totalReferrals}</p>
+                                            <p className="text-2xl font-bold text-gray-900">{snapshot ? snapshot.summary.count : stats.totalReferrals}</p>
                                         </div>
                                         <div className="p-3 bg-purple-100 rounded-full">
                                             <BarChart3 className="h-6 w-6 text-purple-600" />
@@ -448,7 +465,7 @@ export function AdminGroupDetail() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-green-600">Gelecek Etkinlikler</p>
-                                            <p className="text-2xl font-bold text-gray-900">Veri yok</p>
+                                            <p className="text-2xl font-bold text-gray-900">{snapshot ? snapshot.summary.upcomingEvents : 'Veri yok'}</p>
                                         </div>
                                         <div className="p-3 bg-green-100 rounded-full">
                                             <Calendar className="h-6 w-6 text-green-600" />
@@ -647,6 +664,7 @@ export function AdminGroupDetail() {
                                                                         if (isPowerTeam) await api.updatePowerTeamMemberStatus(id!, member.id, 'ACTIVE');
                                                                         else await api.updateGroupMemberStatus(id!, member.id, 'ACTIVE');
                                                                         // Optimistic update
+                                                                        if (useSnapshot) setRetryCount(count => count + 1);
                                                                         setMembers(members.map(m => m.id === member.id ? { ...m, status: 'ACTIVE' } : m));
                                                                     }
                                                                 }}>
@@ -656,6 +674,7 @@ export function AdminGroupDetail() {
                                                                     if (confirm('İsteği reddetmek istiyor musunuz?')) {
                                                                         if (isPowerTeam) await api.deletePowerTeamMember(id!, member.id);
                                                                         else await api.deleteGroupMember(id!, member.id);
+                                                                        if (useSnapshot) setRetryCount(count => count + 1);
                                                                         setMembers(members.filter(m => m.id !== member.id)); // Remove from list
                                                                     }
                                                                 }}>
@@ -670,7 +689,8 @@ export function AdminGroupDetail() {
                                                                         try {
                                                                             if (isPowerTeam) await api.deletePowerTeamMember(id!, member.id);
                                                                             else await api.deleteGroupMember(id!, member.id);
-                                                                            setMembers(members.filter(m => m.id !== member.id));
+                                                                            if (useSnapshot) setRetryCount(count => count + 1);
+                                                                        setMembers(members.filter(m => m.id !== member.id));
                                                                         } catch (e) {
                                                                             alert('Üye çıkarılırken bir hata oluştu.');
                                                                         }
@@ -700,7 +720,7 @@ export function AdminGroupDetail() {
                             <CardTitle>Gruba Bağlı Etkinlikler</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p role="status" className="mb-4 text-sm text-gray-600">Bu ekranda yoklama kaydı henüz kullanılamıyor.</p>
+                            <p role="status" className="mb-4 text-sm text-gray-600">Katılım kayıtları gerçekleşen katılımın doğrulaması değildir. Bu ekranda yoklama kaydı henüz kullanılamıyor.</p>
                             {loading ? (
                                 <div className="text-center py-4">Yükleniyor...</div>
                             ) : (meetings && meetings.length > 0) ? (
@@ -710,8 +730,8 @@ export function AdminGroupDetail() {
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konu</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Katılım Kaydı / Aktif Üye</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kayıt Oranı</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{useSnapshot ? 'Katılım kayıtları (tüm durumlar)' : 'Katılım Kaydı / Aktif Üye'}</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{useSnapshot ? 'PRESENT kayıtları' : 'Kayıt Oranı'}</th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
                                             </tr>
                                         </thead>
@@ -723,15 +743,15 @@ export function AdminGroupDetail() {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meeting.topic}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {meeting.attendees_count ?? 'Veri yok'} / {meeting.total_members ?? 'Veri yok'}
+                                                        {meeting.attendees_count ?? 'Veri yok'}{!useSnapshot && <> / {meeting.total_members ?? 'Veri yok'}</>}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        {meeting.attendees_count != null && meeting.total_members > 0 && meeting.attendees_count <= meeting.total_members ? (
+                                                        {useSnapshot ? <span className="text-xs text-gray-500">{meeting.present_count}</span> : meeting.attendees_count != null && meeting.total_members > 0 && meeting.attendees_count <= meeting.total_members ? (
                                                             <span className="text-xs text-gray-500">{Math.round((meeting.attendees_count / meeting.total_members) * 100)}%</span>
                                                         ) : <span className="text-xs text-gray-500">Veri yok</span>}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-900">
+                                                        <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-900" onClick={() => navigate(`/events/${meeting.id}`)}>
                                                             Detay
                                                         </Button>
                                                     </td>
@@ -788,14 +808,14 @@ export function AdminGroupDetail() {
                                                         {visitor.visited_at ? new Date(visitor.visited_at).toLocaleDateString('tr-TR') : '-'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${visitor.status === 'CONVERTED' ? 'bg-green-100 text-green-800' :
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${['CONVERTED','JOINED'].includes(visitor.status) ? 'bg-green-100 text-green-800' :
                                                             'bg-blue-100 text-blue-800'
                                                             }`}>
-                                                            {visitor.status === 'CONVERTED' ? 'Üye Oldu' : 'Ziyaret Etti'}
+                                                            {groupRecordStatus(visitor.status, 'visitor')}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        {isAdminView && visitor.status !== 'CONVERTED' && (
+                                                        {isAdminView && !['CONVERTED','JOINED'].includes(visitor.status) && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
@@ -825,6 +845,7 @@ export function AdminGroupDetail() {
                                                                     if (confirm(`${visitor.name} adlı ziyaretçiyi silmek istediğinize emin misiniz?`)) {
                                                                         try {
                                                                             await api.deleteVisitorGroup(visitor.id);
+                                                                            if (useSnapshot) setRetryCount(count => count + 1);
                                                                             setVisitors(visitors.filter(v => v.id !== visitor.id));
                                                                             alert('Ziyaretçi başarıyla silindi.');
                                                                         } catch (err) {
@@ -917,11 +938,11 @@ export function AdminGroupDetail() {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ref.from_member_name || 'Bilinmiyor'}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ref.to_member_name || 'Bilinmiyor'}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(ref.created_at).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ref.amount ? `₺${ref.amount.toLocaleString()}` : '-'}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{groupMoney(ref.amount)}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ref.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${['SUCCESSFUL','COMPLETED'].includes(ref.status) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                                             }`}>
-                                                            {ref.status === 'COMPLETED' ? 'Tamamlandı' : 'Beklemede'}
+                                                            {groupRecordStatus(ref.status, 'referral')}
                                                         </span>
                                                     </td>
                                                 </tr>

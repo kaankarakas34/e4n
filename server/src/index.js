@@ -25,6 +25,7 @@ import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
 import { installInvoices } from './invoices.js';
 import { installWebCalendar } from './web-calendar.js';
+import { installAdminGroupDetail } from './admin-group-detail.js';
 import { installWebGroups } from './web-groups.js';
 import { installWebActivities } from './web-activities.js';
 import { installGroupSettings } from './group-settings.js';
@@ -3661,6 +3662,7 @@ installDocuments(app, { pool, authenticateToken });
 installInvoices(app, { pool, authenticateToken, sendEmail });
 installWebCalendar(app, { pool, authenticateToken });
 installWebGroups(app, { pool, authenticateToken });
+installAdminGroupDetail(app, { pool, authenticateToken });
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
 

@@ -1800,18 +1800,30 @@ app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
 });
 
 // Events: public list shows published events that have not ended.
+// Optional public reads disclose registration only for the signed, still-existing owner.
+const eventReadUser = req => {
+  try {
+    const claims = jwt.verify(req.headers.authorization?.split(' ')[1], SECRET_KEY);
+    return typeof claims.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(claims.id) ? claims : null;
+  } catch { return null; }
+};
 app.get('/api/events', async (req, res) => {
   const { type, group_id, limit, mode } = req.query;
   try {
+    const reqUser = eventReadUser(req);
+    res.set('Cache-Control', 'private, no-store');
     let query = `
       SELECT e.*, g.name as group_name,
-        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count
+        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count,
+        CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id = $1::uuid)
+          THEN EXISTS (SELECT 1 FROM attendance own WHERE own.event_id = e.id AND own.user_id = $1::uuid)
+          ELSE NULL END AS is_registered
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE 1=1 
     `;
-    const params = [];
-    let paramCount = 1;
+    const params = [reqUser?.id ?? null];
+    let paramCount = 2;
 
     if (type) {
       query += ` AND e.type = $${paramCount} `;
@@ -1841,14 +1853,6 @@ app.get('/api/events', async (req, res) => {
     const { rows } = await pool.query(query, params);
     
     // Auth check for online_link visibility
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    let reqUser = null;
-    if (token) {
-      try {
-        reqUser = jwt.verify(token, SECRET_KEY);
-      } catch (err) { /* ignore */ }
-    }
     const isAdmin = (reqUser && (String(reqUser.role).toUpperCase() === 'ADMIN' || String(reqUser.role).toUpperCase() === 'SUPER_ADMIN')) || mode === 'admin';
 
     const sanitizedRows = rows.map(r => {
@@ -1870,26 +1874,23 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const reqUser = eventReadUser(req);
+    res.set('Cache-Control', 'private, no-store');
     const { rows } = await pool.query(`
       SELECT e.*, g.name as group_name,
-        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count
+        (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = e.id) AS attendees_count,
+        CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id = $2::uuid)
+          THEN EXISTS (SELECT 1 FROM attendance own WHERE own.event_id = e.id AND own.user_id = $2::uuid)
+          ELSE NULL END AS is_registered
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE e.id = $1
-    `, [id]);
+    `, [id, reqUser?.id ?? null]);
 
     if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
     const event = rows[0];
 
     // Auth check for online_link visibility
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    let reqUser = null;
-    if (token) {
-      try {
-        reqUser = jwt.verify(token, SECRET_KEY);
-      } catch (err) { /* ignore */ }
-    }
     const isAdmin = reqUser && reqUser.role === 'ADMIN';
 
     if (!isAdmin) {

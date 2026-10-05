@@ -11,7 +11,7 @@ import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/ev
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
     const [event, setEvent] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
@@ -23,8 +23,11 @@ export function EventDetail() {
     const contextSequence = useRef(0);
     const pageActive = useRef(true);
     const [registrationError, setRegistrationError] = useState<string | null>(null);
+    const [registrationNotice, setRegistrationNotice] = useState<string | null>(null);
+    const [registrationUncertain, setRegistrationUncertain] = useState(false);
+    const registrationAck = useRef(false);
     const [loadedContext, setLoadedContext] = useState<string | null>(null);
-    const pageContext = `${id}:${user?.id}:${user?.role}`;
+    const pageContext = `${id}:${user?.id}:${user?.role}:${token}`;
     const latestContext = useRef(pageContext);
     latestContext.current = pageContext;
     const price = readEventPrice(event?.price);
@@ -35,13 +38,14 @@ export function EventDetail() {
     useEffect(() => {
         pageActive.current = true;
         setRegistrationError(null);
+        setRegistrationNotice(null); setRegistrationUncertain(false); registrationAck.current = false;
         setIsPaymentModalOpen(false);
         setRegistering(false);
         if (id) {
             loadEvent(id);
         }
         return () => { loadSequence.current++; contextSequence.current++; pageActive.current = false; };
-    }, [id, user?.id, user?.role]);
+    }, [id, user?.id, user?.role, token]);
 
     const loadEvent = async (eventId: string) => {
         if (!pageActive.current || latestContext.current !== pageContext || eventId !== id) return;
@@ -63,10 +67,15 @@ export function EventDetail() {
                 throw new Error('Invalid event response');
             }
             setEvent(data);
-            if (user && data.attendees?.some((att: any) => att.id === user.id)) {
-                setRegistered(true);
-            } else {
-                setRegistered(false);
+            setRegistered(data.is_registered === true);
+            if (typeof data.is_registered === 'boolean') {
+                if (registrationAck.current && !data.is_registered) {
+                    setRegistrationUncertain(true);
+                    setRegistrationError('Kayıt onaylandı ancak güncel kayıtta henüz görünmüyor. Yeniden göndermeden kaydı kontrol edin.');
+                } else {
+                    setRegistrationUncertain(false); setRegistrationError(null);
+                    if (registrationAck.current && data.is_registered) setRegistrationNotice('Etkinlik kaydınız güncel kayıtta doğrulandı.');
+                }
             }
         } catch (e) {
             if (isCurrent()) setLoadError('Etkinlik bilgileri yüklenemedi.');
@@ -74,15 +83,6 @@ export function EventDetail() {
             if (isCurrent()) { setLoadedContext(pageContext); setLoading(false); }
         }
     };
-
-    useEffect(() => {
-        if (event && user) {
-            const isReg = event.attendees?.some((att: any) => att.id === user.id);
-            setRegistered(!!isReg);
-        } else {
-            setRegistered(false);
-        }
-    }, [event, user]);
 
     const handlePaymentSuccess = async () => {
         if (!id || !user || !pageActive.current || latestContext.current !== pageContext) return;
@@ -99,8 +99,8 @@ export function EventDetail() {
 
     const handleRegister = async () => {
         if (!pageActive.current || latestContext.current !== pageContext || loadedContext !== pageContext
-            || registrationPending.current || registering || loading || !event || event.id !== id || registered
-            || (user && !Array.isArray(event.attendees))) return;
+            || registrationPending.current || registering || registrationUncertain || loading || !event || event.id !== id || registered
+            || (user && typeof event.is_registered !== 'boolean')) return;
         if (!user) {
             navigate('/auth/login', { state: { from: `/event/${id}` } });
             return;
@@ -118,15 +118,19 @@ export function EventDetail() {
         const context = contextSequence.current;
         setRegistering(true);
         setRegistrationError(null);
+        setRegistrationNotice(null);
         try {
             const result = await api.registerForEvent(id!);
             if (!pageActive.current || latestContext.current !== pageContext || context !== contextSequence.current) return;
             if (!result || result.success !== true) throw new Error('Invalid event registration response');
-            setRegistered(true);
-            alert('Etkinlik kaydınız doğrulandı.');
+            registrationAck.current = true;
+            setRegistrationUncertain(true);
+            setRegistrationNotice('Sunucu etkinlik kaydınızı onayladı. Güncel kayıt kontrol ediliyor.');
+            await loadEvent(id!);
         } catch {
             if (pageActive.current && latestContext.current === pageContext && context === contextSequence.current) {
                 setRegistrationError('Kayıt sonucu doğrulanamadı. Yeniden göndermeden mevcut kaydınızı kontrol edin.');
+                setRegistrationUncertain(true);
             }
         } finally {
             registrationPending.current = false;
@@ -146,6 +150,7 @@ export function EventDetail() {
         return (
             <div role="alert" className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
                 <p>{loadError}</p>
+                {registrationAck.current && <p>Sunucu kaydı onayladı. Yeniden göndermeyin; güncel kaydı tekrar kontrol edin.</p>}
                 <Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button>
             </div>
         );
@@ -213,7 +218,8 @@ export function EventDetail() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
-            {registrationError && <div role="alert" className="p-4 bg-red-50 text-red-700">{registrationError}</div>}
+            {registrationNotice && <p role="status" className="p-4 bg-green-50 text-green-700">{registrationNotice}</p>}
+            {registrationError && <div role="alert" className="p-4 bg-red-50 text-red-700"><p>{registrationError}</p><Button onClick={() => id && loadEvent(id)}>Kaydımı kontrol et</Button></div>}
             <SEO
                 title={`${event.title} | Event4Network Etkinlik`}
                 description={event.description ? event.description.slice(0, 150) : event.title}
@@ -336,7 +342,7 @@ export function EventDetail() {
 
                                 {!paymentAvailable && <div role="alert"><p>{price === null || !currency ? 'Ücret bilgisi doğrulanamadı.' : 'Bu etkinlik için ödeme şu anda başlatılamıyor.'}</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>}
 
-                                {user && !Array.isArray(event.attendees) && !registered && (
+                                {user && typeof event.is_registered !== 'boolean' && !registered && (
                                     <div role="alert"><p>Etkinlik kaydınız doğrulanamadı.</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>
                                 )}
                                 {registered ? (
@@ -348,7 +354,7 @@ export function EventDetail() {
                                         variant="primary"
                                         className="w-full shadow-md shadow-red-200"
                                         onClick={handleRegister}
-                                        disabled={registering || (!!user && (!Array.isArray(event.attendees) || !paymentAvailable))}
+                                        disabled={registering || registrationUncertain || (!!user && (typeof event.is_registered !== 'boolean' || !paymentAvailable))}
                                     >
                                         {registering ? 'İşleniyor...' : (user ? 'Hemen Kayıt Ol' : 'Giriş Yap ve Kayıt Ol')}
                                     </Button>

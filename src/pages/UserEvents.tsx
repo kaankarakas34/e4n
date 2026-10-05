@@ -5,15 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
 import { Calendar, MapPin, Users, Info, CheckCircle, Pin } from 'lucide-react';
-import { api } from '../api/api';
 import { useAuthStore } from '../stores/authStore';
 
 import { useNavigate } from 'react-router-dom';
 import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
 import { readParticipantCount } from '../utils/eventParticipants';
 
-const hasAttendanceList = (event: EventItem) => Array.isArray(event.attendees)
-    && event.attendees.every(att => att && typeof att === 'object' && !Array.isArray(att) && typeof att.id === 'string' && !!att.id.trim());
 const attendanceCount = (event: EventItem) => readParticipantCount(event.attendees_count);
 const eventCapacity = (event: EventItem) => Number.isSafeInteger(event.max_attendees) && event.max_attendees! > 0 ? event.max_attendees! : null;
 
@@ -21,8 +18,6 @@ export function UserEvents() {
     const navigate = useNavigate();
     const { events, fetchEvents, readLoading, readError, loadedFor } = useEventStore();
     const { user } = useAuthStore();
-    const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
-    const [successMap, setSuccessMap] = useState<Record<string, boolean>>({});
 
     const [filterTab, setFilterTab] = useState<'all' | 'attending'>('all');
 
@@ -30,31 +25,6 @@ export function UserEvents() {
         fetchEvents();
     }, [fetchEvents, user?.id, user?.role]);
 
-    const handleRegister = async (eventId: string) => {
-        if (!window.confirm('Bu etkinliğe kayıt olmak istiyor musunuz?')) return;
-
-        setLoadingMap(prev => ({ ...prev, [eventId]: true }));
-        try {
-            await api.registerForEvent(eventId);
-            setSuccessMap(prev => ({ ...prev, [eventId]: true }));
-            alert('Kayıt başarılı!');
-        } catch (error: any) {
-            let msg = error.message;
-            try {
-                const parsed = JSON.parse(msg);
-                if (parsed.code === 'FE_RESTRICTION') {
-                    msg = 'UYARI: Fırsat Eşitliği (FE) Kısıtlaması\n\nBu etkinlikte her meslek grubundan sadece bir kişi katılabilir. Sizin mesleğinizden başka bir üye zaten kayıtlı.';
-                } else {
-                    msg = parsed.error || msg;
-                }
-            } catch {
-                // use original text
-            }
-            alert('İşlem Başarısız: ' + msg);
-        } finally {
-            setLoadingMap(prev => ({ ...prev, [eventId]: false }));
-        }
-    };
 
     // Event visibility: 
     // - Regular User: PUBLISHED only. Show until it ends.
@@ -69,9 +39,9 @@ export function UserEvents() {
         return isPublished && isUpcomingOrOngoing;
     });
 
-    const attendanceKnown = !!user?.id && visibleEvents.every(hasAttendanceList);
+    const attendanceKnown = !!user?.id && visibleEvents.every(e => typeof e.is_registered === 'boolean');
     const attendingEvents = attendanceKnown
-        ? visibleEvents.filter(e => e.attendees!.some((att: any) => att.id === user!.id))
+        ? visibleEvents.filter(e => e.is_registered === true)
         : [];
     const displayEvents = filterTab === 'all' ? visibleEvents : attendingEvents;
 
@@ -84,6 +54,7 @@ export function UserEvents() {
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">Etkinlikler</h1>
                     <p className="mt-2 text-gray-650">Katılabileceğiniz güncel etkinlikler ve toplantılar.</p>
+                    <Button variant="outline" onClick={() => fetchEvents()}>Etkinlikleri yenile</Button>
                 </div>
 
                 {/* Filter Tabs */}
@@ -216,6 +187,7 @@ export function UserEvents() {
                                         )}
 
                                         <div className="pt-2">
+                                            {event.is_registered === true && <p className="text-green-700 flex items-center mb-2"><CheckCircle className="h-4 w-4 mr-2" />Kayıtlısınız</p>}
                                             <Button
                                                 variant="outline"
                                                 className="w-full"

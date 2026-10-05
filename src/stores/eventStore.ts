@@ -20,6 +20,7 @@ export interface EventItem {
   group_id?: string | null;
   attendees?: any[];
   attendees_count?: number;
+  is_registered?: boolean | null;
   has_equal_opportunity_badge?: boolean;
   city?: string;
   district?: string;

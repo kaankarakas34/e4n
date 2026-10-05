@@ -43,6 +43,10 @@ async function request(path: string, options?: RequestInit, binary = false) {
   return binary ? res.blob() : res.json();
 }
 
+export const webCalendarTransport = {
+  read: (from: string, to: string) => request(`/calendar/web?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+};
+
 export const invoiceTransport = {
  upload:(type:string,id:string,body:FormData)=>request(`/admin/accounting/${type}/${id}/upload-invoice`,{method:'POST',body}),
  download:(id:string):Promise<Blob>=>request(`/invoices/${id}`,undefined,true),

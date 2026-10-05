@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 
 import { Coffee, Calendar as CalendarIcon } from 'lucide-react';
-import { Calendar } from '../shared/Calendar';
+import { WebCalendarPanel } from '../components/WebCalendarPanel';
 import { useAuthStore } from '../stores/authStore';
-import { api } from '../api/api';
 
 import { ActivitySummary } from '../shared/ActivitySummary';
 import { TasksCard } from '../shared/TasksCard';
@@ -19,39 +18,10 @@ import { UserEvents } from './UserEvents';
 export function Activities() {
   const [activeTab, setActiveTab] = useState<'overview' | 'referrals' | 'events' | 'requests'>('overview');
   const { user } = useAuthStore();
-  const [calendarEvents, setCalendarEvents] = useState<Array<{ date: string; type: 'one_to_one' | 'visitor' | 'education' | 'meeting' }>>([]);
   const [openOneToOne, setOpenOneToOne] = useState(false);
-  const [revision,setRevision]=useState(0),[calendarError,setCalendarError]=useState<string|null>(null),[calendarLoading,setCalendarLoading]=useState(false);
-  const context=`${user?.id}:${user?.role}`,current=useRef(context),sequence=useRef(0);
-  current.current=context;
-  const [calendarFor,setCalendarFor]=useState<string|null>(null);
-  useEffect(()=>{setOpenOneToOne(false);},[context]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    // Fetch Real Calendar Data from Backend
-    let active=true;const seq=++sequence.current;const valid=()=>active&&current.current===context&&sequence.current===seq;
-    const fetchCalendar = async () => {
-      setCalendarLoading(true);setCalendarError(null);
-      try {
-        const apiEvents = await api.getCalendar(user.id);
-        if(!Array.isArray(apiEvents)||apiEvents.some((e:any)=>!e||typeof e.start_at!=='string'||!Number.isFinite(Date.parse(e.start_at))||typeof e.type!=='string'))throw new Error('Invalid calendar');
-        const realEvents = apiEvents.map((e: any) => ({
-          date: (()=>{const value=new Date(e.start_at);return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;})(),
-          type: e.type,
-          title: e.title
-        }));
-        if(valid())setCalendarEvents(realEvents as any);
-      } catch (e) {
-        if(valid()){setCalendarEvents([]);setCalendarError('Aktivite takvimi yüklenemedi.');}
-      }finally{if(valid()){setCalendarLoading(false);setCalendarFor(context);}
-      }
-    };
-
-    fetchCalendar();
-    return()=>{active=false;};
-  }, [context, revision]);
+  const [revision, setRevision] = useState(0);
+  const context = `${user?.id}:${user?.role}`;
+  useEffect(() => { setOpenOneToOne(false); }, [context]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,7 +91,7 @@ export function Activities() {
                   </CardHeader>
                   <CardContent>
                     <div className="w-full">
-                      {calendarLoading||calendarFor!==context?<p role="status">Takvim yükleniyor...</p>:calendarError?<div><p role="alert">{calendarError}</p><Button onClick={()=>setRevision(value=>value+1)}>Takvimi tekrar yükle</Button></div>:<Calendar events={calendarEvents} />}
+                      <WebCalendarPanel refreshVersion={revision} />
                     </div>
                   </CardContent>
                 </Card>

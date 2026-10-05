@@ -24,6 +24,7 @@ import adminRoutes from './routes/admin.js';
 import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
 import { installInvoices } from './invoices.js';
+import { installWebCalendar } from './web-calendar.js';
 import { installDocuments } from './documents.js';
 import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
@@ -3683,6 +3684,7 @@ installConnections(app, { pool, authenticateToken });
 installMessages(app, { pool, authenticateToken });
 installDocuments(app, { pool, authenticateToken });
 installInvoices(app, { pool, authenticateToken, sendEmail });
+installWebCalendar(app, { pool, authenticateToken });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

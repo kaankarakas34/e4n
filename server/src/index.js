@@ -25,6 +25,7 @@ import { installSupportProcessing } from './support-processing.js';
 import { installPersonalReports } from './personal-reports.js';
 import { installInvoices } from './invoices.js';
 import { installWebCalendar } from './web-calendar.js';
+import { installAdminGroupCatalog } from './admin-group-catalog.js';
 import { installAdminMemberDirectory } from './admin-member-directory.js';
 import { installAdminVisitorQueue } from './admin-visitor-queue.js';
 import { installAdminGroupDetail } from './admin-group-detail.js';
@@ -3667,6 +3668,7 @@ installWebGroups(app, { pool, authenticateToken });
 installAdminGroupDetail(app, { pool, authenticateToken });
 installAdminVisitorQueue(app, { pool, authenticateToken });
 installAdminMemberDirectory(app, { pool, authenticateToken });
+installAdminGroupCatalog(app, { pool, authenticateToken });
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
 

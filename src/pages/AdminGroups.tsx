@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { api } from '../api/api';
-import { Layers, Users, Plus, X } from 'lucide-react';
+import { Users, Plus, X } from 'lucide-react';
+import { AdminGroupCatalog } from '../components/AdminGroupCatalog';
 import { AdminShuffle } from './AdminShuffle';
 import * as Dialog from '@radix-ui/react-dialog';
 
@@ -17,7 +18,7 @@ export function AdminGroups() {
   const creationId = useRef(crypto.randomUUID());
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'GROUPS' | 'TEAMS' | 'SHUFFLE'>('GROUPS');
-  const [groups, setGroups] = useState<any[]>([]);
+  const [catalogVersion, setCatalogVersion] = useState(0);
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,19 +31,17 @@ export function AdminGroups() {
 
   useEffect(() => {
     setIsGroupModalOpen(false); setIsTeamModalOpen(false); setIsSubmitting(false);
-    loadData();
-  }, [context]);
+    if (activeTab === 'TEAMS') loadData();
+  }, [context, activeTab]);
 
   const loadData = async () => {
     const scope = context;
-    setLoading(true); setError(null); setLoadedFor(null); setGroups([]); setTeams([]);
+    setLoading(true); setError(null); setLoadedFor(null); setTeams([]);
     if (user?.role !== 'ADMIN') { setLoading(false); return; }
     try {
-      const g = await api.getGroups();
       const t = await api.getPowerTeams();
       if (current.current !== scope) return;
-      if (!Array.isArray(g) || !Array.isArray(t)) throw new Error('Invalid management lists');
-      setGroups(g);
+      if (!Array.isArray(t)) throw new Error('Invalid management lists');
       setTeams(t || []);
     } catch (e) {
       if (current.current === scope) setError('Veriler yüklenemedi');
@@ -74,7 +73,7 @@ export function AdminGroups() {
       if (current.current !== scope) return;
       setIsGroupModalOpen(false);
       setNewItemName('');
-      loadData(); // Refresh list
+      setCatalogVersion(n => n + 1); // Read new saved group from catalog
     } catch (e: any) {
       if (current.current === scope) alert('Hata: ' + (e.message || 'Grup oluşturulamadı'));
     } finally {
@@ -128,47 +127,10 @@ export function AdminGroups() {
           </div>
         </div>
 
-        {error && <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 border border-red-200">{error}</div>}
+        {activeTab === 'TEAMS' && error && <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 border border-red-200">{error}</div>}
 
         {activeTab === 'GROUPS' && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle>Grup Listesi</CardTitle>
-              <Button onClick={() => { creationId.current = crypto.randomUUID(); setNewItemName(''); setIsGroupModalOpen(true); }} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" /> Grup Oluştur
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {loading || loadedFor !== context ? (
-                <div className="text-center py-8 text-gray-500">Yükleniyor...</div>
-              ) : error ? (<Button onClick={loadData}>Grupları tekrar yükle</Button>) : groups.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">Henüz hiç grup yok.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  {groups.map((g: any) => (
-                    <div
-                      key={g.id}
-                      className="p-5 border rounded-lg hover:border-indigo-400 hover:shadow-lg cursor-pointer transition-all bg-white group relative"
-                      onClick={() => navigate(`/admin/groups/${g.id}`)}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="bg-indigo-50 p-2 rounded-full">
-                          <Layers className="h-6 w-6 text-indigo-600" />
-                        </div>
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${g.current_month >= 4 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {g.current_month || 1}. Dönem Ayı
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{g.name}</h3>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <Users className="h-4 w-4" /> {g.member_count || 0} Üye
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <AdminGroupCatalog refreshVersion={catalogVersion} onCreate={() => { creationId.current = crypto.randomUUID(); setNewItemName(''); setIsGroupModalOpen(true); }} />
         )}
 
         {activeTab === 'TEAMS' && (
@@ -182,7 +144,7 @@ export function AdminGroups() {
             <CardContent>
               {loading || loadedFor !== context ? (
                 <div className="text-center py-8 text-gray-500">Yükleniyor...</div>
-              ) : teams.length === 0 ? (
+              ) : error ? (<Button onClick={loadData}>Loncaları tekrar yükle</Button>) : teams.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">Henüz hiç lonca yok.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">

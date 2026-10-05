@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
+import { AdminMemberDirectory } from '../components/AdminMemberDirectory';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
@@ -52,6 +53,7 @@ interface Group {
 export function AdminMembers() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [showManagement, setShowManagement] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
@@ -72,8 +74,8 @@ export function AdminMembers() {
   const [inviteLoading, setInviteLoading] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (showManagement && user?.role === 'ADMIN') fetchData();
+  }, [showManagement, user?.id, user?.role]);
 
   useEffect(() => {
     filterMembers();
@@ -251,11 +253,14 @@ export function AdminMembers() {
     );
   }
 
+  if (!showManagement) return <AdminMemberDirectory onOpenManagement={() => setShowManagement(true)} />;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Üye Yönetimi</h1>
+          <Button variant="outline" onClick={() => setShowManagement(false)}>Hesap dizini</Button>
           <div className="flex gap-2">
             <Button onClick={() => setShowInviteModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white">
               <Mail className="h-4 w-4 mr-2" />

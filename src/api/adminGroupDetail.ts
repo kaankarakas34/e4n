@@ -25,7 +25,7 @@ export const groupRecordStatus=(value:unknown,kind:'visitor'|'referral')=>{
   const labels:Record<string,string>=kind==='visitor'
     ? {INVITED:'Davet edildi',ATTENDED:'Ziyaret etti',JOINED:'Üye oldu',NO_SHOW:'Gelmedi',CONVERTED:'Üye oldu'}
     : {PENDING:'Beklemede',SUCCESSFUL:'Başarılı',UNSUCCESSFUL:'Başarısız',COMPLETED:'Tamamlandı'};
-  return typeof value==='string' ? labels[value]??`Diğer durum (${value})` : 'Durum bilinmiyor';
+  return typeof value==='string' ? (Object.prototype.hasOwnProperty.call(labels,value)?labels[value]:`Diğer durum (${value})`) : 'Durum bilinmiyor';
 };
 export function validAdminGroupDetail(data:any,owner:string,id:string):data is AdminGroupDetailSnapshot {
   const rows=(v:any)=>Array.isArray(v)&&v.length<=5000&&v.every(r=>r&&uuid(r.id))&&new Set(v.map(r=>r.id)).size===v.length;

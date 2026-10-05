@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "migrate": "node src/config/run-versioned-schema.js",
     "test:group-capacity": "node test/group-capacity-contract.mjs",
+    "test:web-acceptance": "node test/web-acceptance.mjs",
     "test:isolated": "node test/isolated-smoke.mjs",
     "test:restore": "node test/backup-restore-rehearsal.mjs",
     "test:event-job": "node test/event-completion-contract.mjs",

@@ -139,12 +139,15 @@ async function main() {
   assert.deepEqual((await pool.query('SELECT id,performance_score FROM users ORDER BY id')).rows,scoresBefore);
   await pool.query('DELETE FROM referrals WHERE id=$1',[failureKey]);assert.equal(await history(),before+2);
   // Exercise the actual mobile bearer transport and typed service against HTTP/PG.
-  const mobile=process.argv[2];if(!mobile)throw new Error('Pass mobile root');
+  const webOnly=process.argv[2]==='--web-only';
+  const mobile=webOnly?null:process.argv[2];if(!webOnly&&!mobile)throw new Error('Pass mobile root or --web-only');
   const compile=file=>ts.transpileModule(readFileSync(path.join(mobile,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   const mod=code=>import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
   let owner=ids[0];globalThis.referralToken=()=>token(owner);
-  const transport=await mod(compile('utils/api-client.ts').replace(/import \{ API_CONFIG \} from ['"]@\/constants\/api['"];?/,'const API_CONFIG={BASE_URL:'+JSON.stringify(base+'/api')+'};').replace(/import \{ SecureStorage \} from ['"]\.\/secure-storage['"];?/,'const SecureStorage={getToken:async()=>globalThis.referralToken()};'));
-  globalThis.referralTransport=transport.apiClient;
+  if(!webOnly){
+    const transport=await mod(compile('utils/api-client.ts').replace(/import \{ API_CONFIG \} from ['"]@\/constants\/api['"];?/,'const API_CONFIG={BASE_URL:'+JSON.stringify(base+'/api')+'};').replace(/import \{ SecureStorage \} from ['"]\.\/secure-storage['"];?/,'const SecureStorage={getToken:async()=>globalThis.referralToken()};'));
+    globalThis.referralTransport=transport.apiClient;
+  }
   // Both clients use the same domain source except the transport import.
   let webTransportSource=ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/api.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
   webTransportSource=webTransportSource.replace(/import \{ emailService \} from ['"]\.\.\/services\/emailService['"];?/,'const emailService={};').replaceAll('import.meta.env.PROD','false').replaceAll('http://localhost:4005/api',`${base}/api`);
@@ -152,7 +155,7 @@ async function main() {
   const webTransport=await mod(webTransportSource);
   globalThis.webReferralTransport=webTransport.referralTransport;
   const webService=await mod(ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/referrals.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ referralTransport as apiClient \} from ['"]\.\/api['"];?/,'const apiClient=globalThis.webReferralTransport;'));
-  const {referralsApi}=await mod(compile('utils/referrals-api.ts').replace(/import \{ apiClient \} from ['"]\.\/api-client['"];?/,'const apiClient=globalThis.referralTransport;'));
+  const {referralsApi}=webOnly?webService:await mod(compile('utils/referrals-api.ts').replace(/import \{ apiClient \} from ['"]\.\/api-client['"];?/,'const apiClient=globalThis.referralTransport;'));
   const group=randomUUID(),team=randomUUID();
   await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Referral fixture group','ACTIVE')",[group]);
   await pool.query("INSERT INTO power_teams(id,name,status) VALUES($1,'Referral fixture team','ACTIVE')",[team]);
@@ -161,7 +164,7 @@ async function main() {
     await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')",[member,group]);
     await pool.query("INSERT INTO power_team_members(user_id,power_team_id,status) VALUES($1,$2,'ACTIVE')",[member,team]);
   }
-  for(const service of [referralsApi,webService.referralsApi]){
+  for(const service of new Set([referralsApi,webService.referralsApi])){
     const scopes=await service.scopes(owner);assert.equal(scopes.length,2);
     for(const scope of scopes){const members=await service.people(owner,scope);assert.equal(members.length,1);assert.equal(members[0].id,ids[1]);}
     assert.deepEqual((await service.people(owner)).map(r=>r.id),[ids[1]]);
@@ -173,7 +176,7 @@ async function main() {
   owner=ids[1];assert.equal((await webService.referralsApi.list(owner)).length,2);
   assert.equal((await referralsApi.decide(owner,key,'SUCCESSFUL',12.34)).amount,'12.34');await webService.referralsApi.decide(owner,key,'SUCCESSFUL',12.34);
   owner=ids[2];await assert.rejects(referralsApi.decide(owner,key,'UNSUCCESSFUL'));assert.deepEqual(await referralsApi.list(owner),[]);
-  console.log('Referral contract PASS: actual mobile HTTP/PG, owner/receiver, keyed race, terminal replay, validation, atomic score rollback.');
+  console.log(`Referral contract PASS: actual ${webOnly?'web':'web/mobile'} HTTP/PG, owner/receiver, keyed race, terminal replay, validation, atomic score rollback.`);
 
 }
 let exitCode = 0;

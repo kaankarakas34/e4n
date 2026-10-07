@@ -1,0 +1,7 @@
+# WEB14 — Yönetici hesap ve çoklu grup dizini
+
+WEB14 teslim: commit/push 2330cc8423cda2a20f8ce5ad911809bd3b33d47a. API readonly RR/current DB ADMIN/private-no-store, tek hesap + tüm gerçek grup kayıtları; ayrı null/hesap/grup/üyelik durumları. AdminMembers gerçek Türkçe arama/rol/status/grup/topluluk/detail/error/retry/empty/token-owner. PG17/14 migration/repeat0, gerçek HTTP/TS contract PASS (concurrent snapshot/revocation/private DTO/failure/no admission writes/5001-limit503); gerçek component fixture Playwright passed=true/3GET; VALUE sentinel collision targeted PASS. check/build/diff/syntax PASS. server/docs/admin-member-directory.md + server/test/admin-member-directory-contract.mjs kanıt. Şema14/41 değişmedi; canlı yazma/deploy/mail/ödeme yok. Legacy yazım kolu ayrı, D01–D10/P31/P39/SEC ana kabulü kapanmadı. Mobil/LMS ertelenmiş.
+
+Gerçek browser 3GET/error retry, Türkçe filtre/detail/unique account/all three memberships/owner replacement passed=true. Screenshot gözle incelendi; LinkedIn metni link olarak çalıştırılmaz. Fixture üretim E2E değildir. Gerçek contract concurrent writer karşısında snapshot ve sonraki değişmiş okuma dahil PASS; son VALUE sentinel değişikliği ayrı actual TS pure test ve browser ile PASS. Kaynak ve test yönetilen worktree server/docs/admin-member-directory.md / server/test/admin-member-directory-contract.mjs; scratch output/admin-member-directory-*.
+
+Linear92 toplam36Done/15IP/41Backlog; eğitim dışı web/ortak32/79=%40,5; mobil4/12=%33,3; LMS0/1. Bunlar ağırlıksız görev sayımı; ürünün yayına hazır yüzdesi değildir.

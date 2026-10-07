@@ -12,6 +12,8 @@ dist
 dist-ssr
 .playwright-cli/
 output/playwright/
+output/
+server/supabase/.temp/
 *.local
 
 # Editor directories and files

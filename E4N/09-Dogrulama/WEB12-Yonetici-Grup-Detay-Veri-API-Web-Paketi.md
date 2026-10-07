@@ -1,0 +1,11 @@
+# WEB12 — Yönetici grup detay veri/API/web paketi
+
+## 5 Ekim — WEB-12 doğrulanmış teslim
+
+16b446d074d22165fef64617d09077a131fe6b0e yönetilen dala push edildi. /admin/groups/:id/detail mevcut DB ADMIN rolü, salt okunur REPEATABLE READ snapshot, private/no-store, query/UUID/404/5001-limit503 ile grup/üyeler/eğitim dışı etkinlikler/ziyaretçiler/yönlendirmeler/özeti birlikte döndürür. Mevcut aktif gönderen üyeliği ve tüm geçmiş yönlendirme kapsamı açıklanır; tarihsel atama değildir. SQL exact SUCCESSFUL bilinen tutar/eksik sayısı; PENDING/UNSUCCESSFUL toplama girmez. Sıfır ve eksik tutar ayrı. Katılım tüm durumlar ve PRESENT ayrı, gerçekleşen katılım iddiası yok.
+
+AdminGroupDetail tek typed snapshot, gerçek status etiketleri, finans/gelecek kayıt sayısı, hata/tekrar/yenileme ve eski owner/token/grup yanıt koruması ile tamamlandı. Eski yapay 1. Ay/4. Ay fallback kaldırıldı; yeni dönem kuralı seçilmedi. Etkinlik detay bağlantısı çalışır; mevcut roster/ziyaretçi yazımı sonrası snapshot yenilenir. Başkan/lonca eski API kolu, silme/kabul/rol atama politikaları ve kapsamlı SEC ayrıca açık.
+
+İzole gerçek PostgreSQL17/Express/TS contract PASS: role revocation/owner/query/cache/404, concurrent writer sırasında tutarlı snapshot, 7ref/5successful/2missing/known100.30, zero/complete103.30, education/other-group sınırı, empty/503/injected500 recovery/DTO. Gerçek AdminGroupDetail+captured fixture Playwright error/retry/status/zero/katılım2-PRESENT1/event navigation/held read sonrası owner guard PASS; screenshot incelendi. check/build/diff/syntax PASS, mevcut bundle/browser-data uyarıları. Kaynak14 migration/41 tablo değişmedi; canlı Supabase yazma/migration/deploy/gerçek mail/ödeme yok. Kanıt server/docs/admin-group-detail.md, server/test/admin-group-detail-contract.mjs, Obsidian WEB12-Yonetici-Grup-Detay-Veri-API-Web-Paketi.md. Ana P31/P39/P09 ve D01–D10 hedefleri bu alt paketle Done sayılmaz; mobil/LMS ertelenmiş.
+
+API ve test kaynakları yönetilen worktree server/docs/admin-group-detail.md ve server/test/admin-group-detail-contract.mjs. Browser fixture/assertion/screenshot managed output/admin-group-detail-*; görüntü incelendi. Native alert stub kullanıldı. Test concurrency ilk harness callback pool.query uyumsuzluğu düzeltildi; son başarılı çalışmada ayrı writer bağlantısı kullanıldı. Doğrulama üretim kabulü değildir.

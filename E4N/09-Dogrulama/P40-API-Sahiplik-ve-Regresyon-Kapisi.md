@@ -1,0 +1,9 @@
+# P40 — API sahiplik ve regresyon kapısı
+
+## 5 Ekim — P40 API sahiplik paketi teslim
+
+babb59e52feea61465257b0cc3a2fdf2952bd6ec yönetilen dala push. P40 kalan17 bağlantısız modül için operasyonel hedef statüsü belirlendi: kaynak korunmuş/bağlanmamış; education ertelenmiş.85 eski tanımdan80 aktif eşleşme (16router80/75 + support5/5),5 unmatched eskiwrite yolu yeni ürün/P41 ihtiyacı olmadan açılmıyor. Sahipler JSON'da tek aktif provider; legacy auth/events/reports farkları yeni akışın yerine geçirilmedi. Kaynak API handler/URL/veri davranışı değiştirilmedi, eski dosya silinmedi.
+
+AST araç163 API yöntem/yolu ve18 aktif provider çözüyor; arrayalias/literalforof callback dahil. Actual Express runtime163method/path exact match, duplicate zero. Build/check artık static route guard çalıştırır: paramname farklıduplicate, repeated mount/installer, unclassified legacy veya unresolved route hata. Test mutantları PASS; isolated real PG17 runtime14/repeat0/auth/current DB role/cache PASS; existing isolated-smoke fresh/upgrade/adoption/HTTP regresyonu PASS. check/build/diff/syntax PASS; mevcut bundle/browser-data uyarıları. UI değişmedi, yeni browser E2E yapılmış denmez.
+
+Kanıt server/docs/route-ownership.md/json, tools/route-ownership.mjs, test/route-ownership-static.mjs ve route-ownership-contract.mjs. İzole smoke korunan legacy kusurlarını yeniden doğrular:36kapasite, memberapproval200, periodmetadataeksik, shuffle500/notify404, delete FK500/rollback. Bunlar hedef kabulü değildir; P17/P18/P20/P21–29/P39/SEC ve D kapıları açık. P40 sahiplik/kaynak korunması kapsamı kapandı; P39 aktifweb çağrı/yanıt/rol farkları, P41 ürün kaldırma/yeni5path değerlendirmesi kapanmaz. Canlı Supabase yazma/migration/deploy/realmail/payment yok; source14/41. Mobil/LMS enson.

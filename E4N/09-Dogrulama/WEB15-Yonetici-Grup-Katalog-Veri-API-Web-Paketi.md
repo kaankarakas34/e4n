@@ -1,0 +1,20 @@
+# WEB15 — Yönetici grup kataloğu
+
+## WEB15 doğrulanmış teslim — 5 Ekim
+
+97460a1c51d90054d3bba534d129873e128a1f58 mevcut yönetilen dala push. GET /admin/group-catalog current DB ADMIN/private-no-store/readonly RR, minimal grup/status + mevcut hesaba bağlı toplam/ACTIVE/REQUESTED/diğer/null membership sayımı; 5000bound/503. AdminGroups typedcatalog/Türkçe search/status/null filtre/empty/error/retry/token-owner/detail navigasyonu; lonca okuması ayrıldı, lonca500 grubu engellemiyor. WEB11 UUID create/retry/saved sonucu sonrası catalog refresh korunur. Yapay dönem ayı ve tüm kayıtları aktif Üye gibi gösterme kaldırıldı; yeni dönem/kapasite/hak/kabul/hizmet/shuffle politikası seçilmedi.
+
+İzole PG17/Express/actual TS catalog contract PASS:14 migration/repeat0/auth/revocation/query/cache/status/count/current concurrent snapshot/privateDTO/invalid/readfail/recovery/5001limit503/empty. Baseline yalnızACTIVE/REQUESTED/null; other status yalnız izole legacy schema varyantında test edildi, üretim constraint değişmedi. WEB11 actual group-settings create/update/concurrentUUID/rollback/readback regresyonu yeniden PASS. Gerçek AdminGroups+captured fixture Playwright passed=true/7 catalogGET/1 failed guildGET/2 sameUUID createPOST; count/filter/null/empty/detail navigation/guild isolation/lost create reply retry/readback/held owner guard PASS; ilk mock meeting_dates eksikliği düzeltildi. check/build/diff/syntax PASS, screenshot gözle incelendi; browser üretim E2E değil.
+
+Kanıt server/docs/admin-group-catalog.md, server/test/admin-group-catalog-contract.mjs; Obsidian WEB15-Yonetici-Grup-Katalog-Veri-API-Web-Paketi.md. Kaynak14/41 değişmedi; canlı Supabase yazma/migration/deploy/realmail/payment yok. Mobil/LMS ertelenmiş. P39/P40/P30/P31/P09/SEC ana hedefleri açık. Kullanıcının öncelik planında sıra1 kapandı; sıradaki sıra2 P39/P40 aktif web/API/modül sahiplik kabulü.
+
+## 5 Ekim — WEB15 teslim / sıradaki öncelik
+
+E4N-149 Done; commit/push97460a1c51d90054d3bba534d129873e128a1f58. Yönetici grup kataloğu gerçek grup durumları ve toplam/ACTIVE/REQUESTED/diğer/null üyelik sayımları, Türkçe filtre/detail bağlantısı, lonca okumasından bağımsız katalog ve WEB11 keyed create readback birlikte teslim. Kanıt [[WEB15-Yonetici-Grup-Katalog-Veri-API-Web-Paketi]]. Gerçek PG17/HTTP/TS contract ve WEB11 group-settings regresyonu PASS; gerçek AdminGroups captured fixture browser7catalogGET/1failedguildGET/2sameUUIDPOST açık passed=true. check/build/diff/syntax PASS, screenshot incelendi. Baseline INACTIVE reddiyle test fixture düzeltildi; other status yalnız izole runtime legacy variantında test edildi. Üretim constraint değişmedi. Browser ilk mock meeting_dates eksikliği düzeltildi; son run PASS. Canlı yazma/migration/deploy/realmail/payment yok, source14/41.
+
+Linear93 görev:37Done/15In Progress/41Backlog. Eğitim dışı web/ortak33/80=%41,25; mobil4/12=%33,3; LMS0/1. Ağırlıksız görev sayımı, yayına hazır ürün yüzdesi değildir. Mobil12 ayrı IDs78/104/114/115/116/117/118/119/128/129/130/134, ortak132 iki kez sayılmaz.
+
+Kullanıcı [[Web-Oncelik-Plani-2026-10-05]] sıra1 E4N149 kapandı. Sıradaki sıra2 P39/P40 bütün paket: güncel aktif web çağrıları ve server giriş/modül sahipliği envanterini delivered WEB01–15 ile uzlaştır; unused eski17module otomatik mount/silme yapma. Güncel files18/admin bağlı17eski bağlı değil; eski auth/events/reports davranışı yeni testli sözleşmenin yerine geçmez. Kalan web/API gerçek çağrı farklarını, yetki/veri/hata/tekrar kabulü ve kullanılmayan5write yolu bağımlılığıyla tek matriste değerlendir; bu inceleme yeni küçük read-only ekran taskı değildir. P30/P31 D hedefleri ayrı, aşağıdaki yayın kapıları açık.
+
+Sonraki paketler: etkinlik/ödeme bütünlüğü P26/P14; gerçek schema/filecopy/rollback P09/P11/P35/P36; planlayıcı/kritik regresyonP34/P37; Sprint6SEC58/59/120 ve P38 release. D01–D10 uydurulmaz; mobil/LMS enson. Own browser/Vite/container kapalı; managed tracked tree temiz, scratch output untracked; HEAD/origin eşit. Bu update önceki WEB15 taslak/devam notlarını tarihsel yapar.
+

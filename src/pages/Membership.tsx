@@ -1,3 +1,4 @@
+import {useNavigate} from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -8,6 +9,7 @@ import { PaymentModal } from '../components/PaymentModal';
 import { api } from '../api/api';
 
 export function MembershipPage() {
+    const navigate=useNavigate();
     const { user } = useAuthStore();
     const [record, setRecord] = useState<{ id: string; subscription_plan?: string | null; subscription_end_date?: string | null } | null>(null);
     const [readState, setReadState] = useState<{ userId?: string; loading: boolean; error: string | null }>({ loading: true, error: null });
@@ -113,6 +115,7 @@ export function MembershipPage() {
                     </p>
                 </div>
 
+                <div className="text-center mb-6"><Button onClick={()=>navigate('/membership-records')}>Üyelik ve Ödeme Kayıtlarım</Button></div>
                 {/* Current Status */}
                 <div className="mb-12" aria-live="polite">
                     {!readReady ? <p role="status">Üyelik bilgileri yükleniyor…</p> : readState.error ? (

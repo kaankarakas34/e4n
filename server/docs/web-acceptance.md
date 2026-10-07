@@ -2,7 +2,7 @@
 
 Run `npm --prefix server run test:web-acceptance` from the managed checkout.
 Node dependencies and Docker with PostgreSQL 17 are required. The runner executes
-31 contract suites sequentially, including private profile/session isolation,
+32 contract suites sequentially, including private profile/session isolation,
 the 15 delivered WEB packages, route
 ownership, admission/transfer/capacity, payment, meetings, referrals, support,
 scheduled transactions and synthetic backup/restore. Referral verification uses
@@ -33,7 +33,7 @@ routes, browsers, historical production records or future product rules passed.
 The isolated smoke suite deliberately retains documented unresolved defect
 baselines; a passing smoke run does not fix those defects.
 
-`releaseReady` remains false even if all 31 suites pass. The report records:
+`releaseReady` remains false even if all 32 suites pass. The report records:
 
 - BLOCKED: remaining scoring/removal/ban, service/admission/company/membership
   decisions and exact shuffle payment/grace/restriction/reopening policy.
@@ -226,3 +226,7 @@ Fresh API/data bundle 2026-10-07T17-08-35-447Z: **31 PASS / 0 FAIL**; focused fi
 Schema chain19; immutable execution snapshots include actual before/after membership statuses and role changes. The existing shuffle regression covers history insertion failure with full rollback and retry, current-role list/detail isolation, stale/replay/concurrent single record, historical names after rename, and a full35+president redistribution. The real browser now saves a distribution, reads its persistent history and role change, rejects a member's history view, and reconciles37 unique ACTIVE assignments with the saved snapshot. Previous group/pending final-state assertions apply to earlier no-write browser runs; this run intentionally performs an isolated successful shuffle. Live eligibility/period/notification rules remain open.
 
 Final shuffle history acceptance: API/data2026-10-07T17-40-49-108Z31PASS0FAIL, fresh browser2026-10-07T17-45-16-446Z31PASS0FAIL; build/TS/syntax/diffPASS. First browser incomplete found the transient36-member bug; fixed by archiving before resetting leaders. Isolated synthetic restore45tables/catalog/ACL/RLS/triggers and actual history/job rows. No live changes; releaseReadyfalse.
+
+## 7 October membership record package
+
+output/web-acceptance/2026-10-07T18-02-15-840Z/report.json:32PASS/0FAIL. output/web-browser/2026-10-07T18-06-08-150Z/browser-report.json:34PASS/0FAIL, including actual owner/admin record screens, authorized invoice download and member admin-route rejection with final persisted-data reconciliation. BaseHEAD4e1d115 plus the membership record working tree; see delivery note for final source scope. Both are regression evidence; releaseReady remains false and product/schema/security gates remain open.

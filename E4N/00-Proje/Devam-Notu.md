@@ -1,5 +1,14 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — üyelik ve ödeme kayıtları bütün web paketi
+
+[[P30-P31-Uyelik-Odeme-Kayit-Butunlugu-2026-10-07]]: read-only repeatable-read owner/currentDBadmin API; gerçek accountstatus/plan/end, explicit payment ownership+NULL-ownercount, invoice download ve reminder outcome aynı üye/admin ekranında. Eski ACTIVE+pastend ve legacyplan aynen; fiyat/hak/borç/shuffle/grace kuralı uydurulmadı. DTO/snapshot/102paymentslast100/redacted500/foreigndeny; webactor-tokenisolation/refresh/search/download.
+
+32API/veriPASS0FAIL(18-02-15-840Z), freshstyledbrowser34PASS0FAIL(18-06-08-150Z); admin/member screenshotsincelendi, DBinvoice35byte/paymentNULL/reminderUNKNOWN ve önceki37shuffle/geçmiş korundu. İlkfixtureinitdisconnect kabuldeğil. Build/check/syntax/diffPASS; yeni migrationyok/source19; sentetikrestorePASS. Ownedfixtureskapalı; canlıwrite/deploy/realmail/paymentyok.
+
+P30/P31/P14/P37 anahedefIP/releaseReadyfalse. SonrakiXL üyelik/haklar vegrupakışları; D07/D10 ayrıntıları, hizmetkoltuğu/kabulmodeli vepuanDkararları açık. Mobil/LMSenson. Teslim yenidenyapılmaz.
+
+
 ## 7 Ekim — büyük shuffle atomik kayıt ve geçmiş paketi
 
 [[P29-Atomik-Dagitim-ve-Kayit-Gecmisi-2026-10-07]]: migration0019kalıcıexecutionhistory currentactor/before-afterrevision/names/accountroles/allgroupmembershipstates(ACTIVE/REQUESTED/INACTIVE)/joined_at; histinsert aynıtransactionda, failtümroller/üyeliklerrollback; successfulACKexecutionId. Update/delete/truncate23514, RLS/ACL; admincurrentDBread-onlysnapshot listlast100+detail, webhistoryrefresh/detail/memberhide/stalesession. Noemail/password/phone/payment snapshot. LegacyexpectedRevisionoptional, dönemgeçmişi veundo uydurulmadı.

@@ -37,6 +37,16 @@ async page=>{
     ['admin-members','/admin/members','Üye Hesap Dizini'],['admin-visitors','/admin/visitors','Ziyaretçi Başvuruları'],
     ['admin-accounting','/admin/accounting','Muhasebe & Fatura Yönetimi'],['admin-group-catalog','/admin/groups','Grup Yönetimi'],
   ])await test(name,()=>visit(url,heading));
+  await test('admin-membership-records-owned-detail',async()=>{
+    await visit('/admin/membership-records','Üyelik ve Ödeme Kayıtları');
+    await page.getByText(/Hesaba bağlanmamış ödeme kaydı: 1/).waitFor();
+    await page.getByRole('button',{name:'Hesap kayıtlarını göster: Browser member',exact:true}).click();
+    await page.getByRole('heading',{name:'Kayıtlı Hesap ve Üyelik',exact:true}).waitFor();
+    await page.getByText('Hesap durumu: ACTIVE · Plan: LEGACY_PLAN',{exact:true}).waitFor();
+    await page.getByRole('cell',{name:'browser-owned-membership',exact:true}).waitFor();
+    await page.getByRole('cell',{name:'120.50',exact:true}).waitFor();
+    check(await page.getByText('browser-unowned-payment',{exact:true}).count()===0,'Unowned transaction inferred as membership');
+  });
   await test('admin-event-participant-count',async()=>{
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('2 / 50 katılımcı',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
@@ -121,6 +131,18 @@ async page=>{
     await page.goto(f.webBase+'/admin/web-jobs');
     await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();
     check(await page.getByRole('table').count()===0,'Previous admin execution history visible');
+  });
+  await test('member-membership-records-and-invoice',async()=>{
+    await visit('/membership-records','Üyelik ve Ödeme Kayıtlarım');
+    await page.getByText('Hesap durumu: ACTIVE · Plan: LEGACY_PLAN',{exact:true}).waitFor();
+    await page.getByRole('cell',{name:'browser-owned-membership',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'Üyelik Hatırlatma Kayıtları',exact:true}).waitFor();
+    await page.getByRole('cell',{name:'UNKNOWN',exact:true}).waitFor();
+    const download=page.waitForEvent('download');await page.getByRole('button',{name:'Faturayı indir: browser-membership.pdf',exact:true}).click();check((await download).suggestedFilename()==='browser-membership.pdf','Wrong membership invoice filename');
+    check(await page.getByText('browser-unowned-payment',{exact:true}).count()===0,'Unowned transaction disclosed');
+  });
+  await test('member-admin-membership-records-hidden',async()=>{
+    await page.goto(f.webBase+'/admin/membership-records');await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();check(await page.getByRole('table').count()===0,'Previous administrator membership records visible');
   });
   await test('member-shuffle-history-hidden',async()=>{
     await page.goto(f.webBase+'/admin/shuffle-history');await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();check(await page.getByRole('table').count()===0,'Previous shuffle detail leaked');

@@ -1,3 +1,4 @@
+import {MembershipRecords} from './pages/MembershipRecords';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import React, { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
@@ -213,6 +214,8 @@ function App() {
 
               <Route path="/profile" element={<Profile />} />
               <Route path="/membership" element={<MembershipPage />} />
+              <Route path="/membership-records" element={<MembershipRecords />} />
+              <Route path="/admin/membership-records" element={<MembershipRecords admin />} />
               <Route path="/events" element={<UserEvents />} />
               <Route path="/admin/events" element={<AdminEvents />} />
               <Route path="/admin/visitors" element={<AdminVisitors />} />

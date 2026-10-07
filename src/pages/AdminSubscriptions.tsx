@@ -1,3 +1,4 @@
+import {useNavigate} from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useMembershipStore } from '../stores/membershipStore';
@@ -23,6 +24,7 @@ import { MembershipPlan } from '../types';
 import { api } from '../api/api';
 
 export function AdminSubscriptions() {
+  const navigate=useNavigate();
   const { user } = useAuthStore();
   const { items: memberships, fetchAll, loading, error } = useMembershipStore();
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -205,6 +207,7 @@ export function AdminSubscriptions() {
           </Button>
         </div>
 
+        <Button onClick={()=>navigate('/admin/membership-records')}>Üyelik ve Ödeme Kayıtlarını İncele</Button>
         {/* Premium KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="bg-white border-l-4 border-l-blue-500 shadow-sm">

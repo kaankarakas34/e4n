@@ -4,10 +4,10 @@ Eğitim dışı web öncelikli. Mobil Sprint 7 ve kurs/eğitim/sınav Sprint 8 e
 
 | Öncelik | Büyük paket | Büyüklük | Mevcut durum / koşul |
 |---|---|---|---|
-| 1 | Üyelik, ödeme, haklar ve tekrar açılma | XL | Mevcut ödeme ve hatırlatma altyapısı hazır. Fiyat/dönem, beş gün başlangıcı, kısıtlanan haklar, kesin shuffle kesimi ve ödeme sonrası açılma kararları açık. |
+| 1 | Üyelik, ödeme, haklar ve tekrar açılma | XL | Üye/admin gerçek hesap-ödeme-fatura-hatırlatma kayıt paketi 32 API +34 browser kabulüyle teslim; mevcut ödeme ve hatırlatma altyapısı hazır. Fiyat/dönem, beş gün başlangıcı, kısıtlanan haklar, kesin shuffle kesimi ve ödeme sonrası açılma kararları açık. |
 | 2 | Grup başvuru, kabul, kapasite, transfer | XL | Başkan hariç 35 DB invariantı teslim. Hizmet koltuğu/sınıflandırma, kabul yetkisi ve grup bazlı rol modeli kalan bütün akışı belirliyor. |
 | 3 | Puan, çıkarma ve başvuru engeli | XL | D01–D04 kesin eşik/dönem/yeniden başvuru kararları bekleniyor. Yeni kural uydurulmaz. |
-| 4 | Shuffle önizleme, atomik dağıtım, kalıcı geçmiş | XL | Gerçek mevcut dağılım ve eski taslak 409 koruması teslim. 0019 ile mevcut atomik kayıt ve önceki/sonraki immutable execution geçmişi + web görüntüleme uygulanıyor. Ödeme uygunluğu/kesim, başkan davranışı, dönem ve bildirim kabulü açık. |
+| 4 | Shuffle önizleme, atomik dağıtım, kalıcı geçmiş | XL | Gerçek mevcut dağılım ve eski taslak 409 koruması teslim. 0019 ile mevcut atomik kayıt ve önceki/sonraki immutable execution geçmişi + web görüntüleme teslim. Ödeme uygunluğu/kesim, başkan davranışı, dönem ve bildirim kabulü açık. |
 | 5 | Web operasyonları ve kalıcı çalışma geçmişi | L | b942636 ile migration + mevcut runnerlar + yetkili dış/yönetici çağrı + admin ekranı + izole bütün kabul teslim. Üretim planlayıcı kabulü ayrıca açık. |
 | 6 | Bütün web sürüm kabulü ve güvenlik | XL | Her teslim sonrası bütün regresyon + gerçek tarayıcı. D/şema/üretim kabulü ve Sprint 6 kapsamlı güvenlik kapanmadan releaseReady=false. |
 

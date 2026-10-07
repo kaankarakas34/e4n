@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,17);
+  assert.equal((await applyVersionedSchema()).applied.length,18);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -143,7 +143,7 @@ async function main() {
   pool.connect=async()=>{const c=await original(),q=c.query.bind(c),release=c.release.bind(c);c.query=async(sql,args)=>{const result=await q(sql,args);if(!changed&&typeof sql==='string'&&sql.startsWith('SELECT role,now()')){changed=true;await writer.query("UPDATE users SET name='Changed' WHERE id=$1",[member]);}return result;};c.release=()=>{c.query=q;c.release=release;release();};return c;};
   const consistent=await(await call()).json();pool.connect=original;writer.release();assert.notEqual(consistent.members.find(m=>m.id===member).full_name,'Changed');assert.equal((await(await call()).json()).members.find(m=>m.id===member).full_name,'Changed');
   pool.connect=async()=>{const c=await original(),q=c.query.bind(c),release=c.release.bind(c);c.query=async(sql,args)=>{if(typeof sql==='string'&&sql.startsWith('SELECT id,name,status FROM groups'))throw Object.assign(Error('isolated failure'),{code:'TEST'});return q(sql,args);};c.release=()=>{c.query=q;c.release=release;release();};return c;};assert.equal((await call()).status,500);pool.connect=original;assert.equal((await call()).status,200);
-  console.log('Shuffle workspace PASS: isolated17/repeat0; actual ACTIVE membership/no invented history; owner/current-role/cache; DTO/duplicates/multigroup/unassigned; stale group/user/replay409 no mutation; save200; 35 capacity/71 unique/locks; consistent read; injected500 recovery.');
+  console.log('Shuffle workspace PASS: isolated18/repeat0; actual ACTIVE membership/no invented history; owner/current-role/cache; DTO/duplicates/multigroup/unassigned; stale group/user/replay409 no mutation; save200; 35 capacity/71 unique/locks; consistent read; injected500 recovery.');
 }
 let exitCode=0;
 try{await main();}catch(error){exitCode=1;console.error('Shuffle workspace contract failed:',error);}

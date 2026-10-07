@@ -14,9 +14,7 @@ import cors from 'cors';
 import pkg from 'pg';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
-import {scheduleEventCompletion} from './cron/event-completion.js';
-import {runChampionCalculation} from './cron/champion-calculation.js';
-import {scheduleSubscriptionReminders} from './cron/subscription-reminders.js';
+import {installWebJobOperations,runAuditedWebJob} from './web-job-operations.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -190,13 +188,13 @@ app.use('/api/admin', adminRoutes);
 
 // --- CHAMPION CALCULATION LOGIC ---
 const calculateChampions = async (periodType, startDate, endDate) => {
-  try { return await runChampionCalculation(pool,{periodType,startDate,endDate}); }
-  catch { return undefined; } // The runner logs a redacted FAILED record; cron remains alive.
+  try { return await runAuditedWebJob(pool,{job:'champion-calculation',championOptions:{periodType,startDate,endDate}}); }
+  catch { return undefined; } // The runner records/logs a redacted outcome; cron remains alive.
 };
 
 // --- CRON JOBS ---
 // Auto-complete past events every 10 minutes
-scheduleEventCompletion(scheduleCron,pool);
+scheduleCron('*/10 * * * *',async()=>{try{return await runAuditedWebJob(pool,{job:'event-completion'});}catch{return undefined;}});
 
 
 
@@ -2981,7 +2979,7 @@ VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET stat
 
 // Daily membership reminder: DB claim + in-app notification are atomic;
 // mail is attempted once after commit and its uncertain outcome is persisted.
-scheduleSubscriptionReminders(scheduleCron,pool,{sendMail:sendEmail});
+scheduleCron('0 9 * * *',async()=>{try{return await runAuditedWebJob(pool,{job:'subscription-reminders',sendMail:sendEmail});}catch{return undefined;}});
 
 
 
@@ -3500,6 +3498,7 @@ installAdminVisitorQueue(app, { pool, authenticateToken });
 installAdminMemberDirectory(app, { pool, authenticateToken });
 installAdminGroupCatalog(app, { pool, authenticateToken });
 installShuffleWorkspace(app, { pool, authenticateToken });
+installWebJobOperations(app,{pool,authenticateToken,sendMail:sendEmail});
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
 

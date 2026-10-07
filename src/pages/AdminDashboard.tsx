@@ -243,6 +243,7 @@ export function AdminDashboard() {
               onClick={() => navigate('/admin/shuffle')}
               description="Grup üyelerini karıştırın."
             />
+            <QuickActionCard title="Web İşlemleri" icon={Clock} color="text-indigo-600" bg="bg-indigo-50 hover:bg-indigo-100" onClick={()=>navigate('/admin/web-jobs')} description="Zamanlanmış işlerin geçmişini ve sonuçlarını izleyin." />
             <QuickActionCard
               title="Eğitim & Sınav"
               icon={BookOpen}

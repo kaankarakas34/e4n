@@ -89,7 +89,24 @@ async page=>{
     await page.getByText('Grup durumu: ACTIVE · 36 Üye',{exact:true}).waitFor();
     check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Stale rejection retained a savable draft');
   });
+  await test('admin-web-job-history-and-run',async()=>{
+    await visit('/admin/web-jobs','Web İşlemleri ve Çalışma Geçmişi');
+    await page.getByText('Henüz çalışma kaydı yok.',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Etkinlik Tamamlama Çalıştır',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'İş tamamlandı.'}).waitFor();
+    await page.getByRole('cell',{name:'Tamamlandı',exact:true}).waitFor();
+    await page.getByRole('cell',{name:'Yönetici',exact:true}).waitFor();
+    await page.getByText('Güncellenen etkinlik: 0',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Geçmişi Yenile',exact:true}).click();
+    await page.getByRole('cell',{name:'Tamamlandı',exact:true}).waitFor();
+    check(requests.filter(r=>r.path==='/api/admin/web-jobs/event-completion/run').length===1,'Refresh retriggered the job');
+  });
   await test('member-login',()=>login('member'));
+  await test('member-web-job-history-hidden',async()=>{
+    await page.goto(f.webBase+'/admin/web-jobs');
+    await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();
+    check(await page.getByRole('table').count()===0,'Previous admin execution history visible');
+  });
   for(const [name,url,heading] of [
     ['member-reports','/reports','Kişisel Aktivite Raporu'],['member-groups','/chapter-management','Gruplarım ve Ağ'],
     ['member-activities-calendar','/activities','Aktivite Merkezi'],['member-documents','/documents','Doküman Merkezi'],

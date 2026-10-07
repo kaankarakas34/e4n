@@ -1,5 +1,14 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — büyük web operasyon paketi
+
+[[P34-Web-Islemleri-Kalici-Gecmis-ve-Dis-Cagri-2026-10-07]]: migration0018kalıcıweb_job_runs+RLS/ACL, mevcut3runnerortakaudit, sessionlocktekçalışma/SKIPPED, başlangıçledgerfailişbaşlamıyor, finalizasyonfailRUNNING/UNKNOWN/redactedlog; currentDBADMINread/run + flag/CRONSECRETBearerexternalGET, adminwebmonitor/refresh/confirm/ownerisolation. Mevcut3/1/-1/-3/-5reminder vechampiondönemkuralları korunur, yeniDkuralı yok. [[Web-Buyuk-Paket-Oncelikleri-2026-10-07]] bütünXLönceliksırası; üyelik→grup→puan→shuffle→operasyon→bütünkabul, DblockedXLvarken bağımsızoperasyonpaketi teslim.
+
+Son31API/dataPASS0FAIL(17-08-35-447Z); finalfocusedrunnerPASS; gerçekstyledbrowser29PASS0FAIL(17-13-17-877Z), adminrunpersist/refreshonecall/memberhide/finalDB; screenshotsincelendi. Sentetikrestore44table/rowhash/catalog/ACL/RLSinclledgerrow, fresh18/repeat0/17upgrade. Build/check/syntax/diffPASS; ownership167/20/17legacy. İlkpaymentupgradecountfixturefail düzeltildi; ilkbrowserfixtureinitdisconnect kabuldeğil. Ownedfixtureskapalı.
+
+P34/P09/P37 IP; productionexternalcronactivation/connectionmode/sessionpooling/UTCvealertkabul, liveadoption, championperiods/backfill, D01–D10 üyelik/hak/puan/kabul/shufflecutoff ve broadSECaçık; releaseReadyfalse. Sessionadvisorylock transactionpoolingde kullanılamaz, poolenaz2connection. CanlıSupabase/write/deploy/realmail/paymentyok. Mobil/LMS enson. Sonraki büyükpaket, bu karar/şemabağımlılıkları kapanınca üyelik+gruphakları bütünwebakışı; bağımsızkabulkapıları ilerletilir. Teslimedilenpaket tekraryapılmaz.
+
+
 ## 7 Ekim — Shuffle gerçek dağılım ve taslak kayıt paketi
 
 [[P28-Gercek-Dagilim-ve-Taslak-Kayit-2026-10-07]]: eski AdminShuffle round-robin ve uydurulmuş previous_group_id kaldırıldı. Yeni private/current-admin repeatable-read snapshot gerçek ACTIVE bağlantıları getirir; eski hesap filtresi korunur. Çoklu aktif grup/eksik meslek için varsayım yapılmaz. 35koltuklu önizleme, atanamayan varsa kayıt engeli; webexpectedRevision/rowlocks ile eski taslak409/nochange, aynırevisionrace200/409 ve aynıplacementreplay409. ACKvalidasyonu; eksiknotify çağrısı ve yanlış e-posta başarı vaadi kaldırıldı. Mevcut globalreset/archive semantiği değişmedi; dönem/uygunluk/Dkuralları ve canonicalhistory/notificationdelivery açık. Legacy çağrılarda revisionopsiyonel, yeniwebzorunlu.

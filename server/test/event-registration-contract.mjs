@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,17);
+  assert.equal((await applyVersionedSchema()).applied.length,18);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -161,7 +161,7 @@ async function main() {
   assert.equal((await call('/events',bob)).status,500);pool.query=original;assert.equal((await list(bob)).find(e=>e.id===two).is_registered,true);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   writeFileSync(path.join(root,'output/event-registration-browser.json'),JSON.stringify({owner:bob,other:alice,event:await detail(bob,two),list:await list(bob)}));
-  console.log('Event registration PASS: fresh17/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
+  console.log('Event registration PASS: fresh18/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
 }
 let exitCode = 0;
 try {

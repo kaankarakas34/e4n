@@ -20,6 +20,7 @@ try{
   const stateResponse=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)});if(!stateResponse.ok)throw Error('Could not verify final disposable database state');
   report.databaseState=await stateResponse.json();const s=report.databaseState;
   const consistent=s.group.filter(r=>r.status==='ACTIVE').length===36&&s.group.find(r=>r.user_id===fixture.ids.applicant)?.status==='REQUESTED'
+    &&s.jobs.length===1&&s.jobs[0].state==='SUCCESS'&&s.jobs[0].source==='ADMIN'&&s.jobs[0].summary.changed===0
     &&s.attendance.length===2&&s.documents.length===1&&s.documents[0].title==='Browser Shared Contract'
     &&Buffer.from(s.documents[0].bytes||'','hex').equals(Buffer.from('%PDF-1.7\nBrowser isolated contract\n%%EOF'))
     &&s.messages.length===1&&s.messages[0].sender_id===fixture.ids.member&&s.messages[0].receiver_id===fixture.ids.president&&s.messages[0].content==='Browser local message';

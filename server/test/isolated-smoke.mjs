@@ -92,13 +92,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 17 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 18 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=17')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=18')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -108,9 +108,9 @@ async function main() {
   `);
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
-  if (tableCount !== 42) throw new Error(`Repository schema bootstrap expected 42 tables, found ${tableCount}`);
+  if (tableCount !== 43) throw new Error(`Repository schema bootstrap expected 43 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
-  await pool.query("DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("DROP TABLE web_job_runs; DELETE FROM schema_migrations WHERE version='0018_web_job_runs'; DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
@@ -133,11 +133,11 @@ async function main() {
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
   const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
-  if (visitorUpgrade.applied.length !== 13 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+  if (visitorUpgrade.applied.length !== 14 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
       || visitorUpgrade.applied[1] !== '0006_registration_consents'
       || visitorUpgrade.applied[2] !== '0007_meeting_requests'
       || visitorUpgrade.applied[3] !== '0008_payment_initiation'
-      || visitorUpgrade.applied[4] !== '0009_support_mutations' || visitorUpgrade.applied[5] !== '0010_score_history' || visitorUpgrade.applied[6] !== '0011_direct_messages' || visitorUpgrade.applied[7] !== '0012_document_library' || visitorUpgrade.applied[8] !== '0013_invoice_files' || visitorUpgrade.applied[9] !== '0014_group_meeting_settings' || visitorUpgrade.applied[10] !== '0015_group_membership_state' || visitorUpgrade.applied[11] !== '0016_group_capacity_invariant' || visitorUpgrade.applied[12] !== '0017_subscription_reminder_delivery'
+      || visitorUpgrade.applied[4] !== '0009_support_mutations' || visitorUpgrade.applied[5] !== '0010_score_history' || visitorUpgrade.applied[6] !== '0011_direct_messages' || visitorUpgrade.applied[7] !== '0012_document_library' || visitorUpgrade.applied[8] !== '0013_invoice_files' || visitorUpgrade.applied[9] !== '0014_group_meeting_settings' || visitorUpgrade.applied[10] !== '0015_group_membership_state' || visitorUpgrade.applied[11] !== '0016_group_capacity_invariant' || visitorUpgrade.applied[12] !== '0017_subscription_reminder_delivery' || visitorUpgrade.applied[13] !== '0018_web_job_runs'
       || oldVisitor.rows[0]?.name !== 'Existing Fixture Visitor' || oldVisitor.rows[0].inviter_id !== null
       || Object.values(oldConsent).some(value => value !== null)) {
     throw new Error('Existing versioned visitor row was not preserved during 0005 upgrade');
@@ -211,8 +211,8 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 16
-        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 42 || !legacyRowsPreserved) {
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 17
+        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 43 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
   } finally { await legacyPool.end(); }

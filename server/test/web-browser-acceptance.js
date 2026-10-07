@@ -18,9 +18,20 @@ async page=>{
   });
   const check=(condition,message)=>{if(!condition)throw Error(message);};
   async function test(name,action){const start=requests.length,errorStart=pageErrors.length;try{await action();await page.waitForLoadState('networkidle');check(pageErrors.length===errorStart,'Uncaught page error: '+pageErrors.slice(errorStart).join(';'));check(!requests.slice(start).some(r=>r.status>=500),'Unexpected API 5xx');await page.screenshot({path:f.runDir+'/'+name+'.png',fullPage:true});cases.push({name,status:'PASS',requests:requests.slice(start)});}catch(e){cases.push({name,status:'FAIL',error:e.message,requests:requests.slice(start)});await page.screenshot({path:f.runDir+'/'+name+'-failed.png',fullPage:true}).catch(()=>{});}}
-  async function login(actor){await page.goto(f.webBase+'/auth/login');await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});await page.reload();await page.getByLabel('E-posta Adresi').fill(actor+'@example.invalid');await page.getByLabel('Şifre',{exact:true}).fill(f.password);await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');await page.getByText('Browser '+actor,{exact:true}).first().waitFor();}
+  async function login(actor){
+    // Clear the previous actor before React/session hydration can redirect login.
+    await page.addInitScript(({actor})=>{const key='e4n-fixture-login-reset-'+actor;if(!sessionStorage.getItem(key)){localStorage.clear();sessionStorage.setItem(key,'1');}},{actor});
+    await page.goto(f.webBase+'/auth/login');await page.getByLabel('E-posta Adresi').fill(actor+'@example.invalid');await page.getByLabel('Şifre',{exact:true}).fill(f.password);await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');await page.getByText('Browser '+actor,{exact:true}).first().waitFor();
+  }
   async function visit(url,heading){await page.goto(f.webBase+url);await page.getByRole('heading',{name:heading,exact:true}).first().waitFor();}
   await test('admin-login',()=>login('admin'));
+  await test('application-styles-loaded',async()=>{
+    const styles=await page.evaluate(()=>{
+      const probe=document.createElement('div');probe.className='hidden fixed p-4';document.body.append(probe);
+      const css=getComputedStyle(probe),result={display:css.display,position:css.position,padding:css.paddingTop};probe.remove();return result;
+    });
+    check(styles.display==='none'&&styles.position==='fixed'&&styles.padding==='16px','Application Tailwind styles are missing');
+  });
   for(const [name,url,heading] of [
     ['admin-dashboard','/dashboard','Admin Panel'],['admin-reports','/admin/reports','Yönetici Raporları'],
     ['admin-members','/admin/members','Üye Hesap Dizini'],['admin-visitors','/admin/visitors','Ziyaretçi Başvuruları'],
@@ -71,7 +82,7 @@ async page=>{
   });
   await test('member-message-send',async()=>{
     await page.goto(f.webBase+'/messages?recipient='+f.ids.president);await page.getByLabel('Mesaj metni',{exact:true}).waitFor();
-    await page.getByLabel('Mesaj metni',{exact:true}).fill('Browser local message');await page.getByRole('button',{name:'Gönder',exact:true}).click();await page.getByText('Browser local message',{exact:true}).waitFor();
+    await page.getByLabel('Mesaj metni',{exact:true}).fill('Browser local message');await page.getByRole('button',{name:'Gönder',exact:true}).click();await page.getByRole('paragraph').filter({hasText:/^Browser local message$/}).waitFor();
   });
   await test('member-admin-data-hidden',async()=>{
     await page.goto(f.webBase+'/admin/groups');await page.getByRole('heading',{name:'Erişim Kısıtlı',exact:true}).waitFor();check(await page.getByRole('article').count()===0,'Previous admin catalog visible');

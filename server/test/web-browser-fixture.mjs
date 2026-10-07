@@ -11,6 +11,9 @@ import nodemailer from 'nodemailer';
 import {createServer as createViteServer} from 'vite';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+// Tailwind resolves its config/content from cwd, including when Vite has a root.
+// npm --prefix server launches here from server/, so align the fixture with the app.
+process.chdir(root);
 const container='e4n-web-browser-'+randomUUID().slice(0,8),secret=randomUUID();
 const runDir=path.join(root,'output/web-browser',new Date().toISOString().replace(/[:.]/g,'-'));
 let pool,appServer,vite,control,timer,closing=false,containerStarted=false,mails=0;
@@ -52,7 +55,7 @@ try{
     if(req.url!=='/state'||req.method!=='GET'){res.writeHead(404);res.end();return;}
     try{const group=(await pool.query('SELECT user_id,status FROM group_members WHERE group_id=$1 ORDER BY user_id',[ids.group])).rows;const attendance=(await pool.query('SELECT user_id,status FROM attendance WHERE event_id=$1 ORDER BY user_id',[ids.event])).rows;const documents=(await pool.query("SELECT d.title,d.filename,d.size_bytes,encode(f.content,'hex') bytes FROM document_library d JOIN document_files f ON f.document_id=d.id")).rows;const messages=(await pool.query('SELECT sender_id,receiver_id,content FROM direct_messages')).rows;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({group,attendance,documents,messages,mails}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
   });control.listen(0,'127.0.0.1');await once(control,'listening');
-  const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:15,productionWrites:false,realMail:false,realPayment:false};
+  const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:schema.applied.length,productionWrites:false,realMail:false,realPayment:false};
   writeFileSync(path.join(runDir,'fixture.json'),JSON.stringify(fixture,null,2));writeFileSync(path.join(root,'output/web-browser-current.json'),JSON.stringify(fixture,null,2));console.log('WEB_BROWSER_READY '+path.relative(root,path.join(runDir,'fixture.json')));
   timer=setTimeout(()=>close().then(()=>process.exit(1)),20*60*1000);
   process.once('SIGINT',()=>close().then(()=>process.exit(0)));

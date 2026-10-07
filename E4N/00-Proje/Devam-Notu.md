@@ -1,5 +1,9 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — P37 stilli gerçek web kabulü
+
+[[P37-Stilli-Gercek-Web-Kabulu-2026-10-07]]: fresh17migration gerçek App/Vite→Express/JWT→PG17, son taze browser24PASS/0FAIL (16-23-16-419Z). Önceki stiller eksik DOM koşusu görsel kabul değildir. Fixture cwd uygulama köküne alındı, computed CSS kontrolü eklendi, schema metadata gerçek sayıdan gelir. Mesaj locator konuşma paragraphı; actor storage hydration öncesi temizlenir. Gerçek2/50+pencere2, 409pendingkoruma, PDF40byte, profil/takvim/mesaj/rol ve finalDB PASS; screenshots incelendi. Owned süreçler kapalı. P37 IP/releaseReadyfalse; D/productioncopy/security gate açık, mobil/LMS enson.
+
 ## 7 Ekim — P34 üyelik hatırlatma atomik teslim paketi
 
 Mevcut3/1/-1/-3/-5 günleri ve ACTIVE filtresi korunarak reminder işi migration0017 özel teslimat ledgerı, advisorytransactionlock ve atomik claim+inappnotification+lasttrigger ile tekrar güvenli hale getirildi. Mail commit sonrası tekdeneme; SENT/UNKNOWN/NO_EMAIL kalıcı, SMTPbelirsizliğinde duplicate riski nedeniyle otomatik yeniden gönderim yok. Ledger RLS açık ve public/anon/authenticated tablo yetkisi yok; kullanıcı mevcut authenticatednotifications API’sinden okur. [[P34-Uyelik-Hatirlatma-Atomik-Teslim-2026-10-07]].

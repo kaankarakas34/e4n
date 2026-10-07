@@ -93,7 +93,7 @@ In another terminal run `npm --prefix server run test:web-browser -- <path-to-pl
 Use the installed Playwright CLI JavaScript entry (the CLI skill's cached
 installation is suitable). No `@playwright/test` framework is required.
 
-The fixture creates a disposable PostgreSQL 17 container, applies all 15 versions,
+The fixture creates a disposable PostgreSQL 17 container, applies all 17 versions,
 seeds admin/member/president/applicant accounts, a full group, a vacant group, an
 event with two attendees, and an accepted connection. Vite loads the actual App
 router and components, with environment file loading disabled and synthetic
@@ -193,3 +193,19 @@ passed.
 `releaseReady` remains false. Live Supabase migration/cutover, production
 scheduler/provider monitoring, five-day restriction rules, remaining product
 decisions, full browser release acceptance and Sprint 6 security gates are open.
+
+## Styled full application browser evidence, 7 October
+
+Final fresh run `2026-10-07T16-23-16-419Z/browser-report.json`: **24 PASS / 0 FAIL**.
+The fixture now starts from the application root so Tailwind resolves its config
+and content. A computed-style probe rejects missing utility CSS. Schema metadata
+uses the actual applied migration count. Actor storage is reset before React
+hydration, and message verification selects the conversation paragraph rather
+than the identically worded preview.
+
+The earlier 12-14-27 run passed DOM/data checks with missing styles and is not
+visual acceptance. The 16-18-35 run retained one ambiguous message locator FAIL;
+the 16-20-08 run was stopped after a fixture login race and is incomplete.
+The final run verifies styled UI, actual HTTP and persisted database state;
+screenshots were visually inspected. All owned fixture processes were closed.
+P37 remains In Progress with the remaining product/live/security release gates.

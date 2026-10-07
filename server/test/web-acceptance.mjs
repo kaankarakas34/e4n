@@ -19,6 +19,7 @@ const suites=[
   ['payment-flow','Isolated gateway payment lifecycle'],['meeting-contract','Meeting lifecycle'],
   ['referral-contract','Referral lifecycle'],['support-flow','Support lifecycle'],
   ['event-completion-contract','Event completion transaction'],['champion-calculation-contract','Champion transaction'],
+  ['subscription-reminder-contract','Membership reminder claim, notification and mail outcome'],
   ['backup-restore-rehearsal','Synthetic schema/data/file restore'],
 ];
 const runDir=path.join(root,'output/web-acceptance',new Date().toISOString().replace(/[:.]/g,'-'));

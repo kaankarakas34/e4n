@@ -2,7 +2,7 @@
 
 Run `npm --prefix server run test:web-acceptance` from the managed checkout.
 Node dependencies and Docker with PostgreSQL 17 are required. The runner executes
-28 contract suites sequentially, including private profile/session isolation,
+29 contract suites sequentially, including private profile/session isolation,
 the 15 delivered WEB packages, route
 ownership, admission/transfer/capacity, payment, meetings, referrals, support,
 scheduled transactions and synthetic backup/restore. Referral verification uses
@@ -33,13 +33,14 @@ routes, browsers, historical production records or future product rules passed.
 The isolated smoke suite deliberately retains documented unresolved defect
 baselines; a passing smoke run does not fix those defects.
 
-`releaseReady` remains false even if all 28 suites pass. The report records:
+`releaseReady` remains false even if all 29 suites pass. The report records:
 
 - BLOCKED: remaining scoring/removal/ban, service/admission/company/membership
   decisions and exact shuffle payment/grace/restriction/reopening policy.
 - OPEN: live schema rehearsal, group-scoped roles, historical
   attendance/tickets and complete shuffle/history/notify. The direct database
-  capacity invariant is covered by migration 0016 and its PostgreSQL contract.
+  capacity invariant is covered by migration 0016 and its PostgreSQL contract;
+  migration 0017 covers atomic, replay-safe membership reminder delivery claims.
 - NOT_RUN: a fresh whole-flow browser acceptance. Previous package browser
   fixtures are separate evidence, not a substitute for this gate.
 - DEFERRED: Sprint 6 broad security and production release acceptance.
@@ -172,3 +173,23 @@ member reading somebody else's private profile. The earlier 23-case run
 `18-48-49-384Z` is preserved: its screenshot exposed the legacy hardcoded group
 header, which was corrected and asserted in the final fresh run. The browser,
 API, Vite and owned PostgreSQL fixture are closed after verification.
+
+## Membership reminder delivery package, 7 October
+
+Migration 0017 adds the private, unique delivery claim used by the existing
+membership reminder schedule. The database claim, in-app notification and user
+marker commit atomically; mail is attempted once after commit and its
+`SENT`/`UNKNOWN`/`NO_EMAIL` outcome is retained. The existing five trigger
+days and ACTIVE filter are unchanged.
+
+The initial 29-suite run retained one failure: the group-capacity migration
+upgrade fixture tried to replay 0015/0016 while the later 0017 ledger entry still
+existed. The fixture now rolls later schema state back first; its focused rerun
+passed. The clean full rerun
+`2026-10-07T12-06-02-614Z/report.json` finished **29 PASS / 0 FAIL**.
+Production build, isolated smoke and the 43-table synthetic backup/restore also
+passed.
+
+`releaseReady` remains false. Live Supabase migration/cutover, production
+scheduler/provider monitoring, five-day restriction rules, remaining product
+decisions, full browser release acceptance and Sprint 6 security gates are open.

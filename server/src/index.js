@@ -16,6 +16,7 @@ import nodemailer from 'nodemailer';
 import cron from 'node-cron';
 import {scheduleEventCompletion} from './cron/event-completion.js';
 import {runChampionCalculation} from './cron/champion-calculation.js';
+import {scheduleSubscriptionReminders} from './cron/subscription-reminders.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -2972,68 +2973,9 @@ VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET stat
   }
 });
 
-// Helper: Send Notification (Mock + DB)
-// Helper: Send Notification (DB + Email)
-const sendNotification = async (userId, title, message) => {
-  console.log(`[NOTIFICATION] To: ${userId} | Subject: ${title} `);
-  try {
-    // 1. Insert In-App Notification
-    await pool.query(
-      `INSERT INTO notifications(user_id, type, title, message, read) VALUES($1, 'SYSTEM', $2, $3, false)`,
-      [userId, title, message]
-    );
-
-    // 2. Fetch User Email & Send
-    const res = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
-    if (res.rows.length > 0 && res.rows[0].email) {
-      await sendEmail(res.rows[0].email, title, `<p>${message}</p>`);
-    }
-
-  } catch (err) {
-    console.error('Notification/Email failed', err);
-  }
-};
-
-// Daily Cron: Subscription Reminders (Every day at 09:00)
-scheduleCron('0 9 * * *', async () => {
-  console.log('Running daily subscription check...');
-  try {
-    const { rows } = await pool.query(`
-            SELECT id, name, email, subscription_end_date, last_reminder_trigger 
-            FROM users 
-            WHERE account_status = 'ACTIVE' AND subscription_end_date IS NOT NULL
-        `);
-
-    const now = new Date();
-    const triggers = [3, 1, -1, -3, -5];
-
-    for (const user of rows) {
-      const endDate = new Date(user.subscription_end_date);
-      const endMidnight = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const daysLeft = Math.round((endMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
-
-      if (triggers.includes(daysLeft) && user.last_reminder_trigger !== daysLeft) {
-        let title = '';
-        let message = '';
-        
-        if (daysLeft > 0) {
-          title = 'Üyelik Ödeme Hatırlatması';
-          message = `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Hesabınızın kısıtlanmaması için lütfen en kısa sürede dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`;
-        } else {
-          const overdue = Math.abs(daysLeft);
-          title = 'Gecikmiş Üyelik Ödemesi Uyarısı';
-          message = `Sayın ${user.name}, üyeliğinizin süresi dolalı ${overdue} gün olmuştur. Hizmetlerinizin kesilmemesi için lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`;
-        }
-
-        await sendNotification(user.id, title, message);
-        await pool.query('UPDATE users SET last_reminder_trigger = $1 WHERE id = $2', [daysLeft, user.id]);
-      }
-    }
-  } catch (e) {
-    console.error('Daily check error:', e);
-  }
-});
+// Daily membership reminder: DB claim + in-app notification are atomic;
+// mail is attempted once after commit and its uncertain outcome is persisted.
+scheduleSubscriptionReminders(scheduleCron,pool,{sendMail:sendEmail});
 
 
 

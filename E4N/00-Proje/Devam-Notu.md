@@ -1,5 +1,13 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — P34 üyelik hatırlatma atomik teslim paketi
+
+Mevcut3/1/-1/-3/-5 günleri ve ACTIVE filtresi korunarak reminder işi migration0017 özel teslimat ledgerı, advisorytransactionlock ve atomik claim+inappnotification+lasttrigger ile tekrar güvenli hale getirildi. Mail commit sonrası tekdeneme; SENT/UNKNOWN/NO_EMAIL kalıcı, SMTPbelirsizliğinde duplicate riski nedeniyle otomatik yeniden gönderim yok. Ledger RLS açık ve public/anon/authenticated tablo yetkisi yok; kullanıcı mevcut authenticatednotifications API’sinden okur. [[P34-Uyelik-Hatirlatma-Atomik-Teslim-2026-10-07]].
+
+PG17 fresh17/repeat0, beştetikgünü, rollback/retry, replay0, 10concurrenttekclaim, heldlockSKIPPED, fakeSMTPunknown/noemail, JWT/Expresswebread, sentetikrestore ve build PASS. İlk toplu koşu28PASS/1fixtureFAIL; migrationgeri almasırasi düzeltildi, focusedP17PASS ve temiz tekrar29PASS/0FAIL (12-06-02-614Z). CanlıDB/mail/payment/deploy yok. Bu paket beşgünlük günlükmail, beşincigünkısıtlama, haklar, shufflecutoff, geçödeme veya reopen kuralı uygulamaz; D07/D10 ayrıntıları açık. P34/P09/P37 IP; mobil/LMS enson, broadSEC Sprint6.
+
+
+
 ## 7 Ekim — P17 veritabanı kapasite invariantı
 
 Kapalı grup kapasitesi artık yalnız API'de değil migration0016 ile doğrudanSQL/SupabaseDataAPI sınırında da korunuyor: başkanhariç35ACTIVEüye, ençok1ACTIVEbaşkan, ortak advisory transactionlock. Concurrentsonkoltuk tekcommit/tek23514; 36.üye, ikinci başkan ve dolugrupta başkandemotion atomik red. Mevcut ihlalli veri otomatik değişmez, migration ledger yazmadan durur. API DBconstraintleri typed409'a çevirir. [[P17-Veritabani-Kapasite-Invarianti-2026-10-07]].

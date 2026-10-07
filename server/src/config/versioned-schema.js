@@ -34,6 +34,7 @@ const invoicesSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261
 const groupSettingsSql = readFileSync(path.join(serverDir, 'migrations/0014_group_meeting_settings.sql'), 'utf8');
 const groupMembershipStateSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261005141434_group_membership_state.sql'), 'utf8');
 const groupCapacityInvariantSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261007111807_group_capacity_invariant.sql'), 'utf8');
+const subscriptionReminderDeliverySql = readFileSync(path.join(serverDir, 'supabase/migrations/20261007115111_subscription_reminder_delivery.sql'), 'utf8');
 const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
@@ -51,6 +52,7 @@ const versions = [
   { version: '0014_group_meeting_settings', checksum: checksum(groupSettingsSql), apply: client => client.query(groupSettingsSql) },
   { version: '0015_group_membership_state', checksum: checksum(groupMembershipStateSql), apply: client => client.query(groupMembershipStateSql) },
   { version: '0016_group_capacity_invariant', checksum: checksum(groupCapacityInvariantSql), apply: client => client.query(groupCapacityInvariantSql) },
+  { version: '0017_subscription_reminder_delivery', checksum: checksum(subscriptionReminderDeliverySql), apply: client => client.query(subscriptionReminderDeliverySql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

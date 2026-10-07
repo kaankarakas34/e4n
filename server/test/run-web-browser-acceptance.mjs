@@ -19,7 +19,7 @@ try{
   const report=JSON.parse(result);
   const stateResponse=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)});if(!stateResponse.ok)throw Error('Could not verify final disposable database state');
   report.databaseState=await stateResponse.json();const s=report.databaseState;
-  const consistent=s.group.filter(r=>r.status==='ACTIVE').length===36&&s.group.find(r=>r.user_id===fixture.ids.applicant)?.status==='REQUESTED'
+  const consistent=s.activeMemberships.length===37&&new Set(s.activeMemberships.map(r=>r.user_id)).size===37&&s.shuffleHistory.length===1&&s.shuffleHistory[0].member_count===37&&s.shuffleHistory[0].before_snapshot.memberships.some(r=>r.user_id===fixture.ids.applicant&&r.status==='REQUESTED')&&s.shuffleHistory[0].after_snapshot.memberships.filter(r=>r.status==='ACTIVE').length===37
     &&s.jobs.length===1&&s.jobs[0].state==='SUCCESS'&&s.jobs[0].source==='ADMIN'&&s.jobs[0].summary.changed===0
     &&s.attendance.length===2&&s.documents.length===1&&s.documents[0].title==='Browser Shared Contract'
     &&Buffer.from(s.documents[0].bytes||'','hex').equals(Buffer.from('%PDF-1.7\nBrowser isolated contract\n%%EOF'))

@@ -1,3 +1,4 @@
+import {recordShuffleExecution,installShuffleHistory,readShuffleHistorySnapshot} from './shuffle-history.js';
 // CRITICAL DEBUGGING: Catch process crashes
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL PROCESS CRASH:', err);
@@ -2930,27 +2931,17 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
     await beginGroupMutation(client);
     await requireCurrentAdmin(client,req.user.id);
 
-    // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
+    // Capture and check the locked source state before any distribution changes.
+    const beforeShuffle=await readShuffleWorkspace(client,{lock:true});
     if(req.body.expectedRevision!==undefined){
-      const current=await readShuffleWorkspace(client,{lock:true});
+      const current=beforeShuffle;
       if(current.revision!==req.body.expectedRevision)throw Object.assign(Error('Grup veya üye kayıtları değişti. Güncel verileri yükleyip dağılımı tekrar hazırlayın.'),{status:409,code:'SHUFFLE_STALE'});
     }
-    // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
-    // IMPORTANT: Exclude ADMIN from reset
-    await client.query(`
-      UPDATE users 
-      SET role = 'MEMBER' 
-      WHERE role IN('PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY_TREASURER', 'EDUCATION_COORDINATOR', 'VISITOR_HOST')
-  `);
-
-    // 2. Archive ALL existing active group memberships
-    // We assume shuffle applies to everyone effectively, or we could only target users in the assignment list.
-    // For a full shuffle, archiving all ACTIVE is safer to ensure no duplicates.
-    await client.query(`
-      UPDATE group_members 
-      SET status = 'INACTIVE' 
-      WHERE status = 'ACTIVE'
-  `);
+    const beforeHistory=await readShuffleHistorySnapshot(client,beforeShuffle,{lock:true});
+    // Archive memberships before resetting leaders: a full 35+president group
+    // must never transiently become 36 ordinary members under the DB invariant.
+    await client.query("UPDATE group_members SET status='INACTIVE' WHERE status='ACTIVE'");
+    await client.query("UPDATE users SET role='MEMBER' WHERE role IN('PRESIDENT','VICE_PRESIDENT','SECRETARY_TREASURER','EDUCATION_COORDINATOR','VISITOR_HOST')");
 
     // 3. Insert new group assignments
     const insertQuery = `
@@ -2966,8 +2957,11 @@ VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET stat
     }
 
     await enforceGroupCapacity(client, null);
+    const afterShuffle=await readShuffleWorkspace(client);
+    const afterHistory=await readShuffleHistorySnapshot(client,afterShuffle);
+    const executionId=await recordShuffleExecution(client,{actorId:req.user.id,expectedRevision:req.body.expectedRevision,before:beforeHistory,after:afterHistory});
     await client.query('COMMIT');
-    res.json({ success: true, message: 'Shuffle applied successfully.' });
+    res.json({ success: true, executionId, message: 'Shuffle applied successfully.' });
   } catch (e) {
     if(client)await client.query('ROLLBACK').catch(()=>{});
     console.error('Shuffle save error:', e);
@@ -3498,6 +3492,7 @@ installAdminVisitorQueue(app, { pool, authenticateToken });
 installAdminMemberDirectory(app, { pool, authenticateToken });
 installAdminGroupCatalog(app, { pool, authenticateToken });
 installShuffleWorkspace(app, { pool, authenticateToken });
+installShuffleHistory(app,{pool,authenticateToken});
 installWebJobOperations(app,{pool,authenticateToken,sendMail:sendEmail});
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });

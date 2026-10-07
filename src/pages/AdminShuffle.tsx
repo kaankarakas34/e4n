@@ -66,7 +66,7 @@ export function AdminShuffle(){
   return <div className="min-h-screen bg-gray-50 p-8"><div className="max-w-7xl mx-auto space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3"><Button variant="ghost" onClick={()=>navigate('/admin/groups')}><ArrowLeft className="h-4 w-4 mr-2"/>Gruplara Dön</Button><h1 className="text-2xl font-bold">Grup Shuffle Yönetimi</h1></div>
-      <div className="flex gap-2"><Button variant="outline" disabled={loading||saving} onClick={()=>{setMessage('');void load();}}><RefreshCw className="h-4 w-4 mr-2"/>Güncel Dağılımı Yükle</Button><Button disabled={previewBlocked||!draft||!!unassigned.length||overflow} onClick={()=>void save()}><Save className="h-4 w-4 mr-2"/>{saving?'Kaydediliyor…':'Dağıtımı Kaydet'}</Button></div>
+      <div className="flex gap-2"><Button onClick={()=>navigate('/admin/shuffle-history')}>Kayıt Geçmişi</Button><Button variant="outline" disabled={loading||saving} onClick={()=>{setMessage('');void load();}}><RefreshCw className="h-4 w-4 mr-2"/>Güncel Dağılımı Yükle</Button><Button disabled={previewBlocked||!draft||!!unassigned.length||overflow} onClick={()=>void save()}><Save className="h-4 w-4 mr-2"/>{saving?'Kaydediliyor…':'Dağıtımı Kaydet'}</Button></div>
     </div>
     {loading&&<p role="status">Mevcut dağılım yükleniyor…</p>}
     {error&&<p role="alert" className="p-4 bg-red-50 text-red-800 rounded">{error}</p>}

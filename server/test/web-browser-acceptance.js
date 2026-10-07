@@ -89,6 +89,21 @@ async page=>{
     await page.getByText('Grup durumu: ACTIVE · 36 Üye',{exact:true}).waitFor();
     check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Stale rejection retained a savable draft');
   });
+  await test('admin-shuffle-success-and-history',async()=>{
+    await page.getByRole('button',{name:'Dağıtım Taslağı Hazırla',exact:true}).click();
+    await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Dağıtım kaydedildi.'}).waitFor();
+    await page.getByRole('button',{name:'Kayıt Geçmişi',exact:true}).click();
+    await page.getByRole('heading',{name:'Shuffle Kayıt Geçmişi',exact:true}).waitFor();
+    await page.getByRole('button',{name:/Dağıtım ayrıntısı /}).click();
+    await page.getByRole('heading',{name:'Kaydedilen Önceki ve Sonraki Yerleşim',exact:true}).waitFor();
+    const presidentRow=page.getByRole('row').filter({hasText:'Browser president'});
+    await presidentRow.getByRole('cell',{name:'PRESIDENT',exact:true}).waitFor();
+    await presidentRow.getByRole('cell',{name:'MEMBER',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Geçmişi Yenile',exact:true}).click();
+    await page.getByRole('button',{name:/Dağıtım ayrıntısı /}).waitFor();
+    check(await page.getByRole('button',{name:/Dağıtım ayrıntısı /}).count()===1,'Duplicate history on refresh');
+  });
   await test('admin-web-job-history-and-run',async()=>{
     await visit('/admin/web-jobs','Web İşlemleri ve Çalışma Geçmişi');
     await page.getByText('Henüz çalışma kaydı yok.',{exact:true}).waitFor();
@@ -106,6 +121,9 @@ async page=>{
     await page.goto(f.webBase+'/admin/web-jobs');
     await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();
     check(await page.getByRole('table').count()===0,'Previous admin execution history visible');
+  });
+  await test('member-shuffle-history-hidden',async()=>{
+    await page.goto(f.webBase+'/admin/shuffle-history');await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();check(await page.getByRole('table').count()===0,'Previous shuffle detail leaked');
   });
   for(const [name,url,heading] of [
     ['member-reports','/reports','Kişisel Aktivite Raporu'],['member-groups','/chapter-management','Gruplarım ve Ağ'],

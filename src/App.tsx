@@ -25,6 +25,7 @@ import { AdminAccounting } from './pages/AdminAccounting';
 import { AdminGroups } from './pages/AdminGroups';
 import { AdminGroupDetail } from './pages/AdminGroupDetail';
 import { GroupDetail } from './pages/GroupDetail';
+import {AdminShuffleHistory} from './pages/AdminShuffleHistory';
 import { AdminShuffle } from './pages/AdminShuffle';
 import { AdminWebJobs } from './pages/AdminWebJobs';
 import { AdminExams } from './pages/AdminExams';
@@ -225,6 +226,7 @@ function App() {
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
               <Route path="/admin/accounting" element={<AdminAccounting />} />
               <Route path="/admin/shuffle" element={<AdminShuffle />} />
+              <Route path="/admin/shuffle-history" element={<AdminShuffleHistory />} />
               <Route path="/admin/web-jobs" element={<AdminWebJobs />} />
               <Route path="/admin/groups" element={<AdminGroups />} />
               <Route path="/admin/groups/:id" element={<AdminGroupDetail />} />

@@ -1,5 +1,14 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — büyük shuffle atomik kayıt ve geçmiş paketi
+
+[[P29-Atomik-Dagitim-ve-Kayit-Gecmisi-2026-10-07]]: migration0019kalıcıexecutionhistory currentactor/before-afterrevision/names/accountroles/allgroupmembershipstates(ACTIVE/REQUESTED/INACTIVE)/joined_at; histinsert aynıtransactionda, failtümroller/üyeliklerrollback; successfulACKexecutionId. Update/delete/truncate23514, RLS/ACL; admincurrentDBread-onlysnapshot listlast100+detail, webhistoryrefresh/detail/memberhide/stalesession. Noemail/password/phone/payment snapshot. LegacyexpectedRevisionoptional, dönemgeçmişi veundo uydurulmadı.
+
+Gerçekbrowser35+başkan grupta oldreset-before-archive geçici36üye23514bugyakalandı; ACTIVEarşivlemeroldenönce alındı, finalglobalreset/archive/upsertsemantikaynı. Dedicated35+pres→35+1successfulrolehistory/legacyNULLrevisionPASS. Son31API/dataPASS0FAIL(17-40-49-108Z), freshbrowser31PASS0FAIL(17-45-16-446Z), successfulshuffle37uniqueACTIVE+singlehistory/reconcile, screenshotincelendi. İlk17-35-49incompletekabuldeğil. Build/TS/syntax/diffPASS;169route/21provider/17legacy. Fresh19/repeat0/18upgrade; restore45table/rowhash/catalog/ACL/RLS/triggersinclactualhistory/webjobrowPASS. Ownedfixtureskapalı.
+
+P29 IP; canonicaldönem/eligibility/service/başkan/policy ve güvenilirnotify/retention/legacyretry kararları açık; P28/P09/P37/releaseReadyfalse. LiveDB/write/deploy/realmail/payment yok; mobil/LMSenson. SonrakiXLüyelik/gruphakları vepuanpaketleri açıkDkararlarına bağlı; karardanbağımsızcanlışemaizoleprova/kabulplanı ilerletilebilir. Bu paket yeniden yapılmaz.
+
+
 ## 7 Ekim — büyük web operasyon paketi
 
 [[P34-Web-Islemleri-Kalici-Gecmis-ve-Dis-Cagri-2026-10-07]]: migration0018kalıcıweb_job_runs+RLS/ACL, mevcut3runnerortakaudit, sessionlocktekçalışma/SKIPPED, başlangıçledgerfailişbaşlamıyor, finalizasyonfailRUNNING/UNKNOWN/redactedlog; currentDBADMINread/run + flag/CRONSECRETBearerexternalGET, adminwebmonitor/refresh/confirm/ownerisolation. Mevcut3/1/-1/-3/-5reminder vechampiondönemkuralları korunur, yeniDkuralı yok. [[Web-Buyuk-Paket-Oncelikleri-2026-10-07]] bütünXLönceliksırası; üyelik→grup→puan→shuffle→operasyon→bütünkabul, DblockedXLvarken bağımsızoperasyonpaketi teslim.

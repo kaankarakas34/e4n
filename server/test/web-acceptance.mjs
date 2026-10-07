@@ -32,7 +32,7 @@ const report={version:1,startedAt:new Date().toISOString(),commit:head.stdout.tr
     {id:'D01-D04',status:'BLOCKED',scope:'Monthly scoring, removal and application ban policy'},
     {id:'D05-D08-D10',status:'BLOCKED',scope:'Service classification, final admission, company proof and remaining membership policy'},
     {id:'SHUFFLE-CUTOFF',status:'BLOCKED',scope:'Exact payment cutoff, grace start, restricted rights and reopening policy'},
-    {id:'P09-P10-P17',status:'OPEN',scope:'Live schema adoption, group-scoped roles and direct database capacity invariant'},
+    {id:'P09-P10',status:'OPEN',scope:'Live schema adoption and group-scoped roles; database capacity invariant covered by migration 0016'},
     {id:'P26-P29',status:'OPEN',scope:'Historical attendance/ticket interpretation and full shuffle/history/notification acceptance'},
     {id:'BROWSER',status:'NOT_RUN',scope:'Fresh whole-flow browser acceptance; previous package browser evidence remains separate'},
     {id:'SEC-P38',status:'DEFERRED',scope:'Sprint 6 broad security and production release gate'},

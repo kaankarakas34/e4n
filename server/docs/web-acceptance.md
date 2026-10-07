@@ -37,8 +37,9 @@ baselines; a passing smoke run does not fix those defects.
 
 - BLOCKED: remaining scoring/removal/ban, service/admission/company/membership
   decisions and exact shuffle payment/grace/restriction/reopening policy.
-- OPEN: live schema rehearsal, group-scoped roles/direct database capacity
-  invariant, historical attendance/tickets and complete shuffle/history/notify.
+- OPEN: live schema rehearsal, group-scoped roles, historical
+  attendance/tickets and complete shuffle/history/notify. The direct database
+  capacity invariant is covered by migration 0016 and its PostgreSQL contract.
 - NOT_RUN: a fresh whole-flow browser acceptance. Previous package browser
   fixtures are separate evidence, not a substitute for this gate.
 - DEFERRED: Sprint 6 broad security and production release acceptance.

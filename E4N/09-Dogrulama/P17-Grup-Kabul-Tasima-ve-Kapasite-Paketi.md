@@ -21,7 +21,9 @@ Build PASS (mevcut bundle/browser veri uyarıları sürer); static/runtime163rou
 
 ## Açık kalanlar
 
-P17 ana görev In Progress: uygulama kilidi arbitrary directSQL/Supabase Data API yazısını koruyan DB trigger/constraint değildir. P10 global users.role/group_title ile group_members.role'ın tek grup yetki modeline dönüşümü ve çoklu aktif grup modeli açık. Mevcut yorum üç alandan PRESIDENT'ı tek kişi olarak sayar; birden fazla başkan kaydı açık hata verir, fazladan muaf koltuk yaratmaz. Eski fazla kapasiteli/çelişkili gruplar otomatik temizlenmez.
+7 Ekim eki: migration0016 ile doğrudan SQL/Supabase Data API sınırı da kapatıldı. ACTIVE kısmi indeks, uygulamayla aynı advisory transaction lock ve iki trigger; 36. normal üye, ikinci başkan ve dolu grupta başkan muafiyetini kaldıran kullanıcı rolü değişikliği `23514` ile atomik reddedilir. Geçiş, mevcut fazla kapasite/çoklu başkan verisini dönüştürmez; ledger yazmadan durur. Fresh/legacy/repeat, doğrudan SQL ve concurrent final-seat PG17 kanıtı ile bütün 28 web kontratı geçti.
+
+P17 kapasite/race kapsamı tamamlandı. P10 global users.role/group_title ile group_members.role'ın grup bazlı yetki modeline dönüşümü ve çoklu aktif grup modeli açık. Migration0016 bu karar verilene kadar mevcut üç alandaki PRESIDENT yorumunu bilinçli olarak korur.
 
 P16/D05 hizmet sınıflandırması ve status-update profession açığı; P18/D08 görüşme/son kabul; D06 shuffle ödeme kesimi/önizleme/atama geçmişi/notify; puan/dönem kuralları ayrı açık. Bu paket shuffle ürününü veya broadSEC'yi tamamlamaz. P09 gerçekcanlışema/yedek/cutover hâlâ açık. Ücret/dönem,5gün başlangıcı/kısıtlanan haklar/ödeme sonrası açılma ve tamshufflecutoff kararı uydurulmadı.
 

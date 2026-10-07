@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,15);
+  assert.equal((await applyVersionedSchema()).applied.length,16);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -107,17 +107,25 @@ async function main() {
   const candidates=[await user(),await user()];for(const id of candidates)await add(id,g,'REQUESTED');
   // Existing 0014-style data upgrades without role or status backfills.
   const beforeUpgrade=JSON.stringify((await pool.query('SELECT id,user_id,group_id,status,role,joined_at FROM group_members ORDER BY id')).rows);
-  await pool.query("ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0015_group_membership_state']);assert.equal((await applyVersionedSchema()).applied.length,0);
+  await pool.query("DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0015_group_membership_state','0016_group_capacity_invariant']);assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal(JSON.stringify((await pool.query('SELECT id,user_id,group_id,status,role,joined_at FROM group_members ORDER BY id')).rows),beforeUpgrade);
   // A legacy unknown status fails validation atomically, preserving the row and constraint.
-  await pool.query("ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED','OTHER')); DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED','OTHER')); DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("UPDATE group_members SET status='OTHER' WHERE user_id=$1 AND group_id=$2",[candidates[0],g]);
   await assert.rejects(applyVersionedSchema(),e=>e.code==='23514');
   assert.equal((await pool.query('SELECT status FROM group_members WHERE user_id=$1 AND group_id=$2',[candidates[0],g])).rows[0].status,'OTHER');
   assert.equal((await pool.query("SELECT count(*)::int AS n FROM schema_migrations WHERE version='0015_group_membership_state'")).rows[0].n,0);
   await pool.query("UPDATE group_members SET status='REQUESTED' WHERE user_id=$1 AND group_id=$2",[candidates[0],g]);
-  assert.deepEqual((await applyVersionedSchema()).applied,['0015_group_membership_state']);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0015_group_membership_state','0016_group_capacity_invariant']);
+  // The database invariant refuses to install over ambiguous legacy capacity data.
+  const invalidGroup=await group(),legacyPresidents=[await user('PRESIDENT'),await user('PRESIDENT')];
+  await pool.query("DROP TRIGGER users_group_capacity_write ON users; DROP TRIGGER group_members_capacity_write ON group_members; DROP FUNCTION e4n_check_user_group_capacity_write(); DROP FUNCTION e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'");
+  for(const id of legacyPresidents)await add(id,invalidGroup);
+  await assert.rejects(applyVersionedSchema(),e=>e.code==='23514'&&e.constraint==='group_members_capacity_existing_data');
+  assert.equal((await pool.query("SELECT count(*)::int AS n FROM schema_migrations WHERE version='0016_group_capacity_invariant'")).rows[0].n,0);
+  await pool.query("UPDATE users SET role='MEMBER' WHERE id=$1",[legacyPresidents[1]]);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0016_group_capacity_invariant']);
   const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('No real mail permitted');}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port+'/api';
   const token=(id,role='ADMIN')=>jwt.sign({id,role},process.env.JWT_SECRET);
@@ -129,6 +137,12 @@ async function main() {
   assert.equal((await call(`/groups/${g}/join`,{},winner)).status,200);
   assert.equal((await pool.query('SELECT status FROM group_members WHERE user_id=$1 AND group_id=$2',[winner,g])).rows[0].status,'ACTIVE');
   assert.equal((await pool.query("SELECT count(*)::int AS n FROM group_members WHERE group_id=$1 AND status='ACTIVE'",[g])).rows[0].n,36);
+  await assert.rejects(pool.query("UPDATE group_members SET status='ACTIVE' WHERE user_id=$1 AND group_id=$2",[loser,g]),
+    e=>e.code==='23514'&&e.constraint==='group_members_capacity_check');
+  assert.equal((await pool.query('SELECT status FROM group_members WHERE user_id=$1 AND group_id=$2',[loser,g])).rows[0].status,'REQUESTED');
+  await assert.rejects(pool.query("UPDATE users SET role='MEMBER' WHERE id=$1",[president]),
+    e=>e.code==='23514'&&e.constraint==='group_members_capacity_check');
+  assert.equal((await pool.query('SELECT role FROM users WHERE id=$1',[president])).rows[0].role,'PRESIDENT');
   assert.equal((await approve(loser,null)).status,401);assert.equal((await approve(loser,ordinary)).status,403);assert.equal((await approve(loser,admin,'INVALID')).status,400);
   const outsider=await user('PRESIDENT');assert.equal((await approve(loser,outsider)).status,403);
   // A forged ADMIN claim is checked against the current database actor.
@@ -164,9 +178,17 @@ async function main() {
   let api=readFileSync(path.join(root,'src/api/adminGroupCatalog.ts'),'utf8').replace("import {referralTransport} from './api';","const referralTransport={};");
   const typed=await import('data:text/javascript;base64,'+Buffer.from(compile(api)).toString('base64'));
   assert.equal(typed.validGroupCatalog(catalog,admin),true);assert.equal(typed.validGroupCapacity({...row.capacity,member_records:34},g),false);
-  // Foreign group president data is not silently treated as multiple free seats.
-  await add(outsider,destination);await add(await user('PRESIDENT'),destination);
-  r=await call('/admin/move-member',{userId:ordinary,groupId:destination});assert.equal(r.status,409);assert.equal((await r.json()).code,'GROUP_ROLE_AMBIGUOUS');
-  console.log('Group capacity PASS: PG17 race 200/409, 35 members plus president, replay, transfer rollback and replay timestamp, role demotion/admission rollback, both shuffle rollback and malformed input, current actor/foreign president boundaries, power-team 36 unaffected, typed catalog/detail capacity. No live DB/mail/payment.');
+  // Direct SQL is serialized too: only one of two final-seat writes commits.
+  const directGroup=await group(),directPresident=await user('PRESIDENT');await add(directPresident,directGroup);
+  for(let i=0;i<34;i++)await add(await user(),directGroup);
+  const directCandidates=[await user(),await user()];for(const id of directCandidates)await add(id,directGroup,'REQUESTED');
+  const directRace=await Promise.allSettled(directCandidates.map(id=>pool.query("UPDATE group_members SET status='ACTIVE' WHERE group_id=$1 AND user_id=$2",[directGroup,id])));
+  assert.equal(directRace.filter(result=>result.status==='fulfilled').length,1);
+  assert.equal(directRace.filter(result=>result.status==='rejected'&&result.reason.code==='23514'&&result.reason.constraint==='group_members_capacity_check').length,1);
+  assert.equal((await pool.query("SELECT count(*)::int AS n FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=$1 AND gm.status='ACTIVE' AND u.role<>'PRESIDENT'",[directGroup])).rows[0].n,35);
+  // A second president is rejected at the database boundary rather than becoming ambiguous.
+  await add(outsider,destination);
+  await assert.rejects(add(await user('PRESIDENT'),destination),e=>e.code==='23514'&&e.constraint==='group_members_single_president');
+  console.log('Group capacity PASS: PG17 app and direct-SQL races, 35 members plus president, migration refuses ambiguous legacy rows, DB trigger blocks capacity/second-president/user-demotion violations, replay, transfer and shuffle rollback, current actor boundaries, power-team 36 unaffected, typed catalog/detail capacity. No live DB/mail/payment.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{if(appServer)await new Promise(r=>appServer.close(r));if(pool)await pool.end();if(containerStarted)docker(['stop','--time','3',container]);}process.exit(code);

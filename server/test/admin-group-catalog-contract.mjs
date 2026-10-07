@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,15);
+  assert.equal((await applyVersionedSchema()).applied.length,16);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -128,7 +128,7 @@ async function main() {
   const source=readFileSync(path.join(root,'src/api/adminGroupCatalog.ts'),'utf8').replace("from './api'","from '"+apiUrl+"'");
   const {adminGroupCatalogApi,validGroupCatalog,filterGroupCatalog}=await import('data:text/javascript;base64,'+Buffer.from(compile(source)).toString('base64'));
   // Isolated legacy schema variant: runtime CREATE definition does not enforce this baseline check.
-  await pool.query('ALTER TABLE group_members DROP CONSTRAINT group_members_status_check');
+  await pool.query("DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check");
   await pool.query("UPDATE group_members SET status='INACTIVE' WHERE group_id=$1",[draft]);
   const actual=await adminGroupCatalogApi.read(admin);assert.equal(actual.groups.length,3);assert.equal(actual.groups.find(g=>g.id===draft).other_records,1);assert.equal(filterGroupCatalog(actual.groups,'istanbul','ALL')[0].id,active);
   assert.equal(filterGroupCatalog(actual.groups,'','VALUE:DRAFT')[0].id,draft);assert.equal(filterGroupCatalog(actual.groups,'','UNKNOWN')[0].id,unknown);assert.equal(filterGroupCatalog(actual.groups,'no match','ALL').length,0);
@@ -138,7 +138,7 @@ async function main() {
   writeFileSync(path.join(root,'output/admin-group-catalog-browser.json'),JSON.stringify({owner:admin,other:member,snapshot:actual,active,draft,unknown}));
   const values=[];for(let i=0;i<4998;i++)values.push("('"+randomUUID()+"','G"+i+"')");await pool.query('INSERT INTO groups(id,name) VALUES'+values.join(','));assert.equal((await call()).status,503);
   await pool.query('DELETE FROM group_members');await pool.query('DELETE FROM groups');assert.equal((await(await call()).json()).groups.length,0);
-  console.log('WEB15 PASS: isolated15/repeat0/current-role/auth/query/cache; counts ACTIVE/REQUESTED/other/null/draft/zero; consistent concurrent snapshot; real TS transport/filter/DTO; injected500/recovery; no admission writes; 5001-limit503 and genuine empty.');
+  console.log('WEB15 PASS: isolated16/repeat0/current-role/auth/query/cache; counts ACTIVE/REQUESTED/other/null/draft/zero; consistent concurrent snapshot; real TS transport/filter/DTO; injected500/recovery; no admission writes; 5001-limit503 and genuine empty.');
 }
 let exitCode=0;
 try{await main();}catch(error){exitCode=1;console.error('Catalog contract failed:',error);}

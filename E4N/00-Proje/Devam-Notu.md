@@ -1,5 +1,11 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — P17 veritabanı kapasite invariantı
+
+Kapalı grup kapasitesi artık yalnız API'de değil migration0016 ile doğrudanSQL/SupabaseDataAPI sınırında da korunuyor: başkanhariç35ACTIVEüye, ençok1ACTIVEbaşkan, ortak advisory transactionlock. Concurrentsonkoltuk tekcommit/tek23514; 36.üye, ikinci başkan ve dolugrupta başkandemotion atomik red. Mevcut ihlalli veri otomatik değişmez, migration ledger yazmadan durur. API DBconstraintleri typed409'a çevirir. [[P17-Veritabani-Kapasite-Invarianti-2026-10-07]].
+
+PG17 fresh16/repeat0/knowninitadoption, groupcapacity directSQL/concurrency, isolatedsmoke, sentetikbackuprestore, productionbuild ve 28webkontratı PASS. CanlıSupabase yazma/deploy/mail/payment yok. P17 kapasite/race kapsamı tamam; P10 grupbazlırol/çokluaktifgrup modeli açık ve mevcut üçalandaki PRESIDENT yorumu geçici korunuyor. P09 canlı şema/yedek/geçiş, D05/D08 ve shuffle ürün kuralları, broadSEC açık. Mobil/LMS enson.
+
 ## 5 Ekim — mevcut profil/dashboard bütün veri ve oturum paketi
 
 12b2ae3f370e541ad14c7952b833e1ffd75015fe commit/push; [[P30-Profil-Panel-Veri-ve-Oturum-Kabulu]]. Önceki P37 receiver_id/basicprofilefallback gerçekbulgusu çözüldü: canonical partner_id, iki yön4görüşme/son3stable, allhistorymetric, ACTIVEgruplar/primaryguessyok; header sabitLiderlerGlobal yerine gerçekgrup. Read-only snapshot/currentDBactor self/admin/private-no-store/redactedfailure, typedowner/targetDTO. Dashboard/profil staleowner-role-token isolation/reset/retry; editsonrasıtamDTO. Yeni puan/hak/kesimsaati yok.

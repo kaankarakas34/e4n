@@ -89,7 +89,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,15);
+  assert.equal((await applyVersionedSchema()).applied.length,16);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids=[randomUUID(),randomUUID(),randomUUID()];
   for(const [i,id] of ids.entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,'Fixture','fixture','MEMBER','PENDING')",[id,`payment-${i}@example.invalid`,`Payment ${i}`]);
@@ -175,13 +175,13 @@ async function main() {
   const legacy=await call('/support',1,{subject:'Legacy caller',message:'Legacy message'});assert.equal(legacy.status,201);
   const snapshot=async()=>({tickets:(await pool.query('SELECT * FROM tickets ORDER BY id')).rows,messages:(await pool.query('SELECT * FROM ticket_messages ORDER BY id')).rows});
   const beforeUpgrade=await snapshot();
-  await pool.query("ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
   await pool.query("DROP TABLE direct_messages; DELETE FROM schema_migrations WHERE version='0011_direct_messages'");
   await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0009_support_mutations','0010_score_history','0011_direct_messages','0012_document_library','0013_invoice_files','0014_group_meeting_settings','0015_group_membership_state']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual(await snapshot(),beforeUpgrade);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0009_support_mutations','0010_score_history','0011_direct_messages','0012_document_library','0013_invoice_files','0014_group_meeting_settings','0015_group_membership_state','0016_group_capacity_invariant']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual(await snapshot(),beforeUpgrade);
   console.log('Support flow: real Express/api.ts/PostgreSQL17 create/read/reply/status, aliases, role/owner/target validation, concurrent keyed repeats, replay without later-status mutation, rollback/retry and 8→9 existing-data upgrade passed. No live DB/email.');
 }
 let exitCode=0;

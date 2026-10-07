@@ -32,7 +32,7 @@ try{
   Object.assign(process.env,{DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:'e4n_isolated_test',DB_PASSWORD:'local_fixture_only',DB_NAME:'e4n_isolated_test',NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'web_browser_fixture_only',DOTENV_CONFIG_PATH:path.join(root,'server/test/.nonexistent-env'),SMTP_HOST:'127.0.0.1'});
   nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'local-fake'};}});
   ({default:pool}=await import('../src/config/db.js'));
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==15)throw Error('Unexpected schema version count');
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==16)throw Error('Unexpected schema version count');
   const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);

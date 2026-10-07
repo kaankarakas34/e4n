@@ -56,6 +56,12 @@ export async function enforceGroupCapacity(client, ids) {
 }
 export function sendGroupMutationError(res, error) {
   if (error.status) return res.status(error.status).json({ error: error.message, code: error.code });
+  if (error.code === '23514' && error.constraint === 'group_members_capacity_check') {
+    return res.status(409).json({ error:'Grup dolu: başkan hariç en fazla 35 üye kabul edilebilir.', code:'GROUP_CAPACITY_FULL' });
+  }
+  if (error.code === '23514' && error.constraint === 'group_members_single_president') {
+    return res.status(409).json({ error:'Grupta birden fazla başkan kaydı olamaz.', code:'GROUP_ROLE_AMBIGUOUS' });
+  }
   if (['55P03', '57014', '40P01'].includes(error.code)) return res.status(503).json({ error:'Grup işlemi şu anda meşgul. Sonucu kontrol edip tekrar deneyin.', code:'GROUP_BUSY' });
   console.error('Group mutation failed:', error.code || 'UNKNOWN');
   return res.status(500).json({ error:'Grup işlemi tamamlanamadı.' });

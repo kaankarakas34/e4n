@@ -31,6 +31,7 @@ import { installPersonalReports } from './personal-reports.js';
 import { installInvoices } from './invoices.js';
 import { installWebCalendar } from './web-calendar.js';
 import { installAdminGroupCatalog } from './admin-group-catalog.js';
+import { installShuffleWorkspace, readShuffleWorkspace } from './shuffle-workspace.js';
 import { installAdminMemberDirectory } from './admin-member-directory.js';
 import { installAdminVisitorQueue } from './admin-visitor-queue.js';
 import { installAdminGroupDetail } from './admin-group-detail.js';
@@ -2923,6 +2924,7 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
 
   const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
   if(!validShuffleAssignments(assignments))return res.status(400).json({error:'Geçersiz shuffle dağıtımı.'});
+  if(req.body.expectedRevision!==undefined&&(typeof req.body.expectedRevision!=='string'||!/^[a-f0-9]{64}$/.test(req.body.expectedRevision)))return res.status(400).json({error:'Geçersiz dağılım sürümü.'});
   let client;
 
   try {
@@ -2931,6 +2933,10 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
     await requireCurrentAdmin(client,req.user.id);
 
     // 1. Reset LEADERSHIP roles (Keep ADMIN, MEMBER, etc. if needed, but per request reset leaders to MEMBER)
+    if(req.body.expectedRevision!==undefined){
+      const current=await readShuffleWorkspace(client,{lock:true});
+      if(current.revision!==req.body.expectedRevision)throw Object.assign(Error('Grup veya üye kayıtları değişti. Güncel verileri yükleyip dağılımı tekrar hazırlayın.'),{status:409,code:'SHUFFLE_STALE'});
+    }
     // Roles to reset: PRESIDENT, VICE_PRESIDENT, SECRETARY_TREASURER, EDUCATION_COORDINATOR, VISITOR_HOST
     // IMPORTANT: Exclude ADMIN from reset
     await client.query(`
@@ -3493,6 +3499,7 @@ installAdminGroupDetail(app, { pool, authenticateToken });
 installAdminVisitorQueue(app, { pool, authenticateToken });
 installAdminMemberDirectory(app, { pool, authenticateToken });
 installAdminGroupCatalog(app, { pool, authenticateToken });
+installShuffleWorkspace(app, { pool, authenticateToken });
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
 

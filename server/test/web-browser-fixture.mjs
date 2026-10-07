@@ -52,6 +52,9 @@ try{
   control=createHttpServer(async(req,res)=>{
     if(req.headers['x-fixture-key']!==secret){res.writeHead(403);res.end();return;}
     if(req.url==='/stop'&&req.method==='POST'){res.end('stopping');setImmediate(()=>close().then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1);}));return;}
+    if(req.url==='/shuffle-stale'&&req.method==='POST'){
+      await pool.query("UPDATE users SET profession='Updated fixture profession' WHERE id=$1",[ids.president]);res.end('updated');return;
+    }
     if(req.url!=='/state'||req.method!=='GET'){res.writeHead(404);res.end();return;}
     try{const group=(await pool.query('SELECT user_id,status FROM group_members WHERE group_id=$1 ORDER BY user_id',[ids.group])).rows;const attendance=(await pool.query('SELECT user_id,status FROM attendance WHERE event_id=$1 ORDER BY user_id',[ids.event])).rows;const documents=(await pool.query("SELECT d.title,d.filename,d.size_bytes,encode(f.content,'hex') bytes FROM document_library d JOIN document_files f ON f.document_id=d.id")).rows;const messages=(await pool.query('SELECT sender_id,receiver_id,content FROM direct_messages')).rows;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({group,attendance,documents,messages,mails}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
   });control.listen(0,'127.0.0.1');await once(control,'listening');

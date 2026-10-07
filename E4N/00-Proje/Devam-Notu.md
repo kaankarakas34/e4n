@@ -1,5 +1,11 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — Shuffle gerçek dağılım ve taslak kayıt paketi
+
+[[P28-Gercek-Dagilim-ve-Taslak-Kayit-2026-10-07]]: eski AdminShuffle round-robin ve uydurulmuş previous_group_id kaldırıldı. Yeni private/current-admin repeatable-read snapshot gerçek ACTIVE bağlantıları getirir; eski hesap filtresi korunur. Çoklu aktif grup/eksik meslek için varsayım yapılmaz. 35koltuklu önizleme, atanamayan varsa kayıt engeli; webexpectedRevision/rowlocks ile eski taslak409/nochange, aynırevisionrace200/409 ve aynıplacementreplay409. ACKvalidasyonu; eksiknotify çağrısı ve yanlış e-posta başarı vaadi kaldırıldı. Mevcut globalreset/archive semantiği değişmedi; dönem/uygunluk/Dkuralları ve canonicalhistory/notificationdelivery açık. Legacy çağrılarda revisionopsiyonel, yeniwebzorunlu.
+
+30API/veri regresyonu PASS/0FAIL (16-38-58-920Z); taze gerçekbrowser27PASS/0FAIL (16-43-51-855Z), screenshots incelendi/finalDBkorunur. İlkbrowserERR_NETWORK_CHANGED nedeniyle incomplete, tekrar tekfixturefinalPASS. Focusedrace/replay PASS; build/checkPASS. Source17migration,164routes/19providers/17legacy. Livewrite/mail/payment/deploy yok; mobil/LMSenson. AnaP28/P29/P39/P37 tamam iddiası yok; releaseReadyfalse.
+
 ## 7 Ekim — P37 stilli gerçek web kabulü
 
 [[P37-Stilli-Gercek-Web-Kabulu-2026-10-07]]: fresh17migration gerçek App/Vite→Express/JWT→PG17, son taze browser24PASS/0FAIL (16-23-16-419Z). Önceki stiller eksik DOM koşusu görsel kabul değildir. Fixture cwd uygulama köküne alındı, computed CSS kontrolü eklendi, schema metadata gerçek sayıdan gelir. Mesaj locator konuşma paragraphı; actor storage hydration öncesi temizlenir. Gerçek2/50+pencere2, 409pendingkoruma, PDF40byte, profil/takvim/mesaj/rol ve finalDB PASS; screenshots incelendi. Owned süreçler kapalı. P37 IP/releaseReadyfalse; D/productioncopy/security gate açık, mobil/LMS enson.

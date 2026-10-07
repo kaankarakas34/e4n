@@ -209,3 +209,9 @@ the 16-20-08 run was stopped after a fixture login race and is incomplete.
 The final run verifies styled UI, actual HTTP and persisted database state;
 screenshots were visually inspected. All owned fixture processes were closed.
 P37 remains In Progress with the remaining product/live/security release gates.
+
+## Current shuffle workspace package, 7 October
+
+Fresh full API/data run 2026-10-07T16-38-58-920Z: **30 PASS / 0 FAIL**. Fresh single-fixture actual application browser 2026-10-07T16-43-51-855Z: **27 PASS / 0 FAIL**, including real current memberships, locked preview without writes, stale revision409 and refresh, plus unchanged final database records. Focused concurrent/same-placement revision replay also PASS. Build/check PASS. The interrupted 16-37-17 browser encountered local ERR_NETWORK_CHANGED while Docker fixtures changed the host network; it is not acceptance evidence.
+
+See shuffle-workspace.md. This does not complete period eligibility, immutable assignment history or notification delivery; existing legacy save callers may omit the revision while this web screen supplies it. P28/P29/P39/P37 and release gates stay open. No new migration; runtime ownership164 routes/19providers,17retained legacy.

@@ -62,6 +62,33 @@ async page=>{
     await page.getByText('Aktif gruplar: Browser Full Group',{exact:true}).waitFor();
     check(await page.getByText('Liderler Global',{exact:true}).count()===0,'Hardcoded group displayed');
   });
+  await test('admin-shuffle-current-records',async()=>{
+    await visit('/admin/shuffle','Grup Shuffle Yönetimi');
+    await page.getByRole('heading',{name:'Mevcut Aktif Grup Üyelikleri',exact:true}).waitFor();
+    await page.getByText('Grup durumu: ACTIVE · 36 Üye',{exact:true}).waitFor();
+    await page.getByText('Grup durumu: ACTIVE · 0 Üye',{exact:true}).waitFor();
+    await page.getByRole('heading',{name:'Aktif Grubu Olmayan Üyeler (1)',exact:true}).waitFor();
+    check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Current records enabled save without a draft');
+    check(await page.getByText(/Planlanan Shuffle:/).count()===0,'Invented schedule is still displayed');
+  });
+  await test('admin-shuffle-preview-no-write',async()=>{
+    await page.getByRole('button',{name:'Yerinde kilitle: Browser member',exact:true}).click();
+    await page.getByRole('button',{name:'Dağıtım Taslağı Hazırla',exact:true}).click();
+    await page.getByRole('heading',{name:'Dağıtım Taslağı',exact:true}).waitFor();
+    check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isEnabled(),'Valid draft could not be saved');
+    check(await page.getByRole('button',{name:'Kilidi aç: Browser member',exact:true}).count()===1,'Locked member lost');
+    check(!requests.some(r=>r.path==='/api/shuffle/save'),'Preview wrote to API');
+  });
+  await test('admin-shuffle-stale-draft-rejected',async()=>{
+    const changed=await page.request.post(f.controlBase+'/shuffle-stale',{headers:{'x-fixture-key':f.secret}});check(changed.ok(),'Could not create isolated stale-data condition');
+    await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'Kayıtlar değişmiş'}).waitFor();
+    check(requests.some(r=>r.path==='/api/shuffle/save'&&r.status===409),'No actual stale draft rejection');
+    check(!requests.some(r=>r.path==='/api/shuffle/notify'),'Missing notification route was called');
+    await page.getByRole('button',{name:'Güncel Dağılımı Yükle',exact:true}).click();
+    await page.getByText('Grup durumu: ACTIVE · 36 Üye',{exact:true}).waitFor();
+    check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Stale rejection retained a savable draft');
+  });
   await test('member-login',()=>login('member'));
   for(const [name,url,heading] of [
     ['member-reports','/reports','Kişisel Aktivite Raporu'],['member-groups','/chapter-management','Gruplarım ve Ağ'],

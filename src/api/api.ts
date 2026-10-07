@@ -164,8 +164,10 @@ export const api = {
   },
 
   // Shuffle & Admin
-  async saveShuffle(assignments: Record<string, string[]>) {
-    return await request('/shuffle/save', { method: 'POST', body: JSON.stringify({ assignments }) });
+  async saveShuffle(assignments: Record<string, string[]>, expectedRevision?: string) {
+    const result=await request('/shuffle/save', { method: 'POST', body: JSON.stringify({ assignments,expectedRevision }) });
+    if(result?.success!==true)throw new Error('Dağıtım kaydı doğrulanamadı. Güncel kayıtları kontrol edin.');
+    return result;
   },
   async moveMember(userId: string, groupId: string) {
     const result=await request('/admin/move-member', { method: 'POST', body: JSON.stringify({ userId, groupId }) });

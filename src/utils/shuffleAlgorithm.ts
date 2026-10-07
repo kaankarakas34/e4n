@@ -84,6 +84,8 @@ export function distributeMembers(
 
         for (const group of shuffledGroups) {
             const groupMemberIds = newDistribution[group.id];
+            // The existing save resets leadership, so every proposed row consumes a member seat.
+            if (groupMemberIds.length >= 35) continue;
             const groupMembers = groupMemberIds.map(id => allMembers.find(m => m.id === id)).filter((m): m is Member => !!m);
 
             // HARD CONSTRAINT: Profession Conflict

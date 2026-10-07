@@ -13,6 +13,7 @@ const suites=[
   ['documents-contract','WEB05 document bytes and ownership'],['invoices-contract','WEB06 invoice bytes and ownership'],
   ['event-registration-contract','WEB07 registration/ticket ownership'],['web-calendar-contract','WEB08 calendar'],
   ['web-groups-contract','WEB09 personal groups'],['web-activities-contract','WEB10 activities'],
+  ['membership-history-contract','Durable membership row history, rollback, owner and admin web transport'],
   ['membership-records-contract','Owned membership/payment/invoice/reminder records and current admin snapshot'],
   ['web-job-operations-contract','Durable web job history, authorized invocation and concurrency'],
   ['shuffle-workspace-contract','Current shuffle workspace, stale draft rejection and preview capacity'],

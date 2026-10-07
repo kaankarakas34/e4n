@@ -2,7 +2,7 @@
 
 Run `npm --prefix server run test:web-acceptance` from the managed checkout.
 Node dependencies and Docker with PostgreSQL 17 are required. The runner executes
-32 contract suites sequentially, including private profile/session isolation,
+33 contract suites sequentially, including private profile/session isolation,
 the 15 delivered WEB packages, route
 ownership, admission/transfer/capacity, payment, meetings, referrals, support,
 scheduled transactions and synthetic backup/restore. Referral verification uses
@@ -33,7 +33,7 @@ routes, browsers, historical production records or future product rules passed.
 The isolated smoke suite deliberately retains documented unresolved defect
 baselines; a passing smoke run does not fix those defects.
 
-`releaseReady` remains false even if all 32 suites pass. The report records:
+`releaseReady` remains false even if all 33 suites pass. The report records:
 
 - BLOCKED: remaining scoring/removal/ban, service/admission/company/membership
   decisions and exact shuffle payment/grace/restriction/reopening policy.
@@ -230,3 +230,7 @@ Final shuffle history acceptance: API/data2026-10-07T17-40-49-108Z31PASS0FAIL, f
 ## 7 October membership record package
 
 output/web-acceptance/2026-10-07T18-02-15-840Z/report.json:32PASS/0FAIL. output/web-browser/2026-10-07T18-06-08-150Z/browser-report.json:34PASS/0FAIL, including actual owner/admin record screens, authorized invoice download and member admin-route rejection with final persisted-data reconciliation. BaseHEAD4e1d115 plus the membership record working tree; see delivery note for final source scope. Both are regression evidence; releaseReady remains false and product/schema/security gates remain open.
+
+## Durable group membership history,7October
+
+output/web-acceptance/2026-10-07T18-21-36-986Z/report.json:33PASS/0FAIL. The earlier31/2 run failed old migration/table-count fixture assumptions; both were corrected. Focused history rerun after the explicit timestamp-column index ordering passed. output/web-browser/2026-10-07T18-26-37-721Z/browser-report.json:37PASS/0FAIL; actual member/admin history, older-page load, refresh and owner boundaries with real shuffle-change reconciliation. Synthetic restore includes two real membership history rows,46tables and immutable controls. Source20;174routes/23providers. Build/TypeScript PASS; base66550ad plus delivery working tree. Technical connection history does not close canonical period/removal policy, live adoption, broad security or releaseReady gates.

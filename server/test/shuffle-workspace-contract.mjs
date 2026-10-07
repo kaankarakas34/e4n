@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,19);
+  assert.equal((await applyVersionedSchema()).applied.length,20);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -99,8 +99,8 @@ async function main() {
 
 
 
-  await pool.query("DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0019_shuffle_execution_history']);assert.equal((await applyVersionedSchema()).applied.length,0);
+  await pool.query("DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'; DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0019_shuffle_execution_history','0020_group_membership_history']);assert.equal((await applyVersionedSchema()).applied.length,0);
   const [admin,member,other,pending,deleted]=Array.from({length:5},()=>randomUUID());
   for(const [id,role,status] of [[admin,'ADMIN','ACTIVE'],[member,'MEMBER','ACTIVE'],[other,'MEMBER','ACTIVE'],[pending,'MEMBER','PENDING']])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$2,$2,'private_secret',$3,$4)",[id,id+'@example.invalid',role,status]);
   const [a,b]=[randomUUID(),randomUUID()];
@@ -169,7 +169,7 @@ async function main() {
   for(const id of [pres,...fullMembers]){await pool.query("INSERT INTO users(id,name,email,profession,role,account_status) VALUES($1::uuid,'Full fixture',$2,$1::uuid::text,$3,'ACTIVE')",[id,id+'@example.invalid',id===pres?'PRESIDENT':'MEMBER']);await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')",[id,fullGroup]);}
   const fullSave=await save({[fullGroup]:fullMembers,[a]:[pres],[b]:[member,other]});assert.equal(fullSave.status,200);const fullAck=await fullSave.json();assert.ok(fullAck.executionId);
   const fullHistory=(await historyCall(admin,'/'+fullAck.executionId).then(r=>r.json())).execution;assert.equal(fullHistory.member_count,38);assert.equal(fullHistory.before_snapshot.members.find(m=>m.id===pres).role,'PRESIDENT');assert.equal(fullHistory.after_snapshot.members.find(m=>m.id===pres).role,'MEMBER');assert.equal(fullHistory.expected_revision,null);assert.equal(fullHistory.after_snapshot.memberships.filter(m=>m.group_id===fullGroup&&m.status==='ACTIVE').length,35);
-  console.log('Shuffle workspace/history PASS: isolated19/repeat0/18upgrade; immutable update/delete/truncate; atomic history outage rollback+retry; concurrent single ledger; authorized list/detail and snapshot preservation; actual ACTIVE membership/no invented history; owner/current-role/cache; DTO/duplicates/multigroup/unassigned; stale group/user/replay409 no mutation; save200; 35 capacity/71 unique/locks; consistent read; injected500 recovery.');
+  console.log('Shuffle workspace/history PASS: isolated20/repeat0/18upgrade; immutable update/delete/truncate; atomic history outage rollback+retry; concurrent single ledger; authorized list/detail and snapshot preservation; actual ACTIVE membership/no invented history; owner/current-role/cache; DTO/duplicates/multigroup/unassigned; stale group/user/replay409 no mutation; save200; 35 capacity/71 unique/locks; consistent read; injected500 recovery.');
 }
 let exitCode=0;
 try{await main();}catch(error){exitCode=1;console.error('Shuffle workspace contract failed:',error);}

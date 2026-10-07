@@ -262,6 +262,7 @@ export function GroupManagerDashboard() {
                 {attendanceNotice?.context === attendanceContext && <p role="status" className="mb-4">{attendanceNotice.text}</p>}
                 {/* Header Section */}
                 <div className="mb-8">
+                    <Button onClick={()=>navigate('/membership-history')}>Grup Üyelik Geçmişim</Button>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                         <Users className="h-8 w-8 text-red-600 mr-3" />
                         {selectedGroup.name} Yönetim Paneli

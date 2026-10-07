@@ -1,3 +1,4 @@
+import {MembershipHistory} from './pages/MembershipHistory';
 import {MembershipRecords} from './pages/MembershipRecords';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import React, { useEffect } from 'react';
@@ -214,6 +215,8 @@ function App() {
 
               <Route path="/profile" element={<Profile />} />
               <Route path="/membership" element={<MembershipPage />} />
+              <Route path="/membership-history" element={<MembershipHistory />} />
+              <Route path="/admin/membership-history/:id" element={<MembershipHistory admin />} />
               <Route path="/membership-records" element={<MembershipRecords />} />
               <Route path="/admin/membership-records" element={<MembershipRecords admin />} />
               <Route path="/events" element={<UserEvents />} />

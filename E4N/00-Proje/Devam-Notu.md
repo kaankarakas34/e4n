@@ -1,5 +1,14 @@
 # Devam notu — 1 Ekim 2026
 
+## 7 Ekim — grup üyelik geçmişi bütün web paketi
+
+[[P19-Grup-Uyelik-Gecmisi-Veri-API-Web-2026-10-07]]: migration0020 başlangıç gözlemi+aynıtransaction INSERT/UPDATE/DELETE önceki/sonraki durum; historyoutage üyeliği rollback eder, no-op tekrar yok. Silinen grup/hesap geçmişi kalır; kullanıcı değişiminde iki sahibin tarafları ayrı. Immutable+truncate koruma, invoker/RLS/ACL; private currentDBadmin/ownread,50'lik mikro saniyeli cursor; üye/admin gerçek ekran ve üyelik/grup bağlantıları. Neden/işlemi yapan/dönem/tekaktifgrup kuralı uydurulmadı.
+
+33API/veriPASS0FAIL(18-21-36-986Z), son focusedhistoryPASS, gerçek browser37PASS0FAIL(18-26-37-721Z): gerçek shufflehistory, sayfalama/refresh/owner isolation/finalDB. Shared üye ekranı gözle incelendi. İlk31/2 eski fixturecount hataları düzeltildi; başarısız rapor kabul değil. Build/TS/syntax/diffPASS;174route23provider17legacy; fresh20/repeat0/19upgrade; sentetikrestore46table+2historyrow/ACL/RLS/triggerlerPASS. Ownedfixtureskapalı.
+
+P19 anahedefIP; canonicaldönem, tekaktifkapalıgrup ve çıkarılmanedeni/puan/ban politikaları açık. P20/P30/P31/P09/P36/P37/releaseReadyfalse; ücret/hak/grace/cutoff ve hizmet/kabulDkararları açık. Mobil/LMSenson; canlıwrite/deploy/realmail/paymentyok. Canlı0020adoption ayrıkabuldür. Bu paket yeniden yapılmaz.
+
+
 ## 7 Ekim — üyelik ve ödeme kayıtları bütün web paketi
 
 [[P30-P31-Uyelik-Odeme-Kayit-Butunlugu-2026-10-07]]: read-only repeatable-read owner/currentDBadmin API; gerçek accountstatus/plan/end, explicit payment ownership+NULL-ownercount, invoice download ve reminder outcome aynı üye/admin ekranında. Eski ACTIVE+pastend ve legacyplan aynen; fiyat/hak/borç/shuffle/grace kuralı uydurulmadı. DTO/snapshot/102paymentslast100/redacted500/foreigndeny; webactor-tokenisolation/refresh/search/download.

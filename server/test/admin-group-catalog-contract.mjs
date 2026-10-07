@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,19);
+  assert.equal((await applyVersionedSchema()).applied.length,20);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -138,7 +138,7 @@ async function main() {
   writeFileSync(path.join(root,'output/admin-group-catalog-browser.json'),JSON.stringify({owner:admin,other:member,snapshot:actual,active,draft,unknown}));
   const values=[];for(let i=0;i<4998;i++)values.push("('"+randomUUID()+"','G"+i+"')");await pool.query('INSERT INTO groups(id,name) VALUES'+values.join(','));assert.equal((await call()).status,503);
   await pool.query('DELETE FROM group_members');await pool.query('DELETE FROM groups');assert.equal((await(await call()).json()).groups.length,0);
-  console.log('WEB15 PASS: isolated19/repeat0/current-role/auth/query/cache; counts ACTIVE/REQUESTED/other/null/draft/zero; consistent concurrent snapshot; real TS transport/filter/DTO; injected500/recovery; no admission writes; 5001-limit503 and genuine empty.');
+  console.log('WEB15 PASS: isolated20/repeat0/current-role/auth/query/cache; counts ACTIVE/REQUESTED/other/null/draft/zero; consistent concurrent snapshot; real TS transport/filter/DTO; injected500/recovery; no admission writes; 5001-limit503 and genuine empty.');
 }
 let exitCode=0;
 try{await main();}catch(error){exitCode=1;console.error('Catalog contract failed:',error);}

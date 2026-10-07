@@ -20,6 +20,7 @@ try{
   const stateResponse=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)});if(!stateResponse.ok)throw Error('Could not verify final disposable database state');
   report.databaseState=await stateResponse.json();const s=report.databaseState;
   const consistent=s.activeMemberships.length===37&&new Set(s.activeMemberships.map(r=>r.user_id)).size===37&&s.shuffleHistory.length===1&&s.shuffleHistory[0].member_count===37&&s.shuffleHistory[0].before_snapshot.memberships.some(r=>r.user_id===fixture.ids.applicant&&r.status==='REQUESTED')&&s.shuffleHistory[0].after_snapshot.memberships.filter(r=>r.status==='ACTIVE').length===37
+    &&s.membershipHistory.some(e=>e.user_id===fixture.ids.member&&e.operation==='UPDATE'&&e.before_state.status==='ACTIVE'&&e.after_state.status==='INACTIVE')&&s.membershipHistory.some(e=>e.user_id===fixture.ids.member&&e.after_state?.status==='ACTIVE')
     &&s.membershipInvoices.length===1&&s.membershipInvoices[0].id===fixture.ids.invoice&&Buffer.from(s.membershipInvoices[0].bytes,'hex').equals(Buffer.from('%PDF-1.7 browser membership fixture'))&&s.membershipPayments.length===2&&s.membershipPayments.find(p=>p.merchant_oid==='browser-unowned-payment')?.user_id===null&&s.reminderRecords.length===1&&s.reminderRecords[0].delivery_state==='UNKNOWN'
     &&s.jobs.length===1&&s.jobs[0].state==='SUCCESS'&&s.jobs[0].source==='ADMIN'&&s.jobs[0].summary.changed===0
     &&s.attendance.length===2&&s.documents.length===1&&s.documents[0].title==='Browser Shared Contract'

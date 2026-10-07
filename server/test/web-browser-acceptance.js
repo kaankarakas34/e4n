@@ -114,6 +114,14 @@ async page=>{
     await page.getByRole('button',{name:/Dağıtım ayrıntısı /}).waitFor();
     check(await page.getByRole('button',{name:/Dağıtım ayrıntısı /}).count()===1,'Duplicate history on refresh');
   });
+  await test('admin-group-membership-history',async()=>{
+    await visit('/admin/membership-history/'+f.ids.member,'Grup Üyelik Geçmişi');
+    await page.getByRole('button',{name:'Daha Eski Kayıtları Yükle',exact:true}).click();
+    await page.getByRole('heading',{name:'Bağlantı eklendi',exact:true}).first().waitFor();
+    await page.getByRole('heading',{name:'Bağlantı değişti',exact:true}).first().waitFor();
+    check(await page.getByRole('article').count()>=3,'Shuffle changes did not persist in membership history');
+    check(requests.some(r=>r.path==='/api/admin/membership-history/'+f.ids.member&&r.status===200),'No actual authorized history request');
+  });
   await test('admin-web-job-history-and-run',async()=>{
     await visit('/admin/web-jobs','Web İşlemleri ve Çalışma Geçmişi');
     await page.getByText('Henüz çalışma kaydı yok.',{exact:true}).waitFor();
@@ -140,6 +148,20 @@ async page=>{
     await page.getByRole('cell',{name:'UNKNOWN',exact:true}).waitFor();
     const download=page.waitForEvent('download');await page.getByRole('button',{name:'Faturayı indir: browser-membership.pdf',exact:true}).click();check((await download).suggestedFilename()==='browser-membership.pdf','Wrong membership invoice filename');
     check(await page.getByText('browser-unowned-payment',{exact:true}).count()===0,'Unowned transaction disclosed');
+  });
+  await test('member-group-membership-history',async()=>{
+    await page.getByRole('button',{name:'Grup Üyelik Geçmişini Gör',exact:true}).click();
+    await page.getByRole('heading',{name:'Grup Üyelik Geçmişim',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'Bağlantı değişti',exact:true}).first().waitFor();
+    await page.getByRole('button',{name:'Daha Eski Kayıtları Yükle',exact:true}).click();await page.getByRole('heading',{name:'Bağlantı eklendi',exact:true}).first().waitFor();
+    check(await page.getByRole('article').count()>50,'Own history did not include shuffle changes');
+    check(await page.getByText('Browser president',{exact:true}).count()===0,'Another owner appeared in personal history');
+    await page.getByRole('button',{name:'Geçmişi Yenile',exact:true}).click();await page.getByRole('button',{name:'Daha Eski Kayıtları Yükle',exact:true}).waitFor();check(await page.getByRole('article').count()===50,'Refresh did not reset pagination');
+  });
+  await test('member-admin-group-membership-history-hidden',async()=>{
+    await page.goto(f.webBase+'/admin/membership-history/'+f.ids.president);
+    await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();
+    check(await page.getByRole('article').count()===0,'Previous owner history retained');
   });
   await test('member-admin-membership-records-hidden',async()=>{
     await page.goto(f.webBase+'/admin/membership-records');await page.getByText('Bu ekran için yönetici yetkisi gerekir.',{exact:true}).waitFor();check(await page.getByRole('table').count()===0,'Previous administrator membership records visible');

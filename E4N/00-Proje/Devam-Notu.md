@@ -511,3 +511,7 @@ Sonraki web bütün paket: kursa bağlı sınav yönetimi; önce mevcut course z
 1. P08/P40'ın gölgeli route temizliği tamamlandı; aktif yolların ürün sözleşmesi ile bağlantısız 17 modülün sahipliğini P39/P40/P41'de tamamla. D01–D10 yanıtları gelmeden kural uydurma.
 2. P09'un mevcut canlı şema kopyasında yükseltme ve geri yükleme provasını, D kararları ve veri saklama seçimi netleşince yap. P10 taslağını bu kararlara göre somut tablo/FK modeline dönüştür.
 3. Mobil mağaza sürümünün kaynak eşleştirmesini P32/P38'de, P05'in canlı API doğrulamasını dağıtım sonrası yap. Canlı ödeme/kabul/shuffle testlerini üretimde başlatma. Güvenlik E4N-58/59 kullanıcı istediğinde ele alınır.
+
+## P26 teslim kaydı — 8 Ekim
+
+Uygulama commit/push: 2fca79a · codex/e4n-sprint1-foundation. Linear E4N-98 açıklaması ve E4N-109 kabul kaydı güncellendi; P26 InProgress bırakıldı.33API/38browserPASS, owned fixtures kapalı. Canlı migration uygulanmadı.

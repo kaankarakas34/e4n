@@ -17,3 +17,7 @@ Tarayıcı ilk tur 08-22-20-410Z izoleusers/me ECONNRESET ile tamamlanmadı; kab
 P26 InProgress: gerçek etkinlik check-in/düzeltme ve kaynak kanıtı, belirsiz eski yoklamalar, çoklu bilet/fiyat/hak ve provider sandbox kabulü açık. Kayıt/yoklama ayrı durumlar oldu; fiziksel katılım kanıtı otomatik icat edilmedi. Mevcut legacy weeklyyoklama ve raporPRESENT sayımı korunur; eski yanlış puanları geriye dönük temizlemez. D01–D10 eksik kurallar uydurulmadı. Canlı migration0021 önce ayrıca incelenmeli; eski CHECK'e rollback REGISTERED satırlarını PRESENT'e çevirmekle yapılmamalı.
 
 Sonraki uygun P26 paket: mevcut admin etkinlik yetkisi altında açık yoklama ve düzeltme kanıtının API/veri/web akışı; yeni puan/çıkarma veya üyelik hak politikası seçmeden. Büyük üyelik/grup/shuffle paketlerinin D kapıları ayrı açık; mobilSprint7/LMS8enson.
+
+## P26 teslim kaydı — 8 Ekim
+
+Uygulama commit/push: 2fca79a · codex/e4n-sprint1-foundation. Linear E4N-98 açıklaması ve E4N-109 kabul kaydı güncellendi; P26 InProgress bırakıldı.33API/38browserPASS, owned fixtures kapalı. Canlı migration uygulanmadı.

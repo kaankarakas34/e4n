@@ -35,7 +35,7 @@ try{
   Object.assign(process.env,{DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:'e4n_isolated_test',DB_PASSWORD:'local_fixture_only',DB_NAME:'e4n_isolated_test',NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'web_browser_fixture_only',DOTENV_CONFIG_PATH:path.join(root,'server/test/.nonexistent-env'),SMTP_HOST:'127.0.0.1',WEB_JOB_INVOCATION_ENABLED:'true',CRON_SECRET:'isolated_browser_cron_secret_32_chars'});
   nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'local-fake'};}});
   ({default:pool}=await import('../src/config/db.js'));
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==20)throw Error('Unexpected schema version count');
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==21)throw Error('Unexpected schema version count');
   const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);
@@ -45,7 +45,7 @@ try{
   // Exercise actual keyset pagination without changing membership status or rights.
   for(let i=0;i<52;i++)await pool.query('UPDATE group_members SET joined_at=$1 WHERE user_id=$2',[new Date(1700000000000+i),ids.member]);
   await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,max_attendees,created_by,group_id) VALUES($1,'Browser Participant Event',now()+interval '2 days','PUBLISHED',true,'social',0,50,$2,$3)",[ids.event,ids.admin,ids.group]);
-  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT'),($1,$3,'ABSENT')",[ids.event,ids.member,ids.president]);
+  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'REGISTERED'),($1,$3,'PRESENT')",[ids.event,ids.member,ids.president]);
   await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED')",[ids.member,ids.president]);
   await pool.query("UPDATE users SET performance_score=73,performance_color='YELLOW' WHERE id=$1",[ids.member]);
   for(let i=0;i<4;i++)await pool.query("INSERT INTO one_to_ones(requester_id,partner_id,meeting_date) VALUES($1,$2,now()-interval '1 day')",[i%2?ids.president:ids.member,i%2?ids.member:ids.president]);

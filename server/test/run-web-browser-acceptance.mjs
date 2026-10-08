@@ -23,7 +23,7 @@ try{
     &&s.membershipHistory.some(e=>e.user_id===fixture.ids.member&&e.operation==='UPDATE'&&e.before_state.status==='ACTIVE'&&e.after_state.status==='INACTIVE')&&s.membershipHistory.some(e=>e.user_id===fixture.ids.member&&e.after_state?.status==='ACTIVE')
     &&s.membershipInvoices.length===1&&s.membershipInvoices[0].id===fixture.ids.invoice&&Buffer.from(s.membershipInvoices[0].bytes,'hex').equals(Buffer.from('%PDF-1.7 browser membership fixture'))&&s.membershipPayments.length===2&&s.membershipPayments.find(p=>p.merchant_oid==='browser-unowned-payment')?.user_id===null&&s.reminderRecords.length===1&&s.reminderRecords[0].delivery_state==='UNKNOWN'
     &&s.jobs.length===1&&s.jobs[0].state==='SUCCESS'&&s.jobs[0].source==='ADMIN'&&s.jobs[0].summary.changed===0
-    &&s.attendance.length===2&&s.documents.length===1&&s.documents[0].title==='Browser Shared Contract'
+    &&s.attendance.length===3&&s.attendance.find(a=>a.user_id===fixture.ids.admin)?.status==='REGISTERED'&&s.attendance.find(a=>a.user_id===fixture.ids.member)?.status==='REGISTERED'&&s.attendance.find(a=>a.user_id===fixture.ids.president)?.status==='PRESENT'&&s.documents.length===1&&s.documents[0].title==='Browser Shared Contract'
     &&Buffer.from(s.documents[0].bytes||'','hex').equals(Buffer.from('%PDF-1.7\nBrowser isolated contract\n%%EOF'))
     &&s.messages.length===1&&s.messages[0].sender_id===fixture.ids.member&&s.messages[0].receiver_id===fixture.ids.president&&s.messages[0].content==='Browser local message';
   report.cases.push({name:'database-final-state',status:consistent?'PASS':'FAIL'});report.passed=report.cases.filter(c=>c.status==='PASS').length;report.failed=report.cases.length-report.passed;

@@ -102,7 +102,7 @@ export interface Attendance {
   id: string;
   meeting_id: string;
   member_id: string;
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'MEDICAL' | 'SUBSTITUTE';
+  status: 'REGISTERED' | 'PRESENT' | 'ABSENT' | 'LATE' | 'MEDICAL' | 'SUBSTITUTE';
   substitute_name?: string;
   marked_at: string;
   meeting?: Meeting;

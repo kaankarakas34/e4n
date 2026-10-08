@@ -105,7 +105,7 @@ export class PerformanceService {
   }
 
   private static calculateAttendanceScore(attendances: Attendance[]): number {
-    const recentAttendances = attendances.slice(-4);
+    const recentAttendances = attendances.filter(a => ['PRESENT', 'ABSENT', 'LATE', 'MEDICAL', 'SUBSTITUTE'].includes(a.status)).slice(-4);
     if (recentAttendances.length === 0) return 0;
     const presentCount = recentAttendances.filter(a => a.status === 'PRESENT').length;
     const lateCount = recentAttendances.filter(a => a.status === 'LATE').length;

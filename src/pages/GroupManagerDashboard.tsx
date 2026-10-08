@@ -555,7 +555,7 @@ export function GroupManagerDashboard() {
                                                                     att.status === 'LATE' ? 'bg-yellow-100 text-yellow-800' :
                                                                         'bg-blue-100 text-blue-800'
                                                                 }`}>
-                                                                {att.status === 'PRESENT' ? 'Var' : att.status === 'ABSENT' ? 'Yok' : att.status === 'LATE' ? 'Geç' : att.status === 'SUBSTITUTE' ? 'Vekil' : 'Bilinmeyen durum'}
+                                                                {att.status === 'REGISTERED' ? 'Kayıtlı — yoklama yapılmadı' : att.status === 'PRESENT' ? 'Var' : att.status === 'ABSENT' ? 'Yok' : att.status === 'LATE' ? 'Geç' : att.status === 'SUBSTITUTE' ? 'Vekil' : 'Bilinmeyen durum'}
                                                             </span>
                                                         </td>
                                                     </tr>

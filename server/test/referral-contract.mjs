@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,20);
+  assert.equal((await applyVersionedSchema()).applied.length,21);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   const ids = [randomUUID(),randomUUID(),randomUUID()];
   for (const [i,id] of ids.entries()) await pool.query("INSERT INTO users (id,email,name,profession,password_hash,role) VALUES ($1,$2,$3,'Fixture','fixture-only','MEMBER')",[id,`meeting-${i}@example.invalid`,`Fixture ${i}`]);

@@ -855,8 +855,9 @@ export function AdminEvents() {
               {participantNotice && participantNoticeFor === participantContext && <p role="status">{participantNotice}</p>}
               {participantError ? <div role="alert"><p>{participantError}</p><Button onClick={() => { setParticipantError(null); setParticipantLoading(true); setParticipantRetry(count => count + 1); }}>Tekrar dene</Button></div> : participantLoading || participantsLoadedFor !== participantContext ? <p role="status">Katılımcılar yükleniyor...</p> : <>
               <div className="text-sm text-gray-500 mb-4">
-                Toplam Katılımcı: <span className="font-bold text-gray-900">{participants.length}</span>
+                Toplam Kayıt: <span className="font-bold text-gray-900">{participants.length}</span>
               </div>
+              <p className="text-xs text-gray-500">Kayıt sayısı gerçek katılım sayısı değildir. Eski PRESENT kayıtları kayıt ile yoklamayı ayırmadığı için doğrulanmış katılım kabul edilmez.</p>
               {participants.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 italic">
                   Henüz katılımcı bulunmamaktadır.
@@ -889,7 +890,7 @@ export function AdminEvents() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge className={p.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                          {p.status === 'PRESENT' ? 'Kaydoldu' : p.status}
+                          {p.status === 'REGISTERED' ? 'Kayıtlı — yoklama yapılmadı' : p.status === 'PRESENT' ? 'Eski PRESENT kaydı' : p.status}
                         </Badge>
                         <Button
                           size="sm"

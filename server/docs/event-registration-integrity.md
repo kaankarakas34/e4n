@@ -15,6 +15,10 @@ Mevcut doğrulanmış ödeme işlemi tek PENDING bileti aynı ID ile PAID yapar.
 - Gerçek EventDetail + PaymentModal tarayıcı: yakalanmış izole API verisi; bekleyen ödeme ekranı/fatura penceresi, ACK sonrası read failure/GET retry/tek POST ve owner değişiminde önceki kayıt temizlenmesi. Mocklar canlı API'ye gönderilmez. Son sonuç devam notunda kayıtlıdır.
 - `npm run check`, `npm run build`, route ownership runtime 163 yöntem/yol ve `git diff --check`. Build mevcut bundle/browser metadata uyarıları sürer.
 
+## 8 Ekim — yeni kayıt/yoklama ayrımı
+
+Yeni kayıt writerı migration0021 ile REGISTERED kullanır; mevcut score yeniden hesaplaması kaldırıldı. Kayıt sayacı ve owned bilet/ödeme akışı korunur, kayıt gerçek katılım veya gelmeme sayılmaz. İki web performans servisi kaydı son dört yoklama hesabından dışlar. Ayrıntı: [event-registration-separation.md](event-registration-separation.md). Aşağıdaki 5 Ekim açıklaması tarihsel teslim kapsamıdır; güncel yeni kayıt davranışı REGISTERED'dır.
+
 ## Ana görevler neden açık
 
 P26'nın kayıt–gerçek yoklama ayrımı tamamlanmadı: mevcut kayıt `attendance.status=PRESENT` yer tutucusunu kullanır; bu paket gerçek katılım kanıtı sağlamaz. Geçmişte istemciden oluşmuş PAID kayıtları geriye dönük doğrulanmış sayılmaz. Bir etkinlik/sahipte birden fazla eski bilet varsa tek satın alma hepsini PAID yapmaz; detay durumu null olur. Çoklu bilet/hak/indirim/fiyat/D ürün kuralları seçilmedi. Mevcut FE kuralı korunmuş ve yarışta test edilmiştir; grup kabul kuralları yeniden tasarlanmamıştır.

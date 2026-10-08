@@ -131,7 +131,7 @@ export class TrafficLightService {
    * Calculate attendance score (0-100)
    */
   private static calculateAttendanceScore(attendances: Attendance[]): number {
-    const recentAttendances = attendances.slice(-4); // Last 4 meetings
+    const recentAttendances = attendances.filter(a => ['PRESENT', 'ABSENT', 'LATE', 'MEDICAL', 'SUBSTITUTE'].includes(a.status)).slice(-4); // Last 4 meetings
 
     if (recentAttendances.length === 0) return 0;
 

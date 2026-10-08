@@ -1,5 +1,11 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — P26 yeni kayıt/yoklama ayrımı
+
+[[P26-Etkinlik-Kayit-Yoklama-Ayrimi-2026-10-08]]: migration0021 yeni REGISTERED; eski satırlar/scoreweights değişmedi. Kayıt puan veya PRESENT/ABSENT oluşturmaz; cachedscore recalculation kaldırıldı, iki performans servisinde son4 paydasından dışlandı. Admin/grup web durumu ve mevcut sayaç/bilet/ödeme/owner/replay korunur.33API/veriPASS0FAIL(08-16-50-617Z),fresh21/repeat0/20upgrade, restore46tablePASS; build/check/syntax/diffPASS. İlkbrowserECONNRESET incomplete kabuldeğil; İkinci gerçek tarayıcı 38PASS0FAIL: output/web-browser/2026-10-08T08-25-39-153Z/browser-report.json. Gerçek admin kayıt/refresh tekPOST, sayaç2→3, ikiREGISTERED+birlegacyPRESENT, memberownread, önceki shuffle37/history/ödeme/fatura/mesaj/dosya/finalDB kabulü. Admin katılımcı ekranı gözle incelendi. Ownedfixtures kapalı; releaseReady=false.
+
+AnaP26IP: açık yoklama/check-in/düzeltme kaynakkanıtı, geçmiş belirsizliği, çoklubilet/hak/fiyat veprovider sandbox açık. Sonraki uygun P26 tümadminyoklamapaketi. Üyelik/grup/puan/shuffleXL D kapıları açık; mobil/LMSenson. CanlıDBwrite/deploy/realmail/paymentyok.
+
 ## 7 Ekim — grup üyelik geçmişi bütün web paketi
 
 [[P19-Grup-Uyelik-Gecmisi-Veri-API-Web-2026-10-07]]: migration0020 başlangıç gözlemi+aynıtransaction INSERT/UPDATE/DELETE önceki/sonraki durum; historyoutage üyeliği rollback eder, no-op tekrar yok. Silinen grup/hesap geçmişi kalır; kullanıcı değişiminde iki sahibin tarafları ayrı. Immutable+truncate koruma, invoker/RLS/ACL; private currentDBadmin/ownread,50'lik mikro saniyeli cursor; üye/admin gerçek ekran ve üyelik/grup bağlantıları. Neden/işlemi yapan/dönem/tekaktifgrup kuralı uydurulmadı.

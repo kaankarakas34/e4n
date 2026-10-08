@@ -234,3 +234,7 @@ output/web-acceptance/2026-10-07T18-02-15-840Z/report.json:32PASS/0FAIL. output/
 ## Durable group membership history,7October
 
 output/web-acceptance/2026-10-07T18-21-36-986Z/report.json:33PASS/0FAIL. The earlier31/2 run failed old migration/table-count fixture assumptions; both were corrected. Focused history rerun after the explicit timestamp-column index ordering passed. output/web-browser/2026-10-07T18-26-37-721Z/browser-report.json:37PASS/0FAIL; actual member/admin history, older-page load, refresh and owner boundaries with real shuffle-change reconciliation. Synthetic restore includes two real membership history rows,46tables and immutable controls. Source20;174routes/23providers. Build/TypeScript PASS; base66550ad plus delivery working tree. Technical connection history does not close canonical period/removal policy, live adoption, broad security or releaseReady gates.
+
+## 8 October — registration and attendance separation
+
+Migration0021 adds REGISTERED without rewriting history. Fresh21/repeat0/pre20upgrade; existing46-table restore preserved. Whole actual API/data33PASS0FAIL (2026-10-08T08-16-50-617Z), fresh styled browser38PASS0FAIL (2026-10-08T08-25-39-153Z): new booking/reload single POST, counter2→3, newREGISTERED vs legacyPRESENT, final DB and prior whole-flow scenarios. First browser08-22-20-410Z disconnected ECONNRESET and is not acceptance. P26 explicit check-in/provenance/historical interpretation and D/provider gates remain open; releaseReady=false.

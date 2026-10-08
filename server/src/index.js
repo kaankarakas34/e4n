@@ -1285,7 +1285,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
       // 4. Register (Insert Attendance)
       await client.query(`
             INSERT INTO attendance(event_id, user_id, status)
-            VALUES($1, $2, 'PRESENT')-- 'PRESENT' as placeholder for registered / will attend
+            VALUES($1, $2, 'REGISTERED') -- Booking only; never proof of physical attendance.
       `, [eventId, req.user.id]);
 
       // 5. Generate Ticket if enabled
@@ -1353,8 +1353,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
         console.error('Error sending registration confirmation email:', mailErr);
       }
 
-      // Recalculate Score
-      calculateMemberScore(req.user.id).catch(console.error);
+      // Booking is not attendance evidence and must not recalculate performance.
 
       res.json(saved);
 

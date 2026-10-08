@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,20);
+  assert.equal((await applyVersionedSchema()).applied.length,21);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -98,6 +98,13 @@ async function main() {
   const [one,two]=[randomUUID(),randomUUID()];
   for(const [i,id] of [one,two].entries())await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,max_attendees,created_by) VALUES($1,$2,'2099-01-01','PUBLISHED',true,'meeting',0,50,$3)",[id,`Event ${i}`,alice]);
   await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'ABSENT')",[one,alice]);
+  // Rehearse the pre-0021 constraint upgrade with an existing actual legacy row.
+  const legacyBefore=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
+  await pool.query("DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; ALTER TABLE attendance DROP CONSTRAINT attendance_status_check; ALTER TABLE attendance ADD CONSTRAINT attendance_status_check CHECK(status IN ('PRESENT','ABSENT','LATE','SUBSTITUTE','MEDICAL'))");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0021_event_registration_status']);
+  assert.equal((await applyVersionedSchema()).applied.length,0);
+  assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),legacyBefore,'Constraint upgrade never rewrites legacy attendance');
+  await assert.rejects(pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'INVALID')",[two,alice]),e=>e.code==='23514');
   let mails=0;const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'isolated-fake'};}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');
   const base=`http://127.0.0.1:${appServer.address().port}`;
@@ -123,7 +130,10 @@ async function main() {
   globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(bob)}})};
   const {api}=await import('data:text/javascript;base64,'+Buffer.from(compile(apiSource)).toString('base64'));
   assert.equal((await api.getPublicEvents()).find(e=>e.id===two).is_registered,false);
+  await pool.query('UPDATE users SET performance_score=73 WHERE id=$1',[bob]);
   assert.equal((await api.registerForEvent(two)).success,true);
+  assert.equal((await pool.query('SELECT status FROM attendance WHERE event_id=$1 AND user_id=$2',[two,bob])).rows[0].status,'REGISTERED');
+  assert.equal((await pool.query('SELECT performance_score FROM users WHERE id=$1',[bob])).rows[0].performance_score,73,'Booking does not recalculate cached legacy performance');
   assert.equal((await api.getEvent(two)).is_registered,true);
   assert.equal((await api.getPublicEvents()).find(e=>e.id===two).is_registered,true);
   const mailAfterFirst=mails;assert.equal((await api.registerForEvent(two)).success,true);assert.equal(mails,mailAfterFirst);
@@ -144,6 +154,25 @@ async function main() {
   assert.equal(replies.filter(r=>r.replayed===false).length,1);assert(replies.every(r=>r.ownerId===bob&&r.eventId===paidEvent&&r.ticket_payment_status==='PENDING'));
   assert.equal((await pool.query('SELECT count(*)::int n FROM attendance WHERE event_id=$1',[paidEvent])).rows[0].n,1);
   assert.deepEqual((await pool.query('SELECT payment_status FROM event_tickets WHERE event_id=$1',[paidEvent])).rows,[{payment_status:'PENDING'}]);
+  assert.deepEqual((await pool.query('SELECT status FROM attendance WHERE event_id=$1',[paidEvent])).rows,[{status:'REGISTERED'}]);
+  assert.equal((await detail(bob,paidEvent)).attendees_count,1,'Registration counter is preserved');
+  const attendanceRows=await api.getMeetingAttendance(paidEvent);assert.equal(attendanceRows[0].status,'REGISTERED');
+  const stats=await (await call('/reports/attendance-stats',bob)).json();const bobStats=stats.find(r=>r.id===bob);
+  assert.equal(Number(bobStats.present),0);assert.equal(Number(bobStats.absent),0,'Unmarked booking is not an absence');
+  const {runEventCompletion}=await import('../src/cron/event-completion.js');
+  await pool.query("UPDATE events SET start_at='2000-01-01',end_at='2000-01-01' WHERE id=$1",[paidEvent]);
+  await runEventCompletion(pool,{log:()=>{}});
+  assert.equal((await pool.query('SELECT status FROM attendance WHERE event_id=$1',[paidEvent])).rows[0].status,'REGISTERED','Closing event does not infer attendance/no-show');
+  assert.equal((await post(paidEvent)).status,200,'Closed event replay does not create another booking');
+  for(const [filename,className]of [['performanceService.ts','PerformanceService'],['trafficLightService.ts','TrafficLightService']]){
+    const source=readFileSync(path.join(root,'src/utils/services',filename),'utf8');
+    const service=(await import('data:text/javascript;base64,'+Buffer.from(compile(source)).toString('base64')))[className];
+    const baseline=[{status:'PRESENT'},{status:'ABSENT'},{status:'LATE'},{status:'SUBSTITUTE'}];
+    const score=service.calculateAttendanceScore(baseline);
+    assert.equal(service.calculateAttendanceScore([...baseline,...Array.from({length:12},()=>({status:'REGISTERED'}))]),score,'Bookings must not displace actual last four attendance records');
+    assert.equal(service.calculateAttendanceScore([{status:'REGISTERED'}]),0);
+  }
+  assert.equal((await pool.query('SELECT status FROM attendance WHERE event_id=$1',[one])).rows[0].status,'ABSENT','Legacy rows remain untouched');
   assert.equal((await detail(bob,paidEvent)).ticket_payment_status,'PENDING');assert.equal((await detail(alice,paidEvent)).ticket_payment_status,null);assert.equal((await detail(null,paidEvent)).ticket_payment_status,null);
   const fe=await Promise.all([post(feEvent,alice),post(feEvent,bob)]);assert.deepEqual(fe.map(r=>r.status).sort(),[200,403]);assert.equal((await pool.query('SELECT count(*)::int n FROM attendance WHERE event_id=$1',[feEvent])).rows[0].n,1);
   await pool.query("CREATE FUNCTION fixture_ticket_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'isolated ticket failure'; END; $$; CREATE TRIGGER fixture_ticket_fail BEFORE INSERT ON event_tickets FOR EACH ROW EXECUTE FUNCTION fixture_ticket_fail()");
@@ -161,7 +190,7 @@ async function main() {
   assert.equal((await call('/events',bob)).status,500);pool.query=original;assert.equal((await list(bob)).find(e=>e.id===two).is_registered,true);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   writeFileSync(path.join(root,'output/event-registration-browser.json'),JSON.stringify({owner:bob,other:alice,event:await detail(bob,two),list:await list(bob)}));
-  console.log('Event registration PASS: fresh20/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
+  console.log('Event registration PASS: fresh21/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
 }
 let exitCode = 0;
 try {

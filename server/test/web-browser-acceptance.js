@@ -50,6 +50,19 @@ async page=>{
   await test('admin-event-participant-count',async()=>{
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('2 / 50 katılımcı',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
+    await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).waitFor();
+    await page.getByText('Eski PRESENT kaydı',{exact:true}).waitFor();
+  });
+  await test('admin-event-new-booking-is-not-attendance',async()=>{
+    await page.goto(f.webBase+'/event/'+f.ids.event);
+    await page.getByRole('button',{name:'Hemen Kayıt Ol',exact:true}).click();
+    await page.getByText('Kayıtlısınız',{exact:true}).waitFor();
+    await page.reload();await page.getByText('Kayıtlısınız',{exact:true}).waitFor();
+    check(requests.filter(r=>r.path==='/api/events/'+f.ids.event+'/register'&&r.method==='POST').length===1,'Reload repeated the registration');
+    await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('3 / 50 katılımcı',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser admin',{exact:true}).last().waitFor();
+    check(await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).count()===2,'New booking incorrectly marked present');
+    await page.getByText('Eski PRESENT kaydı',{exact:true}).waitFor();
   });
   await test('admin-group-capacity-rejection',async()=>{
     await page.goto(f.webBase+'/admin/groups/'+f.ids.group);await page.getByText('35 / 35 üye · 1 başkan',{exact:true}).waitFor();

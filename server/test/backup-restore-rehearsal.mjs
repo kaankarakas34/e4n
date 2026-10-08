@@ -63,7 +63,7 @@ async function main(){
  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');
  // Roles must pre-exist: database dumps do not contain cluster roles.
  await pool.query('CREATE ROLE anon; CREATE ROLE authenticated');
- assert.equal((await applyVersionedSchema()).applied.length,20);
+ assert.equal((await applyVersionedSchema()).applied.length,21);
  const [admin,member,other,event,invoice,document]=Array.from({length:6},()=>randomUUID());
  for(const [i,id] of [admin,member,other].entries())await pool.query("INSERT INTO users(id,email,name,profession,role) VALUES($1,$2,$3,'Fixture',$4)",[id,`restore-${i}@example.invalid`,i===1?'Üye – 😀':'Fixture',i===0?'ADMIN':'MEMBER']);
  await pool.query("INSERT INTO events(id,title,start_at,type,generate_tickets,price,created_by) VALUES($1,'Restore event','2099-01-01','social',true,100,$2)",[event,admin]);
@@ -112,7 +112,7 @@ async function main(){
  const output=path.resolve(serverDir,'../output');mkdirSync(output,{recursive:true});
  const report={syntheticOnly:true,productionBackup:false,versions:20,applicationTables:45,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
  writeFileSync(path.join(output,'backup-restore-rehearsal.json'),JSON.stringify(report,null,2));
- console.log('Backup/restore PASS: 46 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 20-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
+ console.log('Backup/restore PASS: 46 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 21-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{
  if(appServer)await new Promise(r=>appServer.close(r));if(restored)await restored.end();if(pool)await pool.end();

@@ -12,3 +12,7 @@ Eğitim dışı web öncelikli. Mobil Sprint 7 ve kurs/eğitim/sınav Sprint 8 e
 | 6 | Bütün web sürüm kabulü ve güvenlik | XL | Her teslim sonrası bütün regresyon + gerçek tarayıcı. D/şema/üretim kabulü ve Sprint 6 kapsamlı güvenlik kapanmadan releaseReady=false. |
 
 Linear öncelikleri: E4N-102/103 üyelik ve grup web akışları; E4N-100/101 shuffle/geçmiş; E4N-106 operasyon; E4N-109 bütün kabul High olarak sıralandı. Karar bekleyen XL işler nedeniyle bağımsız operasyon paketi uygulanıyor. Teslim edilen WEB-01/02/03/04/05 ve diğer kayıtlı WEB paketleri tekrar yapılmaz. Eğitim/mobil kabulü bu web kuyruğunu engellemez.
+
+## 8 Ekim — bağımsız P26 kayıt/yoklama paketi
+
+Yeni REGISTERED migration0021 + writer + scorepaydası izolasyonu + admin/grup web etiketleri + kayıt/bilet/ödeme/sayaç regresyonu.33API/veri+38browserPASS0FAIL; admin newbooking2→3/finalDB. AnaP26IP; actualcheck-in/düzeltmekaynağı ve geçmişbelirsizliği ayrı açık. Üyelik/hak/grup/puan/shuffle büyük hedeflerinde açıkDkararları korunur.

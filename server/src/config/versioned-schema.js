@@ -38,6 +38,7 @@ const subscriptionReminderDeliverySql = readFileSync(path.join(serverDir, 'supab
 const webJobRunsSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261007165758_web_job_runs.sql'), 'utf8');
 const shuffleExecutionSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261007172331_shuffle_execution_history.sql'), 'utf8');
 const membershipHistorySql = readFileSync(path.join(serverDir, 'supabase/migrations/20261007181257_group_membership_history.sql'), 'utf8');
+const eventRegistrationStatusSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008081425_event_registration_status.sql'), 'utf8');
 const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
@@ -59,6 +60,7 @@ const versions = [
   { version: '0018_web_job_runs', checksum: checksum(webJobRunsSql), apply: client => client.query(webJobRunsSql) },
   { version: '0019_shuffle_execution_history', checksum: checksum(shuffleExecutionSql), apply: client => client.query(shuffleExecutionSql) },
   { version: '0020_group_membership_history', checksum: checksum(membershipHistorySql), apply: client => client.query(membershipHistorySql) },
+  { version: '0021_event_registration_status', checksum: checksum(eventRegistrationStatusSql), apply: client => client.query(eventRegistrationStatusSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

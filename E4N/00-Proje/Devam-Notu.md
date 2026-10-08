@@ -639,3 +639,6 @@ Uygulama commit/push: 2fca79a · codex/e4n-sprint1-foundation. Linear E4N-98 aç
 ## Git ve Linear teslim kaydı — 8 Ekim 2026
 
 Uygulama/test/kanıt commit 7c26bfb, origin/codex/e4n-sprint1-foundation dalına başarıyla push edildi. Linear E4N-111 açıklaması 2026-10-08T15:49:01Z güncellendi; E4N-102 yorum 3df63590-5921-43e9-bec3-dbe97ab8853b ve E4N-109 yorum 16b777ee-61b4-4026-a6dd-3b1c5c09f4ff aynı teslim/kanıt/açık kapıları kaydeder. Ana görevler In Progress. İlgili üç Obsidian notu ana E4N bilgi bankasına aynı içerikle yansıtıldı. Canlı migration uygulanmadı.
+## Bildirim/oturum Git ve Linear teslimi
+
+Uygulama a930c3c origin/codex/e4n-sprint1-foundation dalına push edildi. Linear E4N-111 In Progress açıklaması 2026-10-08T16:11:03Z güncellendi; E4N-102 yorum c405b94e-6b41-4933-b48b-478c3f7bbf81, E4N-109 yorum 99c7ca44-ff04-48da-8450-fd7e743a820b aynı teslim ve açık kapıları içerir. Üç bilgi bankası notu ana E4N klasörüne yansıtıldı. API/browser/DB/Vite owned süreçleri kabul sonrasında kapandı; canlı değişiklik yok. Yeni küçük Done görev/yüzde artışı yok.

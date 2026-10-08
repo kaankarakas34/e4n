@@ -26,3 +26,7 @@ P39/P30/P37 stay In Progress; D decisions and live migration/provider/security/r
 Güncel gerçek App/Vite→Express/JWT→izolePG17 browser79/79, bildirim finalDB65kayıt/0okunmamış. Özel bildirim5/5+finalDB PASS. API/data/typedguard, gerçek authstore ve actualroutecontract PASS. Güncel check/build teslim kaydında; tüm38API tekrar çalıştı denmez. Kanıt server/docs/notifications-web-acceptance-2026-10-08.json. Önceki75/4FAIL korunur; geçici ağ hatasının oturumu silmesi ve eski yanıtın hesap değiştirmesi production authstoreda testlenip giderildi. Kaynak23/47değişmedi.
 
 Güncel productionbuild/check/diff PASS; build output/notifications-build-complete.log. 38 API paket runnerda kayıtlı; bu tur38topluAPI yeniden koşulmadı.
+
+## Bildirim/oturum Git ve Linear teslimi
+
+Uygulama a930c3c origin/codex/e4n-sprint1-foundation dalına push edildi. Linear E4N-111 In Progress açıklaması 2026-10-08T16:11:03Z güncellendi; E4N-102 yorum c405b94e-6b41-4933-b48b-478c3f7bbf81, E4N-109 yorum 99c7ca44-ff04-48da-8450-fd7e743a820b aynı teslim ve açık kapıları içerir. Üç bilgi bankası notu ana E4N klasörüne yansıtıldı. API/browser/DB/Vite owned süreçleri kabul sonrasında kapandı; canlı değişiklik yok. Yeni küçük Done görev/yüzde artışı yok.

@@ -13,3 +13,7 @@ Yeni profil/fatura ve bildirim/oturum paketleri, mevcut grup/lonca, üyelik/öde
 ## Açık sürüm kapıları
 
 releaseReady=false; P37 InProgress. D01–D10 kalan ürün kuralları ve üç mevcut üyelik sorusu açık. 35başkanhariçkapasite ve beşgüngünlükmail kararları korunur; ücret/dönem, gracebaşlangıcı/kısıtlanan haklar/açılma ve exactshufflecutoff uydurulmadı. Canlıschemaadoption/gerçeküretimkopyası/legacywriters/provider sandbox ve Sprint6SEC58/59/120/P38 ayrıca açık. Mobil7/LMS8 enson. CanlıSupabasewrite/migration/deploy/realmail/payment yok. Bu tur uygulama kodu değişmedi; önceki iki bütün paketin aynıkaynak kabul açığı kapatıldı. Yeni küçükDoneiş/yüzde artışı yok.
+
+## P37 güncel kabul teslim kaydı
+
+c9b7a51 yönetilen dala push edildi. Linear E4N-109 In Progress açıklaması 2026-10-08T16:23:00Z güncellendi; E4N-111 yorum e9754dda-312c-433f-a374-c0d376d4a2c9 ve E4N-110 yorum 6ab797bb-0e73-4af0-b7dc-08b0e9a5ade7 aynı kabul ve açık kapıları kaydeder. Üç ilgili bilgi bankası notu ana E4N klasörüne yansıtıldı. Kaynak kodu bu prova turunda değişmedi; yeni küçük Done görev veya hedef yüzde artışı yok.

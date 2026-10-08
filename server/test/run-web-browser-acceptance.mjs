@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const cli=process.argv[2];if(!cli||!fs.existsSync(cli))throw Error('Pass the installed Playwright CLI JavaScript entry path');
-const fixture=JSON.parse(fs.readFileSync(path.join(root,'output/web-browser-current.json'),'utf8'));
+const fixture=JSON.parse(fs.readFileSync(process.argv[3]?path.resolve(process.argv[3]):path.join(root,'output/web-browser-current.json'),'utf8'));
 for(const k of ['apiBase','webBase','controlBase'])if(new URL(fixture[k]).hostname!=='127.0.0.1')throw Error('Only the loopback fixture is allowed');
 const preflight=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)});if(!preflight.ok)throw Error('Disposable fixture is not active');
 const source=fs.readFileSync(path.join(root,'server/test/web-browser-acceptance.js'),'utf8').replace('/*E4N_BROWSER_FIXTURE*/null',JSON.stringify(fixture));

@@ -11,7 +11,7 @@ const suites=[
   ['personal-reports-contract','WEB01 personal reports'],['admin-reports-contract','WEB02 admin reports'],
   ['connections-contract','WEB03 connections'],['messages-contract','WEB04 messages'],
   ['documents-contract','WEB05 document bytes and ownership'],['invoices-contract','WEB06 invoice bytes and ownership'],
-  ['event-registration-contract','WEB07 registration/ticket ownership'],['web-calendar-contract','WEB08 calendar'],
+  ['event-registration-contract','WEB07 registration/ticket ownership'],['event-attendance-contract','Explicit administrator attendance observation/correction/history'],['web-calendar-contract','WEB08 calendar'],
   ['web-groups-contract','WEB09 personal groups'],['web-activities-contract','WEB10 activities'],
   ['membership-history-contract','Durable membership row history, rollback, owner and admin web transport'],
   ['membership-records-contract','Owned membership/payment/invoice/reminder records and current admin snapshot'],

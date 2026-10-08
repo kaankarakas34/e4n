@@ -51,7 +51,7 @@ async page=>{
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('2 / 50 katılımcı',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
     await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).waitFor();
-    await page.getByText('Eski PRESENT kaydı',{exact:true}).waitFor();
+    await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
   await test('admin-event-new-booking-is-not-attendance',async()=>{
     await page.goto(f.webBase+'/event/'+f.ids.event);
@@ -62,7 +62,7 @@ async page=>{
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('3 / 50 katılımcı',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser admin',{exact:true}).last().waitFor();
     check(await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).count()===2,'New booking incorrectly marked present');
-    await page.getByText('Eski PRESENT kaydı',{exact:true}).waitFor();
+    await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
   await test('admin-group-capacity-rejection',async()=>{
     await page.goto(f.webBase+'/admin/groups/'+f.ids.group);await page.getByText('35 / 35 üye · 1 başkan',{exact:true}).waitFor();
@@ -283,6 +283,29 @@ async page=>{
     await visit('/support','Destek Taleplerim');await page.getByText('Browser lifecycle support',{exact:true}).first().click();
     await page.getByText('Browser administrator support answer',{exact:true}).last().waitFor();
     check(await page.getByPlaceholder('Bir mesaj yazın...').count()===0,'Closed ticket still accepts a reply');
+  });
+
+  await test('admin-attendance-return-login',()=>login('admin'));
+  async function openAttendance(title){await visit('/admin/events','Etkinlik Yönetimi');const card=page.getByText(title,{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');await card.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByRole('button',{name:'Yoklama ve geçmiş',exact:true}).click();await page.getByRole('heading',{name:'Etkinlik yoklaması ve düzeltme geçmişi',exact:true}).waitFor();await page.getByText(title+' · 2 kayıt · 0 yönetici tarafından kaydedilmiş katılım',{exact:true}).waitFor();}
+  await test('admin-attendance-observe-lost-ack-recovery',async()=>{
+    const seed=await fetch(f.controlBase+'/attendance-seed',{method:'POST',headers:{'x-fixture-key':f.secret}});check(seed.ok,'Attendance fixture could not seed');
+    await openAttendance('Browser Attendance Event');await page.getByLabel('Yoklama katılımcısı').selectOption(f.ids.member);await page.getByLabel('Yoklama açıklaması').fill('Browser observed attendance');
+    const pattern='**/api/admin/events/'+f.ids.pastEvent+'/attendance/'+f.ids.member;
+    await page.route(pattern,async route=>{const req=route.request(),u=new URL(req.url());const r=await route.fetch({url:f.apiBase+u.pathname});requests.push({method:req.method(),path:u.pathname,status:r.status()});await route.abort();});
+    await page.getByRole('button',{name:'Yoklamayı kaydet',exact:true}).click();await page.getByText('Yoklama kaydı doğrulandı.',{exact:true}).waitFor();await page.unroute(pattern);
+    await page.getByText('Browser member — Katıldı — yönetici kaydı',{exact:false}).waitFor();
+    check(requests.filter(r=>r.path==='/api/admin/events/'+f.ids.pastEvent+'/attendance/'+f.ids.member&&r.method==='PUT').length===1,'Lost ACK repeated attendance write');
+  });
+  await test('admin-attendance-correction-and-reload',async()=>{
+    await page.getByLabel('Yoklama durumu').selectOption('ABSENT');await page.getByLabel('Yoklama açıklaması').fill('Browser attendance correction');await page.getByRole('button',{name:'Yoklamayı kaydet',exact:true}).click();await page.getByText('Yoklama kaydedildi ve kayıtlar yeniden okundu.',{exact:true}).waitFor();
+    await page.reload();await openAttendance('Browser Attendance Event');await page.getByText('Browser member — Katılmadı — yönetici kaydı',{exact:false}).waitFor();await page.getByText('Browser attendance correction',{exact:false}).waitFor();await page.getByText('Browser observed attendance',{exact:false}).waitFor();
+  });
+  await test('admin-attendance-retract-and-registration-count',async()=>{
+    await page.getByLabel('Yoklama katılımcısı').selectOption(f.ids.member);await page.getByLabel('Yoklama durumu').selectOption('REGISTERED');await page.getByLabel('Yoklama açıklaması').fill('Browser observation retracted');await page.getByRole('button',{name:'Yoklamayı kaydet',exact:true}).click();await page.getByText('Yoklama kaydedildi ve kayıtlar yeniden okundu.',{exact:true}).waitFor();
+    await page.getByText('Browser member — Kayıtlı — yoklama yapılmadı',{exact:false}).waitFor();await page.getByText('Toplam 3 işlem; en son 3 işlem gösteriliyor.',{exact:true}).waitFor();await page.getByRole('button',{name:'Kapat',exact:true}).click();
+  });
+  await test('admin-future-event-attendance-read-only',async()=>{
+    await visit('/admin/events','Etkinlik Yönetimi');const card=page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');await card.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByRole('button',{name:'Yoklama ve geçmiş',exact:true}).click();await page.getByText('Yoklama yalnız başlamış, iptal edilmemiş etkinlik için kaydedilebilir.',{exact:true}).waitFor();check(await page.getByRole('button',{name:'Yoklamayı kaydet',exact:true}).count()===0,'Future attendance can be recorded');
   });
 
   const failed=cases.filter(r=>r.status==='FAIL').length;

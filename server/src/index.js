@@ -1,3 +1,4 @@
+import {installEventAttendance} from './event-attendance.js';
 import {installMembershipHistory} from './membership-history.js';
 import {installMembershipRecords} from './membership-records.js';
 import {recordShuffleExecution,installShuffleHistory,readShuffleHistorySnapshot} from './shuffle-history.js';
@@ -3495,6 +3496,7 @@ installAdminGroupCatalog(app, { pool, authenticateToken });
 installShuffleWorkspace(app, { pool, authenticateToken });
 installShuffleHistory(app,{pool,authenticateToken});
 installMembershipHistory(app,{pool,authenticateToken});
+installEventAttendance(app,{pool,authenticateToken});
 installMembershipRecords(app,{pool,authenticateToken});
 installWebJobOperations(app,{pool,authenticateToken,sendMail:sendEmail});
 installWebActivities(app, { pool, authenticateToken });

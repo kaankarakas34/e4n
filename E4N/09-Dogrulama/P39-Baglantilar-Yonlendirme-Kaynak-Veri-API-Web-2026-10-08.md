@@ -1,5 +1,8 @@
 # P39 bağlantılar ve yönlendirme kaynak kabulü
 
+Teslim kaydı: 35bb24a yönetilen dala push edildi. E4N-111 açıklaması, E4N-109 ve E4N-132 yorumları 8 Ekim 10:05 UTC güncellendi. Ana hedefler açık; mobil/LMS kapsamı değişmedi.
+
+
 ## 8 Ekim — P39 bağlantı kaynağı ve yönlendirme bütün web paketi
 
 Sorun: Bağlantılarım ve EXTERNAL yönlendirme alıcıları /user/friends ortak ACTIVE grup/lonca satırlarından geliyordu; acceptedfriend_requests kaynağı kullanılmıyordu. Shuffle/grup değişikliği kabul edilmiş bağlantıyı görünümden silebiliyordu.

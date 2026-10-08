@@ -1,5 +1,18 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — P29/P31/P39 shuffle kaydetme ve kurtarma bütün web paketi
+
+Shuffle kaydetme, mevcut atomik atama/geçmiş üzerine owner-scoped UUID işlem kimliğiyle bağlandı. Tam taslak ve expectedRevision SHA256 fingerprinti mevcut immutable after_snapshot içinde; UUID history.id olur. Aynı işlem sekiz eşzamanlı istekte tek atama/tek geçmiş, replay ek üyelik geçmişi yaratmaz. Başka payload/revision, diğer owner veya legacy ID409. İlk kayıt, mevcut rol sıfırlama/arşiv/upsert/kapasite/history aynı transactionda; history outage tam rollback, aynı UUID tekrar başarılı. Güncel DB ADMIN, revoked/deleted/foreign/query/DTO/cache sınırları test edildi. Eski keyless çağrılar mevcut davranışta, blind retry garantisi yok; oldhistory backfill yapılmadı.
+
+Web tam komutu owner/tab sessiona gönderimden önce kaydeder. Synchronous double-click lock; kayıp POST yanıtında yalnız GET receipt uzlaştırma; unknown sonuç korunur, yeni taslak kilitli. Reload aynı UUID/payload; açık aynı-işlem retry canonical replay döndürür. Verified ACK sonrası pending temizlenir, sonra currentworkspace refresh; refresh hatası yeniden atama oluşturmaz. Owner/role/token/unmount staleACK koruması; corrupt/unavailable session yeni writeı durdurur. Aynı sekmede reload kapsamıdır; clearedstorage/newdevice kurtarması değildir.
+
+**Kabul:** 39/39 API/veri ve production build PASS; taze gerçek web→Express/JWT→PG17 browser/finalDB **87/87 PASS**, bitiş2026-10-08T20:11:57.458Z. Üç yeni ekran senaryosu: kayıp ACK+receipt unavailable; reload/read-only; aynı UUID/fullpayload retry=true/tek execution. Son DB37 unique ACTIVE/1shuffleexecution, önceki toplantı75history ve tüm bütünlük kontrolleri korundu. Pending ekran screenshot gözle incelendi; ownedfixture exit0 ve container absent doğrulandı.
+
+Tek rootPASS iddiası yok: output/web-rehearsal/2026-10-08T20-02-25-609Z/report.json ilk control/state5sn timeout nedeniyle browser başlamadan FAIL; API39/buildPASS korunur. Yeni ownedfixture warm200 sonrası output/web-browser/2026-10-08T20-08-26-507Z/browser-report.json87/0. Uygulama/test kaynağı değiştirilmedi: rootsourceBefore, taze browser before/after aynı313dosya SHA256 **4cae38af5169f9feb57ee0aadf70dc25d450a7f3688b839bdaf7f9d7e62dbc06**. Testbase386bff2 dirty=true; yeni teslim working-sourcehash ile tanımlıdır. Kanıt server/docs/shuffle-submission-acceptance-2026-10-08.json, teknik sözleşme server/docs/shuffle-submission.md.
+
+Şema24migration/47table değişmedi; yeni tablo/migration yok.182route/28provider/17legacy. P29/P31/P39/P37 InProgress/releaseReady=false; yeni küçükDone veya yüzde artışı yok. Canonical dönem, hizmet/kabul/başkan/ücret/gecikme/shufflecutoff/bildirim kuralları, canlıdata/adoption/provider/SEC6/P38 açık. Gerçek mail/ödeme/canlıSupabasewrite/deploy yok; mobile7/LMS8 enson. Ayrıntı [[E4N/09-Dogrulama/P29-Shuffle-Kayit-Kurtarma-Web-2026-10-08]].
+
+
 ## 8 Ekim — P26/P31 toplu toplantı yoklaması bütün web teslimi
 
 Mevcut toplu kayıt yolu, güncel grup yetkisi, tam aktif üye listesi, açık katılım seçimi ve açıklama doğrulamasıyla tek transactiona alındı. Sekiz eşzamanlı aynı UUID gönderimi tek toplantı oluşturur; farklı içerik409, silinmiş toplantının geçmiş UUID'si tekrar kullanılamaz. Toplantı, kayıt/gözlem ve değiştirilemeyen ilk geçmiş birlikte kaydedilir; admin düzeltmesinden sonra ilk işlem makbuzu korunur. Eski otomatik puan hesabı bu gözlem yolundan kaldırıldı; hedef puan/hak politikası seçilmedi.

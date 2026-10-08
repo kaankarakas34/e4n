@@ -516,73 +516,73 @@
       "method": "GET",
       "path": "/api/champions",
       "provider": "src/index.js",
-      "line": 2855
+      "line": 2867
     },
     {
       "method": "POST",
       "path": "/api/admin/assign-role",
       "provider": "src/index.js",
-      "line": 2870
+      "line": 2882
     },
     {
       "method": "GET",
       "path": "/api/memberships",
       "provider": "src/index.js",
-      "line": 2944
+      "line": 2956
     },
     {
       "method": "POST",
       "path": "/api/memberships",
       "provider": "src/index.js",
-      "line": 2979
+      "line": 2991
     },
     {
       "method": "PUT",
       "path": "/api/memberships/:id",
       "provider": "src/index.js",
-      "line": 3026
+      "line": 3038
     },
     {
       "method": "POST",
       "path": "/api/memberships/extend",
       "provider": "src/index.js",
-      "line": 3071
+      "line": 3083
     },
     {
       "method": "POST",
       "path": "/api/memberships/:id/remind",
       "provider": "src/index.js",
-      "line": 3114
+      "line": 3126
     },
     {
       "method": "GET",
       "path": "/api/payments/history",
       "provider": "src/index.js",
-      "line": 3151
+      "line": 3163
     },
     {
       "method": "GET",
       "path": "/api/admin/accounting/payments",
       "provider": "src/index.js",
-      "line": 3169
+      "line": 3181
     },
     {
       "method": "DELETE",
       "path": "/api/admin/accounting/payments/:type/:id",
       "provider": "src/index.js",
-      "line": 3235
+      "line": 3247
     },
     {
       "method": "GET",
       "path": "/api/lms/courses",
       "provider": "src/index.js",
-      "line": 3265
+      "line": 3277
     },
     {
       "method": "GET",
       "path": "/api/groups/:id/substitutes",
       "provider": "src/index.js",
-      "line": 3270
+      "line": 3282
     },
     {
       "method": "GET",
@@ -970,15 +970,21 @@
     },
     {
       "method": "GET",
+      "path": "/api/admin/shuffle-submissions/:id",
+      "provider": "src/shuffle-history.js",
+      "line": 25
+    },
+    {
+      "method": "GET",
       "path": "/api/admin/shuffle-history",
       "provider": "src/shuffle-history.js",
-      "line": 29
+      "line": 49
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-history/:id",
       "provider": "src/shuffle-history.js",
-      "line": 30
+      "line": 50
     },
     {
       "method": "GET",

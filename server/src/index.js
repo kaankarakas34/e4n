@@ -5,7 +5,7 @@ import {installGroupMeetingAttendance} from './group-meeting-attendance.js';
 import {installEventAttendance} from './event-attendance.js';
 import {installMembershipHistory} from './membership-history.js';
 import {installMembershipRecords} from './membership-records.js';
-import {recordShuffleExecution,installShuffleHistory,readShuffleHistorySnapshot} from './shuffle-history.js';
+import {recordShuffleExecution,installShuffleHistory,readShuffleHistorySnapshot,readShuffleReceipt,validShuffleSubmission,shuffleFingerprint} from './shuffle-history.js';
 // CRITICAL DEBUGGING: Catch process crashes
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL PROCESS CRASH:', err);
@@ -2793,8 +2793,11 @@ app.delete('/api/power-teams/:id/members/:userId', authenticateToken, async (req
 
 // Save Shuffle Distribution
 app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-
+  if(Object.keys(req.query).length)return res.sendStatus(400);
+  const keyed=Object.prototype.hasOwnProperty.call(req.body,'requestId');
+  if(keyed&&!validShuffleSubmission(req.body))return res.status(400).json({error:'Geçersiz dağıtım işlem kimliği veya içeriği.'});
   const { assignments } = req.body; // { groupId: [memberId1, memberId2...], ... }
   if(!validShuffleAssignments(assignments))return res.status(400).json({error:'Geçersiz shuffle dağıtımı.'});
   if(req.body.expectedRevision!==undefined&&(typeof req.body.expectedRevision!=='string'||!/^[a-f0-9]{64}$/.test(req.body.expectedRevision)))return res.status(400).json({error:'Geçersiz dağılım sürümü.'});
@@ -2804,6 +2807,14 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
         client=await pool.connect();
     await beginGroupMutation(client);
     await requireCurrentAdmin(client,req.user.id);
+    if(keyed){
+      const receipt=await readShuffleReceipt(client,req.body.requestId,req.user.id);
+      if(receipt){
+        if(receipt.fingerprint!==shuffleFingerprint(req.body))throw groupError('SHUFFLE_INTENT_CONFLICT','İşlem kimliği farklı bir dağıtım için kullanılmış.');
+        await client.query('COMMIT');return res.json({...receipt,replayed:true});
+      }
+      if((await client.query('SELECT id FROM shuffle_execution_history WHERE id=$1',[req.body.requestId])).rowCount)throw groupError('SHUFFLE_INTENT_CONFLICT','İşlem kimliği zaten kullanılmış.');
+    }
 
     // Capture and check the locked source state before any distribution changes.
     const beforeShuffle=await readShuffleWorkspace(client,{lock:true});
@@ -2833,9 +2844,10 @@ VALUES($1, $2, 'ACTIVE', NOW()) ON CONFLICT(group_id,user_id) DO UPDATE SET stat
     await enforceGroupCapacity(client, null);
     const afterShuffle=await readShuffleWorkspace(client);
     const afterHistory=await readShuffleHistorySnapshot(client,afterShuffle);
-    const executionId=await recordShuffleExecution(client,{actorId:req.user.id,expectedRevision:req.body.expectedRevision,before:beforeHistory,after:afterHistory});
+    const executionId=await recordShuffleExecution(client,{actorId:req.user.id,expectedRevision:req.body.expectedRevision,before:beforeHistory,after:afterHistory,submission:keyed?req.body:undefined});
+    const receipt=keyed?await readShuffleReceipt(client,executionId,req.user.id):null;
     await client.query('COMMIT');
-    res.json({ success: true, executionId, message: 'Shuffle applied successfully.' });
+    res.json(receipt?{...receipt,replayed:false}:{ success: true, executionId, message: 'Shuffle applied successfully.' });
   } catch (e) {
     if(client)await client.query('ROLLBACK').catch(()=>{});
     console.error('Shuffle save error:', e);

@@ -169,6 +169,48 @@ async function main() {
   for(const id of [pres,...fullMembers]){await pool.query("INSERT INTO users(id,name,email,profession,role,account_status) VALUES($1::uuid,'Full fixture',$2,$1::uuid::text,$3,'ACTIVE')",[id,id+'@example.invalid',id===pres?'PRESIDENT':'MEMBER']);await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')",[id,fullGroup]);}
   const fullSave=await save({[fullGroup]:fullMembers,[a]:[pres],[b]:[member,other]});assert.equal(fullSave.status,200);const fullAck=await fullSave.json();assert.ok(fullAck.executionId);
   const fullHistory=(await historyCall(admin,'/'+fullAck.executionId).then(r=>r.json())).execution;assert.equal(fullHistory.member_count,38);assert.equal(fullHistory.before_snapshot.members.find(m=>m.id===pres).role,'PRESIDENT');assert.equal(fullHistory.after_snapshot.members.find(m=>m.id===pres).role,'MEMBER');assert.equal(fullHistory.expected_revision,null);assert.equal(fullHistory.after_snapshot.memberships.filter(m=>m.group_id===fullGroup&&m.status==='ACTIVE').length,35);
+  // Keyed web submissions reserve immutable history IDs and acknowledge exactly once.
+  const keyed=(body,id=admin)=>fetch(base+'/api/shuffle/save',{method:'POST',headers:{Authorization:'Bearer '+token(id),'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const receipt=(key,id=admin,query='')=>fetch(base+'/api/admin/shuffle-submissions/'+key+query,{headers:{Authorization:'Bearer '+token(id)}});
+  const command={requestId:randomUUID(),expectedRevision:(await(await call()).json()).revision,assignments:{[fullGroup]:fullMembers,[a]:[pres],[b]:[member,other]}};
+  assert.equal((await receipt(command.requestId)).status,404);
+  for(const bad of [{...command,expectedRevision:undefined},{...command,requestId:'bad'},{...command,extra:true},{...command,assignments:{[a]:[member,member]}}])assert.equal((await keyed(bad)).status,400);
+  const ledgerBefore=(await pool.query('SELECT count(*)::int n FROM shuffle_execution_history')).rows[0].n;
+  const concurrent=await Promise.all(Array.from({length:8},()=>keyed(command)));
+  assert.ok(concurrent.every(r=>r.status===200));const acknowledgements=await Promise.all(concurrent.map(r=>r.json()));
+  assert.equal(acknowledgements.filter(r=>!r.replayed).length,1);assert.ok(acknowledgements.every(r=>r.executionId===command.requestId&&r.ownerId===admin));
+  assert.equal((await pool.query('SELECT count(*)::int n FROM shuffle_execution_history')).rows[0].n,ledgerBefore+1);
+  const durable=await receipt(command.requestId);assert.match(durable.headers.get('cache-control'),/private.*no-store/);const ack=await durable.json();
+  const placement=(await pool.query('SELECT * FROM group_members ORDER BY group_id,user_id')).rows;
+  const historyCount=(await pool.query('SELECT count(*)::int n FROM group_membership_history')).rows[0].n;
+  const reversed={...command,assignments:{[b]:[other,member],[a]:[pres],[fullGroup]:[...fullMembers].reverse()}};
+  assert.equal((await keyed(reversed)).status,200);assert.deepEqual((await pool.query('SELECT * FROM group_members ORDER BY group_id,user_id')).rows,placement);
+  assert.equal((await pool.query('SELECT count(*)::int n FROM group_membership_history')).rows[0].n,historyCount);
+  assert.equal((await keyed({...command,assignments:{[b]:[member]}})).status,409);
+  assert.equal((await keyed({...command,expectedRevision:'0'.repeat(64)})).status,409);
+  assert.equal((await keyed({...command,requestId:firstExecution.id})).status,409);
+  assert.equal((await receipt(firstExecution.id)).status,404,'Legacy history must not masquerade as a keyed receipt');
+  assert.equal((await receipt(command.requestId,admin,'?owner='+member)).status,400);
+  assert.equal((await receipt('bad')).status,400);assert.equal((await receipt(command.requestId,member)).status,403);assert.equal((await receipt(command.requestId,deleted)).status,401);
+  await pool.query("UPDATE users SET role='ADMIN' WHERE id=$1",[other]);
+  assert.equal((await receipt(command.requestId,other)).status,404);assert.equal((await keyed(command,other)).status,409);
+  await pool.query("UPDATE users SET role='MEMBER' WHERE id=$1",[admin]);assert.equal((await keyed(command)).status,403);assert.equal((await receipt(command.requestId)).status,403);await pool.query("UPDATE users SET role='ADMIN' WHERE id=$1",[admin]);
+  // Later source changes cannot make a committed command run again or invalidate its receipt.
+  await pool.query("UPDATE users SET profession='After committed shuffle' WHERE id=$1",[member]);
+  assert.equal((await keyed(command)).status,200);assert.deepEqual(await(await receipt(command.requestId)).json(),ack);
+  assert.deepEqual((await pool.query('SELECT * FROM group_members ORDER BY group_id,user_id')).rows,placement);
+  const retryCommand={...command,requestId:randomUUID(),expectedRevision:(await(await call()).json()).revision};
+  await pool.query("CREATE FUNCTION fail_submission() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'submission history outage'; END $$; CREATE TRIGGER fail_submission BEFORE INSERT ON shuffle_execution_history FOR EACH ROW EXECUTE FUNCTION fail_submission()");
+  assert.equal((await keyed(retryCommand)).status,500);assert.equal((await receipt(retryCommand.requestId)).status,404);assert.deepEqual((await pool.query('SELECT * FROM group_members ORDER BY group_id,user_id')).rows,placement);
+  await pool.query('DROP TRIGGER fail_submission ON shuffle_execution_history; DROP FUNCTION fail_submission()');assert.equal((await keyed(retryCommand)).status,200);
+  const typedTransport='data:text/javascript;base64,'+Buffer.from('export const referralTransport={post:async()=>globalThis.__shuffleAck,get:async()=>globalThis.__shuffleAck};').toString('base64');
+  const typedCode=readFileSync(path.join(serverDir,'../src/api/shuffleSubmission.ts'),'utf8').replace("from './api'","from '"+typedTransport+"'");
+  const {validShuffleCommand,shuffleSubmissionApi}=await import('data:text/javascript;base64,'+Buffer.from(compile(typedCode)).toString('base64'));
+  assert.equal(validShuffleCommand(command),true);assert.equal(validShuffleCommand({...command,assignments:{[a]:[member,member]}}),false);
+  globalThis.__shuffleAck=ack;assert.equal((await shuffleSubmissionApi.save(admin,command)).executionId,command.requestId);assert.equal((await shuffleSubmissionApi.reconcile(admin,reversed)).executionId,command.requestId);
+  for(const bad of [{...ack,ownerId:other},{...ack,requestId:randomUUID()},{...ack,executionId:randomUUID()},{...ack,fingerprint:'0'.repeat(64)},{...ack,expectedRevision:'0'.repeat(64)},{...ack,afterRevision:'bad'},{...ack,replayed:null}]){globalThis.__shuffleAck=bad;await assert.rejects(shuffleSubmissionApi.reconcile(admin,command));}
+  delete globalThis.__shuffleAck;
+  console.log('Keyed shuffle submission PASS: eight concurrent same intents / single execution; canonical full-payload replay; conflict and legacy collision; immutable owned receipt after source changes; no extra membership history; role/owner/query/DTO guards; full rollback and same UUID retry; typed ACK fingerprint verification.');
   console.log('Shuffle workspace/history PASS: isolated20/repeat0/18upgrade; immutable update/delete/truncate; atomic history outage rollback+retry; concurrent single ledger; authorized list/detail and snapshot preservation; actual ACTIVE membership/no invented history; owner/current-role/cache; DTO/duplicates/multigroup/unassigned; stale group/user/replay409 no mutation; save200; 35 capacity/71 unique/locks; consistent read; injected500 recovery.');
 }
 let exitCode=0;

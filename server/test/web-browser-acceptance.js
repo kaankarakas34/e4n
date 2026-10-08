@@ -143,10 +143,38 @@ async page=>{
     await page.getByText('Grup durumu: ACTIVE · 36 Üye',{exact:true}).waitFor();
     check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Stale rejection retained a savable draft');
   });
-  await test('admin-shuffle-success-and-history',async()=>{
+  let frozenShuffle=null,shufflePosts=0;
+  const shufflePostPattern='http://localhost:4005/api/shuffle/save';
+  const shuffleReceiptPattern='http://localhost:4005/api/admin/shuffle-submissions/*';
+  await test('admin-shuffle-lost-ack-keeps-frozen-intent',async()=>{
     for(const name of ['Browser member','Browser president']){const lock=page.getByRole('button',{name:'Yerinde kilitle: '+name,exact:true});if(await lock.count())await lock.click();}
     await page.getByRole('button',{name:'Dağıtım Taslağı Hazırla',exact:true}).click();
+    await page.route(shufflePostPattern,async route=>{frozenShuffle=route.request().postDataJSON();shufflePosts++;const r=await route.fetch({url:f.apiBase+'/api/shuffle/save'});check(r.status()===200,'Actual shuffle failed');requests.push({method:'POST',path:'/api/shuffle/save',status:r.status(),lostAck:true});await route.abort('failed');});
+    await page.route(shuffleReceiptPattern,route=>route.abort('failed'));
     await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'Bekleyen işlem korunuyor'}).waitFor();
+    await page.getByRole('heading',{name:'Bekleyen dağıtım işlemi',exact:true}).waitFor();
+    check(shufflePosts===1,'Automatic POST retry');check(await page.getByRole('button',{name:'Dağıtım Taslağı Hazırla',exact:true}).isDisabled(),'Unknown intent permits new draft');
+  });
+  await test('admin-shuffle-reload-read-only-reconciliation',async()=>{
+    await page.reload();await page.getByRole('heading',{name:'Bekleyen dağıtım işlemi',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Dağıtım Sonucunu Kontrol Et',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'Bekleyen işlem korunuyor'}).waitFor();
+    check(shufflePosts===1,'Reload/read-only action repeated POST');
+    const stored=await page.evaluate(id=>JSON.parse(sessionStorage.getItem('e4n-shuffle-submission:'+id)),f.ids.admin);
+    check(JSON.stringify(stored)===JSON.stringify(frozenShuffle),'Reload changed frozen command');
+  });
+  await test('admin-shuffle-same-intent-retry-single-execution',async()=>{
+    await page.unroute(shufflePostPattern);await page.unroute(shuffleReceiptPattern);
+    await page.route(shufflePostPattern,async route=>{const b=route.request().postDataJSON();check(JSON.stringify(b)===JSON.stringify(frozenShuffle),'Retry changed full intent');shufflePosts++;const r=await route.fetch({url:f.apiBase+'/api/shuffle/save'});const ack=await r.json();check(r.status()===200&&ack.replayed===true&&ack.executionId===b.requestId,'Retry did not reconcile original history');requests.push({method:'POST',path:'/api/shuffle/save',status:r.status(),replayed:ack.replayed});await route.fulfill({response:r});});
+    await page.getByRole('button',{name:'Aynı Dağıtımı Tekrar Gönder',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Dağıtım kaydedildi.'}).waitFor();
+    check(shufflePosts===2,'Unexpected POST count');check(await page.getByRole('heading',{name:'Bekleyen dağıtım işlemi',exact:true}).count()===0,'Receipt did not clear pending intent');
+    const stored=await page.evaluate(id=>sessionStorage.getItem('e4n-shuffle-submission:'+id),f.ids.admin);check(stored===null,'Saved intent retained in session');
+    const r=await page.request.get(f.controlBase+'/state',{headers:{'x-fixture-key':f.secret}});const state=await r.json();check(state.shuffleHistory.length===1&&state.shuffleHistory[0].id===frozenShuffle.requestId,'Retry duplicated execution');
+    await page.unroute(shufflePostPattern);
+  });
+  await test('admin-shuffle-success-and-history',async()=>{
     await page.getByRole('status').filter({hasText:'Dağıtım kaydedildi.'}).waitFor();
     await page.getByRole('button',{name:'Kayıt Geçmişi',exact:true}).click();
     await page.getByRole('heading',{name:'Shuffle Kayıt Geçmişi',exact:true}).waitFor();

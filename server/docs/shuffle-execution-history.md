@@ -15,3 +15,7 @@ Apply0019 before this application version. Snapshot limits:5000groups,10000accou
 P29 remains open for canonical period/eligibility/history rules and notification delivery; D06/D07/D08/other pending rules remain open. No live schema write, deployment, real mail/payment, mobile or LMS changes. Validation uses disposable PG17 and actual Express/JWT/browser flows. See E4N/09-Dogrulama/P29-Atomik-Dagitim-ve-Kayit-Gecmisi-2026-10-07.md.
 
 A real full-group browser run found the previous reset-roles-before-archive order caused a temporary36-member invariant violation in a35+president group. The transaction now archives ACTIVE memberships before resetting leadership, then inserts the target distribution; final global reset/archive semantics are unchanged. A dedicated full35+president contract covers the successful redistribution and preserved role snapshots.
+
+## 8 October — keyed web submissions
+
+The current web uses mandatory request IDs and source revisions with full-command fingerprints, owned immutable receipts, tab persistence and explicit identical retries. Keyed replay returns the original receipt without another role/archive/placement/history mutation, even after later source changes. Existing keyless callers keep stale-revision/legacy semantics. See [shuffle-submission.md](shuffle-submission.md) for the contract, verification and remaining policy/release limitations.

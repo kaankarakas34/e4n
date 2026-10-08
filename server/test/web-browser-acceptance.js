@@ -80,7 +80,7 @@ async page=>{
   });
   await test('admin-event-participant-count',async()=>{
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('2 / 50 katılımcı',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
+    await page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]').getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser member',{exact:true}).last().waitFor();await page.getByText('Browser president',{exact:true}).last().waitFor();
     await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).waitFor();
     await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
@@ -91,7 +91,7 @@ async page=>{
     await page.reload();await page.getByText('Kayıtlısınız',{exact:true}).waitFor();
     check(requests.filter(r=>r.path==='/api/events/'+f.ids.event+'/register'&&r.method==='POST').length===1,'Reload repeated the registration');
     await visit('/admin/events','Etkinlik Yönetimi');await page.getByText('3 / 50 katılımcı',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser admin',{exact:true}).last().waitFor();
+    await page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]').getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByText('Browser admin',{exact:true}).last().waitFor();
     check(await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).count()===2,'New booking incorrectly marked present');
     await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
@@ -174,7 +174,7 @@ async page=>{
     await page.getByRole('status').filter({hasText:'İş tamamlandı.'}).waitFor();
     await page.getByRole('cell',{name:'Tamamlandı',exact:true}).waitFor();
     await page.getByRole('cell',{name:'Yönetici',exact:true}).waitFor();
-    await page.getByText('Güncellenen etkinlik: 0',{exact:true}).waitFor();
+    await page.getByText('Güncellenen etkinlik: 2',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Geçmişi Yenile',exact:true}).click();
     await page.getByRole('cell',{name:'Tamamlandı',exact:true}).waitFor();
     check(requests.filter(r=>r.path==='/api/admin/web-jobs/event-completion/run').length===1,'Refresh retriggered the job');

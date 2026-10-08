@@ -49,6 +49,7 @@ export function installGroupMeetingAttendance(app,{pool,authenticateToken}) {
       const old=await saved(c,b.requestId,req.user.id);
       if(old){if(old.fingerprint!==fingerprint(b))throw groupError('ATTENDANCE_CONFLICT','İşlem anahtarı farklı bir yoklama için kullanıldı.');await c.query('COMMIT');return res.json({...old,replayed:true});}
       if((await c.query('SELECT id FROM events WHERE id=$1',[b.requestId])).rowCount)throw groupError('ATTENDANCE_CONFLICT','İşlem anahtarı zaten kullanılmış.');
+      if((await c.query('SELECT id FROM event_attendance_verifications WHERE event_id=$1 LIMIT 1',[b.requestId])).rowCount)throw groupError('ATTENDANCE_CONFLICT','Bu toplantı kaldırılmış; geçmiş işlem anahtarı yeniden kullanılamaz.');
       if(Date.parse(b.meeting_date)>Date.now())throw groupError('FUTURE_ATTENDANCE','Gelecek toplantıya gerçekleşmiş yoklama yazılamaz.',409);
       const roster=(await c.query("SELECT gm.user_id FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=$1 AND gm.status='ACTIVE' ORDER BY gm.user_id FOR SHARE OF gm,u",[b.group_id])).rows;
       if(roster.length!==b.items.length||roster.some((r,i)=>r.user_id!==b.items[i].user_id))throw groupError('ROSTER_CHANGED','Aktif üye listesi değişti. Güncel listeyi yükleyip yoklamayı yeniden değerlendirin.');

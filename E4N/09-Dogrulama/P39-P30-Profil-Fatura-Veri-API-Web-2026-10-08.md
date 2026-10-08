@@ -35,3 +35,7 @@ API/veri36/36 PASS (output/web-acceptance/2026-10-08T15-13-32-141Z/report.json);
 İlk full browser71PASS/3FAIL (native Response.ok hazırlık yanlışı ve takip eden billing/finalDB); sonraki uzun browser yerel GET power-teams navigasyon iptalindeki ECONNRESET nedeniyle tamamlanamadı ve tam rapor üretmedi. Her iki başarısız/eksik çıktı korunur. Ortak test transportu iptal edilen fetch'i ağ hatası/abort olarak uygulamaya taşır; otomatik GET/PUT retry veya sahte başarı yok. Düzeltmeden sonra11 ve74 temiz kabul geçti.
 
 179route/26provider/17retainedlegacy. Şema23/47. Tüm ownedfixture/browser/API/Vite/PG süreçleri kabul sonunda kapandı; canlıwrite/deploy/mail/payment yok. P39/P30/P37 ana hedefleri açık.
+
+## Git ve Linear teslim kaydı — 8 Ekim 2026
+
+Uygulama/test/kanıt commit 7c26bfb, origin/codex/e4n-sprint1-foundation dalına başarıyla push edildi. Linear E4N-111 açıklaması 2026-10-08T15:49:01Z güncellendi; E4N-102 yorum 3df63590-5921-43e9-bec3-dbe97ab8853b ve E4N-109 yorum 16b777ee-61b4-4026-a6dd-3b1c5c09f4ff aynı teslim/kanıt/açık kapıları kaydeder. Ana görevler In Progress. İlgili üç Obsidian notu ana E4N bilgi bankasına aynı içerikle yansıtıldı. Canlı migration uygulanmadı.

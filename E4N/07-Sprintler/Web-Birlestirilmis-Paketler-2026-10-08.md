@@ -6,7 +6,7 @@ Site/biyografi kaydı ve boş alan temizleme, private own settings API, minimal 
 
 Kabul: API36/36 +güncelbuildPASS; özel profile/billing11/11; taze bütünbrowser74/74+finalDB. output/web-browser/2026-10-08T15-41-06-717Z/browser-report.json, bitiş2026-10-08T15:43:37.367Z. Güncel303dosya digest e2f6172fcd7a0c2977b8d0dadb83435b27bd3bd4eab9527e9b113443a1d11133, iki browser turunda eşit. API/veri kaynaklarının eski36turundan beri değişmediği hash ile kanıtlıdır; son fark yalnızUIstore +testassertion/transport. Tek donmuş rootPASS denmez. İlk eski migration-count failures, native Response.ok browser71/3FAIL ve navigasyon ECONNRESET yarım tur korunur. Kanıt server/docs/self-profile-web-acceptance-2026-10-08.json ve [[E4N/09-Dogrulama/P39-P30-Profil-Fatura-Veri-API-Web-2026-10-08]].
 
-P39/P30/P37 InProgress; yeni küçükDone/yüzde artışı yok. Aktif büyük kuyruk: üyelik/ödeme/haklar → grupbaşvuru/kabul/transfer → puan/çıkarma/engel →shuffle. Üç mevcut üyelik sorusu/D01–D10 kalanları hâlâ açık; “devam” ürün seçeneği onayı değildir. Aynı soruları tekrar sorma, mevcut paketleri tekrar yapma. Canlıschemaadoption/provider/SEC6 kapıları açık; mobil7/LMS8 enson. Ownedtest süreçleri kapandı; canlıDB/deploy/mail/ödeme yok. Commit/push/Linear teslim kaydı sonraki satırda eklenir.
+P39/P30/P37 InProgress; yeni küçükDone/yüzde artışı yok. Aktif büyük kuyruk: üyelik/ödeme/haklar → grupbaşvuru/kabul/transfer → puan/çıkarma/engel →shuffle. Üç mevcut üyelik sorusu/D01–D10 kalanları hâlâ açık; “devam” ürün seçeneği onayı değildir. Aynı soruları tekrar sorma, mevcut paketleri tekrar yapma. Canlıschemaadoption/provider/SEC6 kapıları açık; mobil7/LMS8 enson. Ownedtest süreçleri kapandı; canlıDB/deploy/mail/ödeme yok. Git ve Linear teslim kaydı bu notun sonunda kaydedildi.
 
 
 ## P39/P31 — Lonca oluşturma ve ayar teslimi
@@ -162,3 +162,7 @@ Bu kapılar görevlerin **tam kapanışı** içindir. Bağımsız mevcut akış 
 Veri/migration + API ve rol/veri sınırları + gerçek web ekranları + izole bütün akış testi + commit/push + Linear/Obsidian tek paket kabulüdür. Alt endpoint, düğme veya cron tek başına ana paket teslimi sayılmaz. Bu düzenleme ilerleme yüzdesini artırmaz, iş durumlarını Done yapmaz.
 
 Mobil Sprint7, kurs/eğitim/sınav Sprint8 en son. Web kabulü bunlara bağlanmaz. Canlı Supabase yazma, üretim dağıtımı, gerçek mail/ödeme yok. Bu tur plan/Linear düzenlemesidir; uygulama kodu ve test sonucu değişmedi.
+
+## Git ve Linear teslim kaydı — 8 Ekim 2026
+
+Uygulama/test/kanıt commit 7c26bfb, origin/codex/e4n-sprint1-foundation dalına başarıyla push edildi. Linear E4N-111 açıklaması 2026-10-08T15:49:01Z güncellendi; E4N-102 yorum 3df63590-5921-43e9-bec3-dbe97ab8853b ve E4N-109 yorum 16b777ee-61b4-4026-a6dd-3b1c5c09f4ff aynı teslim/kanıt/açık kapıları kaydeder. Ana görevler In Progress. İlgili üç Obsidian notu ana E4N bilgi bankasına aynı içerikle yansıtıldı. Canlı migration uygulanmadı.

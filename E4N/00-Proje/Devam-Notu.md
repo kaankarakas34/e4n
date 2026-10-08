@@ -1,5 +1,8 @@
 # Devam notu — 1 Ekim 2026
 
+Teslim kaydı: b77e42d yönetilen dala push edildi. E4N-98 açıklaması ve E4N-109/E4N-111 yorumları 8 Ekim 09:49 UTC güncellendi; üç ana görev In Progress.
+
+
 ## 8 Ekim — P26 yönetici yoklama ve düzeltme paketi
 
 Mevcut ADMIN için gerçek kayıt üzerinden PRESENT/ABSENT gözlemi ve REGISTERED geri alma tamamlandı. Açıklama zorunlu; önceki/sonraki durum, yönetici ve zaman değiştirilemeyen ayrı geçmişte. Veri, iki özel API, tipli web sözleşmesi ve yönetici ekranı birlikte teslim edilir. Başkan yetkisi, yeni puan/hak/fiyat kararı veya eski kayıtların doğruluğu varsayılmadı. Gelecek/iptal/eğitim etkinliğine yeni yoklama yazılmaz.

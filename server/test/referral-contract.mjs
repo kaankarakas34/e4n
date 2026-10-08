@@ -154,8 +154,10 @@ async function main() {
   globalThis.localStorage={getItem:()=>JSON.stringify({state:{token:token(owner)}})};
   const webTransport=await mod(webTransportSource);
   globalThis.webReferralTransport=webTransport.referralTransport;
-  const webService=await mod(ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/referrals.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ referralTransport as apiClient \} from ['"]\.\/api['"];?/,'const apiClient=globalThis.webReferralTransport;'));
+  globalThis.webConnectionsApi=(await mod(ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/connections.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ referralTransport \} from ['"]\.\/api['"];?/,'const referralTransport=globalThis.webReferralTransport;'))).connectionsApi;
+  const webService=await mod(ts.transpileModule(readFileSync(path.join(serverDir,'../src/api/referrals.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ referralTransport as apiClient \} from ['"]\.\/api['"];?/,'const apiClient=globalThis.webReferralTransport;').replace(/import \{ connectionsApi \} from ['"]\.\/connections['"];?/,'const connectionsApi=globalThis.webConnectionsApi;'));
   const {referralsApi}=webOnly?webService:await mod(compile('utils/referrals-api.ts').replace(/import \{ apiClient \} from ['"]\.\/api-client['"];?/,'const apiClient=globalThis.referralTransport;'));
+  await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED'),($1,$3,'PENDING')",ids);
   const group=randomUUID(),team=randomUUID();
   await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Referral fixture group','ACTIVE')",[group]);
   await pool.query("INSERT INTO power_teams(id,name,status) VALUES($1,'Referral fixture team','ACTIVE')",[team]);
@@ -169,6 +171,11 @@ async function main() {
     for(const scope of scopes){const members=await service.people(owner,scope);assert.equal(members.length,1);assert.equal(members[0].id,ids[1]);}
     assert.deepEqual((await service.people(owner)).map(r=>r.id),[ids[1]]);
   }
+  // Accepted relationships survive group/lonca departure; common membership alone is not acceptance.
+  await pool.query('DELETE FROM group_members WHERE user_id=$1',[ids[1]]);
+  await pool.query('DELETE FROM power_team_members WHERE user_id=$1',[ids[1]]);
+  assert.deepEqual((await webService.referralsApi.people(owner)).map(r=>r.id),[ids[1]]);
+  assert.equal((await webService.referralsApi.people(owner,{id:group,name:'Fixture',kind:'group'})).length,0);
   const key=randomUUID(),input={receiverId:ids[1],type:'EXTERNAL',temperature:'COLD',description:'Mobile contract'};
   assert.equal((await referralsApi.create(owner,input,key)).id,key);assert.equal((await referralsApi.create(owner,input,key)).id,key);
   assert.equal((await referralsApi.list(owner)).length,2);

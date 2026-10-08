@@ -13,7 +13,18 @@ const states: ConnectionState[] = ['NONE', 'SELF', 'PENDING_SENT', 'PENDING_RECE
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const invalid = () => new Error('Bağlantı yanıtı doğrulanamadı. Tekrar deneyin.');
 const profileKeys = ['id', 'name', 'profession', 'company', 'bio', 'profile_image', 'email', 'phone', 'city', 'website', 'linkedin_profile', 'tax_number', 'tax_office', 'billing_address'];
+export interface AcceptedConnection {id:string;name:string;profession:string|null;company:string|null;city:string|null}
 export const connectionsApi = {
+  async list(owner:string):Promise<AcceptedConnection[]> {
+    if(!uuid(owner))throw invalid();
+    const r=await referralTransport.get<{version:number;ownerId:string;connections:AcceptedConnection[]}>('/user/connections');
+    if(!r||r.version!==1||!uuid(r.ownerId)||!same(r.ownerId,owner)||!Array.isArray(r.connections)||r.connections.length>1000
+      ||r.connections.some(p=>!p||!uuid(p.id)||same(p.id,owner)||typeof p.name!=='string'||!p.name.trim()
+        ||['profession','company','city'].some(k=>p[k as keyof AcceptedConnection]!==null&&typeof p[k as keyof AcceptedConnection]!=='string')
+        ||Object.keys(p).some(k=>!['id','name','profession','company','city'].includes(k)))
+      ||new Set(r.connections.map(p=>p.id.toLowerCase())).size!==r.connections.length)throw invalid();
+    return r.connections;
+  },
   async profile(owner: string, target: string): Promise<ConnectionProfile> {
     if (!uuid(owner) || !uuid(target)) throw invalid();
     const r = await referralTransport.get<ConnectionProfile>(`/user/profiles/${target}`);

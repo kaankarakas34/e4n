@@ -34,6 +34,19 @@ export function installConnections(app, { pool, authenticateToken }) {
     if (!user) throw fail(404, 'Kullanıcı bulunamadı.');
     return user.data;
   };
+  app.get('/api/user/connections', authenticateToken, route(async (req, client, owner) => {
+    if (Object.keys(req.query).length) throw fail(400, 'Bu liste oturum sahibine aittir.');
+    const bad = await client.query(`SELECT 1 FROM friend_requests WHERE sender_id=$1 OR receiver_id=$1
+      GROUP BY CASE WHEN sender_id=$1 THEN receiver_id ELSE sender_id END
+      HAVING count(*)<>1 OR bool_or(sender_id=receiver_id OR status IS NULL OR status NOT IN ('PENDING','ACCEPTED','REJECTED')) LIMIT 1`, [owner.id]);
+    if (bad.rowCount) throw fail(409, 'Bağlantı kayıtları tutarsız; yönetim incelemesi gerekiyor.');
+    const rows = (await client.query(`SELECT u.id,u.name,u.profession,u.company,u.city
+      FROM friend_requests fr JOIN users u ON u.id=CASE WHEN fr.sender_id=$1 THEN fr.receiver_id ELSE fr.sender_id END
+      WHERE (fr.sender_id=$1 OR fr.receiver_id=$1) AND fr.status='ACCEPTED' AND u.id<>$1
+      ORDER BY u.name,u.id LIMIT 1001`, [owner.id])).rows;
+    if (rows.length>1000) throw fail(503, 'Bağlantı listesi sınırı aşıldı.');
+    return {version:1,ownerId:owner.id,connections:rows};
+  }));
   app.get('/api/user/friends/check/:id', authenticateToken, route(async (req, client) => {
     const user = await target(req, client, req.params.id);
     return { ownerId: req.user.id, targetId: user.id, status: state((await client.query(pairSql, [req.user.id, user.id])).rows, req.user.id, user.id) };

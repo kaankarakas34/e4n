@@ -832,39 +832,45 @@
     },
     {
       "method": "GET",
-      "path": "/api/user/friends/check/:id",
+      "path": "/api/user/connections",
       "provider": "src/connections.js",
       "line": 37
     },
     {
       "method": "GET",
+      "path": "/api/user/friends/check/:id",
+      "provider": "src/connections.js",
+      "line": 50
+    },
+    {
+      "method": "GET",
       "path": "/api/user/profiles/:id",
       "provider": "src/connections.js",
-      "line": 41
+      "line": 54
     },
     {
       "method": "GET",
       "path": "/api/user/friends/requests",
       "provider": "src/connections.js",
-      "line": 56
+      "line": 69
     },
     {
       "method": "POST",
       "path": "/api/user/friends/request",
       "provider": "src/connections.js",
-      "line": 93
+      "line": 106
     },
     {
       "method": "POST",
       "path": "/api/user/friends/request/:id/accept",
       "provider": "src/connections.js",
-      "line": 94
+      "line": 107
     },
     {
       "method": "POST",
       "path": "/api/user/friends/request/:id/reject",
       "provider": "src/connections.js",
-      "line": 95
+      "line": 108
     },
     {
       "method": "GET",

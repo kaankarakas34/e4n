@@ -5,7 +5,7 @@ import { referralsApi, referralRevenue, type ReferralRow, type ReferralInput, ty
 
 const labels={PENDING:'Bekliyor',SUCCESSFUL:'Başarılı',UNSUCCESSFUL:'Olumsuz'};
 export function ReferralWorkspace({incomingOnly=false}:{incomingOnly?:boolean}){
-    const {user}=useAuth(),context=`${user?.id}:${user?.role}`;
+    const {user,token:authToken}=useAuth(),context=`${user?.id}:${user?.role}:${authToken}`;
     const current=useRef(context),generation=useRef(0),active=useRef(true);
     if(current.current!==context){current.current=context;generation.current++;}
     const version=generation.current,valid=()=>active.current && current.current===context && generation.current===version && !!user?.id;
@@ -43,7 +43,7 @@ export function ReferralWorkspace({incomingOnly=false}:{incomingOnly?:boolean}){
         const scope=type==='INTERNAL'?scopes?.rows.find(s=>`${s.kind}:${s.id}`===scopeKey):undefined;
         if(type==='INTERNAL'&&!scope){setPeople(null);setPeopleLoading(false);return;}
         try{const rows=await referralsApi.people(user.id,scope);if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current){setPeople({context:peopleContext,rows});if(!rows.some(r=>r.id===receiver))setReceiver('');}}
-        catch{if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current){setPeople(null);setPeopleError('Üyeler yüklenemedi.');}}
+        catch{if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current){setPeople(null);setPeopleError(type==='EXTERNAL'?'Kabul edilmiş bağlantılar yüklenemedi.':'Üyeler yüklenemedi.');}}
         finally{if(valid()&&peopleCurrent.current===peopleContext&&peopleGeneration.current===peopleVersion&&seq===peopleSeq.current)setPeopleLoading(false);}
     };
     useEffect(()=>{
@@ -99,11 +99,12 @@ export function ReferralWorkspace({incomingOnly=false}:{incomingOnly?:boolean}){
                     <label className="mt-3 block">Grup veya lonca<select aria-label="Grup veya lonca" value={scopeKey} onChange={e=>setScopeKey(e.target.value)} disabled={scopeLoading||!!scopeError||scopes?.context!==context} className="ml-3 rounded border p-2"><option value="">Seçiniz</option>{scopes?.context===context&&scopes.rows.map(scope=><option key={`${scope.kind}:${scope.id}`} value={`${scope.kind}:${scope.id}`}>{scope.name} ({scope.kind==='group'?'Grup':'Lonca'})</option>)}</select></label>
                     {scopes?.context===context&&scopes.rows.length===0&&<p>Üyesi olduğunuz grup/lonca yok.</p>}
                 </div>}
-                {peopleLoading&&<p>Üyeler yükleniyor…</p>}
+                {type==='EXTERNAL'&&<p className="text-sm text-gray-600">Kabul edilmiş bağlantılarınız listelenir; grup değişikliği bağlantıyı kaldırmaz.</p>}
+                {peopleLoading&&<p>Alıcılar yükleniyor…</p>}
                 {peopleError&&<p role="alert">{peopleError}</p>}
                 {button('Üyeleri yeniden yükle',()=>loadPeople())}
                 <label className="block">Alıcı<select aria-label="Alıcı" value={receiver} onChange={e=>setReceiver(e.target.value)} disabled={!peopleReady} className="ml-3 rounded border p-2"><option value="">Seçiniz</option>{peopleReady&&people.rows.map(person=><option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
-                {peopleReady&&people.rows.length===0&&<p>Seçilebilir üye yok.</p>}
+                {peopleReady&&people.rows.length===0&&<p>Seçilebilir alıcı yok.</p>}
                 <label className="block">Sıcaklık<select aria-label="Sıcaklık" value={temperature} onChange={e=>setTemperature(e.target.value as ReferralInput['temperature'])} className="ml-3 rounded border p-2"><option value="HOT">Sıcak</option><option value="WARM">Ilık</option><option value="COLD">Soğuk</option></select></label>
                 <label className="block">İş açıklaması<textarea aria-label="Referans açıklaması" maxLength={10000} value={description} onChange={e=>setDescription(e.target.value)} className="mt-2 block w-full rounded border p-3" rows={4}/></label>
                 <label className="block">Tahmini iş hacmi (isteğe bağlı, ₺)<input aria-label="Tahmini iş hacmi" inputMode="decimal" value={estimate} onChange={e=>setEstimate(e.target.value)} className="ml-3 rounded border p-2" placeholder="1500.50"/></label>

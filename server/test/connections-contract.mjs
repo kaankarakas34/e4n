@@ -109,6 +109,10 @@ async function main() {
   assert.equal((await call(profile(bob),deleted)).status,401);
   assert.equal((await call(profile('invalid'))).status,400);
   assert.equal((await call(profile(deleted))).status,404);
+  const listPath='/user/connections';
+  assert.equal((await call(listPath,null)).status,401);assert.equal((await call(listPath,deleted)).status,401);
+  assert.equal((await call(listPath+'?ownerId='+bob)).status,400);
+  assert.deepEqual((await (await call(listPath)).json()).connections,[]);
   const before=await snapshot();
   const p=await (await call(profile(bob))).json();
   assert.equal(p.status,'NONE');assert.equal(p.contactVisible,false);assert.equal(p.billingVisible,false);
@@ -142,6 +146,16 @@ async function main() {
   const incoming=await connectionsApi.incoming(receiver);assert.equal(incoming.length,1);assert.ok(incoming[0].sender_name.startsWith('Fixture'));
   await connectionsApi.mutate(receiver,sender,'accept');
   assert.equal((await connectionsApi.profile(receiver,sender)).status,'FRIEND');
+  const acceptedList=await call(listPath,receiver);assert.equal(acceptedList.headers.get('cache-control'),'private, no-store');
+  const acceptedData=await acceptedList.json();assert.equal(acceptedData.ownerId,receiver);assert.equal(acceptedData.connections.length,1);assert.equal(acceptedData.connections[0].id,sender);
+  assert.deepEqual(Object.keys(acceptedData.connections[0]).sort(),['city','company','id','name','profession']);
+  assert.equal((await connectionsApi.list(receiver))[0].id,sender);await assert.rejects(connectionsApi.list(third));
+  const originalGet=globalThis.connectionTransport.get;
+  for(const mutate of [r=>({...r,ownerId:third}),r=>({...r,connections:[...r.connections,...r.connections]}),r=>({...r,connections:r.connections.map(p=>({...p,email:'private'}))}),r=>({...r,connections:[{...r.connections[0],id:receiver}]})]){
+    globalThis.connectionTransport.get=async()=>mutate(acceptedData);await assert.rejects(connectionsApi.list(receiver));
+  }globalThis.connectionTransport.get=originalGet;
+  await pool.query('DELETE FROM group_members WHERE user_id=$1 AND group_id=$2',[sender,group]);
+  assert.equal((await connectionsApi.list(receiver))[0].id,sender);
   const accepted=await snapshot();
   const repeated=await Promise.all(Array.from({length:8},()=>call(decision(sender,'accept'),receiver,{})));
   for(const response of repeated)assert.equal((await response.json()).replay,true);
@@ -164,6 +178,7 @@ async function main() {
   assert.equal((await (await call(profile(bob),admin,undefined,'ADMIN')).json()).billingVisible,false);
   await pool.query("INSERT INTO friend_requests(sender_id,receiver_id) VALUES($1,$2)",[bob,alice]);
   assert.equal((await call(profile(bob))).status,409);
+  assert.equal((await call(listPath)).status,409);
   assert.equal((await call(decision(bob,'reject'),alice,{})).status,409);
   await pool.query('DELETE FROM friend_requests WHERE sender_id=$1 AND receiver_id=$2',[bob,alice]);
   assert.equal((await call('/user/friends/requests?type=bad')).status,400);
@@ -175,6 +190,15 @@ async function main() {
   pool.connect=async()=>{const c=await originalConnect(),query=c.query.bind(c),release=c.release.bind(c);c.query=async(sql,args)=>{const result=await query(sql,args);if(typeof sql==='string'&&sql.startsWith('INSERT INTO friend_requests'))throw new Error('Fixture failure after insert');return result;};c.release=()=>{c.query=query;c.release=release;release();};return c;};
   assert.equal((await call(request,alice,{targetId:rollbackUser})).status,500);pool.connect=originalConnect;
   assert.equal(await snapshot(),stable);assert.equal((await call(request,alice,{targetId:rollbackUser})).status,200);
+  const stableList=await connectionsApi.list(receiver);
+  await pool.query('ALTER TABLE friend_requests RENAME TO hidden_friend_requests');
+  const readFailure=await call(listPath,receiver);assert.equal(readFailure.status,500);assert.ok(!(await readFailure.text()).includes('hidden_friend_requests'));
+  await pool.query('ALTER TABLE hidden_friend_requests RENAME TO friend_requests');assert.deepEqual(await connectionsApi.list(receiver),stableList);
+  // The bounded endpoint must fail explicitly, never silently truncate a network.
+  await pool.query(`WITH people AS (INSERT INTO users(id,email,name,profession,password_hash)
+    SELECT gen_random_uuid(),'bound-'||g||'@example.invalid','Bound '||g,'Fixture','x' FROM generate_series(1,1001) g RETURNING id)
+    INSERT INTO friend_requests(sender_id,receiver_id,status) SELECT $1,id,'ACCEPTED' FROM people`,[admin]);
+  assert.equal((await call(listPath,admin)).status,503);
   console.log('Connections PASS: actual web bearer/Express/isolated PG; profile contact/billing/common group boundaries; missing/self/invalid owners; bidirectional create race; recipient-only decisions; opposite decision race; replay; accepted rejection protection; rejected resend conflict; legacy ambiguity; rollback/retry; GET no writes.');
 }
 let exitCode = 0;

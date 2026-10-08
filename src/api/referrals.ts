@@ -1,3 +1,4 @@
+import { connectionsApi } from './connections';
 import { referralTransport as apiClient } from './api';
 
 export interface ReferralRow {
@@ -38,6 +39,7 @@ export const referralsApi={
     return result;
   },
   async people(owner:string,scope?:ReferralScope){
+    if(!scope)return (await connectionsApi.list(owner)).map(({id,name})=>({id,name}));
     const endpoint=scope?`/${scope.kind==='group'?'groups':'power-teams'}/${encodeURIComponent(scope.id)}/members`:'/user/friends';
     return peopleRows(await apiClient.get<unknown>(endpoint),owner);
   },

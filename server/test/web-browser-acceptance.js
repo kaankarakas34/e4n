@@ -308,6 +308,42 @@ async page=>{
     await visit('/admin/events','Etkinlik Yönetimi');const card=page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');await card.getByRole('button',{name:'Katılımcılar',exact:true}).click();await page.getByRole('button',{name:'Yoklama ve geçmiş',exact:true}).click();await page.getByText('Yoklama yalnız başlamış, iptal edilmemiş etkinlik için kaydedilebilir.',{exact:true}).waitFor();check(await page.getByRole('button',{name:'Yoklamayı kaydet',exact:true}).count()===0,'Future attendance can be recorded');
   });
 
+  await test('member-accepted-connections-login',()=>login('member'));
+  const network=page.getByRole('region',{name:'Kabul edilmiş bağlantılar',exact:true});
+  async function openNetwork(){await page.goto(f.webBase+'/chapter-management');await page.getByRole('button',{name:'Bağlantılarım (Network)',exact:true}).click();await network.getByRole('heading',{name:'Bağlantılarım (Network)',exact:true}).waitFor();}
+  await test('accepted-connections-error-retry-and-no-common-member-substitution',async()=>{
+    const seed=await fetch(f.controlBase+'/connections-seed',{method:'POST',headers:{'x-fixture-key':f.secret}});check(seed.ok,'Connection fixture failed');
+    const pattern='**/api/user/connections';await page.route(pattern,route=>route.fulfill({status:500,json:{error:'Isolated read failure'}}));
+    await openNetwork();await network.getByRole('alert').waitFor();check(await network.getByRole('article').count()===0,'Read error replaced by old network');
+    await page.unroute(pattern);await network.getByRole('button',{name:'Bağlantıları yenile',exact:true}).click();await network.getByRole('heading',{name:'Browser admin',exact:true}).waitFor();
+    check(await network.getByRole('article').count()===2,'Network must contain exactly accepted president/admin');
+    check(await network.getByText('Browser applicant',{exact:true}).count()===0,'Pending connection displayed as accepted');
+    check(await network.getByText(/Browser seat /).count()===0,'Common group members displayed as accepted');
+    await page.getByLabel('Bağlantı ara',{exact:true}).fill('Browser admin');check(await network.getByRole('article').count()===1,'Search mismatch');await page.getByLabel('Bağlantı ara',{exact:true}).fill('missing');await network.getByText('Arama kriterlerine uygun bağlantı bulunamadı.',{exact:true}).waitFor();await page.getByLabel('Bağlantı ara',{exact:true}).fill('');
+  });
+  await test('accepted-connections-profile-and-message-navigation',async()=>{
+    const card=network.getByRole('article').filter({hasText:'Browser admin'});await card.getByRole('link',{name:'Profili Gör',exact:true}).click();await page.waitForURL('**/profile/'+f.ids.admin);await page.getByRole('heading',{name:'Browser admin',exact:true}).waitFor();
+    await openNetwork();await network.getByRole('article').filter({hasText:'Browser admin'}).getByRole('link',{name:'Mesaj',exact:true}).click();await page.waitForURL('**/messages?recipient='+f.ids.admin);await page.getByPlaceholder('Mesajınızı yazın...').waitFor();
+  });
+  await test('external-referral-accepted-source-lost-ack-replay-and-reload',async()=>{
+    await visit('/referrals','İş Yönlendirmeleri');await page.getByRole('button',{name:'Yeni referans',exact:true}).click();await page.getByLabel('Yönlendirme türü',{exact:true}).selectOption('EXTERNAL');
+    const select=page.getByLabel('Alıcı',{exact:true});await select.locator('option[value="'+f.ids.admin+'"]').waitFor({state:'attached'});
+    check(await select.locator('option').count()===3,'External options must be accepted connections only');
+    check(await select.locator('option[value="'+f.ids.applicant+'"]').count()===0,'Pending external recipient');await select.selectOption(f.ids.admin);await page.getByLabel('Referans açıklaması',{exact:true}).fill('Browser external connection referral');
+    let once=true;const pattern='**/api/referrals';await page.route(pattern,async route=>{if(route.request().method()!=='POST'||!once)return route.fallback();once=false;const r=await route.fetch({url:f.apiBase+'/api/referrals'});requests.push({method:'POST',path:'/api/referrals',status:r.status()});await route.abort();});
+    await page.getByRole('button',{name:'Referansı gönder',exact:true}).click();await page.getByRole('status').filter({hasText:'İşlem sonucu doğrulanamadı'}).waitFor();
+    await page.getByRole('button',{name:'Referansı gönder',exact:true}).click();await page.getByText('Referans kaydedildi.',{exact:true}).waitFor();await page.unroute(pattern);await page.getByRole('button',{name:'Gönderdiklerim',exact:true}).click();await page.getByText('Browser external connection referral',{exact:true}).waitFor();await page.reload();await page.getByText('Browser external connection referral',{exact:true}).waitFor();
+  });
+  await test('accepted-connection-revocation-refresh-clears-selection',async()=>{
+    await page.getByRole('button',{name:'Yeni referans',exact:true}).click();await page.getByLabel('Yönlendirme türü',{exact:true}).selectOption('EXTERNAL');const select=page.getByLabel('Alıcı',{exact:true});await select.locator('option[value="'+f.ids.admin+'"]').waitFor({state:'attached'});await select.selectOption(f.ids.admin);
+    const revoke=await fetch(f.controlBase+'/connections-revoke',{method:'POST',headers:{'x-fixture-key':f.secret}});check(revoke.ok,'Revoke fixture failed');await page.getByRole('button',{name:'Üyeleri yeniden yükle',exact:true}).click();await select.locator('option[value="'+f.ids.admin+'"]').waitFor({state:'detached'});check(await select.inputValue()==='','Revoked selected recipient retained');
+    await openNetwork();await network.getByRole('heading',{name:'Browser president',exact:true}).waitFor();check(await network.getByText('Browser admin',{exact:true}).count()===0,'Revoked network card retained');
+  });
+  await test('accepted-connections-unrelated-owner-empty',async()=>{
+    await login('applicant');await openNetwork();await network.getByText('Henüz kabul edilmiş bağlantınız yok.',{exact:true}).waitFor();check(await network.getByText('Browser president',{exact:true}).count()===0,'Previous owner network retained');
+    await visit('/referrals','İş Yönlendirmeleri');await page.getByRole('button',{name:'Yeni referans',exact:true}).click();await page.getByLabel('Yönlendirme türü',{exact:true}).selectOption('EXTERNAL');await page.getByText('Seçilebilir alıcı yok.',{exact:true}).waitFor();check(await page.getByLabel('Alıcı',{exact:true}).locator('option').count()===1,'Other owner external recipients leaked');
+  });
+
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};
 }

@@ -1,3 +1,4 @@
+import { AcceptedConnectionsPanel } from '../components/AcceptedConnectionsPanel';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -84,15 +85,6 @@ export function ChapterManagement() {
 
   // Network Logic
   const [activeTab, setActiveTab] = useState<'GROUPS' | 'NETWORK' | 'POWER_TEAMS'>('GROUPS');
-  const [friends, setFriends] = useState<any[]>([]);
-  const [networkFilter, setNetworkFilter] = useState('');
-
-  useEffect(() => {
-    if (user?.id) {
-      api.getNetwork().then(setFriends).catch(() => { });
-    }
-  }, [user?.id, activeTab]); // Re-fetch when tab changes to be sure, or just once. Tab change is fine.
-
   const onSearch = async () => {
     const res = await api.searchMembers({ name: filters.name || query, profession: filters.profession, city: filters.city });
     setMembers(res || []);
@@ -440,98 +432,8 @@ export function ChapterManagement() {
           </div>
         )}
 
-        {activeTab === 'NETWORK' && (
-          <Card className="w-full shadow-lg border-cyan-100">
-            <CardHeader className="border-b border-gray-100 bg-cyan-50/30">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <CardTitle className="flex items-center text-xl"><Users className="h-6 w-6 mr-3 text-cyan-600" /> Bağlantılarım (Network)</CardTitle>
-                <div className="relative w-full md:w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="İsim, meslek veya şehir ara..."
-                    className="pl-9 bg-white"
-                    value={networkFilter}
-                    onChange={(e) => setNetworkFilter(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {friends.length > 0 ? (
-                  friends
-                    .filter(f => {
-                      const searchLower = networkFilter.toLowerCase();
-                      return (
-                        (f.full_name || f.name).toLowerCase().includes(searchLower) ||
-                        (f.profession || '').toLowerCase().includes(searchLower) ||
-                        (f.city || '').toLowerCase().includes(searchLower)
-                      );
-                    })
-                    .map((friend: any) => (
-                      <div key={friend.id} className="group relative bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-lg transition-all duration-300 hover:border-cyan-200">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center">
-                            <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold mr-4 text-white shadow-sm
-                                  ${friend.performance_color === 'GREEN' ? 'bg-gradient-to-br from-green-400 to-green-600' :
-                                friend.performance_color === 'YELLOW' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                                  friend.performance_color === 'RED' ? 'bg-gradient-to-br from-red-400 to-red-600' :
-                                    'bg-gradient-to-br from-gray-400 to-gray-600'
-                              }`}>
-                              {friend.full_name ? friend.full_name.charAt(0) : 'U'}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900 group-hover:text-cyan-600 transition-colors pointer-events-none">
-                                {friend.full_name || friend.name}
-                              </h3>
-                              <p className="text-sm font-medium text-gray-500">{friend.profession}</p>
-                            </div>
-                          </div>
-                          {/* Action Menu or Status Indicator could go here */}
-                        </div>
+        {activeTab === 'NETWORK' && <AcceptedConnectionsPanel />}
 
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center text-xs text-gray-500">
-                            <span className="w-20 font-medium">Şehir:</span>
-                            <span className="text-gray-900">{friend.city || '-'}</span>
-                          </div>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <span className="w-20 font-medium">Puan:</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white
-                                  ${friend.performance_color === 'GREEN' ? 'bg-green-500' :
-                                friend.performance_color === 'YELLOW' ? 'bg-yellow-500' :
-                                  friend.performance_color === 'RED' ? 'bg-red-500' : 'bg-gray-400'}`}>
-                              {friend.performance_score || 0}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="pt-4 border-t border-gray-100 flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/profile/${friend.id}`)}>
-                            Profili Gör
-                          </Button>
-                          <Button size="sm" variant="primary" className="flex-1 text-xs bg-cyan-600 hover:bg-cyan-700 border-transparent">
-                            Mesaj
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-16 text-gray-500 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                    <Users className="h-12 w-12 text-gray-300 mb-3" />
-                    <p className="text-lg font-medium text-gray-900">Henüz bağlantınız yok</p>
-                    <p className="text-sm">Gruplara katılarak ağınızı genişletmeye başlayın.</p>
-                  </div>
-                )}
-                {friends.length > 0 && friends.filter(f => (f.full_name || f.name).toLowerCase().includes(networkFilter.toLowerCase())).length === 0 && (
-                  <div className="col-span-full text-center py-12 text-gray-500">
-                    Arama kriterlerine uygun bağlantı bulunamadı.
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Entity Details Modal */}

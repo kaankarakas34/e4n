@@ -1,0 +1,377 @@
+{
+  "scope": "P39/P30 notification and session web package; focused API/data/store plus current browser, not a new frozen all-API rehearsal",
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "releaseReady": false,
+  "apiContracts": [
+    "notifications-contract:PASS actual PG17/Express and TypeScript guard",
+    "auth-refresh-contract:PASS production Zustand store",
+    "route-ownership-contract:PASS180/27/17"
+  ],
+  "browser": {
+    "path": "output/web-browser/2026-10-08T16-05-53-094Z/browser-report.json",
+    "passed": 79,
+    "failed": 0,
+    "finishedAt": "2026-10-08T16:09:20.933Z",
+    "cases": [
+      {
+        "name": "admin-login",
+        "status": "PASS"
+      },
+      {
+        "name": "application-styles-loaded",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-dashboard",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-reports",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-members",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-visitors",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-accounting",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-group-catalog",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-membership-records-owned-detail",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-event-participant-count",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-event-new-booking-is-not-attendance",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-group-capacity-rejection",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-document-upload",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-member-profile-history",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-shuffle-current-records",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-shuffle-preview-no-write",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-shuffle-stale-draft-rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-shuffle-success-and-history",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-group-membership-history",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-web-job-history-and-run",
+        "status": "PASS"
+      },
+      {
+        "name": "member-login",
+        "status": "PASS"
+      },
+      {
+        "name": "member-web-job-history-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "member-membership-records-and-invoice",
+        "status": "PASS"
+      },
+      {
+        "name": "member-group-membership-history",
+        "status": "PASS"
+      },
+      {
+        "name": "member-admin-group-membership-history-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "member-admin-membership-records-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "member-shuffle-history-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "member-reports",
+        "status": "PASS"
+      },
+      {
+        "name": "member-groups",
+        "status": "PASS"
+      },
+      {
+        "name": "member-activities-calendar",
+        "status": "PASS"
+      },
+      {
+        "name": "member-documents",
+        "status": "PASS"
+      },
+      {
+        "name": "member-calendar-event-data",
+        "status": "PASS"
+      },
+      {
+        "name": "member-event-registration-view",
+        "status": "PASS"
+      },
+      {
+        "name": "member-document-download",
+        "status": "PASS"
+      },
+      {
+        "name": "member-message-send",
+        "status": "PASS"
+      },
+      {
+        "name": "member-admin-data-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "member-private-profile-denied",
+        "status": "PASS"
+      },
+      {
+        "name": "member-support-create-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "member-referral-create-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "member-meeting-request-create-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "president-login",
+        "status": "PASS"
+      },
+      {
+        "name": "receiver-referral-settle-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "receiver-meeting-accept-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "unrelated-account-login",
+        "status": "PASS"
+      },
+      {
+        "name": "unrelated-account-lifecycle-data-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-support-login",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-support-answer-close-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "member-support-return-login",
+        "status": "PASS"
+      },
+      {
+        "name": "member-support-closed-read-and-no-reply",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-attendance-return-login",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-attendance-observe-lost-ack-recovery",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-attendance-correction-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-attendance-retract-and-registration-count",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-future-event-attendance-read-only",
+        "status": "PASS"
+      },
+      {
+        "name": "member-accepted-connections-login",
+        "status": "PASS"
+      },
+      {
+        "name": "accepted-connections-error-retry-and-no-common-member-substitution",
+        "status": "PASS"
+      },
+      {
+        "name": "accepted-connections-profile-and-message-navigation",
+        "status": "PASS"
+      },
+      {
+        "name": "external-referral-accepted-source-lost-ack-replay-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "accepted-connection-revocation-refresh-clears-selection",
+        "status": "PASS"
+      },
+      {
+        "name": "accepted-connections-unrelated-owner-empty",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-guild-catalog-error-retry",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-guild-create-lost-ack-same-id-retry",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-guild-ack-list-error-retry-no-second-post",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-guild-edit-canonical-save-and-reload",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-guild-owner-switch-hidden",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-settings-read-error-retry",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-save-clear-reload-and-canonical-store",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-invalid-url-keeps-draft",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-lost-put-ack-read-reconciliation",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-stale-edit-conflict-and-refresh",
+        "status": "PASS"
+      },
+      {
+        "name": "billing-save-failure-blocks-card-step-and-retry-persists",
+        "status": "PASS"
+      },
+      {
+        "name": "billing-lost-ack-reconciles-without-second-write",
+        "status": "PASS"
+      },
+      {
+        "name": "self-profile-held-response-owner-switch",
+        "status": "PASS"
+      },
+      {
+        "name": "notifications-real-total-outside-window",
+        "status": "PASS"
+      },
+      {
+        "name": "notifications-error-is-not-empty-and-retry",
+        "status": "PASS"
+      },
+      {
+        "name": "notifications-lost-read-ack-single-write-reconciled",
+        "status": "PASS"
+      },
+      {
+        "name": "notifications-read-all-includes-older-rows",
+        "status": "PASS"
+      },
+      {
+        "name": "notifications-owner-switch-private-window",
+        "status": "PASS"
+      },
+      {
+        "name": "database-final-state",
+        "status": "PASS"
+      }
+    ],
+    "notificationCounts": [
+      {
+        "user_id": "73255bb2-58d6-41e8-8ef3-528f01537ad6",
+        "total": 65,
+        "unread": 0
+      }
+    ]
+  },
+  "focused": {
+    "path": "output/web-browser/2026-10-08T16-02-29-609Z/notifications-focused-report.json",
+    "passed": 5,
+    "failed": 0,
+    "finalDBPass": true
+  },
+  "retainedFailures": [
+    {
+      "path": "output/web-browser/2026-10-08T15-57-30-453Z/browser-report.json",
+      "passed": 75,
+      "failed": 4
+    },
+    {
+      "path": "output/notifications-browser-final.log",
+      "result": "preflight timeout, no complete browser report"
+    },
+    {
+      "path": "output/notifications-contract.log",
+      "result": "legacy array referenced removed local rows variable; corrected and fresh final contract PASS"
+    },
+    {
+      "path": "output/notifications-attendance-regression.log",
+      "result": "focused5UI PASS; custom final checker wrongly required president row REGISTERED"
+    }
+  ],
+  "sourceLimit": "Final browser fixture imported final API/auth code; NotificationList error counter label changed early in run and was exercised by the later notification scenarios. This is not a single immutable full-API/build/browser root report.",
+  "build": {
+    "status": "PASS",
+    "log": "output/notifications-build-complete.log"
+  },
+  "check": {
+    "status": "PASS",
+    "log": "output/notifications-check-complete.log"
+  }
+}

@@ -1,3 +1,4 @@
+import { NotificationList } from '../components/NotificationList';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
@@ -271,7 +272,7 @@ export function Navigation() {
 }
 
 function NotificationBell() {
-  const { unreadCount, notifications, fetchNotifications, markAsRead } = useNotificationStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -284,6 +285,7 @@ function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Bildirimler" aria-expanded={isOpen}
         className="text-gray-400 hover:text-gray-500 relative p-1"
       >
         <Bell className="h-6 w-6" />
@@ -298,31 +300,7 @@ function NotificationBell() {
             <span className="text-sm font-semibold text-gray-700">Bildirimler</span>
             {unreadCount > 0 && <span className="text-xs text-red-500">{unreadCount} yeni</span>}
           </div>
-          {notifications.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">Bildiriminiz yok.</div>
-          ) : (
-            <div className="max-h-64 overflow-y-auto">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${!n.read ? 'bg-blue-50' : ''}`}
-                  onClick={() => {
-                    markAsRead(n.id);
-                    setIsOpen(false);
-                    if (n.type === 'FRIEND_REQUEST' || n.type === 'FRIEND_ACCEPTED') {
-                      navigate(`/profile/${n.type === 'FRIEND_REQUEST' ? n.message.split(' ')[0] : ''}`); // Basic navigation, ideally link to profile
-                    } else if (n.type === 'MESSAGE') {
-                      navigate('/messages');
-                    }
-                  }}
-                >
-                  <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                  <p className="text-sm text-gray-900">{n.message}</p>
-                  <p className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleDateString()}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <NotificationList />
         </div>
       )}
     </div>

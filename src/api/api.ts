@@ -102,6 +102,11 @@ export const referralTransport = {
   put: <T>(path: string, body: unknown): Promise<T> => request(path, { method: 'PUT', body: JSON.stringify(body) }),
 };
 
+export const notificationTransport = {
+ get:(path:string,owner:string)=>request(path,undefined,false,owner),
+ put:(path:string,body:unknown,owner:string)=>request(path,{method:'PUT',body:JSON.stringify(body)},false,owner),
+};
+
 const savedGroup = (value: any, expectedId?: string) => {
   if (!value || typeof value.id !== 'string' || (expectedId && value.id !== expectedId) || typeof value.name !== 'string'
     || !Array.isArray(value.meeting_dates) || value.meeting_dates.some((d: any) => typeof d !== 'string' || !Number.isFinite(Date.parse(d)))) throw new Error('Grup kayıt yanıtı geçersiz. Sonucu kontrol edip tekrar deneyin.');

@@ -1,65 +1,21 @@
-import { create } from 'zustand';
-import { api } from '../api/api';
-
-export interface Notification {
-    id: string;
-    title: string;
-    message: string;
-    type: string;
-    read: boolean;
-    created_at: string;
-}
-
-interface NotificationState {
-    notifications: Notification[];
-    unreadCount: number;
-    isLoading: boolean;
-
-    // Actions
-    fetchNotifications: (userId: string) => Promise<void>;
-    markAsRead: (id: string) => Promise<void>;
-    addNotification: (notification: Notification) => void;
-}
-
-export const useNotificationStore = create<NotificationState>((set, get) => ({
-    notifications: [],
-    unreadCount: 0,
-    isLoading: false,
-
-    fetchNotifications: async (userId: string) => {
-        set({ isLoading: true });
-        try {
-            const data: Notification[] = await api.getNotifications(userId);
-            set({
-                notifications: data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-                unreadCount: data.filter(n => !n.read).length,
-                isLoading: false
-            });
-        } catch (error) {
-            console.error('Failed to fetch notifications', error);
-            set({ isLoading: false });
-        }
-    },
-
-    markAsRead: async (id: string) => {
-        try {
-            await api.markNotificationRead(id);
-            const { notifications } = get();
-            const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-            set({
-                notifications: updated,
-                unreadCount: updated.filter(n => !n.read).length
-            });
-        } catch (error) {
-            console.error('Failed to mark read', error);
-        }
-    },
-
-    addNotification: (notification: any) => {
-        const { notifications } = get();
-        set({
-            notifications: [notification, ...notifications],
-            unreadCount: get().unreadCount + (notification.read ? 0 : 1)
-        });
-    }
-}));
+import {create} from 'zustand';
+import {notificationsApi,type NotificationSnapshot,type Notification} from '../api/notifications';
+import {useAuthStore} from './authStore';
+export type {Notification};
+interface State {notifications:Notification[];unreadCount:number;total:number;isLoading:boolean;isSaving:boolean;error:string|null;fetchNotifications:(owner:string)=>Promise<void>;markAsRead:(id:string)=>Promise<void>;markAllAsRead:()=>Promise<void>}
+let epoch=0;
+const scope=()=>{const s=useAuthStore.getState();return s.user?.id&&s.token?s.user.id+'|'+s.token:'';};
+const empty={notifications:[],unreadCount:0,total:0,isLoading:false,isSaving:false,error:null};
+export const useNotificationStore=create<State>((set,get)=>{
+ const publish=(v:NotificationSnapshot)=>set({notifications:v.notifications,unreadCount:v.unreadCount,total:v.total,error:null});
+ const mark=async(id?:string)=>{
+  const owner=useAuthStore.getState().user?.id,context=scope();if(!owner||!context||get().isSaving)return;
+  ++epoch;set({isSaving:true,isLoading:false,error:null});
+  try{const v=await notificationsApi.mark(owner,id);if(scope()===context)publish(v);}
+  catch{if(scope()===context){try{const v=await notificationsApi.read(owner);if(scope()===context){publish(v);if(id?!v.notifications.some(n=>n.id===id&&n.read):v.unreadCount>0)set({error:'Okundu işlemi doğrulanamadı. Durumu kontrol ederek tekrar deneyin.'});}}catch{if(scope()===context)set({error:'Bildirim işlemi doğrulanamadı. Yenileyip durumu kontrol edin.'});}}}
+  finally{if(scope()===context)set({isSaving:false});}
+ };
+ return {...empty,fetchNotifications:async(owner)=>{const context=scope();if(!context||useAuthStore.getState().user?.id!==owner||get().isSaving)return;const seq=++epoch;set({isLoading:true,error:null});try{const v=await notificationsApi.read(owner);if(seq===epoch&&scope()===context)publish(v);}catch{if(seq===epoch&&scope()===context)set({notifications:[],unreadCount:0,total:0,error:'Bildirimler yüklenemedi. Tekrar deneyin.'});}finally{if(seq===epoch&&scope()===context)set({isLoading:false});}},markAsRead:mark,markAllAsRead:()=>mark()};
+});
+let previousScope=scope();
+useAuthStore.subscribe(()=>{const next=scope();if(next!==previousScope){previousScope=next;++epoch;useNotificationStore.setState({...empty});}});

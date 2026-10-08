@@ -415,6 +415,22 @@ async page=>{
     await page.getByRole('button',{name:'Kaydet',exact:true}).click();await ready;await login('president');release();await page.unroute(pattern);await page.goto(f.webBase+'/profile/'+f.ids.president);await page.getByRole('heading',{name:'Browser president',exact:true}).waitFor();check(await page.getByText('Browser final profile',{exact:true}).count()===0,'Previous profile leaked across owner');check(await page.getByText('Profil kaydedildi.',{exact:true}).count()===0,'Stale write acknowledgement visible to new owner');
   });
 
+
+  await test('notifications-real-total-outside-window',async()=>{
+    await fetch(f.controlBase+'/notification-seed',{method:'POST',headers:{'x-fixture-key':f.secret}});await login('member');await page.getByRole('button',{name:'Bildirimler',exact:true}).click();await page.getByText('65 okunmamış',{exact:true}).waitFor();await page.getByText('65 bildirimin son 50 kaydı gösteriliyor.',{exact:true}).waitFor();check(await page.locator('section[aria-label="Bildirim listesi"] article').count()===50,'Window is not50');
+  });
+  await test('notifications-error-is-not-empty-and-retry',async()=>{
+    const pattern='**/api/notifications/web';await page.route(pattern,route=>route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:'isolated failure'})}));await page.getByRole('button',{name:'Yenile',exact:true}).click();await page.getByRole('alert').filter({hasText:'Bildirimler yüklenemedi'}).waitFor();check(await page.getByText('Bildiriminiz yok.',{exact:true}).count()===0,'Failure rendered empty');await page.unroute(pattern);await page.getByRole('button',{name:'Yenile',exact:true}).click();await page.getByText('65 okunmamış',{exact:true}).waitFor();
+  });
+  await test('notifications-lost-read-ack-single-write-reconciled',async()=>{
+    let writes=0;const pattern='**/api/notifications/*/read';await page.route(pattern,async route=>{writes++;const r=await route.fetch({url:f.apiBase+new URL(route.request().url()).pathname});check(r.ok(),'Notification write failed');return route.abort('failed');});await page.getByRole('button',{name:'Okundu işaretle',exact:true}).first().click();await page.getByText('64 okunmamış',{exact:true}).waitFor();check(writes===1,'LostACK repeatedPUT');await page.unroute(pattern);
+  });
+  await test('notifications-read-all-includes-older-rows',async()=>{
+    await page.getByRole('button',{name:'Tümünü okundu işaretle',exact:true}).click();await page.getByText('0 okunmamış',{exact:true}).waitFor();check(await page.getByRole('button',{name:'Okundu işaretle',exact:true}).count()===0,'Unread rows remain');await page.reload();await page.getByRole('button',{name:'Bildirimler',exact:true}).click();await page.getByText('0 okunmamış',{exact:true}).waitFor();
+  });
+  await test('notifications-owner-switch-private-window',async()=>{
+    await login('president');await page.getByRole('button',{name:'Bildirimler',exact:true}).click();check(await page.getByText('Owned notification body',{exact:true}).count()===0,'Member notices leaked');
+  });
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};
 }

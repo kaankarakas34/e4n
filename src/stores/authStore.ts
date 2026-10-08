@@ -84,13 +84,21 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Verify token and refresh user data
+          const owner = get().user?.id;
+          const current = () => get().token === token && get().user?.id === owner;
           try {
             const user = await api.getMe(token);
-            set({ user, isLoading: false });
+            if (current()) set({ user, isLoading: false, error: null });
           } catch (e) {
-            // Token likely invalid/expired
-            console.warn('Session expired or invalid:', e);
-            set({ user: null, token: null, chapterId: null, isLoading: false });
+            if (!current()) return;
+            const status = (e as {status?:number}).status;
+            if (status === 401 || status === 403) {
+              set({ user: null, token: null, chapterId: null, isLoading: false });
+            } else {
+              // A cancelled navigation, network error or server outage does not
+              // prove that credentials expired. Existing API role checks still apply.
+              set({ error: 'Oturum bilgileri doğrulanamadı. Tekrar deneyin.', isLoading: false });
+            }
           }
         } catch (error) {
           set({

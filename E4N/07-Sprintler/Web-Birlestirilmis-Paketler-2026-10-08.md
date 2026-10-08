@@ -1,4 +1,11 @@
 # Birleştirilmiş web paketleri — 8 Ekim 2026
+## 8 Ekim — P39/P30 bildirim ve oturum bütün web paketi
+
+Bildirim sayacı tüm kayıtları, liste son50yi aynı SQL snapshotta okur. Canonical tekil/toplu okundu, rollback/replay/currentowner, kayıpACK GET-only uzlaştırma; zil ve topluluk ekranında ortak accessible liste/loading/error/empty/refresh. İnsan metninden sahte profil URL çıkarılmaz. Hesap/token değişince eski özel state hemen temizlenir. Auth refresh stale yanıt/çıkış koruması ve transientfail≠401/403 ayrımı birlikte tamamlandı.
+
+Kabul: taze bütün browser79/79 ve finalDB65/0; odaklı bildirim5/5+DB, actualPG17/Express/typedguard ve productionauthstore, actualroute180/27/17 PASS. Önceki75/4FAIL ve startup timeout korunur. Yeni frozen38API/rootPASS iddiası yok. Ayrıntı [[E4N/09-Dogrulama/P39-P30-Bildirim-Oturum-Veri-API-Web-2026-10-08]]. Şema23/47değişmedi; canlıwrite/deploy/mail/payment yok. P39/P30/P37 açık, büyük üyelik/grup/puan/shuffle kuyruğu ve bekleyen ürün soruları korunur; mobil7/LMS8enson.
+
+
 
 ## 8 Ekim — P39/P30 profil ve fatura bütün web paketi
 

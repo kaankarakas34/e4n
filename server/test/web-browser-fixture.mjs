@@ -75,6 +75,10 @@ try{
       await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,max_attendees,created_by) VALUES($1,'Browser Attendance Event',now()-interval '2 days','COMPLETED',true,'meeting',0,50,$2) ON CONFLICT(id) DO NOTHING",[ids.pastEvent,ids.admin]);
       await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'REGISTERED'),($1,$3,'PRESENT') ON CONFLICT(event_id,user_id) DO NOTHING",[ids.pastEvent,ids.member,ids.president]);res.end('seeded');return;
     }
+    if(req.url==='/notification-seed'&&req.method==='POST'){
+      await pool.query('DELETE FROM notifications WHERE user_id=$1',[ids.member]);
+      await pool.query("INSERT INTO notifications(user_id,title,message,type,read)SELECT $1,'Browser notice '||i,'Owned notification body','MESSAGE',false FROM generate_series(1,65)i",[ids.member]);res.end(JSON.stringify({seeded:65}));return;
+    }
     if(req.url==='/profile-paid-event'&&req.method==='POST'){
       await pool.query("INSERT INTO events(id,title,start_at,status,is_public,type,price,currency,max_attendees,created_by) VALUES($1,'Browser Paid Profile Event',now()+interval '3 days','PUBLISHED',true,'social',125,'TRY',50,$2) ON CONFLICT(id) DO NOTHING",[ids.paidEvent,ids.admin]);res.end('seeded');return;
     }
@@ -84,8 +88,9 @@ const observedAttendance=(await pool.query('SELECT user_id,status FROM attendanc
 const externalReferrals=(await pool.query("SELECT giver_id,receiver_id,type,status,description FROM referrals WHERE description='Browser external connection referral'")).rows;
 const guildSettings=(await pool.query("SELECT id,name,description,status,visitor_email_subject,visitor_email_template FROM power_teams WHERE name='Browser guild saved'")).rows;
 const acknowledgedGuilds=(await pool.query("SELECT id FROM power_teams WHERE name='Browser guild acknowledged'")).rows;
+const notificationCounts=(await pool.query('SELECT user_id,count(*)::int AS total,count(*) FILTER(WHERE read IS DISTINCT FROM TRUE)::int AS unread FROM notifications GROUP BY user_id ORDER BY user_id')).rows;
 const profileSettings=(await pool.query('SELECT id,name,phone,city,website,bio,company,tax_number,tax_office,billing_address FROM users WHERE id=$1',[ids.member])).rows;
-res.end(JSON.stringify({profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
+res.end(JSON.stringify({notificationCounts,profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
   });control.listen(0,'127.0.0.1');await once(control,'listening');
   const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:schema.applied.length,productionWrites:false,realMail:false,realPayment:false};
   writeFileSync(path.join(runDir,'fixture.json'),JSON.stringify(fixture,null,2));writeFileSync(path.join(root,'output/web-browser-current.json'),JSON.stringify(fixture,null,2));console.log('WEB_BROWSER_READY '+path.relative(root,path.join(runDir,'fixture.json')));

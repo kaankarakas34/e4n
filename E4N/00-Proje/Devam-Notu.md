@@ -1,5 +1,13 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — bağlantılı web görevleri ortak paketlerde
+
+[[Web-Birlestirilmis-Paketler-2026-10-08]] güncel sıra: 01 üyelik/ödeme/haklar/etkinlik; 02 grup başvuru/kabul/transfer; 03 puan/çıkarma/engel; 04 ödeme uygunluğu/shuffle. Ortak 05 veri/geçiş/geri dönüş ve 06 API/web sözleşmesi her paketle; 07 operasyon/güvenlik/bütün sürüm kabulü son kapı.
+
+Linear 34 açık ana görev parent+sprint eşlendi, SEC58/59/120 E4N72 altında. P30→üyelik, P31→grup, P35→ödeme, P36→veri; P01/P02/P03 kararları ilgili paket başında. Gerçek eksik bağımlılıklar eklendi; önceki kayıtlar korunur, grafikte döngü/parent-sprint uyuşmazlığı yok. Yeni görev/Done/yüzde artışı yok. Mevcut 50PASS browser kabulü yeniden çalıştırılmadı.
+
+Sonraki uygulama: 01 içindeki yapılabilir P26 yoklama/check-in/düzeltme + ödeme/bilet/kayıt/web bütünlüğü; P39 farkları aynı akışta. D kararları uydurulmaz. 05/06 ortak işler ürün akışını destekler; bütün hedef kapanışları bağımsız işi engellemez. Mobil7/LMS8 enson; canlı write/deploy/mail/payment yok.
+
 ## 8 Ekim — P37 görüşme, yönlendirme ve destek bütün web kabulü
 
 [[P37-Gorusme-Yonlendirme-Destek-Web-Kabulu-2026-10-08]]: Mevcut üç akış gerçek web/API/veri boyunca doğrulandı. Destek oluşturma/yanıt/kapatma; grup içi yönlendirme oluşturma/alıcı tarafından 120.50 başarılı sonuç; görüşme talebi oluşturma/alıcı kabulü. Yenileme, aynı hesaba geri dönüş, ilgisiz hesapta veri gizliliği ve son DB uzlaştırması aynı pakette. Kabul edilen talep gerçekleşmiş görüşme değildir.

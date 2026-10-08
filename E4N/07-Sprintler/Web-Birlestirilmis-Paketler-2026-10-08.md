@@ -1,0 +1,93 @@
+# Birleştirilmiş web paketleri — 8 Ekim 2026
+
+Kullanıcı talebi: bağlantılı işleri ardışık yürütmek ve ayrı duran paketleri birleştirmek. Linear canlı envanteri ve mevcut bağımlılıklar kontrol edildi. **34 açık ana görev 7 mevcut epic altında toplandı**; ayrıca SEC58/59/120 sürüm epic'ine alındı. Yeni küçük görev açılmadı. Kimlikler, geçmiş kanıtlar, Done kayıtları ve açık ürün kararları korunur.
+
+## Ortak paketler ve sıra
+
+| Sıra | Ortak paket | Boyut | Paket içi uygulama sırası |
+|---|---|---|---|
+| 01 | Üyelik, ödeme, haklar ve etkinlik | XL | E4N-75 → E4N-84 → E4N-85 → E4N-86 → E4N-107 → E4N-97 → E4N-98 → E4N-102 |
+| 02 | Grup başvuru, görüşme, kabul ve transfer | XL | E4N-74 → E4N-87 → E4N-88 → E4N-90 → E4N-91 → E4N-92 → E4N-103 |
+| 03 | Puan, çıkarma ve yeniden başvuru | XL | E4N-73 → E4N-93 → E4N-94 → E4N-95 → E4N-96 |
+| 04 | Ödeme uygunluğu ve shuffle | XL | E4N-99 → E4N-100 → E4N-101 |
+| 05 | Ortak veri modeli, geçiş ve geri dönüş | XL | E4N-81 → E4N-82 → E4N-83 → E4N-108 |
+| 06 | Aktif web sözleşmesi ve ürün anlatımı | L | E4N-80 → E4N-111 → E4N-113 → E4N-105 |
+| 07 | Operasyon, güvenlik ve web sürüm kabulü | XL | E4N-106 → E4N-109 → E4N-110 |
+
+## 01 — Üyelik, ödeme, haklar ve etkinlik
+
+Ana kayıt: E4N-67. Üyelik/şirket kararı → hak modeli ve eski hesap eşleme → ödeme/callback/fatura → bilet hakkı ve etkinlik kaydı/yoklama → üye paneli.
+
+D07/D10 fiyat/dönem, gecikme başlangıcı, kısıtlanan haklar/açılma ve bilet kuralları açık. P30'un puan/başvuru engeli ekranları 03 paketine bağlıdır. Şimdiki uygulama: P26 mevcut kayıt/yoklama akışının kalan bütün paketi; ödeme sağlayıcısı sandbox ve eski fatura kabulü aynı para akışının parçalarıdır.
+
+## 02 — Grup başvuru, görüşme, kabul ve transfer
+
+Ana kayıt: E4N-68. Grup/hizmet/başkan yetkisi kararı → açık lonca ve hizmet koltuğu → başvuru/başkan görüşmesi → kabul/ret/transfer + atomik geçmiş → üye/başkan/admin ekranları.
+
+Başkan hariç 35 kapasite P17 Done; yeniden yapılmaz. D05/D06/D08 ve grup bazlı rol modeli açık. P31'in shuffle yönetimi 04 paketinden sonra kapanır; grup kabul ekranı bunun yüzünden ertelenmez.
+
+## 03 — Puan, çıkarma ve yeniden başvuru
+
+Ana kayıt: E4N-69. D01–D04 → kaynak olay defteri → aylık kesinleşme/tablo → tekrar güvenli çıkarma/geçmiş → yeniden başvuru engeli → üye/admin açıklaması.
+
+Etkinlikte REGISTERED puan kaynağı değildir; doğrulanmış yoklama kaynağı 01 paketinden gelir. Çıkarma üyelik geçmişi 02 ile ortak kullanılır. Eşik/dönem/itiraz/ikinci çıkarılma ayrıntıları uydurulmaz.
+
+## 04 — Ödeme uygunluğu ve shuffle
+
+Ana kayıt: E4N-70. Üyelik/ödeme/başvuru engeli + hizmet/kapasite + dönem → uygunluk/kesim → önizleme → atomik uygulama/kalıcı geçmiş → bildirim ve üye/başkan/admin ekranı.
+
+01/02/03 verilerini tüketir. Kesim saati, grace etkileşimi, başkan davranışı ve dönem ayrıntıları açık. Önizleme/atomik geçmişin teslim edilmiş kısmı tekrar iş sayılmaz.
+
+## 05 — Ortak veri modeli, geçiş ve geri dönüş
+
+Ana kayıt: E4N-66. Sürümlü şema → D kararlarıyla hedef/eski veri eşleme → durum kısıtları/drift → üretim kopyasında geçiş provası/geri dönüş.
+
+Bu ortak hat her ürün paketiyle ilerler; tüm veri paketinin kapanması bağımsız web işlerinin başlangıç şartı değildir. P36 nihai provası shuffle hedef modeli ve gerçek yedek gerektirir. Canlı yazma/dağıtım yetkisi içermez.
+
+## 06 — Aktif web sözleşmesi ve ürün anlatımı
+
+Ana kayıt: E4N-71. Aktif yol/yanıt kararı → bağlantı/yönlendirme gibi gerçek sözleşme farkları → demo/kullanılmayan parça kararı → onaylı ürün metinleri.
+
+P39 API+ekran+veri testleri ilgili ürün paketiyle beraber teslim edilir; yalnız endpoint kapatmak ayrı teslim değildir. EXTERNAL alıcı kaynağı farkı açıktır. P40 ve WEB01–15 Done; tekrar yapılmaz. Mobil/eşitlik mevcut Sprint7'de ayrı kalır.
+
+## 07 — Operasyon, güvenlik ve web sürüm kabulü
+
+Ana kayıt: E4N-72. Ürün paketleri boyunca tekrar güvenli job/scheduler ve bütün regresyon → son veri/geri dönüş provası → Sprint6 kapsamlı güvenlik → sürüm kararı.
+
+P34 üyelik, puan ve shuffle işlerini tek ortak operasyon hattında destekler; bu runnerları üç defa yapmayız. P37 testleri her paketle ilerler, nihai kapanış tüm web kapılarına bağlıdır. SEC58/59/120 Sprint6; mobil Sprint7 ve LMS Sprint8 en son.
+
+## Birleştirilen teslimler
+
+- P30 üye web paneli üyelik/haklar epic'ine taşındı. Puan/engel ekranının nihai kabulü 03 paketinden sonra; üyelik bölümü önce uygulanabilir.
+- P31 başkan/admin web işlemleri grup epic'ine taşındı. Grup başvuru ve kabul ekranı grup işleriyle; shuffle bölümü 04'le birlikte doğrulanır.
+- P35 kalıcı fatura/erişim, ödeme ve callback paketiyle birleşti.
+- P26 etkinlik kayıt/bilet/yoklama, üyelik–ödeme–haklar paketine alındı. P25 yeni bilet hakkı kararına bağlıdır; mevcut P26 akışı bunun tamamlanmasını beklemek zorunda değildir.
+- P36 veri geçişi ve geri dönüş, P09/P10/P11 ile ortak veri epic'ine taşındı. Final prova hedef model + gerçek yedek gerektirir.
+- P01/P02/P03 kararları ilgili puan/grup/üyelik paketinin başına alındı; D kuralları uydurulmaz.
+- P08/P39/P41/P33 web sözleşmesi ve ürün anlatımı epic'inde toplandı. API düzeltmesi ilgili ürün akışının veri/ekran/test kabulüyle beraber teslim edilir.
+- P34 ortak operasyon, P37 bütün regresyon, SEC58/59/120 ve P38 son sürüm kabulü aynı operasyon/sürüm epic'indedir.
+
+Açık görevlerin sprinti parent epic ile eşlendi; Done alt görevlerin tarihsel sprintleri değiştirilmedi. Paket sırası UI'daki açıklamalarda kayıtlıdır; Linear'ın elle sürükleme sırası değiştirildi iddiası yok.
+
+## Gerçek bağımlılık düzeltmeleri
+
+- P13 şirket/eski hesap geçişi ← P03 üyelik kararı ve P10 hedef model.
+- P15 açık lonca yaşam döngüsü ← P02 grup kararı ve P12 hak modeli.
+- P22 aylık kesinleşme ← P21 puan olay defteri.
+- P27 ödeme uygunluğu ← P12 hak modeli; mevcut grup/engel/karar bağımlılıkları korunur.
+- P37 nihai bütün web kabulü ← P26, P30, P31, P33, P41; mevcut bağımlılıklar da korunur.
+
+Bu kapılar görevlerin **tam kapanışı** içindir. Bağımsız mevcut akış düzeltmeleri ve test hazırlığı yapılabilir. Epic'ler arasında yapay bir tamamlama zinciri kurulmadı. Değişen görevlerde önceki blockedBy kayıtları korundu; açık görev grafiğinde döngü yok. 34 görev için parent/sprint doğrulaması: 0 uyuşmazlık.
+
+## Şimdiki hareket sırası
+
+1. **01 paketinin yapılabilir kısmı: P26 kayıt → gerçek yoklama/check-in → düzeltme geçmişi → bilet/ödeme/sayaç/web bütün kabulü.** Açık yoklama semantiği kaynak ve mevcut yetki modelinden netleştirilmeden yeni politika seçilmez.
+2. Aynı ürün akışını etkileyen P39 API/ekran farkları birlikte kapatılır. EXTERNAL bağlantı alıcı kaynağındaki fark için kabul edilmiş bağlantı/uygunluk sözleşmesi ayrıca açık kalır.
+3. D07/D10 cevaplarıyla 01'in hedef üyelik/hakları; D05/D06/D08 cevaplarıyla 02; D01–D04 ile 03; bu çıktılarla 04 tamamlanır. Kararsız hedefler olmuş gibi Done sayılmaz.
+4. 05 veri hattı ve 06 sözleşme hattı ilgili ürün paketleriyle ilerler; 07 regresyonu her teslimde, kapsamlı güvenlik ve nihai sürüm kararı en sonda.
+
+## Ortak teslim ölçütü ve sınırlar
+
+Veri/migration + API ve rol/veri sınırları + gerçek web ekranları + izole bütün akış testi + commit/push + Linear/Obsidian tek paket kabulüdür. Alt endpoint, düğme veya cron tek başına ana paket teslimi sayılmaz. Bu düzenleme ilerleme yüzdesini artırmaz, iş durumlarını Done yapmaz.
+
+Mobil Sprint7, kurs/eğitim/sınav Sprint8 en son. Web kabulü bunlara bağlanmaz. Canlı Supabase yazma, üretim dağıtımı, gerçek mail/ödeme yok. Bu tur plan/Linear düzenlemesidir; uygulama kodu ve test sonucu değişmedi.

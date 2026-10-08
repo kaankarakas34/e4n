@@ -1,3 +1,7 @@
+# Güncel büyük web paketleri
+
+8 Ekim yeniden düzenlemesi: [[Web-Birlestirilmis-Paketler-2026-10-08]] güncel ve bağlayıcı çalışma sırasıdır. 34 açık ana görev 7 ortak epic/paket altında; SEC58/59/120 son sürüm paketinde. Üye/admin ekranı, ödeme/fatura ve geçiş/geri dönüş aynı akış paketinde birlikte teslim edilir. Aşağıdaki önceki notlar tarihsel kanıttır.
+
 # Büyük web paketlerinin uygulama sırası
 
 Eğitim dışı web öncelikli. Mobil Sprint 7 ve kurs/eğitim/sınav Sprint 8 en son. Her paket API/veri/ekran/test/commit bütünlüğüyle değerlendirilir; küçük alt düzeltmeler ana teslim sayılmaz.

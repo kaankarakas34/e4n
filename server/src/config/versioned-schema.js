@@ -41,6 +41,7 @@ const membershipHistorySql = readFileSync(path.join(serverDir, 'supabase/migrati
 const eventRegistrationStatusSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008081425_event_registration_status.sql'), 'utf8');
 const eventAttendanceVerificationSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008092049_event_attendance_verification.sql'), 'utf8');
 const selfProfileFieldsSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008145443_self_profile_fields.sql'), 'utf8');
+const groupMeetingAttendanceSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008191226_group_meeting_attendance.sql'), 'utf8');
 const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
   { version: '0002_runtime_extensions', checksum: checksum(runtimeSource), apply: client => runMigrations(client) },
@@ -65,6 +66,7 @@ const versions = [
   { version: '0021_event_registration_status', checksum: checksum(eventRegistrationStatusSql), apply: client => client.query(eventRegistrationStatusSql) },
   { version: '0022_event_attendance_verification', checksum: checksum(eventAttendanceVerificationSql), apply: client => client.query(eventAttendanceVerificationSql) },
   { version: '0023_self_profile_fields', checksum: checksum(selfProfileFieldsSql), apply: client => client.query(selfProfileFieldsSql) },
+  { version: '0024_group_meeting_attendance', checksum: checksum(groupMeetingAttendanceSql), apply: client => client.query(groupMeetingAttendanceSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

@@ -38,7 +38,7 @@ try{
   let sqlReady=false;
   for(let attempt=0;attempt<30;attempt++){try{await pool.query('SELECT 1');sqlReady=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,500));}}
   if(!sqlReady)throw Error('Disposable fixture did not accept a SQL connection');
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==23)throw Error('Unexpected schema version count');
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==24)throw Error('Unexpected schema version count');
   const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice','pastEvent','paidEvent'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);
@@ -90,10 +90,12 @@ const guildSettings=(await pool.query("SELECT id,name,description,status,visitor
 const acknowledgedGuilds=(await pool.query("SELECT id FROM power_teams WHERE name='Browser guild acknowledged'")).rows;
 const notificationCounts=(await pool.query('SELECT user_id,count(*)::int AS total,count(*) FILTER(WHERE read IS DISTINCT FROM TRUE)::int AS unread FROM notifications GROUP BY user_id ORDER BY user_id')).rows;
 const profileSettings=(await pool.query('SELECT id,name,phone,city,website,bio,company,tax_number,tax_office,billing_address FROM users WHERE id=$1',[ids.member])).rows;
-res.end(JSON.stringify({notificationCounts,profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
+const batchMeetings=(await pool.query("SELECT e.id,e.created_by,(SELECT count(*)::int FROM attendance a WHERE a.event_id=e.id) participants,(SELECT count(*)::int FROM event_attendance_verifications h WHERE h.event_id=e.id) history FROM events e WHERE title IN ('Browser batch observed meeting','Browser batch retry meeting')")).rows;
+res.end(JSON.stringify({batchMeetings,notificationCounts,profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
   });control.listen(0,'127.0.0.1');await once(control,'listening');
   const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:schema.applied.length,productionWrites:false,realMail:false,realPayment:false};
   writeFileSync(path.join(runDir,'fixture.json'),JSON.stringify(fixture,null,2));writeFileSync(path.join(root,'output/web-browser-current.json'),JSON.stringify(fixture,null,2));console.log('WEB_BROWSER_READY '+path.relative(root,path.join(runDir,'fixture.json')));
   timer=setTimeout(()=>close().then(()=>process.exit(1)),20*60*1000);
   process.once('SIGINT',()=>close().then(()=>process.exit(0)));
 }catch(e){console.error(e.message);await close();process.exitCode=1;}
+

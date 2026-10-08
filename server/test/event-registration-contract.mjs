@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,23);
+  assert.equal((await applyVersionedSchema()).applied.length,24);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -100,8 +100,8 @@ async function main() {
   await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'ABSENT')",[one,alice]);
   // Rehearse the pre-0021 constraint upgrade with an existing actual legacy row.
   const legacyBefore=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; ALTER TABLE attendance DROP CONSTRAINT attendance_status_check; ALTER TABLE attendance ADD CONSTRAINT attendance_status_check CHECK(status IN ('PRESENT','ABSENT','LATE','SUBSTITUTE','MEDICAL'))");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields']);
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; ALTER TABLE attendance DROP CONSTRAINT attendance_status_check; ALTER TABLE attendance ADD CONSTRAINT attendance_status_check CHECK(status IN ('PRESENT','ABSENT','LATE','SUBSTITUTE','MEDICAL'))");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance']);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),legacyBefore,'Constraint upgrade never rewrites legacy attendance');
   await assert.rejects(pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'INVALID')",[two,alice]),e=>e.code==='23514');
@@ -190,7 +190,7 @@ async function main() {
   assert.equal((await call('/events',bob)).status,500);pool.query=original;assert.equal((await list(bob)).find(e=>e.id===two).is_registered,true);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   writeFileSync(path.join(root,'output/event-registration-browser.json'),JSON.stringify({owner:bob,other:alice,event:await detail(bob,two),list:await list(bob)}));
-  console.log('Event registration PASS: fresh23/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
+  console.log('Event registration PASS: fresh24/repeat0; own flag true/false/null, other/query spoof/deleted/invalid tokens, filters/cache, read no writes, actual TS transport register/read/replay one row/no repeated mail, failed list/recovery.');
 }
 let exitCode = 0;
 try {

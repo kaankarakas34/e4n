@@ -63,7 +63,7 @@ async function main(){
  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');
  // Roles must pre-exist: database dumps do not contain cluster roles.
  await pool.query('CREATE ROLE anon; CREATE ROLE authenticated');
- assert.equal((await applyVersionedSchema()).applied.length,23);
+ assert.equal((await applyVersionedSchema()).applied.length,24);
  const [admin,member,other,event,invoice,document]=Array.from({length:6},()=>randomUUID());
  for(const [i,id] of [admin,member,other].entries())await pool.query("INSERT INTO users(id,email,name,profession,role) VALUES($1,$2,$3,'Fixture',$4)",[id,`restore-${i}@example.invalid`,i===1?'Üye – 😀':'Fixture',i===0?'ADMIN':'MEMBER']);
  await pool.query('UPDATE users SET bio=$1,website=$2 WHERE id=$3',['Kalıcı biyografi 😀','https://example.invalid/restored',member]);
@@ -113,9 +113,9 @@ async function main(){
  const profile=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/user/profile-settings',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(profile.ownerId,member);assert.equal(profile.bio,'Kalıcı biyografi 😀');assert.equal(profile.website,'https://example.invalid/restored');assert.ok(!('password_hash' in profile));assert.deepEqual(await manifest(restored),before);
  await assert.rejects(restored.query('DELETE FROM group_membership_history'),e=>e.code==='23514');assert.deepEqual(await manifest(restored),before);
  const output=path.resolve(serverDir,'../output');mkdirSync(output,{recursive:true});
- const report={syntheticOnly:true,productionBackup:false,versions:23,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
+ const report={syntheticOnly:true,productionBackup:false,versions:24,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
  writeFileSync(path.join(output,'backup-restore-rehearsal.json'),JSON.stringify(report,null,2));
- console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 23-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
+ console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 24-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{
  if(appServer)await new Promise(r=>appServer.close(r));if(restored)await restored.end();if(pool)await pool.end();

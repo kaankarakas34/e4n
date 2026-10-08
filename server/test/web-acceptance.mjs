@@ -5,6 +5,7 @@ import path from 'node:path';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites=[
+  ['group-meeting-attendance-contract','Group-scoped explicit bulk meeting attendance, immutable history and canonical retry'],
   ['auth-refresh-contract','Session refresh stale response and transient failure guards'],
   ['notifications-contract','Owner-scoped notification counts, read/replay and rollback'],
   ['self-profile-contract','Owned profile/billing persistence, optimistic conflict, validation and safe acknowledgement'],

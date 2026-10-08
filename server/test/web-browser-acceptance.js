@@ -31,6 +31,30 @@ async page=>{
     await page.goto(f.webBase+'/auth/login');await page.getByLabel('E-posta Adresi').fill(actor+'@example.invalid');await page.getByLabel('Şifre',{exact:true}).fill(f.password);await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');await page.getByText('Browser '+actor,{exact:true}).first().waitFor();
   }
   async function visit(url,heading){await page.goto(f.webBase+url);await page.getByRole('heading',{name:heading,exact:true}).first().waitFor();}
+  await test('group-meeting-explicit-selection-required',async()=>{
+    await login('president');await page.goto(f.webBase+'/group-management');await page.getByRole('button',{name:'Yoklama',exact:true}).click();await page.getByRole('button',{name:'Bu Haftanın Yoklamasını Gir',exact:true}).click();
+    check(await page.locator('input[type=radio]:checked').count()===0,'Members silently marked PRESENT');await page.getByRole('button',{name:'Yoklamayı Kaydet',exact:true}).click();await page.getByRole('status').filter({hasText:'Her aktif üye'}).waitFor();
+  });
+  await test('group-meeting-lost-ack-read-reconciliation',async()=>{
+    await page.getByLabel('Toplantı konusu',{exact:true}).fill('Browser batch observed meeting');await page.getByLabel('Yoklama açıklaması',{exact:true}).fill('Browser explicit observation');
+    const radios=page.locator('input[type=radio][aria-label$=" PRESENT"]');check(await radios.count()===36,'Expected full active roster');for(const radio of await radios.all())await radio.check();
+    let posts=0;const pattern='**/api/events/attendance';await page.route(pattern,async route=>{posts++;const r=await route.fetch({url:f.apiBase+'/api/events/attendance'});check(r.ok(),'Batch mutation failed');return route.abort('failed');});
+    await page.getByRole('button',{name:'Yoklamayı Kaydet',exact:true}).click();await page.getByRole('status').filter({hasText:'açıklamalı geçmiş kaydı'}).waitFor();check(posts===1,'Lost acknowledgement repeated POST');await page.unroute(pattern);
+    await page.getByText('Browser batch observed meeting',{exact:true}).first().waitFor();
+  });
+  await test('group-meeting-new-form-has-no-old-selection',async()=>{
+    await page.getByRole('button',{name:'Bu Haftanın Yoklamasını Gir',exact:true}).click();check(await page.locator('input[type=radio]:checked').count()===0,'Old observations became new default');check(await page.getByLabel('Yoklama açıklaması',{exact:true}).inputValue()==='','Old explanation retained');
+  });
+  await test('group-meeting-unknown-reload-reuses-command',async()=>{
+    await page.getByLabel('Toplantı konusu',{exact:true}).fill('Browser batch retry meeting');await page.getByLabel('Yoklama açıklaması',{exact:true}).fill('Browser retry observation');for(const radio of await page.locator('input[type=radio][aria-label$=" PRESENT"]').all())await radio.check();
+    const bodies=[];let once=true;const pattern='**/api/events/attendance';await page.route(pattern,async route=>{bodies.push(route.request().postDataJSON());if(once){once=false;return route.abort('failed');}const r=await route.fetch({url:f.apiBase+'/api/events/attendance'});return route.fulfill({response:r});});
+    await page.getByRole('button',{name:'Yoklamayı Kaydet',exact:true}).click();await page.getByRole('status').filter({hasText:'henüz doğrulanamadı'}).waitFor();
+    await page.reload();await page.getByRole('button',{name:'Yoklama',exact:true}).click();await page.getByRole('button',{name:'Bu Haftanın Yoklamasını Gir',exact:true}).click();check(await page.getByLabel('Toplantı konusu',{exact:true}).isDisabled(),'Pending command became editable after reload');await page.getByRole('button',{name:'Aynı Yoklamayı Tekrar Dene',exact:true}).click();await page.getByRole('status').filter({hasText:'açıklamalı geçmiş kaydı'}).waitFor();check(bodies.length===2&&bodies[0].requestId===bodies[1].requestId&&JSON.stringify(bodies[0])===JSON.stringify(bodies[1]),'Retry did not preserve the complete command');await page.unroute(pattern);
+  });
+  await test('member-quick-attendance-does-not-create-meeting',async()=>{
+    await login('member');await page.getByRole('button',{name:/^Yoklama Bildir/}).click();await page.getByText('Vekil ve mazeret bildirimi bu ekranda henüz kullanıma açık değil.',{exact:true}).waitFor();check(await page.getByRole('button',{name:'Bildir',exact:true}).count()===0,'Unsupported report can be submitted');await page.getByRole('link',{name:'Etkinliklere git',exact:true}).click();await page.waitForURL('**/events');
+  });
+
   await test('admin-login',()=>login('admin'));
   await test('application-styles-loaded',async()=>{
     const styles=await page.evaluate(()=>{
@@ -434,3 +458,5 @@ async page=>{
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};
 }
+
+

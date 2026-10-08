@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,23);
+  assert.equal((await applyVersionedSchema()).applied.length,24);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -134,7 +134,7 @@ async function main() {
   for(let i=0;i<101;i++)await pool.query("INSERT INTO payment_transactions(merchant_oid,user_id,amount,status,action_type) VALUES($1,$2,1,'PENDING','membership')",['bounded-'+String(i).padStart(3,'0'),member]);
   const bounded=await call('/membership-records').then(r=>r.json());assert.equal(bounded.totals.payments,102);assert.equal(bounded.payments.length,100);assert.equal(validRecords(bounded,member,member),true);
   assert.equal((await pool.query('SELECT count(*)::int n FROM invoice_files')).rows[0].n,2);assert.equal((await pool.query('SELECT count(*)::int n FROM subscription_reminder_deliveries')).rows[0].n,1);
-  console.log('Membership records PASS: fresh23/repeat0; own/admin/current-role snapshot, foreign/unowned proof not inferred, null/legacy/end-state independence, exact invoice bytes+foreign denial, reminder UNKNOWN, DTOowner/duplicates/count bounds, concurrent snapshot, redacted500/recovery, no writes or providers from read endpoints.');
+  console.log('Membership records PASS: fresh24/repeat0; own/admin/current-role snapshot, foreign/unowned proof not inferred, null/legacy/end-state independence, exact invoice bytes+foreign denial, reminder UNKNOWN, DTOowner/duplicates/count bounds, concurrent snapshot, redacted500/recovery, no writes or providers from read endpoints.');
 }
 
 let exitCode=0;

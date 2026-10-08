@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
+import {groupMeetingAttendanceApi, type MeetingAttendanceCommand, type MeetingObservation} from '../api/groupMeetingAttendance';
 import {
     Users,
     Layers,
@@ -23,7 +24,7 @@ import {
 
 export function GroupManagerDashboard() {
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
     const [myGroups, setMyGroups] = useState<any[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
@@ -43,7 +44,12 @@ export function GroupManagerDashboard() {
     const [attendancePending, setAttendancePending] = useState(false);
     const [attendanceNotice, setAttendanceNotice] = useState<{ context: string; text: string } | null>(null);
     const attendanceBusy = useRef(false);
-    const attendanceContext = `${user?.id}:${user?.role}:${selectedGroup?.id}`;
+    const pendingAttendance = useRef<{context:string;command:MeetingAttendanceCommand}|null>(null);
+    const [attendanceReason,setAttendanceReason]=useState('');
+    const [meetingTopic,setMeetingTopic]=useState('Haftalık Toplantı');
+    const [hasPendingAttendance,setHasPendingAttendance]=useState(false);
+    const attendanceContext = `${user?.id}:${user?.role}:${token}:${selectedGroup?.id}`;
+    const pendingAttendanceKey = `e4n-meeting-pending:${user?.id}:${selectedGroup?.id}`;
     const currentAttendanceContext = useRef(attendanceContext);
     currentAttendanceContext.current = attendanceContext;
     const mounted = useRef(true);
@@ -52,54 +58,54 @@ export function GroupManagerDashboard() {
         return () => { mounted.current = false; };
     }, []);
 
-    const handleAttendanceSubmit = async () => {
-        if (attendanceBusy.current || !mounted.current || currentAttendanceContext.current !== attendanceContext || loadedFor !== readContext || !user?.id || !selectedGroup?.id) return;
-        if (!confirm('Yoklamayı kaydetmek istiyor musunuz?')) return;
-        const context = attendanceContext;
-        const isCurrent = () => mounted.current && currentAttendanceContext.current === context;
-        attendanceBusy.current = true;
-        setAttendancePending(true);
-        setAttendanceNotice(null);
+    useEffect(()=>{
+        pendingAttendance.current=null;setHasPendingAttendance(false);setAttendanceData({});setAttendanceReason('');setMeetingTopic('Haftalık Toplantı');setAttendanceNotice(null);
         try {
-            const result = await api.submitAttendance({
-                group_id: selectedGroup.id,
-                meeting_date: new Date().toISOString(),
-                topic: (document.getElementById('meeting-topic') as HTMLInputElement)?.value || '',
-                items: members.filter(m => m.status === 'ACTIVE').map(m => ({ user_id: m.id, status: attendanceData[m.id] })),
-            });
-            if (!isCurrent()) return;
-            if (result?.success !== true || typeof result.eventId !== 'string' || !result.eventId.trim()) {
-                throw new Error('Unconfirmed attendance response');
+            const command=JSON.parse(sessionStorage.getItem(pendingAttendanceKey)||'null') as MeetingAttendanceCommand|null;
+            if(command?.group_id===selectedGroup?.id&&typeof command.requestId==='string'&&Array.isArray(command.items)&&typeof command.topic==='string'&&typeof command.reason==='string'){
+                pendingAttendance.current={context:attendanceContext,command};setHasPendingAttendance(true);setAttendanceData(Object.fromEntries(command.items.map(i=>[i.user_id,i.status])));setAttendanceReason(command.reason);setMeetingTopic(command.topic);
+                setAttendanceNotice({context:attendanceContext,text:'Önceki yoklamanın sonucu doğrulanmayı bekliyor. Aynı işlemle devam edin.'});
             }
-            setAttendanceNotice({ context, text: 'Yoklama kaydı sunucu tarafından onaylandı.' });
-            setActiveTab('ATTENDANCE');
-            try {
-                const updatedMeetings = await api.getGroupMeetings(selectedGroup.id);
-                if (!Array.isArray(updatedMeetings)) throw new Error('Invalid meetings response');
-                if (isCurrent()) setMeetings(updatedMeetings);
-            } catch {
-                if (isCurrent()) setAttendanceNotice({ context, text: 'Yoklama kaydı onaylandı; toplantı listesi yenilenemedi. Yeniden kayıt göndermeyin.' });
+        }catch{/* Storage may be unavailable; the mounted form still retains its command. */}
+    },[attendanceContext,pendingAttendanceKey,selectedGroup?.id]);
+    const handleAttendanceSubmit = async () => {
+        if(attendanceBusy.current||!mounted.current||loadedFor!==readContext||!user?.id||!selectedGroup?.id)return;
+        const context=attendanceContext;
+        const isCurrent=()=>mounted.current&&currentAttendanceContext.current===context;
+        let pending=pendingAttendance.current;
+        if(!pending||pending.context!==context){
+            const active=members.filter(m=>m.status==='ACTIVE');
+            if(!active.length||!attendanceReason.trim()||!meetingTopic.trim()||active.some(m=>!attendanceData[m.id])){
+                setAttendanceNotice({context,text:'Her aktif üye için katılım seçin; toplantı konusu ve yoklama açıklamasını yazın.'});return;
             }
-        } catch {
-            if (isCurrent()) setAttendanceNotice({ context, text: 'Kayıt sonucu doğrulanamadı. Yeniden göndermeden önce toplantı kayıtlarını kontrol edin.' });
-        } finally {
-            attendanceBusy.current = false;
-            if (mounted.current) setAttendancePending(false);
+            if(!confirm('Yoklamayı kaydetmek istiyor musunuz?'))return;
+            pending={context,command:{requestId:crypto.randomUUID(),group_id:selectedGroup.id,meeting_date:new Date().toISOString(),topic:meetingTopic.trim(),reason:attendanceReason.trim(),items:active.map(m=>({user_id:m.id,status:attendanceData[m.id] as MeetingObservation}))}};
+            pendingAttendance.current=pending;setHasPendingAttendance(true);
+            try{sessionStorage.setItem(pendingAttendanceKey,JSON.stringify(pending.command));}catch{}
         }
+        attendanceBusy.current=true;setAttendancePending(true);setAttendanceNotice(null);
+        try{
+            try{await groupMeetingAttendanceApi.save(user.id,pending.command);}
+            catch(error){
+                try{await groupMeetingAttendanceApi.reconcile(user.id,pending.command);}
+                catch(readError){
+                    if(isCurrent()){
+                        const rejected=[400,409,422].includes((error as any)?.status)&&(readError as any)?.status===404;
+                        if(rejected){pendingAttendance.current=null;setHasPendingAttendance(false);try{sessionStorage.removeItem(pendingAttendanceKey);}catch{}}
+                        setAttendanceNotice({context,text:rejected?'Yoklama reddedildi. Güncel üyeleri yükleyip seçimleri kontrol edin.':'Kayıt sonucu henüz doğrulanamadı. Tekrar aynı yoklama işlemiyle denenecek; yeni toplantı oluşturulmayacak.'});
+                    }
+                    return;
+                }
+            }
+            if(!isCurrent())return;
+            pendingAttendance.current=null;setHasPendingAttendance(false);setAttendanceData({});setAttendanceReason('');
+            try{sessionStorage.removeItem(pendingAttendanceKey);}catch{}
+            setAttendanceNotice({context,text:'Yoklama ve açıklamalı geçmiş kaydı sunucu tarafından doğrulandı.'});setActiveTab('ATTENDANCE');
+            try{const rows=await api.getGroupMeetings(selectedGroup.id);if(!Array.isArray(rows))throw Error();if(isCurrent())setMeetings(rows);}
+            catch{if(isCurrent())setAttendanceNotice({context,text:'Yoklama kaydı onaylandı; toplantı listesi yenilenemedi. Yeniden kayıt göndermeyin.'});}
+        }finally{attendanceBusy.current=false;if(mounted.current)setAttendancePending(false);}
     };
 
-
-
-    // Initialize attendance data when members change
-    useEffect(() => {
-        if (members.length > 0) {
-            const initial: Record<string, string> = {};
-            members.forEach((m: any) => {
-                initial[m.id] = 'PRESENT';
-            });
-            setAttendanceData(initial);
-        }
-    }, [members]);
     const [activities, setActivities] = useState<any[]>([]);
     const [visitors, setVisitors] = useState<any[]>([]);
     const [powerTeams, setPowerTeams] = useState<any[]>([]);
@@ -631,7 +637,10 @@ export function GroupManagerDashboard() {
                         <CardContent>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Toplantı Konusu</label>
-                                <input type="text" className="w-full border rounded-md p-2" defaultValue="Haftalık Toplantı" id="meeting-topic" />
+                                <input aria-label="Toplantı konusu" type="text" maxLength={200} disabled={hasPendingAttendance||attendancePending} className="w-full border rounded-md p-2" value={meetingTopic} onChange={e=>setMeetingTopic(e.target.value)} id="meeting-topic" />
+                                <label className="block text-sm font-medium mt-3" htmlFor="attendance-reason">Yoklama açıklaması</label>
+                                <textarea id="attendance-reason" maxLength={500} disabled={hasPendingAttendance||attendancePending} className="w-full border rounded-md p-2" value={attendanceReason} onChange={e=>setAttendanceReason(e.target.value)} />
+                                <p className="text-sm text-gray-500">Katılım durumlarını gözleme göre seçin. Seçilmeyen üyeler otomatik var sayılmaz.</p>
                             </div>
                             <div className="overflow-x-auto border rounded-md">
                                 <table className="min-w-full divide-y divide-gray-200">
@@ -653,6 +662,8 @@ export function GroupManagerDashboard() {
                                                         <input
                                                             type="radio"
                                                             name={`status-${member.id}`}
+                                                            aria-label={`${member.full_name || member.name} ${status}`}
+                                                            disabled={hasPendingAttendance||attendancePending}
                                                             checked={attendanceData[member.id] === status}
                                                             onChange={() => setAttendanceData({ ...attendanceData, [member.id]: status })}
                                                             className={`focus:ring-indigo-500 h-4 w-4 border-gray-300 ${status === 'PRESENT' ? 'text-green-600' : status === 'ABSENT' ? 'text-red-600' : status === 'LATE' ? 'text-yellow-600' : 'text-blue-600'}`}
@@ -666,7 +677,7 @@ export function GroupManagerDashboard() {
                             </div>
                             <div className="mt-6 flex justify-end">
                                 <Button variant="primary" disabled={attendancePending} onClick={handleAttendanceSubmit}>
-                                    Yoklamayı Kaydet
+                                    {hasPendingAttendance ? 'Aynı Yoklamayı Tekrar Dene' : 'Yoklamayı Kaydet'}
                                 </Button>
                             </div>
                         </CardContent>

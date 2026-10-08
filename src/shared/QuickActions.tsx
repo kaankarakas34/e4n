@@ -13,51 +13,10 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Modal } from './Modal';
-import { api } from '../api/api';
-import { useAuthStore } from '../stores/authStore';
 
 export function QuickActions() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-  const [meetings, setMeetings] = useState<any[]>([]);
-  const [selectedMeeting, setSelectedMeeting] = useState<string>('');
-  const [attendanceStatus, setAttendanceStatus] = useState<'PRESENT' | 'ABSENT' | 'SUBSTITUTE'>('PRESENT');
-  const [substituteName, setSubstituteName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuthStore();
-
-  const handleAttendanceClick = async () => {
-    setShowAttendanceModal(true);
-    // Fetch upcoming meetings - for now, using events logic or mock
-    const events = await api.getEvents();
-    // Filter for meetings in the future or recent past
-    const now = new Date();
-    const upcoming = events.filter((e: any) => new Date(e.start_at) > new Date(now.getTime() - 86400000 * 7)); // Show last week + future
-    setMeetings(upcoming);
-  };
-
-  const submitAttendance = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedMeeting) return;
-
-    setLoading(true);
-    try {
-      await api.submitAttendance({
-        userId: user.id,
-        meetingId: selectedMeeting,
-        status: attendanceStatus,
-        substituteName: attendanceStatus === 'SUBSTITUTE' ? substituteName : undefined
-      });
-      alert('Yoklama bildiriminiz işleme alındı.');
-      setShowAttendanceModal(false);
-      setSubstituteName('');
-      setAttendanceStatus('PRESENT');
-    } catch (error) {
-      console.error(error);
-      alert('Bir hata oluştu.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleAttendanceClick = () => setShowAttendanceModal(true);
 
   const actions = [
     {
@@ -179,80 +138,12 @@ export function QuickActions() {
         onClose={() => setShowAttendanceModal(false)}
         title="Yoklama Bildirimi"
       >
-        <form onSubmit={submitAttendance} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Toplantı Seçin
-            </label>
-            <select
-              required
-              className="block w-full border-gray-300 rounded-md shadow-sm p-2 border"
-              value={selectedMeeting}
-              onChange={(e) => setSelectedMeeting(e.target.value)}
-            >
-              <option value="">Seçiniz...</option>
-              {meetings.map(m => (
-                <option key={m.id} value={m.id}>
-                  {new Date(m.start_at).toLocaleDateString()} - {m.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Katılım Durumu
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                className={`p-3 border rounded-lg text-center text-sm font-medium transition-colors ${attendanceStatus === 'PRESENT' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                onClick={() => setAttendanceStatus('PRESENT')}
-              >
-                Katılacağım
-              </button>
-              <button
-                type="button"
-                className={`p-3 border rounded-lg text-center text-sm font-medium transition-colors ${attendanceStatus === 'SUBSTITUTE' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                onClick={() => setAttendanceStatus('SUBSTITUTE')}
-              >
-                Yerime Biri Gelecek
-              </button>
-              <button
-                type="button"
-                className={`p-3 border rounded-lg text-center text-sm font-medium transition-colors ${attendanceStatus === 'ABSENT' ? 'bg-red-100 border-red-500 text-red-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                onClick={() => setAttendanceStatus('ABSENT')}
-              >
-                Katılamayacağım
-              </button>
-            </div>
-          </div>
-
-          {attendanceStatus === 'SUBSTITUTE' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vekil İsmi (Ad Soyad)
-              </label>
-              <input
-                type="text"
-                required
-                className="block w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500"
-                value={substituteName}
-                onChange={(e) => setSubstituteName(e.target.value)}
-                placeholder="Vekilin adını ve soyadını giriniz"
-              />
-            </div>
-          )}
-
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" type="button" onClick={() => setShowAttendanceModal(false)} className="mr-2">
-              İptal
-            </Button>
-            <Button variant="primary" type="submit" isLoading={loading}>
-              Bildir
-            </Button>
-          </div>
-        </form>
+        <div className="space-y-4">
+          <p>Etkinlik kaydı için etkinlikler sayfasını kullanın. Gerçekleşen katılım yönetici yoklamasıyla doğrulanır.</p>
+          <p>Vekil ve mazeret bildirimi bu ekranda henüz kullanıma açık değil.</p>
+          <Link to="/events" className="inline-block text-indigo-600 underline" onClick={()=>setShowAttendanceModal(false)}>Etkinliklere git</Link>
+          <Button variant="outline" onClick={()=>setShowAttendanceModal(false)}>Kapat</Button>
+        </div>
       </Modal>
     </>
   );

@@ -19,7 +19,7 @@ async function main(){
   for(const key of ['DATABASE_URL','POSTGRES_URL','SUPABASE_DB_URL'])delete process.env[key];
   Object.assign(process.env,{DOTENV_CONFIG_PATH:path.join(serverDir,'test','.nonexistent-env'),DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:dbUser,DB_PASSWORD:dbPassword,DB_NAME:dbName,NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'isolated_fixture_signing_key'});
   ({default:pool}=await import('../src/config/db.js'));for(let i=0;i<20;i++){try{await pool.query('SELECT 1');break;}catch{if(i===19)throw Error('Database connection failed');await new Promise(r=>setTimeout(r,500));}}
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');assert.equal((await applyVersionedSchema()).applied.length,23);assert.equal((await applyVersionedSchema()).applied.length,0);
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');assert.equal((await applyVersionedSchema()).applied.length,24);assert.equal((await applyVersionedSchema()).applied.length,0);
   const {runSubscriptionReminders,scheduleSubscriptionReminders,subscriptionReminderLock}=await import('../src/cron/subscription-reminders.js');
   const reference=new Date('2026-01-10T12:00:00Z'),ids=[];
   for(const [i,days] of [3,1,-1,-3,-5].entries()){
@@ -56,6 +56,6 @@ async function main(){
   const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('No real mail allowed');}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base=`http://127.0.0.1:${appServer.address().port}/api`;
   const response=await fetch(`${base}/notifications`,{headers:{Authorization:`Bearer ${jwt.sign({id:ids[0],role:'MEMBER'},process.env.JWT_SECRET)}`}});assert.equal(response.status,200);const notifications=await response.json();assert.equal(notifications.length,1);assert.match(notifications[0].title,/Hatırlatması/);assert.ok(!('delivery_state' in notifications[0]));
-  console.log('Subscription reminder PASS: PG17 fresh23/repeat0, five existing trigger days, atomic claim+notification+marker, replay and 10-run race single claim, DB rollback/retry, SMTP unknown/no-email persisted without resend, held-lock skip, schedule callback, private delivery ledger and actual web notification read. No live DB/mail/payment.');
+  console.log('Subscription reminder PASS: PG17 fresh24/repeat0, five existing trigger days, atomic claim+notification+marker, replay and 10-run race single claim, DB rollback/retry, SMTP unknown/no-email persisted without resend, held-lock skip, schedule callback, private delivery ledger and actual web notification read. No live DB/mail/payment.');
 }
 let code=0;try{await main();}catch(error){code=1;console.error(error.stack);}finally{if(appServer)await new Promise(resolve=>appServer.close(resolve));if(pool)await pool.end();if(containerStarted)docker(['stop','--time','3',container]);}process.exit(code);

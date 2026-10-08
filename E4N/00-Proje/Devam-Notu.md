@@ -1,5 +1,22 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — Küçük işleri ana teslimlere gömme (güncel)
+
+Önceki 7 büyük paket korunur; aşağıdaki işler artık aynı seviyede ayrı paketler değildir. Linear'da gerçek parent/alt görev ilişkileri değiştirildi.
+
+| Ortak teslim | İçine alınan işler | Ardışık çalışma |
+|---|---|---|
+| P14 / E4N-86 ödeme ve fatura | P35 / E4N-107 | ödeme/tekrar/callback → fatura kaydı/dosya/erişim → üye/admin ekranı → bütün kabul |
+| P26 / E4N-98 etkinlik | P25 / E4N-97 | kayıt/bilet/ödeme → onaylı bilet hakkı → yoklama/düzeltme → sayaç/ekran/veri kabulü |
+| P39 / E4N-111 web tutarlılığı | P08 / E4N-80, P41 / E4N-113, P33 / E4N-105 | API kararı → gerçek API/ekran farkları → demo/kullanım kararı → onaylı metinler → bütün akış kabulü |
+
+Beş görev üç ana teslimin altına taşındı. API, dosya erişimi, ekran, metin, düğme, yenileme, hata gösterimi ve aynı akıştaki test düzenlemeleri ana paketle beraber bitirilir. Bu parçalar için ayrı “bitti” teslimi veya ayrı uygulama turu açılmaz. Görev kimlikleri/kanıtları alt iş olarak korunur; kalan iş silinmez.
+
+P41'in artık parent olan P39'un tamamen Done olmasını beklemesi gereksiz kapanış döngüsü yaratacağından bu ilişki kaldırıldı. P08 karar bağımlılığı korundu; P39'un API/ekran uyumu adımının kabulü P41'den önce paket kontrol listesinde yer alır. P25 mevcut hak/karar/engel bağımlılıkları korunur; mevcut etkinlik akışının bağımsız kısmı ilerleyebilir.
+
+8 kayıtta parent ve durum tekrar okundu; 5 taşıma doğru, durumlar değişmedi, parent'a bekleme ilişkisi kalmadı. Uygulama kodu/test sonuçları değişmedi. Mobil/LMS ertelenmiş; D kararları uydurulmaz.
+
+
 ## 8 Ekim — bağlantılı web görevleri ortak paketlerde
 
 [[Web-Birlestirilmis-Paketler-2026-10-08]] güncel sıra: 01 üyelik/ödeme/haklar/etkinlik; 02 grup başvuru/kabul/transfer; 03 puan/çıkarma/engel; 04 ödeme uygunluğu/shuffle. Ortak 05 veri/geçiş/geri dönüş ve 06 API/web sözleşmesi her paketle; 07 operasyon/güvenlik/bütün sürüm kabulü son kapı.

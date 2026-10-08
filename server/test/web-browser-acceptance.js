@@ -20,7 +20,7 @@ async page=>{
   async function test(name,action){const start=requests.length,errorStart=pageErrors.length;try{await action();await page.waitForLoadState('networkidle');check(pageErrors.length===errorStart,'Uncaught page error: '+pageErrors.slice(errorStart).join(';'));check(!requests.slice(start).some(r=>r.status>=500),'Unexpected API 5xx');await page.screenshot({path:f.runDir+'/'+name+'.png',fullPage:true});cases.push({name,status:'PASS',requests:requests.slice(start)});}catch(e){cases.push({name,status:'FAIL',error:e.message,requests:requests.slice(start)});await page.screenshot({path:f.runDir+'/'+name+'-failed.png',fullPage:true}).catch(()=>{});}}
   async function login(actor){
     // Clear the previous actor before React/session hydration can redirect login.
-    await page.addInitScript(({actor})=>{const key='e4n-fixture-login-reset-'+actor;if(!sessionStorage.getItem(key)){localStorage.clear();sessionStorage.setItem(key,'1');}},{actor});
+    await page.addInitScript(()=>{if(location.pathname==='/auth/login')localStorage.clear();});
     await page.goto(f.webBase+'/auth/login');await page.getByLabel('E-posta Adresi').fill(actor+'@example.invalid');await page.getByLabel('Şifre',{exact:true}).fill(f.password);await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');await page.getByText('Browser '+actor,{exact:true}).first().waitFor();
   }
   async function visit(url,heading){await page.goto(f.webBase+url);await page.getByRole('heading',{name:heading,exact:true}).first().waitFor();}
@@ -113,6 +113,7 @@ async page=>{
     check(await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).isDisabled(),'Stale rejection retained a savable draft');
   });
   await test('admin-shuffle-success-and-history',async()=>{
+    for(const name of ['Browser member','Browser president']){const lock=page.getByRole('button',{name:'Yerinde kilitle: '+name,exact:true});if(await lock.count())await lock.click();}
     await page.getByRole('button',{name:'Dağıtım Taslağı Hazırla',exact:true}).click();
     await page.getByRole('button',{name:'Dağıtımı Kaydet',exact:true}).click();
     await page.getByRole('status').filter({hasText:'Dağıtım kaydedildi.'}).waitFor();
@@ -210,6 +211,80 @@ async page=>{
     await page.goto(f.webBase+'/admin/members/'+f.ids.president);await page.getByRole('alert').filter({hasText:'Üye bilgileri yüklenemedi'}).waitFor();
     check(await page.getByRole('heading',{name:'Son 1\'e 1 Görüşmeler',exact:true}).count()===0,'Previous target private metrics visible');
   });
+
+  await test('member-support-create-and-reload',async()=>{
+    await visit('/support','Destek Taleplerim');await page.getByRole('button',{name:'Yeni Destek Talebi',exact:true}).click();
+    await page.getByPlaceholder('Örn: Ödeme Sorunu').fill('Browser lifecycle support');
+    await page.getByPlaceholder('Sorununuzu detaylı bir şekilde açıklayınız...').fill('Browser initial support message');
+    await page.getByRole('button',{name:'Gönder',exact:true}).click();await page.getByText('Browser lifecycle support',{exact:true}).first().waitFor();
+    await page.reload();await page.getByText('Browser lifecycle support',{exact:true}).first().click();
+    await page.getByText('Browser initial support message',{exact:true}).last().waitFor();
+  });
+  await test('member-referral-create-and-reload',async()=>{
+    await visit('/referrals','İş Yönlendirmeleri');await page.getByRole('button',{name:'Yeni referans',exact:true}).click();
+    const state=await (await page.request.get(f.controlBase+'/state',{headers:{'x-fixture-key':f.secret}})).json();
+    const ownGroup=state.activeMemberships.find(m=>m.user_id===f.ids.member)?.group_id;
+    const sameGroup=state.activeMemberships.some(m=>m.user_id===f.ids.president&&m.group_id===ownGroup);
+    check(sameGroup,'Saved shuffle lost the two existing same-group locks');
+    await page.getByLabel('Yönlendirme türü',{exact:true}).selectOption('INTERNAL');
+    if(sameGroup)await page.getByLabel('Grup veya lonca',{exact:true}).selectOption('group:'+ownGroup);
+    await page.getByLabel('Alıcı',{exact:true}).selectOption(f.ids.president);
+    await page.getByLabel('Referans açıklaması',{exact:true}).fill('Browser lifecycle referral');
+    await page.getByLabel('Tahmini iş hacmi',{exact:true}).fill('125.50');
+    await page.getByRole('button',{name:'Referansı gönder',exact:true}).click();
+    await page.getByRole('button',{name:'Gönderdiklerim',exact:true}).click();
+    await page.getByText('Browser lifecycle referral',{exact:true}).waitFor();await page.reload();await page.getByText('Browser lifecycle referral',{exact:true}).waitFor();
+    check(await page.getByRole('button',{name:/^Başarılı:/}).count()===0,'Sender can settle received business');
+  });
+  await test('member-meeting-request-create-and-reload',async()=>{
+    await page.goto(f.webBase+'/profile/'+f.ids.president);await page.getByRole('button',{name:'1-e-1 Toplantı Planla',exact:true}).click();
+    await page.getByLabel('Toplantı Konusu',{exact:true}).fill('Browser lifecycle meeting');
+    await page.getByLabel('Tarih',{exact:true}).fill('2099-01-20');await page.getByLabel('Saat',{exact:true}).fill('15:30');
+    await page.getByRole('button',{name:'İsteği Gönder',exact:true}).click();
+    await visit('/meetings','Toplantı Talepleri');await page.getByRole('heading',{name:'Browser lifecycle meeting',exact:true}).waitFor();
+    check(await page.getByRole('button',{name:'Kabul Et',exact:true}).count()===0,'Sender can accept own request');
+    await page.reload();await page.getByRole('heading',{name:'Browser lifecycle meeting',exact:true}).waitFor();
+  });
+  await test('president-login',()=>login('president'));
+  await test('receiver-referral-settle-and-reload',async()=>{
+    await visit('/referrals','İş Yönlendirmeleri');await page.getByRole('button',{name:'Aldıklarım',exact:true}).click();
+    const card=page.getByRole('article').filter({hasText:'Browser lifecycle referral'});await card.waitFor();
+    await card.getByRole('textbox',{name:/^Ciro:/}).fill('120.50');await card.getByRole('button',{name:/^Başarılı:/}).click();
+    await card.getByText('Başarılı',{exact:true}).waitFor();await page.reload();await page.getByRole('button',{name:'Aldıklarım',exact:true}).click();
+    await page.getByRole('article').filter({hasText:'Browser lifecycle referral'}).getByText('Başarılı',{exact:true}).waitFor();
+    check(await page.getByRole('button',{name:/^Başarılı:/}).count()===0,'Settlement remained writable');
+  });
+  await test('receiver-meeting-accept-and-reload',async()=>{
+    await visit('/meetings','Toplantı Talepleri');await page.getByRole('heading',{name:'Browser lifecycle meeting',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Kabul Et',exact:true}).click();await page.getByRole('button',{name:'Takvime Ekle',exact:true}).waitFor();
+    await page.reload();await page.getByRole('button',{name:'Takvime Ekle',exact:true}).waitFor();
+    check(await page.getByRole('button',{name:'Kabul Et',exact:true}).count()===0,'Accepted request remained actionable');
+  });
+  await test('unrelated-account-login',()=>login('applicant'));
+  await test('unrelated-account-lifecycle-data-hidden',async()=>{
+    await visit('/referrals','İş Yönlendirmeleri');await page.getByRole('button',{name:'Referansları yenile',exact:true}).click();await page.waitForLoadState('networkidle');
+    check(await page.getByText('Browser lifecycle referral',{exact:true}).count()===0,'Foreign outgoing referral visible');
+    await page.getByRole('button',{name:'Aldıklarım',exact:true}).click();check(await page.getByText('Browser lifecycle referral',{exact:true}).count()===0,'Foreign incoming referral visible');
+    await visit('/meetings','Toplantı Talepleri');await page.getByText('Henüz bir toplantı talebi bulunmuyor.',{exact:true}).waitFor();
+    check(await page.getByRole('heading',{name:'Browser lifecycle meeting',exact:true}).count()===0,'Foreign meeting request visible');
+    await visit('/support','Destek Taleplerim');await page.getByText('Henüz bir destek talebiniz yok.',{exact:true}).waitFor();
+    check(await page.getByText('Browser lifecycle support',{exact:true}).count()===0,'Foreign support ticket visible');
+  });
+  await test('admin-support-login',()=>login('admin'));
+  await test('admin-support-answer-close-and-reload',async()=>{
+    await page.goto(f.webBase+'/admin/support');await page.getByText('Browser lifecycle support',{exact:true}).first().click();
+    const reply=page.getByPlaceholder('Yanıtınız...');await reply.fill('Browser administrator support answer');await reply.locator('..').getByRole('button').click();
+    await page.getByText('Browser administrator support answer',{exact:true}).last().waitFor();
+    await page.getByRole('button',{name:'Talebi Kapat',exact:true}).click();await page.getByRole('button',{name:'Tekrar Aç',exact:true}).waitFor();
+    await page.reload();await page.getByText('Browser lifecycle support',{exact:true}).first().click();await page.getByRole('button',{name:'Tekrar Aç',exact:true}).waitFor();
+  });
+  await test('member-support-return-login',()=>login('member'));
+  await test('member-support-closed-read-and-no-reply',async()=>{
+    await visit('/support','Destek Taleplerim');await page.getByText('Browser lifecycle support',{exact:true}).first().click();
+    await page.getByText('Browser administrator support answer',{exact:true}).last().waitFor();
+    check(await page.getByPlaceholder('Bir mesaj yazın...').count()===0,'Closed ticket still accepts a reply');
+  });
+
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};
 }

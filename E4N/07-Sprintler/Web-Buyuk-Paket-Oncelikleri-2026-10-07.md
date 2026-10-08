@@ -16,3 +16,13 @@ Linear öncelikleri: E4N-102/103 üyelik ve grup web akışları; E4N-100/101 sh
 ## 8 Ekim — bağımsız P26 kayıt/yoklama paketi
 
 Yeni REGISTERED migration0021 + writer + scorepaydası izolasyonu + admin/grup web etiketleri + kayıt/bilet/ödeme/sayaç regresyonu.33API/veri+38browserPASS0FAIL; admin newbooking2→3/finalDB. AnaP26IP; actualcheck-in/düzeltmekaynağı ve geçmişbelirsizliği ayrı açık. Üyelik/hak/grup/puan/shuffle büyük hedeflerinde açıkDkararları korunur.
+
+## 8 Ekim — P37 görüşme, yönlendirme ve destek bütün web kabulü
+
+[[P37-Gorusme-Yonlendirme-Destek-Web-Kabulu-2026-10-08]]: Mevcut üç akış gerçek web/API/veri boyunca doğrulandı. Destek oluşturma/yanıt/kapatma; grup içi yönlendirme oluşturma/alıcı tarafından 120.50 başarılı sonuç; görüşme talebi oluşturma/alıcı kabulü. Yenileme, aynı hesaba geri dönüş, ilgisiz hesapta veri gizliliği ve son DB uzlaştırması aynı pakette. Kabul edilen talep gerçekleşmiş görüşme değildir.
+
+Son taze tarayıcı turu **50 PASS / 0 FAIL**, exit0: `output/web-browser/2026-10-08T08-53-33-947Z/browser-report.json`. Gerçek UI → Express/JWT → izole PG17 akışları ve son veritabanı uzlaştırması geçti. Yönetici destek ekranı görsel olarak incelendi; bu tura ait tarayıcı/API/Vite/veritabanı test ortamı kapatıldı.
+
+Üç tarayıcı test dosyası değişti; uygulama/API/şema değişmedi. Önceki 33 API/veri PASS (08-16-50-617Z) aynı kaynak için tekrar kullanılmaktadır; yeniden build/API koşuldu iddiası yok. Syntax/diff PASS. İlk 44/4 ve 47/3 turlar kabul değildir.
+
+P39/E4N-111 açık bulgu: EXTERNAL “Bağlantılar” alıcı listesi acceptedfriend_requests yerine ortak ACTIVE grup/lonca üyelerini kullanıyor; shuffle sonrası kabul edilmiş farklı grup bağlantısı kaybolabilir. Bu tur mevcut INTERNAL akışını doğrular; yeni uygunluk veya ürün politikası seçilmedi. P37 In Progress, releaseReady=false. Sonraki işler P39 alıcı sözleşmesi ile P26 açık yoklama/check-in bütün paketidir; D kararlarına bağlı üyelik/grup/puan/shuffle XL kapıları açık. Mobil/LMS en son; canlı yazma, dağıtım, gerçek e-posta/ödeme yok.

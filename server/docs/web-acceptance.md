@@ -238,3 +238,7 @@ output/web-acceptance/2026-10-07T18-21-36-986Z/report.json:33PASS/0FAIL. The ear
 ## 8 October — registration and attendance separation
 
 Migration0021 adds REGISTERED without rewriting history. Fresh21/repeat0/pre20upgrade; existing46-table restore preserved. Whole actual API/data33PASS0FAIL (2026-10-08T08-16-50-617Z), fresh styled browser38PASS0FAIL (2026-10-08T08-25-39-153Z): new booking/reload single POST, counter2→3, newREGISTERED vs legacyPRESENT, final DB and prior whole-flow scenarios. First browser08-22-20-410Z disconnected ECONNRESET and is not acceptance. P26 explicit check-in/provenance/historical interpretation and D/provider gates remain open; releaseReady=false.
+
+## 8 October — existing meeting/referral/support lifecycle browser package
+
+See [web-lifecycle-browser-acceptance.md](web-lifecycle-browser-acceptance.md). Fresh full browser suite **50 PASS / 0 FAIL**: `output/web-browser/2026-10-08T08-53-33-947Z/browser-report.json`. Three actual actor lifecycles, reloads, unrelated-account privacy and persisted final DB state included. Existing 33 API/data PASS reused on unchanged application code. P37 remains In Progress and releaseReady=false; EXTERNAL referral candidates source mismatch recorded under P39.

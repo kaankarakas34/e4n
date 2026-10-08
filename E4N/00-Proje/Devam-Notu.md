@@ -1,4 +1,21 @@
 # Devam notu — 1 Ekim 2026
+
+## 8 Ekim — P26/P31 toplu toplantı yoklaması bütün web teslimi
+
+Mevcut toplu kayıt yolu, güncel grup yetkisi, tam aktif üye listesi, açık katılım seçimi ve açıklama doğrulamasıyla tek transactiona alındı. Sekiz eşzamanlı aynı UUID gönderimi tek toplantı oluşturur; farklı içerik409, silinmiş toplantının geçmiş UUID'si tekrar kullanılamaz. Toplantı, kayıt/gözlem ve değiştirilemeyen ilk geçmiş birlikte kaydedilir; admin düzeltmesinden sonra ilk işlem makbuzu korunur. Eski otomatik puan hesabı bu gözlem yolundan kaldırıldı; hedef puan/hak politikası seçilmedi.
+
+Başkan paneli üyeleri otomatik PRESENT seçmez. Konu/açıklama, kilitlenmiş bekleyen işlem, hesap/grup için tab session kaydı, reload sonrası aynı UUID, kayıp yanıt sonrası GET-only uzlaştırma, açık kullanıcı tekrarı ve hesap/rol/token koruması birlikte teslim edildi. Desteklenmeyen üye self-report formu yanlış toplu POST yapmaz; gerçek etkinlik kaydına bağlantı ve kullanılabilirlik açıklaması gösterir. Vekil/mazeret self-report politikası tamamlandı sayılmaz. Yeni başkan correction yetkisi verilmedi; mevcut interim requireGroupManager kullanıldı. Nihai grup rol modeli açık.
+
+**Doğrulanmış kabul:** 39/39 API/veri + production build PASS; taze gerçek web→Express/JWT→disposable PostgreSQL17 browser ve son DB 84/84 PASS. Son durumda iki toplu toplantı,72 kayıt/72 ilk gözlem; ayrı admin etkinliğinde3 düzeltme; toplam75 geçmiş doğrulandı. Owned fixture exit0 ve konteyner kaldırılması doğrulandı.
+
+API/build commit5c9ede3; son browser commit34245d4e9a82a746718811711ee84a2706dbc18a. Aradaki tek fark son DB test kontrolü; src/server/src/schema/tools/config/lockfile diff sıfır. 312 kaynak/test dosyası SHA256 e98d79f6a514553905110a1b6858a1723c76dcc2861fccc835629f1d704cbe84 taze browser öncesi/sonrası eşit; 267 uygulama dosyası SHA256 0e64cb07adce426c245d6eeb64c90b99dda2a74f2ee579f2b507cdaccf895c60; dirty=false. Son browser bitişi 2026-10-08T19:51:25.377Z. **Tek donmuş root PASS iddiası yok:** root turu39API/build+83ekran PASS, eski history3 kontrolü nedeniyle finalDB FAIL olarak korunur; yalnız test kontrolü düzeltildikten sonra taze84browser/finalDB ve uygulama kaynak eşitliği ayrıca doğrulandı.
+
+Kanıt: server/docs/group-meeting-attendance-acceptance-2026-10-08.json; API/build output/web-rehearsal/2026-10-08T19-37-31-221Z/report.json; API output\web-acceptance\2026-10-08T19-37-31-804Z\report.json; son browser output/web-browser/2026-10-08T19-48-08-802Z/browser-report.json. İlk API37/2FAIL eski migration sayı beklentileriydi; son39/39 turda yeniden doğrulandı. Yanlış CLI globals ve önceki78/5FAIL, ardından39API/buildPASS+80/4browserFAIL denemeleri korundu. İki belirsiz Katılımcılar locatorı doğru etkinliğe bağlandı, iki yeni toplantının completion changed2 ve final geçmiş75 beklentisi gerçek DB'ye göre düzeltildi. Başarısız raporlar başarı diye değiştirilmedi.
+
+CLI-generated0024 mevcut history constraintini zaten kullanılan LATE/SUBSTITUTE durumlarına genişletir.24 migration/47 tablo; yeni tablo yok. Fresh/repeat/23→24, eski yükseltme ve sentetik restore testleri geçti; canlı adoption uygulanmadı. Yeni geçmiş durumları varken eski constraint/typed reader'a kör rollback uygun değil; uyumlu kod veya gözden geçirilmiş yedek/cutover gerekir.
+
+P26/P31/P39/P37 In Progress ve releaseReady=false. Bilet/hak/fiyat/provider, D01–D10 kalanları, hizmet/kabul/üyelik/shuffle, diğer eski yazma yolları (silme/doğrudan SQL dahil), üretim kopyası/adoption, SEC6/P38 ayrı açık. Mobil Sprint7 ve LMS Sprint8 en son. Yeni küçük Done görevi veya yüzde artışı yok; bağlı veri/API/ekran/kabul adımları ana paketlerde kaydedildi. Ayrıntı [[E4N/09-Dogrulama/P26-P31-Toplu-Toplanti-Yoklama-Web-2026-10-08]].
+
 ## 8 Ekim — P37 güncel aynı-source bütün kabul
 
 38API/veri38PASS0FAIL →buildPASS →freshPG17/Express/Vite →79browser79PASS0FAIL+finalDB →samecommit/sourcedigestPASS →fixturecleanupPASS. Commit8c0454b, 308dosya SHA256 dc55ac268a0ded0840773d3f9b240cdf5113a6de3a568d32b388fa039195ded2 değişmedi, dirty=false; bitiş 2026-10-08T16:21:47.744Z. Yeni bildirim/oturum ve profil/fatura dahil. Ana rapor output/web-rehearsal/2026-10-08T16-13-21-279Z/report.json; Gitkanıtı server/docs/web-rehearsal-2026-10-08-current.json. Önceki ayrı raporlar birleştirilmedi.

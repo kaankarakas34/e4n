@@ -1,3 +1,4 @@
+import {installPowerTeamSettings} from './power-team-settings.js';
 import {installEventAttendance} from './event-attendance.js';
 import {installMembershipHistory} from './membership-history.js';
 import {installMembershipRecords} from './membership-records.js';
@@ -2697,32 +2698,6 @@ app.get('/api/power-teams', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/power-teams', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, description } = req.body;
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO power_teams (name, description, status) VALUES ($1, $2, 'ACTIVE') RETURNING *`,
-      [name, description]
-    );
-    res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/power-teams/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { name, description, status, visitor_email_subject, visitor_email_template } = req.body;
-  try {
-    const { rows } = await pool.query(
-      `UPDATE power_teams SET name = $1, description = $2, status = $3, visitor_email_subject = $4, visitor_email_template = $5
-       WHERE id = $6 RETURNING *`,
-      [name, description, status || 'ACTIVE', visitor_email_subject, visitor_email_template, req.params.id]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-
 app.delete('/api/power-teams/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'ADMIN') return res.sendStatus(403);
   try {
@@ -3501,6 +3476,7 @@ installMembershipRecords(app,{pool,authenticateToken});
 installWebJobOperations(app,{pool,authenticateToken,sendMail:sendEmail});
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
+installPowerTeamSettings(app,{pool,authenticateToken});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

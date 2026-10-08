@@ -17,7 +17,7 @@ const suites=[
   ['membership-records-contract','Owned membership/payment/invoice/reminder records and current admin snapshot'],
   ['web-job-operations-contract','Durable web job history, authorized invocation and concurrency'],
   ['shuffle-workspace-contract','Current shuffle workspace, stale draft rejection and preview capacity'],
-  ['group-settings-contract','WEB11 group settings'],['admin-group-detail-contract','WEB12 group detail'],
+  ['power-team-settings-contract','Administrator guild create/settings integrity'],['group-settings-contract','WEB11 group settings'],['admin-group-detail-contract','WEB12 group detail'],
   ['admin-visitor-queue-contract','WEB13 visitor queue'],['admin-member-directory-contract','WEB14 member directory'],
   ['admin-group-catalog-contract','WEB15 group catalog'],['group-capacity-contract','P17 admission/transfer/role/shuffle capacity'],
   ['payment-flow','Isolated gateway payment lifecycle'],['meeting-contract','Meeting lifecycle'],

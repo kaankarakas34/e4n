@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { UserSelect } from '../components/UserSelect';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -11,7 +11,7 @@ export function GroupDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuthStore();
+    const { user,token } = useAuthStore();
     const [data, setData] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]); // Use 'members' to match rendering usage
     const [meetings, setMeetings] = useState<any[]>([]);
@@ -20,6 +20,8 @@ export function GroupDetail() {
     const [synergy, setSynergy] = useState<any[]>([]);
 
     const [showEditModal, setShowEditModal] = useState(false);
+    const [isSaving,setIsSaving] = useState(false);
+    const saveBusy=useRef(false);
     const [editForm, setEditForm] = useState({ name: '', meeting_day: '', meeting_time: '', meeting_link: '', description: '', meeting_dates: [] as string[] });
 
     // Assignment Modal State
@@ -35,7 +37,9 @@ export function GroupDetail() {
     const isPowerTeam = location.pathname.includes('power-teams');
     const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
     const canRead = !!user;
-    const readContext = `${user?.id}:${user?.role}:${isPowerTeam}:${id}`;
+    const readContext = `${user?.id}:${user?.role}:${token}:${isPowerTeam}:${id}`;
+    const currentContext=useRef(readContext);currentContext.current=readContext;
+    useEffect(()=>{setShowEditModal(false);setIsSaving(false);saveBusy.current=false;},[readContext]);
 
     // Dynamic Stats
     const stats = {
@@ -310,21 +314,24 @@ export function GroupDetail() {
                                 </div>
                             </div>
                             <div className="mt-6 flex justify-end space-x-3">
-                                <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
-                                <Button variant="primary" onClick={async () => {
+                                <Button variant="ghost" disabled={isSaving} onClick={() => setShowEditModal(false)}>İptal</Button>
+                                <Button variant="primary" disabled={isSaving} onClick={async () => {
+                                    if(saveBusy.current)return;const scope=readContext;saveBusy.current=true;setIsSaving(true);
                                     try {
+                                        let saved;
                                         if (isPowerTeam) {
-                                            await api.updatePowerTeam(data.id, editForm);
+                                            saved = await api.updatePowerTeam(data.id, {name:editForm.name,description:editForm.description},user!.id);
                                         } else {
-                                            await api.updateGroup(data.id, editForm);
+                                            saved = await api.updateGroup(data.id, editForm);
                                         }
                                         // Update local data
-                                        setData({ ...data, ...editForm });
+                                        if(currentContext.current!==scope)return;
+                                        setData(saved);
                                         setShowEditModal(false);
                                         alert('Güncelleme başarılı!');
                                     } catch (e: any) {
-                                        alert('Güncelleme başarısız: ' + e.message);
-                                    }
+                                        if(currentContext.current===scope)alert('Güncelleme başarısız: ' + e.message);
+                                    } finally {if(currentContext.current===scope){saveBusy.current=false;setIsSaving(false);}}
                                 }}>Kaydet</Button>
                             </div>
                         </div>

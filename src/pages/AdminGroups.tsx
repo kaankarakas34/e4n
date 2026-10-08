@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
-import { api } from '../api/api';
+import { api, type PowerTeamSettings } from '../api/api';
 import { Users, Plus, X } from 'lucide-react';
 import { AdminGroupCatalog } from '../components/AdminGroupCatalog';
 import { AdminShuffle } from './AdminShuffle';
@@ -16,10 +16,16 @@ export function AdminGroups() {
   const context = `${user?.id}:${user?.role}:${token}`;
   const current = useRef(context); current.current = context;
   const creationId = useRef(crypto.randomUUID());
+  const teamBusy = useRef(false);
+  const teamEpoch = useRef(0);
+  const teamRead = useRef(0);
+  const [teamIntent,setTeamIntent] = useState<{id:string,name:string}|null>(null);
+  const [teamNotice,setTeamNotice] = useState('');
+  const [teamSearch,setTeamSearch] = useState('');
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'GROUPS' | 'TEAMS' | 'SHUFFLE'>('GROUPS');
   const [catalogVersion, setCatalogVersion] = useState(0);
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<PowerTeamSettings[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,23 +36,26 @@ export function AdminGroups() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    teamEpoch.current++; teamBusy.current=false; setTeamIntent(null); setTeamNotice('');
     setIsGroupModalOpen(false); setIsTeamModalOpen(false); setIsSubmitting(false);
+  }, [context]);
+  useEffect(() => {
     if (activeTab === 'TEAMS') loadData();
   }, [context, activeTab]);
 
   const loadData = async () => {
-    const scope = context;
+    const scope = context,read=++teamRead.current;
     setLoading(true); setError(null); setLoadedFor(null); setTeams([]);
     if (user?.role !== 'ADMIN') { setLoading(false); return; }
     try {
-      const t = await api.getPowerTeams();
-      if (current.current !== scope) return;
+      const t = await api.getAdminPowerTeamSettings(user.id);
+      if (current.current !== scope || teamRead.current!==read) return;
       if (!Array.isArray(t)) throw new Error('Invalid management lists');
       setTeams(t || []);
     } catch (e) {
-      if (current.current === scope) setError('Veriler yüklenemedi');
+      if (current.current === scope && teamRead.current===read) setError('Veriler yüklenemedi');
     } finally {
-      if (current.current === scope) { setLoading(false); setLoadedFor(scope); }
+      if (current.current === scope && teamRead.current===read) { setLoading(false); setLoadedFor(scope); }
     }
   };
 
@@ -82,17 +91,25 @@ export function AdminGroups() {
   };
 
   const handleCreateTeam = async () => {
-    if (!newItemName.trim()) return;
-    setIsSubmitting(true);
+    if (!user || !newItemName.trim() || teamBusy.current) return;
+    const scope=context,epoch=teamEpoch.current;
+    const intent=teamIntent ?? {id:crypto.randomUUID(),name:newItemName.trim()};
+    teamBusy.current=true; setTeamIntent(intent); setIsSubmitting(true); setTeamNotice('');
     try {
-      await api.createPowerTeam({ name: newItemName });
+      const saved=await api.createPowerTeam(intent,user.id);
+      if(current.current!==scope || teamEpoch.current!==epoch)return;
+      // Acknowledgement clears the pending write before a separate list refresh.
+      setTeamIntent(null); setTeamNotice(`${saved.name} kaydedildi.`);
       setIsTeamModalOpen(false);
       setNewItemName('');
       loadData(); // Refresh list
     } catch (e: any) {
-      alert('Hata: ' + (e.message || 'Lonca oluşturulamadı'));
+      if(current.current===scope && teamEpoch.current===epoch) {
+        setTeamNotice('Kayıt doğrulanamadı. Tekrar dene aynı oluşturma kimliğini kullanır.');
+        if(e.status>=400 && e.status<500) {setTeamIntent(null);setTeamNotice('Lonca kaydedilemedi: '+e.message);}
+      }
     } finally {
-      setIsSubmitting(false);
+      if(current.current===scope && teamEpoch.current===epoch){teamBusy.current=false;setIsSubmitting(false);}
     }
   };
 
@@ -127,7 +144,8 @@ export function AdminGroups() {
           </div>
         </div>
 
-        {activeTab === 'TEAMS' && error && <div className="bg-red-50 text-red-700 p-4 rounded-md mb-4 border border-red-200">{error}</div>}
+        {activeTab === 'TEAMS' && teamNotice && <p role="status" className="p-3 mb-4 bg-purple-50">{teamNotice}</p>}
+        {activeTab === 'TEAMS' && error && <div role="alert" className="bg-red-50 text-red-700 p-4 rounded-md mb-4 border border-red-200">{error}</div>}
 
         {activeTab === 'GROUPS' && (
           <AdminGroupCatalog refreshVersion={catalogVersion} onCreate={() => { creationId.current = crypto.randomUUID(); setNewItemName(''); setIsGroupModalOpen(true); }} />
@@ -137,19 +155,21 @@ export function AdminGroups() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Lonca Listesi</CardTitle>
-              <Button onClick={() => { setNewItemName(''); setIsTeamModalOpen(true); }} className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2">
-                <Plus className="h-4 w-4" /> Lonca Oluştur
+              <Button disabled={isSubmitting} onClick={() => { if(!teamIntent){setTeamNotice('');setNewItemName('');} setIsTeamModalOpen(true); }} className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2">
+                <Plus className="h-4 w-4" /> {teamIntent?'Bekleyen lonca işlemini aç':'Lonca Oluştur'}
               </Button>
             </CardHeader>
             <CardContent>
+              <Input aria-label="Lonca ara" placeholder="Lonca adı veya açıklaması" value={teamSearch} onChange={e=>setTeamSearch(e.target.value)} />
               {loading || loadedFor !== context ? (
                 <div className="text-center py-8 text-gray-500">Yükleniyor...</div>
               ) : error ? (<Button onClick={loadData}>Loncaları tekrar yükle</Button>) : teams.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">Henüz hiç lonca yok.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  {teams.map((t: any) => (
-                    <div
+                  {!teams.some(t=>`${t.name} ${t.description||''}`.toLocaleLowerCase('tr-TR').includes(teamSearch.toLocaleLowerCase('tr-TR'))) && <p>Aramaya uygun lonca bulunamadı.</p>}
+                  {teams.filter(t=>`${t.name} ${t.description||''}`.toLocaleLowerCase('tr-TR').includes(teamSearch.toLocaleLowerCase('tr-TR'))).map(t => (
+                    <button type="button"
                       key={t.id}
                       className="p-5 border rounded-lg hover:border-purple-400 hover:shadow-lg cursor-pointer transition-all bg-white"
                       onClick={() => navigate(`/admin/power-teams/${t.id}`)}
@@ -160,8 +180,9 @@ export function AdminGroups() {
                         </div>
                       </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">{t.name}</h3>
+                      <p className="text-sm">{t.status==='ACTIVE'?'Aktif':t.status==='DRAFT'?'Taslak':t.status||'Durum belirtilmemiş'}</p>
                       <p className="text-sm text-gray-500 line-clamp-2">{t.description || 'Açıklama girilmemiş.'}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -209,7 +230,7 @@ export function AdminGroups() {
         </Dialog.Root>
 
         {/* Create Team Modal */}
-        <Dialog.Root open={isTeamModalOpen} onOpenChange={setIsTeamModalOpen}>
+        <Dialog.Root open={isTeamModalOpen} onOpenChange={open=>{if(!teamBusy.current)setIsTeamModalOpen(open);}}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
             <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-50">
@@ -225,15 +246,18 @@ export function AdminGroups() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Lonca Adı</label>
                   <Input
                     placeholder="Örn: Teknoloji Loncası"
+                    aria-label="Lonca Adı"
+                    disabled={isSubmitting || !!teamIntent}
                     value={newItemName}
                     onChange={e => setNewItemName(e.target.value)}
                     autoFocus
                   />
                 </div>
+                {teamNotice && <p role="status">{teamNotice}</p>}
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setIsTeamModalOpen(false)}>İptal</Button>
+                  <Button variant="outline" disabled={isSubmitting} onClick={() => setIsTeamModalOpen(false)}>{teamIntent?'Kapat — işlem anahtarı korunur':'İptal'}</Button>
                   <Button onClick={handleCreateTeam} disabled={isSubmitting} className="bg-purple-600 hover:bg-purple-700">
-                    {isSubmitting ? 'Oluşturuluyor...' : 'Oluştur'}
+                    {isSubmitting ? 'Oluşturuluyor...' : teamIntent ? 'Aynı işlemi tekrar dene' : 'Oluştur'}
                   </Button>
                 </div>
               </div>

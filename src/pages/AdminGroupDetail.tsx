@@ -82,7 +82,7 @@ export function AdminGroupDetail() {
                 }
                 let foundItem;
                 if (isPowerTeam) {
-                    const teams = await api.getPowerTeams();
+                    const teams = user?.role==='ADMIN' ? await api.getAdminPowerTeamSettings(user.id) : await api.getPowerTeams();
                     if (!Array.isArray(teams)) throw new Error('Invalid team response');
                     foundItem = teams.find((t: any) => t.id === id);
                 } else {
@@ -372,13 +372,17 @@ export function AdminGroupDetail() {
                                     try {
                                         let saved;
                                         if (isPowerTeam) {
-                                            saved = await api.updatePowerTeam(data.id, editForm);
+                                            saved = await api.updatePowerTeam(data.id, {
+                                                name:editForm.name,description:editForm.description,
+                                                visitor_email_subject:editForm.visitor_email_subject,
+                                                visitor_email_template:editForm.visitor_email_template
+                                            },user!.id);
                                         } else {
                                             saved = await api.updateGroup(data.id, { ...editForm, description: undefined });
                                         }
                                         // Update local data
                                         if (currentContext.current !== scope) return;
-                                        setData(isPowerTeam ? { ...data, ...editForm } : saved);
+                                        setData(saved);
                                         setShowEditModal(false);
                                         alert('Güncelleme başarılı!');
                                     } catch (e: any) {

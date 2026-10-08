@@ -1,5 +1,13 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — Karar bağımsız lonca oluşturma/ayar paketi teslim
+
+P39/P31 içinde lonca oluşturma, özel yönetici ayar kataloğu ve gerçek ayar kaydı API/veri/web/test birlikte tamamlandı. UUID retry tek satır, güncel DB ADMIN, kısmi alan/durum/şablon koruması, canonical ACK, pending kimlik/sekme/modal koruması ve ACK sonrası yalnız liste retry vardır. 178 route/25 provider/17 legacy; migration 22/47 değişmedi. Yeni küçük Done işi açılmadı; ana hedefler açık.
+
+Kanıt: iki odaklı API/runtime kontratı ve build PASS; temiz gerçek browser **66/66**, `output/web-browser/2026-10-08T14-37-57-049Z/browser-report.json`. Son gönderilmeyen metin boşluklarını koruma backend farkı `output/p39-power-team-contract-final.log` ile ayrıca doğrulandı; yeni toplu 35 API provası iddiası yok. İlk 61/4 FAIL raporu korunur. Ayrıntı [[E4N/09-Dogrulama/P39-Lonca-Olusturma-ve-Ayarlar-Veri-API-Web-2026-10-08]]. Owned test süreçleri kapatıldı; canlı işlem yok.
+
+Üyelik için üç soru hâlâ yanıt bekliyor; “devam” herhangi bir ücret/hak/kesim seçeneğini seçmez. Bunları tekrar sorma veya küçük okuma paketleriyle hedef ilerlemesi üretme. P15/P20 kabul ve başkan yetkisi, D01–D10 kalanları, canlı geçiş/provider/SEC kapıları korunur. Mevcut lonca ayar paketi yeniden yapılmaz. Mobil/LMS ertelenmiştir.
+
 ## 8 Ekim — Sıradaki büyük üyelik paketinin karar kapısı
 
 Linear P03/P02/P01 yeniden kontrol edildi. Ücret/para birimi/dönem, gecikmede kısıtlanan haklar ve ödeme sonrası açılma, shuffle ödeme kesim anı için kullanıcıya üç soru iletildi; yanıt bekleniyor. Öneriler karar değildir. Ayrıntılı birleşik uygulama ve sınır kabul tablosu [[E4N/01-Kararlar/Uyelik-Gecikme-Kapasite-ve-Shuffle-2026-10-05]] içindedir. Aynı soruları yanıt gelmeden tekrar sorma; geçmiş P37 provasını yeni çalışma gibi tekrar raporlama. Bu tur yeni uygulama kodu veya Done teslimi değildir. D10/puan/hizmet/kabul kararları ayrıca açık.

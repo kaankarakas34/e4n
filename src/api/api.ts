@@ -89,6 +89,28 @@ const savedGroup = (value: any, expectedId?: string) => {
   return value;
 };
 
+export interface PowerTeamSettings {
+  id:string; name:string; description:string|null; status:string|null;
+  visitor_email_subject:string|null; visitor_email_template:string|null; created_at:string;
+}
+const validPowerTeam = (row:any):row is PowerTeamSettings => !!row && !Array.isArray(row) && uuid(row.id)
+  && typeof row.name==='string' && !!row.name.trim() && ['description','status','visitor_email_subject','visitor_email_template'].every(k=>nullableText(row[k]))
+  && typeof row.created_at==='string' && Number.isFinite(Date.parse(row.created_at));
+const savedPowerTeam = (row:any,owner?:string,id?:string) => {
+  if (!row || row.settingsVersion!==1 || !uuid(row.ownerId) || owner && row.ownerId!==owner.toLowerCase()
+    || !validPowerTeam(row) || id && row.id!==id.toLowerCase()) throw new Error('Lonca kayıt yanıtı doğrulanamadı. Aynı işlemi tekrar kontrol edin.');
+  return row as PowerTeamSettings;
+};
+const confirmedPowerTeam = (row:any,payload:Partial<PowerTeamSettings>,owner?:string,id?:string) => {
+  const saved=savedPowerTeam(row,owner,id);
+  for(const key of ['name','description','status','visitor_email_subject','visitor_email_template'] as const) {
+    if(payload[key]===undefined)continue;
+    const expected=typeof payload[key]==='string' ? payload[key]!.trim() || null : payload[key];
+    if(saved[key]!==expected)throw new Error('Kaydedilen lonca alanları gönderilen işlemle eşleşmiyor. Sonucu tekrar kontrol edin.');
+  }
+  return saved;
+};
+
 export const api = {
   // Auth mocks (extend later)
   // Auth
@@ -587,11 +609,17 @@ export const api = {
   async rejectFriendship(userId: string, senderId: string) {
     return await request(`/user/friends/request/${senderId}/reject`, { method: 'POST' });
   },
-  async createPowerTeam(payload: { name: string, description?: string }) {
-    return await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) });
+  async getAdminPowerTeamSettings(owner:string):Promise<PowerTeamSettings[]> {
+    const row=await request('/admin/power-team-settings');
+    if (!row || row.settingsVersion!==1 || row.ownerId!==owner.toLowerCase() || !Array.isArray(row.teams) || row.teams.length>1000
+      || !row.teams.every(validPowerTeam) || new Set(row.teams.map((t:PowerTeamSettings)=>t.id)).size!==row.teams.length) throw new Error('Lonca listesi doğrulanamadı.');
+    return row.teams;
   },
-  async updatePowerTeam(id: string, payload: any) {
-    return await request(`/power-teams/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  async createPowerTeam(payload: { id?:string,name: string, description?: string },owner?:string) {
+    return confirmedPowerTeam(await request('/power-teams', { method: 'POST', body: JSON.stringify(payload) }),payload,owner,payload.id);
+  },
+  async updatePowerTeam(id: string, payload: Partial<PowerTeamSettings>,owner?:string) {
+    return confirmedPowerTeam(await request(`/power-teams/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),payload,owner,id);
   },
   async deletePowerTeam(id: string) {
     return await request(`/power-teams/${id}`, { method: 'DELETE' });

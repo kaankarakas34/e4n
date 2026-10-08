@@ -1,5 +1,9 @@
 # Birleştirilmiş web paketleri — 8 Ekim 2026
 
+## P39/P31 — Lonca oluşturma ve ayar teslimi
+
+Karar bekleyen üyelik XL yerine mevcut lonca oluşturma/ayar akışındaki somut veri/API/web sorunları aynı teslimde giderildi. UUID retry, güncel yönetici rolü, alan/durum koruması, özel ayar kataloğu, typed canonical kayıt, belirsiz sonuç/ACK sonrası okuma ve oturum izolasyonu birlikte doğrulandı. Odaklı API/runtime kontratları ve build PASS; gerçek browser 66/66, final DB uzlaştırması dahil. Son metin-koruma backend farkı ayrıca odaklı kontratta PASS; yeni toplu 35 API turu iddiası yok. Ayrıntı [[E4N/09-Dogrulama/P39-Lonca-Olusturma-ve-Ayarlar-Veri-API-Web-2026-10-08]]. P15 üyelik ve ana P39/P31 hedefleri açık; yeni küçük Done işi veya yüzde artışı değildir.
+
 ## 8 Ekim — P37 tek komutla taze bütün web teknik provası
 
 Mevcut eğitim dışı web/API/veri için tek sahipli prova komutu eklendi: npm --prefix server run test:web-rehearsal -- <kurulu Playwright CLI JS yolu>.34API/veri paketi → productionbuild → yeni izole PG17/Express/Vite fixture →61gerçekbrowser/finalDBuzlaştırması; önceki rapor veya currentfixturepointer tekrar kullanılmaz. Aynı checkout'ta ikinci prova exclusive lock ile childiş açmadan reddedilir. Kod/bağımlılık/test/configSHA256 veHEAD başta/sonda eşit olmalıdır; değişmiş kaynaktaki farklı sonuçlar birleştirilemez. Başarılı tur sonunda ownedfixture kapatılır, lock kaldırılır.

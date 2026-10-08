@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "runId": "7b82d1a1-4318-4f5b-9e1d-c74304a727eb",
+  "startedAt": "2026-10-08T16:13:21.279Z",
+  "scope": "Fresh existing non-LMS web API/data/build/browser rehearsal",
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "releaseReady": false,
+  "technicalPass": true,
+  "steps": [
+    {
+      "name": "api-data",
+      "status": "PASS",
+      "startedAt": "2026-10-08T16:13:22.070Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-08T16:18:11.729Z",
+      "log": "output\\web-rehearsal\\2026-10-08T16-13-21-279Z\\api-data.log"
+    },
+    {
+      "name": "build",
+      "status": "PASS",
+      "startedAt": "2026-10-08T16:18:11.732Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-08T16:18:57.862Z",
+      "log": "output\\web-rehearsal\\2026-10-08T16-13-21-279Z\\build.log"
+    },
+    {
+      "name": "fixture",
+      "status": "PASS",
+      "startedAt": "2026-10-08T16:18:57.864Z",
+      "descriptor": "output\\web-browser\\2026-10-08T16-18-58-650Z\\fixture.json"
+    },
+    {
+      "name": "browser",
+      "status": "PASS",
+      "startedAt": "2026-10-08T16:19:06.218Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-08T16:21:46.880Z",
+      "log": "output\\web-rehearsal\\2026-10-08T16-13-21-279Z\\browser.log"
+    }
+  ],
+  "gates": [
+    {
+      "id": "D01-D04",
+      "status": "BLOCKED",
+      "scope": "Monthly scoring, removal and application ban policy"
+    },
+    {
+      "id": "D05-D08-D10",
+      "status": "BLOCKED",
+      "scope": "Service classification, final admission, company proof and remaining membership policy"
+    },
+    {
+      "id": "SHUFFLE-CUTOFF",
+      "status": "BLOCKED",
+      "scope": "Exact payment cutoff, grace start, restricted rights and reopening policy"
+    },
+    {
+      "id": "P09-P10",
+      "status": "OPEN",
+      "scope": "Live schema adoption and group-scoped roles; database capacity invariant covered by migration 0016"
+    },
+    {
+      "id": "P26-P29",
+      "status": "OPEN",
+      "scope": "Historical attendance/ticket interpretation and full shuffle/history/notification acceptance"
+    },
+    {
+      "id": "BROWSER",
+      "status": "PASS",
+      "scope": "Fresh owned fixture; actual web/API/database and final state reconciliation"
+    },
+    {
+      "id": "SEC-P38",
+      "status": "DEFERRED",
+      "scope": "Sprint 6 broad security and production release gate"
+    },
+    {
+      "id": "MOBILE-LMS",
+      "status": "EXCLUDED",
+      "scope": "Sprint 7 mobile and Sprint 8 course/exam work"
+    },
+    {
+      "id": "SOURCE",
+      "status": "PASS",
+      "scope": "Same commit and source/dependency/test/config digest before and after"
+    }
+  ],
+  "sourceBefore": {
+    "commit": "8c0454bf415581f74f76055084914dad0e0bc0a1",
+    "sha256": "dc55ac268a0ded0840773d3f9b240cdf5113a6de3a568d32b388fa039195ded2",
+    "fileCount": 308,
+    "dirty": false
+  },
+  "api": {
+    "report": "output\\web-acceptance\\2026-10-08T16-13-22-204Z\\report.json",
+    "passed": 38,
+    "failed": 0
+  },
+  "browser": {
+    "report": "output\\web-browser\\2026-10-08T16-18-58-650Z\\browser-report.json",
+    "passed": 79,
+    "failed": 0
+  },
+  "sourceAfter": {
+    "commit": "8c0454bf415581f74f76055084914dad0e0bc0a1",
+    "sha256": "dc55ac268a0ded0840773d3f9b240cdf5113a6de3a568d32b388fa039195ded2",
+    "fileCount": 308,
+    "dirty": false
+  },
+  "cleanup": {
+    "fixtureExitCode": 0,
+    "status": "PASS"
+  },
+  "finishedAt": "2026-10-08T16:21:47.744Z"
+}

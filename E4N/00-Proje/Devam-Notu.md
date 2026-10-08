@@ -1,4 +1,11 @@
 # Devam notu — 1 Ekim 2026
+## 8 Ekim — P37 güncel aynı-source bütün kabul
+
+38API/veri38PASS0FAIL →buildPASS →freshPG17/Express/Vite →79browser79PASS0FAIL+finalDB →samecommit/sourcedigestPASS →fixturecleanupPASS. Commit8c0454b, 308dosya SHA256 dc55ac268a0ded0840773d3f9b240cdf5113a6de3a568d32b388fa039195ded2 değişmedi, dirty=false; bitiş 2026-10-08T16:21:47.744Z. Yeni bildirim/oturum ve profil/fatura dahil. Ana rapor output/web-rehearsal/2026-10-08T16-13-21-279Z/report.json; Gitkanıtı server/docs/web-rehearsal-2026-10-08-current.json. Önceki ayrı raporlar birleştirilmedi.
+
+P37 InProgress/releaseReady=false; canlıgeçiş/üretimkopyası/provider/legacywrites/SEC6/P38 ve açıkDkararları korunur. Uygulama kodu değişmedi, yeni küçükDone/yüzde yok; mobile7/LMS8enson. Ayrıntı [[E4N/09-Dogrulama/P37-Sabit-Kaynak-Butun-Web-Kabulu-2026-10-08]].
+
+
 ## 8 Ekim — P39/P30 bildirim ve oturum bütün web paketi
 
 Bildirim sayacı tüm kayıtları, liste son50yi aynı SQL snapshotta okur. Canonical tekil/toplu okundu, rollback/replay/currentowner, kayıpACK GET-only uzlaştırma; zil ve topluluk ekranında ortak accessible liste/loading/error/empty/refresh. İnsan metninden sahte profil URL çıkarılmaz. Hesap/token değişince eski özel state hemen temizlenir. Auth refresh stale yanıt/çıkış koruması ve transientfail≠401/403 ayrımı birlikte tamamlandı.

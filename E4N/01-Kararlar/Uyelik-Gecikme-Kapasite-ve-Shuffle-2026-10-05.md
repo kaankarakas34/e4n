@@ -1,5 +1,30 @@
 # 5 Ekim 2026 — Üyelik, kapasite ve shuffle kararları
 
+## 8 Ekim — Büyük üyelik paketinin uygulama kapısı
+
+Linear E4N-75/74/73 ve son kabul kayıtları yeniden okundu. İlk büyük teslim üyelik/ödeme/haklar paketidir; sırf ilerleme sayısını artırmak için yeni küçük teslim açılmaz. Mevcut teknik prova 34 API/veri ve 61 tarayıcı senaryosunda başarılıdır; hedef iş kuralları için onay yerine geçmez.
+
+Kullanıcıya üç karar sorusu iletildi; yanıt henüz alınmadı:
+
+1. Ücret, para birimi ve ödeme dönemi.
+2. **Öneri:** vade anından başlayan beş günlük süre, günlük tek hatırlatma; sonunda grup başvurusu ve yeni etkinlik/bilet işlemleri kısıtlı, giriş/profil/ödeme/geçmiş açık; doğrulanmış ödeme sonrası otomatik açılma.
+3. **Seçenek:** shuffle saatinden tam 24 saat önce veya önceki takvim günü 23:59, İstanbul saati. Önerilen etkileşim: gecikme süresi shuffle uygunluğunu uzatmaz; geç ödeme kesinleşmiş dağıtımı değiştirmez, sonraki dönem veya hizmet koltuğu açık grup başvurusunu açar.
+
+İkinci ve üçüncü maddeler **onaylanmış kural değildir**. Süre geçmesi, zamanlama turu veya “devam” yanıtı bu seçeneklerden birini otomatik seçmez. Aynı sorular yeni yanıt gelmeden tekrar gönderilmez.
+
+### Yanıt sonrası birleşik uygulama ve kabul
+
+| Adım | Birlikte teslim edilecek kapsam | Kabul örnekleri |
+|---|---|---|
+| 1 | Onaylı ücret/dönem ve tek üyelik; ödeme kaydı, callback, hak kararı | Yinelenen callback tek ödeme sonucu; belirsiz ödeme hesabı açmaz |
+| 2 | Gecikme başlangıcı, günlük bildirim kaydı, kısıtlama ve yeniden açılma | Aynı gün tekrar çalışma tek bildirim; ödeme/kısıtlama yarışı; beşinci gün sınırı |
+| 3 | Shuffle ödeme kesimi ve geç ödeme başvuru yolu | Kesim öncesi/eşit/sonrası; gecikme süresinde olup kesimi kaçıran; geç ödeme dağıtımı değiştirmez |
+| 4 | Üye ve yönetici ekranları, hata/yenileme, bütün izole kabul | Aynı hak kararı API ve webde; hesap değişiminde eski veri gizlenir; gerçek ödeme/e-posta gönderilmez |
+
+Bu adımlar aynı üyelik tesliminde yürütülür. Şirket kapsamı/kanıtı D10, bilet hakları ve grup kabul/hizmet kararları gereken alt akışlarda ayrı açık kalır. Üç sorunun yanıtı bütün D01–D10 kararlarını kapatmaz. P03/P12–P14/P25/P30 sırf bu kayıtla Done yapılmaz.
+
+Kaynak gözlemi: eski POST /api/events/attendance hâlâ toplantı oluşturma, toplu yoklama ve asenkron eski puan hesaplama koludur; yeni yönetici yoklama geçmişinin kabulü bu kolun kabulü değildir. P26/P39 kalan kapsamına dahildir; başkan yetkisi ve D01 puan kararı seçilmeden yeni politikaya dönüştürülmedi.
+
 ## Kullanıcının kesinleştirdiği kurallar
 
 - D09: Kapalı grupta başkan hariç 35 üye.

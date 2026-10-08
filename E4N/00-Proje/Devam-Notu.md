@@ -1,5 +1,11 @@
 # Devam notu — 1 Ekim 2026
 
+## 8 Ekim — Sıradaki büyük üyelik paketinin karar kapısı
+
+Linear P03/P02/P01 yeniden kontrol edildi. Ücret/para birimi/dönem, gecikmede kısıtlanan haklar ve ödeme sonrası açılma, shuffle ödeme kesim anı için kullanıcıya üç soru iletildi; yanıt bekleniyor. Öneriler karar değildir. Ayrıntılı birleşik uygulama ve sınır kabul tablosu [[E4N/01-Kararlar/Uyelik-Gecikme-Kapasite-ve-Shuffle-2026-10-05]] içindedir. Aynı soruları yanıt gelmeden tekrar sorma; geçmiş P37 provasını yeni çalışma gibi tekrar raporlama. Bu tur yeni uygulama kodu veya Done teslimi değildir. D10/puan/hizmet/kabul kararları ayrıca açık.
+
+Mevcut kodda eski POST /api/events/attendance toplu toplantı/yoklama ve eski puan hesabı yolunu sürdürüyor; yeni P26 manuel geçmişi tüm writer yollarını kapsamaz. Bu somut kalan iş P26/P39 kabulünde korunur. Mobil/LMS ertelenmiş; canlı veri/ödeme/e-posta kullanılmadı.
+
 Teslim kaydı: 03db90f yönetilen dala push edildi. E4N-109 açıklaması, E4N-111 ve E4N-110 yorumları 8 Ekim10:19UTC güncellendi; P37 InProgress/releaseReady=false.
 
 

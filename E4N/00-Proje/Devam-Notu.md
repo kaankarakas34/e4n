@@ -1,5 +1,8 @@
 # Devam notu — 1 Ekim 2026
 
+Teslim kaydı: 03db90f yönetilen dala push edildi. E4N-109 açıklaması, E4N-111 ve E4N-110 yorumları 8 Ekim10:19UTC güncellendi; P37 InProgress/releaseReady=false.
+
+
 ## 8 Ekim — P37 tek komutla taze bütün web teknik provası
 
 Mevcut eğitim dışı web/API/veri için tek sahipli prova komutu eklendi: npm --prefix server run test:web-rehearsal -- <kurulu Playwright CLI JS yolu>.34API/veri paketi → productionbuild → yeni izole PG17/Express/Vite fixture →61gerçekbrowser/finalDBuzlaştırması; önceki rapor veya currentfixturepointer tekrar kullanılmaz. Aynı checkout'ta ikinci prova exclusive lock ile childiş açmadan reddedilir. Kod/bağımlılık/test/configSHA256 veHEAD başta/sonda eşit olmalıdır; değişmiş kaynaktaki farklı sonuçlar birleştirilemez. Başarılı tur sonunda ownedfixture kapatılır, lock kaldırılır.

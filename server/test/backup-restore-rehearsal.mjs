@@ -63,9 +63,10 @@ async function main(){
  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');
  // Roles must pre-exist: database dumps do not contain cluster roles.
  await pool.query('CREATE ROLE anon; CREATE ROLE authenticated');
- assert.equal((await applyVersionedSchema()).applied.length,22);
+ assert.equal((await applyVersionedSchema()).applied.length,23);
  const [admin,member,other,event,invoice,document]=Array.from({length:6},()=>randomUUID());
  for(const [i,id] of [admin,member,other].entries())await pool.query("INSERT INTO users(id,email,name,profession,role) VALUES($1,$2,$3,'Fixture',$4)",[id,`restore-${i}@example.invalid`,i===1?'Üye – 😀':'Fixture',i===0?'ADMIN':'MEMBER']);
+ await pool.query('UPDATE users SET bio=$1,website=$2 WHERE id=$3',['Kalıcı biyografi 😀','https://example.invalid/restored',member]);
  await pool.query("INSERT INTO events(id,title,start_at,type,generate_tickets,price,created_by) VALUES($1,'Restore event','2099-01-01','social',true,100,$2)",[event,admin]);
  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT')",[event,member]);
  await pool.query("INSERT INTO event_tickets(event_id,user_id,ticket_number,payment_status) VALUES($1,$2,'RESTORE-PENDING','PENDING')",[event,member]);
@@ -101,6 +102,7 @@ async function main(){
  const authenticateToken=(req,res,next)=>{try{req.user=jwt.verify((req.headers.authorization||'').replace(/^Bearer /,''),process.env.JWT_SECRET);next();}catch{res.sendStatus(401);}};
  installInvoices(app,{pool:restored,authenticateToken,sendEmail:async()=>{throw new Error('Rehearsal must never send mail');}});
  const {installMembershipHistory}=await import('../src/membership-history.js');installMembershipHistory(app,{pool:restored,authenticateToken});
+ const {installSelfProfile}=await import('../src/self-profile.js');installSelfProfile(app,{pool:restored,authenticateToken});
  appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');
  const download=async(id,role='MEMBER')=>fetch(`http://127.0.0.1:${appServer.address().port}/api/invoices/${invoice}`,{headers:id?{Authorization:`Bearer ${jwt.sign({id,role},process.env.JWT_SECRET)}`}:{}});
  const own=await download(member);assert.equal(own.status,200);assert.deepEqual(Buffer.from(await own.arrayBuffer()),bytes);assert.equal(own.headers.get('cache-control'),'private, no-store');
@@ -108,11 +110,12 @@ async function main(){
  await restored.query("UPDATE users SET role='MEMBER' WHERE id=$1",[admin]);assert.equal((await download(admin,'ADMIN')).status,404);
  await restored.query("UPDATE users SET role='ADMIN' WHERE id=$1",[admin]);assert.deepEqual(await manifest(restored),before);
  const history=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/membership-history',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(history.total,2);assert.equal(history.events[0].operation,'DELETE');assert.equal(history.events[1].after_state.group_name,'Restore deleted group');
+ const profile=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/user/profile-settings',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(profile.ownerId,member);assert.equal(profile.bio,'Kalıcı biyografi 😀');assert.equal(profile.website,'https://example.invalid/restored');assert.ok(!('password_hash' in profile));assert.deepEqual(await manifest(restored),before);
  await assert.rejects(restored.query('DELETE FROM group_membership_history'),e=>e.code==='23514');assert.deepEqual(await manifest(restored),before);
  const output=path.resolve(serverDir,'../output');mkdirSync(output,{recursive:true});
- const report={syntheticOnly:true,productionBackup:false,versions:22,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
+ const report={syntheticOnly:true,productionBackup:false,versions:23,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
  writeFileSync(path.join(output,'backup-restore-rehearsal.json'),JSON.stringify(report,null,2));
- console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 22-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
+ console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 23-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{
  if(appServer)await new Promise(r=>appServer.close(r));if(restored)await restored.end();if(pool)await pool.end();

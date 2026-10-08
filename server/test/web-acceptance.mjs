@@ -5,6 +5,7 @@ import path from 'node:path';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites=[
+  ['self-profile-contract','Owned profile/billing persistence, optimistic conflict, validation and safe acknowledgement'],
   ['user-detail-contract','Private profile/current role/canonical history'],['performance-context-contract','Dashboard owner/session response isolation'],
   ['route-ownership-static','API ownership'],['route-ownership-contract','Actual Express route ownership'],
   ['isolated-smoke','Existing schema, authentication and known defect baselines'],

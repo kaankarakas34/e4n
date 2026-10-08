@@ -9,7 +9,14 @@ async page=>{
   await page.route('**/*',async route=>{
     const req=route.request(),u=new URL(req.url());
     if(u.origin==='http://localhost:4005'){
-      const r=await route.fetch({url:f.apiBase+u.pathname+u.search});
+      let r;
+      try { r=await route.fetch({url:f.apiBase+u.pathname+u.search}); }
+      catch(e) {
+        // Navigation can cancel an in-flight fixture request. Let the application see
+        // the network failure without rejecting the entire CLI orchestration task.
+        requests.push({method:req.method(),path:u.pathname,status:0,networkError:e.message.split('\n')[0]});
+        return route.abort('failed').catch(()=>{});
+      }
       requests.push({method:req.method(),path:u.pathname,status:r.status()});
       return route.fulfill({response:r});
     }
@@ -366,6 +373,46 @@ async page=>{
   });
   await test('admin-guild-owner-switch-hidden',async()=>{
     await visit('/admin/groups','Grup Yönetimi');await page.getByRole('button',{name:'Loncalar',exact:true}).click();await page.getByRole('heading',{name:'Browser guild saved',exact:true}).waitFor();await login('member');check(await page.getByRole('heading',{name:'Browser guild saved',exact:true}).count()===0,'Admin guild settings leaked into member view');
+  });
+
+
+  async function ownEdit(){await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('button',{name:'Profili Düzenle',exact:true}).click();await page.getByLabel('Ad Soyad',{exact:true}).waitFor();}
+
+  await test('self-profile-settings-read-error-retry',async()=>{
+    const pattern='**/api/user/profile-settings';await page.route(pattern,route=>route.fulfill({status:500,json:{error:'Isolated profile read failure'}}));await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('alert').filter({hasText:'Profil yüklenemedi'}).waitFor();check(await page.getByRole('button',{name:'Profili Düzenle',exact:true}).count()===0,'Failed profile read showed editable old data');await page.unroute(pattern);await page.getByRole('button',{name:'Tekrar Dene',exact:true}).click();await page.getByRole('button',{name:'Profili Düzenle',exact:true}).waitFor();
+  });
+
+  await test('self-profile-save-clear-reload-and-canonical-store',async()=>{
+    await ownEdit();await page.getByLabel('Ad Soyad',{exact:true}).fill('  Browser member  ');await page.getByLabel('Telefon',{exact:true}).fill('12345');await page.getByLabel('Şehir',{exact:true}).fill(' İzmir ');await page.getByLabel('Web Sitesi',{exact:true}).fill('https://example.invalid/profile');await page.getByLabel('Biyografi',{exact:true}).fill('Browser profile biography');await page.getByLabel('Şirket Ünvanı',{exact:true}).fill('Browser profile company');await page.getByLabel('Vergi Numarası',{exact:true}).fill('98765');await page.getByLabel('Vergi Dairesi',{exact:true}).fill('Profile tax office');await page.getByLabel('Fatura Adresi',{exact:true}).fill('Profile billing address');await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByText('Profil kaydedildi.',{exact:true}).waitFor();
+    check(await page.evaluate(()=>JSON.parse(localStorage.getItem('auth-storage')).state.user.name)==='Browser member','Auth store did not receive canonical name');check(await page.evaluate(()=>{const u=JSON.parse(localStorage.getItem('auth-storage')).state.user;return u.tax_number==='98765'&&u.tax_office==='Profile tax office'&&u.billing_address==='Profile billing address';}),'Self profile billing save left stale auth store fields');
+    await page.reload();await page.getByText('Browser profile biography',{exact:true}).waitFor();await page.getByRole('button',{name:'Profili Düzenle',exact:true}).click();check(await page.getByLabel('Web Sitesi',{exact:true}).inputValue()==='https://example.invalid/profile','Website not persisted');check(await page.getByLabel('Şehir',{exact:true}).inputValue()==='İzmir','City not canonical');await page.getByLabel('Telefon',{exact:true}).fill('');await page.getByLabel('Şehir',{exact:true}).fill('');await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByText('Profil kaydedildi.',{exact:true}).waitFor();
+  });
+  await test('self-profile-invalid-url-keeps-draft',async()=>{
+    await ownEdit();await page.getByLabel('Web Sitesi',{exact:true}).fill('javascript:alert(1)');await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByRole('alert').filter({hasText:'Alanları kontrol edin'}).last().waitFor();check(await page.getByLabel('Web Sitesi',{exact:true}).inputValue()==='javascript:alert(1)','Invalid draft was lost');await page.getByRole('button',{name:'İptal',exact:true}).click();
+  });
+  await test('self-profile-lost-put-ack-read-reconciliation',async()=>{
+    await ownEdit();await page.getByLabel('Biyografi',{exact:true}).fill('Browser profile lost acknowledgement');let puts=0;
+    const pattern='**/api/users/me';await page.route(pattern,async route=>{if(route.request().method()!=='PUT')return route.fallback();puts++;const r=await route.fetch({url:f.apiBase+'/api/users/me'});check(r.status()===200,'Real profile write failed');return route.abort('failed');});
+    await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByText('Profil kaydedildi.',{exact:true}).waitFor();check(puts===1,'Lost reply repeated profile PUT');await page.unroute(pattern);await page.reload();await page.getByText('Browser profile lost acknowledgement',{exact:true}).waitFor();
+  });
+  await test('self-profile-stale-edit-conflict-and-refresh',async()=>{
+    await ownEdit();const token=await page.evaluate(()=>JSON.parse(localStorage.getItem('auth-storage')).state.token);const r=await page.request.put(f.apiBase+'/api/users/me',{headers:{Authorization:'Bearer '+token},data:{bio:'Concurrent profile change'}});check(r.ok(),'Concurrent profile seed failed');await page.getByLabel('Biyografi',{exact:true}).fill('Stale profile must not overwrite');await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByRole('alert').filter({hasText:'Profil başka bir işlemde değişti'}).last().waitFor();await page.getByRole('button',{name:'Durumu Yenile',exact:true}).last().click();await page.getByText('Concurrent profile change',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Profili Düzenle',exact:true}).click();await page.getByLabel('Biyografi',{exact:true}).fill('Browser final profile');await page.getByRole('button',{name:'Kaydet',exact:true}).click();await page.getByText('Profil kaydedildi.',{exact:true}).waitFor();
+  });
+  await test('billing-save-failure-blocks-card-step-and-retry-persists',async()=>{
+    const r=await fetch(f.controlBase+'/profile-paid-event',{method:'POST',headers:{'x-fixture-key':f.secret}});check(r.ok,'Paid fixture failed');await page.goto(f.webBase+'/event/'+f.ids.paidEvent);await page.getByRole('button',{name:'Hemen Kayıt Ol',exact:true}).click();await page.getByText('Fatura ve Referans Bilgileri (Adım 1/2)',{exact:true}).waitFor();
+    check(await page.locator('input[name="tax_number"]').inputValue()==='98765','Payment form did not receive saved profile billing');check(await page.locator('textarea[name="billing_address"]').inputValue()==='Profile billing address','Payment form reused old billing address');await page.locator('input[name="company"]').fill('Browser billing company');await page.locator('input[name="tax_office"]').fill('Browser tax office');await page.locator('input[name="tax_number"]').fill('123456');await page.locator('textarea[name="billing_address"]').fill('Browser billing address');
+    const pattern='**/api/users/me';await page.route(pattern,route=>route.request().method()==='PUT'?route.fulfill({status:500,json:{error:'Isolated billing failure'}}):route.fallback());await page.getByRole('button',{name:'Kart Bilgilerine Geç',exact:true}).click();await page.getByText('Fatura bilgileri kaydedilemedi. Bilgileri kontrol edip tekrar deneyin.',{exact:true}).waitFor();check(await page.getByText('Kart Bilgileri ve Ödeme (Adım 2/2)',{exact:true}).count()===0,'Unconfirmed billing advanced payment');await page.unroute(pattern);await page.getByRole('button',{name:'Kart Bilgilerine Geç',exact:true}).click();await page.getByText('Kart Bilgileri ve Ödeme (Adım 2/2)',{exact:true}).waitFor();
+    check(await page.evaluate(()=>JSON.parse(localStorage.getItem('auth-storage')).state.user.company)==='Browser billing company','Billing store ignored saved response');await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('button',{name:'Profili Düzenle',exact:true}).click();check(await page.getByLabel('Fatura Adresi',{exact:true}).inputValue()==='Browser billing address','Billing not persisted');await page.getByRole('button',{name:'İptal',exact:true}).click();
+  });
+
+  await test('billing-lost-ack-reconciles-without-second-write',async()=>{
+    await page.goto(f.webBase+'/event/'+f.ids.paidEvent);await page.getByRole('button',{name:'Hemen Kayıt Ol',exact:true}).click();await page.getByText('Fatura ve Referans Bilgileri (Adım 1/2)',{exact:true}).waitFor();let puts=0;const pattern='**/api/users/me';await page.route(pattern,async route=>{if(route.request().method()!=='PUT')return route.fallback();puts++;const r=await route.fetch({url:f.apiBase+'/api/users/me'});check(r.ok(),'Billing write failed');return route.abort('failed');});await page.getByRole('button',{name:'Kart Bilgilerine Geç',exact:true}).click();await page.getByText('Kart Bilgileri ve Ödeme (Adım 2/2)',{exact:true}).waitFor();check(puts===1,'Lost billing reply repeated PUT');await page.unroute(pattern);await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('button',{name:'Profili Düzenle',exact:true}).waitFor();
+  });
+
+  await test('self-profile-held-response-owner-switch',async()=>{
+    await ownEdit();await page.getByLabel('Biyografi',{exact:true}).fill('Browser final profile');await page.getByLabel('Telefon',{exact:true}).fill('');let release,reached;const ready=new Promise(r=>reached=r),held=new Promise(r=>release=r);const pattern='**/api/users/me';await page.route(pattern,async route=>{if(route.request().method()!=='PUT')return route.fallback();const r=await route.fetch({url:f.apiBase+'/api/users/me'});reached();await held;await route.fulfill({response:r}).catch(()=>{});});
+    await page.getByRole('button',{name:'Kaydet',exact:true}).click();await ready;await login('president');release();await page.unroute(pattern);await page.goto(f.webBase+'/profile/'+f.ids.president);await page.getByRole('heading',{name:'Browser president',exact:true}).waitFor();check(await page.getByText('Browser final profile',{exact:true}).count()===0,'Previous profile leaked across owner');check(await page.getByText('Profil kaydedildi.',{exact:true}).count()===0,'Stale write acknowledgement visible to new owner');
   });
 
   const failed=cases.filter(r=>r.status==='FAIL').length;

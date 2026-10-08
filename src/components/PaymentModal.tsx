@@ -31,6 +31,8 @@ interface PaymentModalProps {
 
 export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, isMembership = false, initialBillingData, action }: PaymentModalProps) {
     const { user, updateUser } = useAuthStore();
+    const billingPending=useRef(false);
+    const liveOpen=useRef(isOpen);liveOpen.current=isOpen;
     const [step, setStep] = useState<1 | 2>(1);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState('');
@@ -57,6 +59,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
     });
 
     const wasOpen = useRef(false);
+    const billingContext = useRef('');
     const attempt = useRef(0);
     const pending = useRef(false);
     const popupCleanup = useRef<(() => void) | null>(null);
@@ -69,6 +72,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     useEffect(() => {
         setRestoredFor(null);
+        billingPending.current=false;setIsProcessing(false);
         const version = ++attempt.current;
         if (isOpen) {
             void readPaymentAttempt(paymentContext).then(saved => {
@@ -96,7 +100,8 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     // Pre-populate billing data from user store or initial billing data when modal opens
     useEffect(() => {
-        if (isOpen && !wasOpen.current) {
+        if (isOpen && (!wasOpen.current || billingContext.current !== paymentContext)) {
+            billingContext.current=paymentContext;
             setBillingData({
                 company: initialBillingData?.company || user?.company || '',
                 tax_number: initialBillingData?.tax_number || user?.tax_number || '',
@@ -116,7 +121,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             });
         }
         wasOpen.current = isOpen;
-    }, [isOpen, user, amount, initialBillingData]);
+    }, [isOpen, user, amount, initialBillingData, paymentContext]);
 
     const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -158,6 +163,9 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
 
     const handleBillingSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if(billingPending.current)return;
+        const context=paymentContext,epoch=attempt.current;
+        const active=()=>currentContext.current===context&&liveOpen.current&&attempt.current===epoch;
         setError('');
         
         if (!(billingData?.company || '').trim()) return setError('Lütfen Şirket / Kurum Unvanı alanını doldurun.');
@@ -165,21 +173,29 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
         if (!(billingData?.tax_number || '').trim()) return setError('Lütfen Vergi Numarası alanını doldurun.');
         if (!(billingData?.billing_address || '').trim()) return setError('Lütfen Fatura Adresi alanını doldurun.');
 
-        setIsProcessing(true);
+        billingPending.current=true;setIsProcessing(true);
         try {
-            // Save billing details to database profile asynchronously if user is logged in and not registering a visitor
+            // Advance only after the owned profile save is acknowledged.
             if (user && action?.type !== 'visitor_registration') {
-                api.updateMe(billingData)
-                    .then(() => updateUser(billingData))
-                    .catch(err => console.error('Non-blocking billing profile update failed:', err));
+                let saved;
+                try { saved=await api.updateMe(billingData,user.id); }
+                catch(e:any) {
+                    if([400,401,403,409].includes(e?.status))throw e;
+                    saved=await api.getProfileSettings(user.id);
+                    if(Object.entries(billingData).some(([key,value])=>saved![key as keyof typeof saved]!==value.trim()))throw e;
+                }
+                if(!active())return;
+                updateUser({company:saved.company??undefined,tax_number:saved.tax_number??undefined,tax_office:saved.tax_office??undefined,billing_address:saved.billing_address??undefined});
             }
+            if(!active())return;
             setStep(2);
             setError('');
         } catch (err: any) {
             console.error('Error in billing form transition:', err);
-            setError(err.error || err.message || 'Bir hata oluştu.');
+            if(active())setError('Fatura bilgileri kaydedilemedi. Bilgileri kontrol edip tekrar deneyin.');
         } finally {
-            setIsProcessing(false);
+            if(attempt.current===epoch)billingPending.current=false;
+            if(active())setIsProcessing(false);
         }
     };
 

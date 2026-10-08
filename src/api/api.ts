@@ -1,5 +1,20 @@
 import { emailService } from '../services/emailService';
 import type {UserDetailSnapshot} from './userDetail';
+export const profileFields = ['name','profession','phone','city','website','bio','linkedin_profile','company','tax_number','tax_office','billing_address'] as const;
+export type ProfilePatch = Partial<Record<typeof profileFields[number],string|null>>;
+export type ProfileSettings = Record<typeof profileFields[number],string|null> & {id:string;name:string;profession:string;ownerId:string;profileSettingsVersion:1;revision:string};
+export function validProfileSettings(v:any,owner:string):v is ProfileSettings {
+  return !!v && uuid(owner) && v.profileSettingsVersion===1 && v.id===owner.toLowerCase() && v.ownerId===v.id
+    && typeof v.name==='string' && !!v.name.trim() && typeof v.profession==='string'
+    && typeof v.revision==='string' && /^[0-9a-f]{64}$/.test(v.revision)
+    && profileFields.every(k=>v[k]===null||typeof v[k]==='string')
+    && Object.keys(v).every(k=>[...profileFields,'id','ownerId','profileSettingsVersion','revision'].includes(k));
+}
+const profileOwner = (owner?:string) => {
+  if(owner)return owner;
+  try{return JSON.parse(localStorage.getItem('auth-storage')||'{}')?.state?.user?.id as string;}catch{return '';}
+};
+const profileError = () => new Error('Profil kayıt yanıtı doğrulanamadı. Güncel durumu kontrol edin.');
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 const nullableText=(v:unknown)=>v===null||typeof v==='string';
 export function validUserDetail(v:any,owner:string,target:string):v is UserDetailSnapshot {
@@ -26,18 +41,22 @@ const validMeetingRow = (row: any) => row && typeof row === 'object' && !Array.i
 const BASE_URL = import.meta.env.PROD ? '/api' : 'http://localhost:4005/api';
 
 
-async function request(path: string, options?: RequestInit, binary = false) {
+async function request(path: string, options?: RequestInit, binary = false, expectedOwner?:string) {
   // Get token from localStorage (zustand persist stores it there)
   const authStorage = localStorage.getItem('auth-storage');
   let token = null;
+  let storedOwner = '';
   if (authStorage) {
     try {
       const parsed = JSON.parse(authStorage);
       token = parsed?.state?.token;
+      storedOwner = parsed?.state?.user?.id ?? '';
     } catch (e) {
       // Ignore parsing errors
     }
   }
+
+  if(expectedOwner && (!uuid(storedOwner) || storedOwner.toLowerCase()!==expectedOwner.toLowerCase()))throw profileError();
 
   const headers: Record<string, string> = {
     ...(options?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
@@ -153,16 +172,20 @@ export const api = {
     return await request('/users/me', { headers });
   },
 
-  async updateMe(data: any) {
-    const authStorage = localStorage.getItem('auth-storage');
-    let token = null;
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage);
-      token = parsed?.state?.token;
-    }
-    const headers: any = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return await request('/users/me', { method: 'PUT', headers, body: JSON.stringify(data) });
+  async getProfileSettings(owner:string):Promise<ProfileSettings> {
+    if(!uuid(owner))throw profileError();
+    const saved=await request('/user/profile-settings',undefined,false,owner);
+    if(!validProfileSettings(saved,owner))throw profileError();
+    return saved;
+  },
+  async updateMe(data: ProfilePatch, owner?:string, expectedRevision?:string):Promise<ProfileSettings> {
+    const actor=profileOwner(owner);
+    if(!uuid(actor))throw profileError();
+    // Existing screens may hold a full read DTO. Never send role, email or unrelated read fields.
+    const body=Object.fromEntries(profileFields.filter(k=>data[k]!==undefined).map(k=>[k,data[k]]));
+    const saved=await request('/users/me', {method:'PUT',body:JSON.stringify({...body,...(expectedRevision?{expectedRevision}:{})})},false,actor);
+    if(!validProfileSettings(saved,actor)||Object.entries(body).some(([k,v])=>saved[k as keyof ProfileSettings] !== (typeof v==='string'?v.trim()||(k==='profession'?'':null):k==='profession'?'':null)))throw profileError();
+    return saved;
   },
 
   async updateUser(id: string, data: any) {

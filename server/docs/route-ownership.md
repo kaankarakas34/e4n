@@ -1,6 +1,6 @@
 # P40 — API route sahipliği ve otomatik regresyon kapısı
 
-Kaynak giriş `src/index.js`. `route-ownership.json` mevcut163 API method/path ve18 provider (index/admin router/16 installer) kaydını içerir. `tools/route-ownership.mjs` JS AST üzerinden gerçek import/mount/installer çağrılarını çözer; support array alias ve ödeme callback literal for-of şablonlarını açar. Parametre adı farkı duplicate yolu gizlemez. Aynı method/path, tekrar installer/mount, çözülmeyen route ve korunmuş eski modül mount'u kontrolü başarısız kılar. Her yeni provider veya dinamik route biçimi gerektiğinde analiz ve runtime testi birlikte güncellenir.
+Kaynak giriş `src/index.js`. `route-ownership.json` 8 Ekim profil/fatura paketiyle mevcut179 API method/path ve26 provider (index/admin router/24 installer) kaydını içerir. Yeni `src/self-profile.js`, GET `/api/user/profile-settings` ve mevcut PUT `/api/users/me` tek sahibidir. `tools/route-ownership.mjs` JS AST üzerinden gerçek import/mount/installer çağrılarını çözer; support array alias ve ödeme callback literal for-of şablonlarını açar. Parametre adı farkı duplicate yolu gizlemez. Aynı method/path, tekrar installer/mount, çözülmeyen route ve korunmuş eski modül mount'u kontrolü başarısız kılar. Her yeni provider veya dinamik route biçimi gerektiğinde analiz ve runtime testi birlikte güncellenir.
 
 `npm run check/build` static kapıyı çalıştırır. Server `npm run test:routes` static mutant testlerini ve gerçek izole PostgreSQL17/Express karşılaştırmasını çalıştırır. Build production DB bağlantısı gerektirmez. JSON sayımları davranış eşdeğerliği, trafik veya kapsamlı güvenlik onayı değildir. Method/path eşitliğinde gölgelenme yoktur; farklı URL desenlerinin sıralama etkisi bu statik kapının tamamladığı bir güvenlik iddiası değildir.
 
@@ -10,7 +10,7 @@ Kaynak giriş `src/index.js`. `route-ownership.json` mevcut163 API method/path v
 
 16 eski router80 tanım/75 aktif eşleşme; eski support ayrıca5/5 eşleşme. Beş eski unmatched yol: DELETE education/:id, PUT ve DELETE one-to-ones/:id, DELETE users/:id, PUT visitors/:id. Bunlar ihtiyaç/kayıt saklama/puan/ürün kararı olmadan yeni API olarak açılmaz. P41 yeni özellik/kaldırma değerlendirmesinde korunur; P40 route sahipliği kararı bu yolları uygulama veya silme kararı değildir. Böylece17 modülün operasyonel hedef statüsü belirlenmiştir; P39 kalan gerçek web çağrı/yanıt/yetki farkları ayrı açık kalır.
 
-## Kanıt
+## Önceki P40 temel teslim kanıtı
 
 Static test PASS:163 yol/18 provider/17 legacy, injected duplicate/legacy mount/repeated installer/unresolved route reddi. Gerçek izole runtime contract PASS:14 migration/repeat0; actual Express metadata163 method/path tam eşleşir, duplicate yok. Gerçek JWT/current DB ADMIN/member/anonymous ve private-no-store için admin catalog/directory/reports HTTP kontrolü PASS.
 

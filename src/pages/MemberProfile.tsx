@@ -117,7 +117,7 @@ export function MemberProfile() {
     if (!id) return;
     const scope=context;
     try {
-      if(isMe)await api.updateMe(editForm);else await api.updateUser(id, editForm);
+      if(isMe)await api.updateMe(editForm,currentUser!.id);else await api.updateUser(id, editForm);
       const updated=await api.getUserById(id);
       if(live.current!==scope)return;
       setUser(updated);setLoadedFor(scope);
@@ -161,7 +161,7 @@ export function MemberProfile() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
-                  <input type="email" className="w-full border rounded-md p-2" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                  <input type="email" disabled={isMe} className="w-full border rounded-md p-2" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>

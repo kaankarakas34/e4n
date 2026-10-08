@@ -1,3 +1,4 @@
+import {installSelfProfile} from './self-profile.js';
 import {installPowerTeamSettings} from './power-team-settings.js';
 import {installEventAttendance} from './event-attendance.js';
 import {installMembershipHistory} from './membership-history.js';
@@ -604,52 +605,7 @@ app.post('/api/auth/create-password', async (req, res) => {
 
 // Update User (Admin) - Triggers Welcome Email if activating
 // Update Own Profile (User)
-app.put('/api/users/me', authenticateToken, async (req, res) => {
-  const id = req.user.id;
-  const { name, phone, city, profession, company, tax_number, tax_office, billing_address } = req.body;
-
-  try {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Check current data
-      const currentRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
-      if (currentRes.rows.length === 0) throw new Error('User not found');
-      const currentUser = currentRes.rows[0];
-
-      const updates = [];
-      const values = [];
-      let idx = 1;
-
-      // Allow always updating personal info
-      if (name) { updates.push(`name = $${idx++}`); values.push(name); }
-      if (phone) { updates.push(`phone = $${idx++}`); values.push(phone); }
-      if (city) { updates.push(`city = $${idx++}`); values.push(city); }
-      if (profession) { updates.push(`profession = $${idx++}`); values.push(profession); }
-
-      if (company !== undefined) { updates.push(`company = $${idx++}`); values.push(company); }
-      if (tax_number !== undefined) { updates.push(`tax_number = $${idx++}`); values.push(tax_number); }
-      if (tax_office !== undefined) { updates.push(`tax_office = $${idx++}`); values.push(tax_office); }
-      if (billing_address !== undefined) { updates.push(`billing_address = $${idx++}`); values.push(billing_address); }
-
-      if (updates.length > 0) {
-        await client.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, [...values, id]);
-      }
-
-      await client.query('COMMIT');
-      const finalRes = await client.query('SELECT * FROM users WHERE id = $1', [id]);
-      res.json(finalRes.rows[0]);
-    } catch (e) {
-      await client.query('ROLLBACK');
-      throw e;
-    } finally {
-      client.release();
-    }
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+installSelfProfile(app,{pool,authenticateToken});
 
 // Update User (Admin)
 app.put('/api/users/:id', authenticateToken, async (req, res) => {

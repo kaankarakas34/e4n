@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { connectionsApi, type ConnectionProfile } from '../api/connections';
-import { api } from '../api/api';
+import { api, profileFields, type ProfileSettings } from '../api/api';
 import { Button } from '../shared/Button';
 import {
     User,
@@ -44,15 +44,17 @@ export function PublicProfile() {
     const [showMeetingModal, setShowMeetingModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
+    const [settings, setSettings] = useState<ProfileSettings | null>(null);
+    const [notice, setNotice] = useState('');
     useEffect(() => {
         const epoch = ++generation.current;
         lock.current = false; setBusy(false); setSnapshot(null); setError(''); setLoading(true);
-        setShowMeetingModal(false); setShowEditModal(false);
+        setShowMeetingModal(false); setShowEditModal(false); setSettings(null); setNotice('');
         const owner = currentUser?.id;
         if (!owner || !id || !token) { setLoading(false); setError('Profili görmek için giriş yapın.'); return; }
-        connectionsApi.profile(owner, id).then(data => {
+        Promise.all([connectionsApi.profile(owner,id),owner===id?api.getProfileSettings(owner):Promise.resolve(null)]).then(([data,ownSettings]) => {
             if (epoch !== generation.current || liveScope.current !== scope) return;
-            setSnapshot({ scope, data }); setEditForm(data.profile);
+            setSnapshot({ scope, data }); setEditForm(ownSettings ?? data.profile); setSettings(ownSettings);
         }).catch(() => { if (epoch === generation.current && liveScope.current === scope) setError('Profil yüklenemedi. Tekrar deneyin.'); })
           .finally(() => { if (epoch === generation.current && liveScope.current === scope) setLoading(false); });
         return () => { generation.current++; };
@@ -76,14 +78,38 @@ export function PublicProfile() {
     const handleSendRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'create'));
     const handleAcceptRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'accept'));
     const handleRejectRequest = () => run(() => connectionsApi.mutate(currentUser!.id, id!, 'reject'));
-    const handleUpdateProfile = () => run(() => api.updateMe(editForm));
+    const handleUpdateProfile = async () => {
+        if(lock.current || !data || data.status!=='SELF' || !currentUser || !settings)return;
+        const owner=currentUser.id,epoch=generation.current;
+        const patch=Object.fromEntries(profileFields.map(k=>[k,editForm[k]??(k==='profession'?'':null)]));
+        const current=()=>epoch===generation.current && liveScope.current===scope;
+        lock.current=true;setBusy(true);setError('');setNotice('');
+        const accept=(saved:ProfileSettings)=>{
+            if(!current())return;
+            setSettings(saved);setEditForm(saved);
+            setSnapshot({scope,data:{...data,profile:{...data.profile,...Object.fromEntries(profileFields.map(k=>[k,saved[k]]))}}});
+            useAuthStore.getState().updateUser({name:saved.name,profession:saved.profession,company:saved.company??undefined,phone:saved.phone??undefined,city:saved.city??undefined,tax_number:saved.tax_number??undefined,tax_office:saved.tax_office??undefined,billing_address:saved.billing_address??undefined});
+            setShowEditModal(false);setNotice('Profil kaydedildi.');
+        };
+        try {accept(await api.updateMe(patch,owner,settings.revision));}
+        catch(e:any) {
+            if(!current())return;
+            // A lost acknowledgement may follow a committed PUT. Reconcile by reading, never repeat the write here.
+            if(![400,401,403,409].includes(e?.status)) {
+                try {
+                    const saved=await api.getProfileSettings(owner);
+                    if(profileFields.every(k=>saved[k]===(typeof patch[k]==='string'?patch[k].trim()||(k==='profession'?'':null):k==='profession'?'':null))){accept(saved);return;}
+                } catch { /* Keep the draft and report the uncertain result. */ }
+            }
+            if(current())setError(e?.status===409?'Profil başka bir işlemde değişti. Durumu yenileyip tekrar düzenleyin.':e?.status===400?'Alanları kontrol edin: ad zorunludur; site adresi http:// veya https:// ile başlamalıdır.':'Profil kaydı doğrulanamadı. Taslağınız korunuyor; durumu yenileyip kontrol edin.');
+        } finally {if(current()){lock.current=false;setBusy(false);}}
+    };
     const profileUser = data?.profile;
     const friendshipStatus = data?.status;
     const isSelf = friendshipStatus === 'SELF';
     const isFriend = friendshipStatus === 'FRIEND';
     const isAdmin = !!data?.billingVisible;
     const canSeeContactInfo = !!data?.contactVisible;
-    const isCompanyLocked = !!(profileUser?.company || profileUser?.tax_number);
     if (!profileUser) return <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p role={error ? 'alert' : 'status'}>{error || (loading ? 'Yükleniyor...' : 'Profil yüklenemedi.')}</p>
         {error && <Button onClick={() => setRetry(n => n + 1)}>Tekrar Dene</Button>}
@@ -91,6 +117,7 @@ export function PublicProfile() {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {notice && <p role="status" className="p-4 bg-green-50 text-green-800">{notice}</p>}
             {error && <div role="alert" className="p-4 bg-red-50 text-red-700">{error} <Button onClick={() => setRetry(n => n + 1)}>Durumu Yenile</Button></div>}
             {/* Cover Image */}
             <div className="h-64 w-full bg-gradient-to-r from-indigo-800 to-blue-600 relative overflow-hidden">
@@ -188,7 +215,9 @@ export function PublicProfile() {
                                         </div>
                                         <div className="flex items-center text-sm text-gray-700">
                                             <Globe className="h-4 w-4 text-gray-400 mr-3" />
-                                            <span className="truncate text-indigo-600 hover:underline cursor-pointer">{profileUser.website || '-'}</span>
+                                            {profileUser.website && /^https?:\/\//i.test(profileUser.website)
+                                                ? <a href={profileUser.website} target="_blank" rel="noopener noreferrer" className="truncate text-indigo-600 hover:underline">{profileUser.website}</a>
+                                                : <span>{profileUser.website || '-'}</span>}
                                         </div>
                                         <div className="flex items-center text-sm text-gray-700">
                                             <MapPin className="h-4 w-4 text-gray-400 mr-3" />
@@ -283,40 +312,51 @@ export function PublicProfile() {
             {/* Edit Modal (Editable) */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animation-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+                    <div role="dialog" aria-modal="true" aria-labelledby="profile-edit-title" className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">Profili Düzenle</h2>
-                            <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600"><Share2 className="h-5 w-5 rotate-45" /></button>
+                            <h2 id="profile-edit-title" className="text-xl font-bold text-gray-900">Profili Düzenle</h2>
+                            <button aria-label="Düzenlemeyi kapat" disabled={busy} onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600"><Share2 className="h-5 w-5 rotate-45" /></button>
                         </div>
 
-                        <div className="space-y-6">
+                        {error && <p role="alert" className="mb-4 text-red-700">{error} <Button disabled={busy} onClick={() => setRetry(n=>n+1)}>Durumu Yenile</Button></p>}
+                        <fieldset disabled={busy} className="space-y-6">
                             {/* Personal Info */}
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 border-b pb-2">Kişisel Bilgiler</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
-                                        <input type="text" className="w-full border rounded-md p-2" value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                                        <label htmlFor="profile-name" className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
+                                        <input id="profile-name" type="text" className="w-full border rounded-md p-2" value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Meslek / Unvan</label>
-                                        <input type="text" className="w-full border rounded-md p-2" value={editForm.profession || ''} onChange={e => setEditForm({ ...editForm, profession: e.target.value })} />
+                                        <label htmlFor="profile-profession" className="block text-sm font-medium text-gray-700 mb-1">Meslek / Unvan</label>
+                                        <input id="profile-profession" type="text" className="w-full border rounded-md p-2" value={editForm.profession || ''} onChange={e => setEditForm({ ...editForm, profession: e.target.value })} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-                                        <input type="text" className="w-full border rounded-md p-2" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                                        <label htmlFor="profile-phone" className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                                        <input id="profile-phone" type="text" className="w-full border rounded-md p-2" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Web Sitesi</label>
-                                        <input type="text" className="w-full border rounded-md p-2" value={editForm.website || ''} onChange={e => setEditForm({ ...editForm, website: e.target.value })} />
+                                        <label htmlFor="profile-website" className="block text-sm font-medium text-gray-700 mb-1">Web Sitesi</label>
+                                        <input id="profile-website" type="text" className="w-full border rounded-md p-2" value={editForm.website || ''} onChange={e => setEditForm({ ...editForm, website: e.target.value })} />
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Biyografi</label>
-                                        <textarea className="w-full border rounded-md p-2" rows={3} value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} />
+                                        <label htmlFor="profile-bio" className="block text-sm font-medium text-gray-700 mb-1">Biyografi</label>
+                                        <textarea id="profile-bio" className="w-full border rounded-md p-2" rows={3} value={editForm.bio || ''} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} />
                                     </div>
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="profile-city" className="block text-sm font-medium text-gray-700 mb-1">Şehir</label>
+                                    <input id="profile-city" className="w-full border rounded-md p-2" value={editForm.city||''} onChange={e=>setEditForm({...editForm,city:e.target.value})}/>
+                                </div>
+                                <div>
+                                    <label htmlFor="profile-linkedin" className="block text-sm font-medium text-gray-700 mb-1">LinkedIn Adresi</label>
+                                    <input id="profile-linkedin" className="w-full border rounded-md p-2" value={editForm.linkedin_profile||''} onChange={e=>setEditForm({...editForm,linkedin_profile:e.target.value})}/>
+                                </div>
+                            </div>
                             {/* Company Info */}
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <div className="flex items-center justify-between mb-4">
@@ -324,57 +364,47 @@ export function PublicProfile() {
                                         <Building className="h-4 w-4 mr-2" />
                                         Şirket Bilgileri
                                     </h3>
-                                    {isCompanyLocked ? (
-                                        <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-100">
-                                            Değiştirilemez
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                                            Düzenlenebilir
-                                        </span>
-                                    )}
+
                                 </div>
                                 <p className="text-xs text-gray-500 mb-4">
-                                    {isCompanyLocked
-                                        ? "Bu bilgiler yasal zorunluluklar ve faturalandırma süreçleri nedeniyle sadece yönetim tarafından değiştirilebilir."
-                                        : "Şirket ve fatura bilgilerinizi giriniz. Kaydettikten sonra bu bilgileri sadece yönetim değiştirebilir."}
+                                    Şirket ve fatura bilgilerinizi güncelleyin.
                                 </p>
 
-                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${isCompanyLocked ? 'opacity-75' : ''}`}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Şirket Ünvanı</label>
-                                        <input
+                                        <label htmlFor="profile-company" className="block text-xs font-medium text-gray-500 mb-1">Şirket Ünvanı</label>
+                                        <input id="profile-company"
                                             type="text"
-                                            disabled={isCompanyLocked}
+
                                             className="w-full border rounded-md p-2"
                                             value={editForm.company || ''}
                                             onChange={e => setEditForm({ ...editForm, company: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Vergi Numarası</label>
-                                        <input
+                                        <label htmlFor="profile-tax_number" className="block text-xs font-medium text-gray-500 mb-1">Vergi Numarası</label>
+                                        <input id="profile-tax_number"
                                             type="text"
-                                            disabled={isCompanyLocked}
+
                                             className="w-full border rounded-md p-2"
                                             value={editForm.tax_number || ''}
                                             onChange={e => setEditForm({ ...editForm, tax_number: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Vergi Dairesi</label>
-                                        <input
+                                        <label htmlFor="profile-tax_office" className="block text-xs font-medium text-gray-500 mb-1">Vergi Dairesi</label>
+                                        <input id="profile-tax_office"
                                             type="text"
-                                            disabled={isCompanyLocked}
+
                                             className="w-full border rounded-md p-2"
                                             value={editForm.tax_office || ''}
                                             onChange={e => setEditForm({ ...editForm, tax_office: e.target.value })}
                                         />
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Fatura Adresi</label>
-                                        <textarea
-                                            disabled={isCompanyLocked}
+                                        <label htmlFor="profile-billing_address" className="block text-xs font-medium text-gray-500 mb-1">Fatura Adresi</label>
+                                        <textarea id="profile-billing_address"
+
                                             className="w-full border rounded-md p-2"
                                             rows={2}
                                             value={editForm.billing_address || ''}
@@ -383,10 +413,10 @@ export function PublicProfile() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <div className="mt-8 flex justify-end gap-3">
-                            <Button variant="ghost" onClick={() => setShowEditModal(false)}>İptal</Button>
+                            <Button variant="ghost" disabled={busy} onClick={() => setShowEditModal(false)}>İptal</Button>
                             <Button className="bg-indigo-600 text-white" disabled={busy} onClick={handleUpdateProfile}>Kaydet</Button>
                         </div>
                     </div>

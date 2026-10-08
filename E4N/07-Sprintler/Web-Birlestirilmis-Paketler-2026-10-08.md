@@ -1,5 +1,14 @@
 # Birleştirilmiş web paketleri — 8 Ekim 2026
 
+## 8 Ekim — P39/P30 profil ve fatura bütün web paketi
+
+Site/biyografi kaydı ve boş alan temizleme, private own settings API, minimal canonical ACK/revision, conflict/replay/rollback/owner koruması, gerçek profil formu ve ödeme formunun doğrulanmış fatura kaydı aynı pakette tamamlandı. Profiledit'te kaydedilmiş fatura alanları authstore ve ödeme formuna güncel taşınır. D10 şirket kanıtı/kilidi ve üyelik hakları seçilmedi; desteklenmeyen yönetim kilidi vaadi kaldırıldı. API-time DDL yok; additive0023, kaynak23migration/47table; canlıya uygulanmadı.
+
+Kabul: API36/36 +güncelbuildPASS; özel profile/billing11/11; taze bütünbrowser74/74+finalDB. output/web-browser/2026-10-08T15-41-06-717Z/browser-report.json, bitiş2026-10-08T15:43:37.367Z. Güncel303dosya digest e2f6172fcd7a0c2977b8d0dadb83435b27bd3bd4eab9527e9b113443a1d11133, iki browser turunda eşit. API/veri kaynaklarının eski36turundan beri değişmediği hash ile kanıtlıdır; son fark yalnızUIstore +testassertion/transport. Tek donmuş rootPASS denmez. İlk eski migration-count failures, native Response.ok browser71/3FAIL ve navigasyon ECONNRESET yarım tur korunur. Kanıt server/docs/self-profile-web-acceptance-2026-10-08.json ve [[E4N/09-Dogrulama/P39-P30-Profil-Fatura-Veri-API-Web-2026-10-08]].
+
+P39/P30/P37 InProgress; yeni küçükDone/yüzde artışı yok. Aktif büyük kuyruk: üyelik/ödeme/haklar → grupbaşvuru/kabul/transfer → puan/çıkarma/engel →shuffle. Üç mevcut üyelik sorusu/D01–D10 kalanları hâlâ açık; “devam” ürün seçeneği onayı değildir. Aynı soruları tekrar sorma, mevcut paketleri tekrar yapma. Canlıschemaadoption/provider/SEC6 kapıları açık; mobil7/LMS8 enson. Ownedtest süreçleri kapandı; canlıDB/deploy/mail/ödeme yok. Commit/push/Linear teslim kaydı sonraki satırda eklenir.
+
+
 ## P39/P31 — Lonca oluşturma ve ayar teslimi
 
 Karar bekleyen üyelik XL yerine mevcut lonca oluşturma/ayar akışındaki somut veri/API/web sorunları aynı teslimde giderildi. UUID retry, güncel yönetici rolü, alan/durum koruması, özel ayar kataloğu, typed canonical kayıt, belirsiz sonuç/ACK sonrası okuma ve oturum izolasyonu birlikte doğrulandı. Odaklı API/runtime kontratları ve build PASS; gerçek browser 66/66, final DB uzlaştırması dahil. Son metin-koruma backend farkı ayrıca odaklı kontratta PASS; yeni toplu 35 API turu iddiası yok. Ayrıntı [[E4N/09-Dogrulama/P39-Lonca-Olusturma-ve-Ayarlar-Veri-API-Web-2026-10-08]]. P15 üyelik ve ana P39/P31 hedefleri açık; yeni küçük Done işi veya yüzde artışı değildir.

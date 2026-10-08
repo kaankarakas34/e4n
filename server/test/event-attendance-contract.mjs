@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,22);
+  assert.equal((await applyVersionedSchema()).applied.length,23);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -98,9 +98,9 @@ async function main() {
   for(const [id,start,type,status]of [[event,'2020-01-01','meeting','COMPLETED'],[future,'2099-01-01','meeting','PUBLISHED'],[education,'2020-01-01','education','COMPLETED'],[cancelled,'2020-01-01','meeting','CANCELLED']])await pool.query("INSERT INTO events(id,title,start_at,type,status,is_public,created_by) VALUES($1,'Attendance Fixture',$2,$3,$4,true,$5)",[id,start,type,status,admin]);
   for(const id of [event,future,education,cancelled])await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'REGISTERED'),($1,$3,'PRESENT')",[id,member,president]);
   const oldRows=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
-  await pool.query("DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'");
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'");
   await pool.query("CREATE ROLE anon; CREATE ROLE authenticated; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon,authenticated; ALTER DEFAULT PRIVILEGES GRANT ALL ON FUNCTIONS TO anon,authenticated");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0022_event_attendance_verification']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),oldRows);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0022_event_attendance_verification','0023_self_profile_fields']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),oldRows);
   assert.equal((await pool.query('SELECT count(*)::int n FROM event_attendance_verifications')).rows[0].n,0);
   const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('No mail allowed');}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port;
@@ -141,7 +141,7 @@ async function main() {
   const {eventAttendanceApi,validAttendanceSnapshot}=await import('data:text/javascript;base64,'+Buffer.from(compile(source)).toString('base64'));
   snap=await eventAttendanceApi.read(admin,event);assert(validAttendanceSnapshot(snap,admin,event));assert(!validAttendanceSnapshot({...snap,ownerId:member},admin,event));assert(!validAttendanceSnapshot({...snap,participants:[{...snap.participants[0],revision:-1}]},admin,event));
   const final=command({expectedStatus:'REGISTERED',expectedVersion:3,reason:'Observed after correction review'});assert.equal((await eventAttendanceApi.save(admin,event,member,final)).revision,4);assert.equal((await eventAttendanceApi.read(admin,event)).history.length,4);
-  console.log('Event attendance PASS: fresh22/repeat0/21upgrade without legacy rewrite; private current-role read/write; stale/concurrent8/replay/collision; explicit observe/correct/retract; atomic outage rollback; immutable/RLS; real typed owner DTO; registration counts and cached scores unchanged; no mail/payment.');
+  console.log('Event attendance PASS: fresh23/repeat0/21upgrade without legacy rewrite; private current-role read/write; stale/concurrent8/replay/collision; explicit observe/correct/retract; atomic outage rollback; immutable/RLS; real typed owner DTO; registration counts and cached scores unchanged; no mail/payment.');
 }
 let exitCode = 0;
 try {

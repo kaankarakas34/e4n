@@ -19,3 +19,5 @@ Uygulama/API/şema kodu değişmedi. Önceki33API/veriPASS raporu08-16-50-617Z a
 EXTERNAL formu Bağlantılar diyor fakat /api/user/friends mevcutACTIVEortakgrup/lonca üyelerini döndürüyor; acceptedfriend_requests listesini kullanmıyor. Bu yüzden shuffle sonrası farklıgruptaki kabul edilmiş bağlantı görünmeyebiliyor. Bunu farklıgrup yönlendirmelerini yasaklayan bir ürünkuralı diye yorumlamayacağız. Bu turINTERNAL gerçekortakgrup akışıyla kabul edilecek; P39 dışalıcı kaynağı/uygunluğu ayrıca açıkbulgu olarak tutulur, yetki/ürünkuralı uydurulmadı.
 
 P37 anahedefIP; tümhedefişkuralları, explicit etkinlikyoklaması, liveadoption/backup/provider, kapsamlıSprint6güvenlik ve yayın kabulü açık. MobilSprint7/LMS8enson. Canlıwrite/deploy/realmail/paymentyok. Ayrı küçükDone task açılmadı.
+
+Teslim kaydı: 5b3340a mevcut codex/e4n-sprint1-foundation dalına push edildi. E4N-109 ve E4N-111 Linear kayıtları güncellendi; ikisi de In Progress.

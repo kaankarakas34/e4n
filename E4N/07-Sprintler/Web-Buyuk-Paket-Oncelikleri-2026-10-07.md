@@ -26,3 +26,5 @@ Son taze tarayıcı turu **50 PASS / 0 FAIL**, exit0: `output/web-browser/2026-1
 Üç tarayıcı test dosyası değişti; uygulama/API/şema değişmedi. Önceki 33 API/veri PASS (08-16-50-617Z) aynı kaynak için tekrar kullanılmaktadır; yeniden build/API koşuldu iddiası yok. Syntax/diff PASS. İlk 44/4 ve 47/3 turlar kabul değildir.
 
 P39/E4N-111 açık bulgu: EXTERNAL “Bağlantılar” alıcı listesi acceptedfriend_requests yerine ortak ACTIVE grup/lonca üyelerini kullanıyor; shuffle sonrası kabul edilmiş farklı grup bağlantısı kaybolabilir. Bu tur mevcut INTERNAL akışını doğrular; yeni uygunluk veya ürün politikası seçilmedi. P37 In Progress, releaseReady=false. Sonraki işler P39 alıcı sözleşmesi ile P26 açık yoklama/check-in bütün paketidir; D kararlarına bağlı üyelik/grup/puan/shuffle XL kapıları açık. Mobil/LMS en son; canlı yazma, dağıtım, gerçek e-posta/ödeme yok.
+
+Teslim kaydı: 5b3340a mevcut codex/e4n-sprint1-foundation dalına push edildi. E4N-109 ve E4N-111 Linear kayıtları güncellendi; ikisi de In Progress.

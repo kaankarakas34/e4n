@@ -10,6 +10,9 @@ Son taze tarayıcı turu **50 PASS / 0 FAIL**, exit0: `output/web-browser/2026-1
 
 P39/E4N-111 açık bulgu: EXTERNAL “Bağlantılar” alıcı listesi acceptedfriend_requests yerine ortak ACTIVE grup/lonca üyelerini kullanıyor; shuffle sonrası kabul edilmiş farklı grup bağlantısı kaybolabilir. Bu tur mevcut INTERNAL akışını doğrular; yeni uygunluk veya ürün politikası seçilmedi. P37 In Progress, releaseReady=false. Sonraki işler P39 alıcı sözleşmesi ile P26 açık yoklama/check-in bütün paketidir; D kararlarına bağlı üyelik/grup/puan/shuffle XL kapıları açık. Mobil/LMS en son; canlı yazma, dağıtım, gerçek e-posta/ödeme yok.
 
+
+Teslim kaydı: 5b3340a mevcut codex/e4n-sprint1-foundation dalına push edildi. E4N-109 ve E4N-111 Linear kayıtları güncellendi; ikisi de In Progress.
+
 ## 8 Ekim — P26 yeni kayıt/yoklama ayrımı
 
 [[P26-Etkinlik-Kayit-Yoklama-Ayrimi-2026-10-08]]: migration0021 yeni REGISTERED; eski satırlar/scoreweights değişmedi. Kayıt puan veya PRESENT/ABSENT oluşturmaz; cachedscore recalculation kaldırıldı, iki performans servisinde son4 paydasından dışlandı. Admin/grup web durumu ve mevcut sayaç/bilet/ödeme/owner/replay korunur.33API/veriPASS0FAIL(08-16-50-617Z),fresh21/repeat0/20upgrade, restore46tablePASS; build/check/syntax/diffPASS. İlkbrowserECONNRESET incomplete kabuldeğil; İkinci gerçek tarayıcı 38PASS0FAIL: output/web-browser/2026-10-08T08-25-39-153Z/browser-report.json. Gerçek admin kayıt/refresh tekPOST, sayaç2→3, ikiREGISTERED+birlegacyPRESENT, memberownread, önceki shuffle37/history/ödeme/fatura/mesaj/dosya/finalDB kabulü. Admin katılımcı ekranı gözle incelendi. Ownedfixtures kapalı; releaseReady=false.

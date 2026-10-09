@@ -1,0 +1,85 @@
+{
+  "package": "P39 lonca başvuru ve üye yönetimi web",
+  "sourceCommit": "310e00a8022b96e99b6d7c30a08f87c755fc66d4",
+  "releaseReady": false,
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "scope": [
+    "current DB ADMIN or active lonca PRESIDENT authority",
+    "join payment gate/replay preserving ACTIVE",
+    "approval/delete ACK and canonical read in three screens",
+    "REQUESTED/PENDING visibility",
+    "synchronous mutation lock and lost ACK GET reconciliation"
+  ],
+  "tests": {
+    "postgres17": "group-capacity-contract PASS, including guild authority/payment/replay/404/rollback/concurrent delete; no closed-group cap on guild",
+    "guildBrowser": {
+      "report": "output/guild-roster/2026-10-09T07-00-28-092Z/report.json",
+      "passed": 6,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "manager-requested-approval-canonical-read",
+          "status": "PASS"
+        },
+        {
+          "name": "manager-removes-active-member",
+          "status": "PASS"
+        },
+        {
+          "name": "admin-corrupt-ack-read-reconciliation",
+          "status": "PASS"
+        },
+        {
+          "name": "detail-lost-ack-no-second-write",
+          "status": "PASS"
+        },
+        {
+          "name": "manager-rejects-requested-delete",
+          "status": "PASS"
+        },
+        {
+          "name": "final-guild-roster",
+          "status": "PASS"
+        }
+      ],
+      "finalState": {
+        "rosterGuild": [
+          {
+            "user_id": "33fc19b3-7c88-4b06-ac82-edcba4c64358",
+            "status": "ACTIVE",
+            "role": "PRESIDENT"
+          },
+          {
+            "user_id": "5c0410a6-c078-4dd0-999a-c3f98d23a7c6",
+            "status": "ACTIVE",
+            "role": "MEMBER"
+          }
+        ]
+      }
+    },
+    "groupRegression": {
+      "report": "output/group-roster/2026-10-09T07-00-56-707Z/report.json",
+      "passed": 7,
+      "failed": 0
+    },
+    "build": "production build/type/static route checks PASS; existing bundle warning"
+  },
+  "sourceEvidence": {
+    "testedWorkingTree": true,
+    "unchangedDuringBothBrowserRuns": true,
+    "committedFilesMatchTestedSource": true
+  },
+  "limitations": [
+    "D08 final authority and D07 grace/shuffle rules remain undecided",
+    "No production rollout or complete release acceptance",
+    "No new guild history schema or policy introduced"
+  ],
+  "earlierAttempt": {
+    "report": "output/guild-roster/2026-10-09T06-59-00-975Z/report.json",
+    "passed": 2,
+    "failed": 5,
+    "reason": "ambiguous fixture selectors plus source change during run; superseded by frozen final run"
+  }
+}

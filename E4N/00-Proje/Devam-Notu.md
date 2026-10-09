@@ -1,5 +1,17 @@
 # E4N devam durumu — 10 Ekim 2026
 
+## Güncel — Canlı Yayın Başarıyla Tamamlandı (10 Ekim 2026)
+
+- Kullanıcının doğrudan talimatı üzerine (`codex/e4n-sprint1-foundation` dalındaki tüm commitler: P21, P22, P23, P24 ve BAŞ-02 / `1558969`) `main` dalına fast-forward merge edilerek pushlandı (`origin/main`).
+- Vercel production build otomatik tamamlandı ve canlıya alındı.
+- Canlı ortam entegrasyon ve doğrulama denetimi (`test_live_production.js`): **13/13 PASS**.
+  - `https://www.event4network.com/api/health-check`: HTTP 200, `dbAttempt: "success"`, DB aktif.
+  - `https://www.event4network.com/api/auth/referral-preview`: HTTP 200 (yeni API devrede).
+  - Güvenlik ve yetki bariyerleri: `/api/user/membership-referral` (401), `/api/admin/members` (401), `/api/groups` (401) anonim engelleri devrede.
+  - Kayıt API bariyeri: Boş POST `/api/auth/register` (400) geçerli doğrulama hatası dönüyor.
+  - Canlı web sayfaları: Ana sayfa (200), `/auth/register` (200), `/auth/login` (200), `event4network.com` yönlendirmesi (307) ve `robots.txt` (200) aktif.
+- Sıfır DDL kuralı korundu; canlı DB'de 28 sürüm ve 50 tablo invariyantı sağlam.
+
 ## Güncel teslim — BAŞ-02 / E4N-162 tamamlandı
 
 - **E4N-162 (BAŞ-02) Done:** Davetiye zorunluluğu kalkarken üyelik referans ilişkisi, kalıcı takip ve web görünümü kuruldu.

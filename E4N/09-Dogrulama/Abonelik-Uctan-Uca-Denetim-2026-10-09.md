@@ -4,6 +4,10 @@ Görev: E4N-163 (In Progress / Acil). İstek: üyenin girişten abonelik satın 
 
 ## 9 Ekim düzeltme teslimi
 
+### Canlı yayın — kullanıcı yetkisiyle
+
+`be4045006469f08f1f39676aba72e66c50c7c923` main'e gönderildi. Production `dpl_4zfBfAXLt7tdRBPbi5UVGjFXBzv2` READY; www.event4network.com yeni `/assets/index-CE-pxV6f.js` sunuyor. Yeni abonelik durum metni var, keyfi E4N3000 kodu yok; anonim own-profile ve payment API 401. Kanıt `output/subscription-production-release.json`. Gerçek ödeme/mail veya canlı fixture kaydı yapılmadı. Aşağıdaki önceki “deploy yapılmadı” cümlesi ilk yerel teslim zamanına aittir; E4N-163 kalan D07/sandbox kapsamıyla hâlâ açıktır.
+
 - Fiyat: mevcut yayımlanmış 7.200 / 39.000 / 69.000 TL tek ortak katalogda; server membership plan/tutar eşleşmesini banka çağrısından önce zorunlu tutuyor. 1 TL ve yanlış paket, katalog dışındaki yeni 4/8 aylık satış, onaysız indirim kodu reddediliyor. Eski 4/8 aylık plan kayıtları okunabilir ve önceden başlatılmış işlemin sağlayıcı doğrulaması korunur. Ücret kararı değişmedi. Tarayıcıdaki keyfi 3.000 TL promo mantığı kaldırıldı; üyelik referans ilişkisine dokunulmadı.
 - Yenileme: gelecek bitiş tarihi varsa buradan, yoksa bugünden satın alınan ay eklenir. Kullanıcı satır kilidi farklı faturaların eşzamanlı tahsilatında süre kaybını önler; UTC ay sonu geçerli son güne sınırlandırılır. Kalan sürenin korunması dışında paket dönüşümü/ücret farkı kuralı eklenmedi.
 - Kısıtlama: ACTIVE/UNSUBSCRIBED/PENDING dışındaki hesapta yeni ödeme başlatma 403. Ödeme başlatıldıktan sonra gelen kısıtlama, sağlayıcı SUCCESS sonrası da korunur; tahsilat kaybolmadan dönem kaydı yazılır, kısıtlı hesap gruba başvuramaz.

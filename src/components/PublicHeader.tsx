@@ -16,7 +16,6 @@ export function PublicHeader() {
     { name: 'E4N Nedir?', path: '/e4n-nedir' },
     { name: 'Nasıl Çalışır?', path: '/nasil-calisir' },
     { name: 'Üyelik', path: '/uyelik' },
-    { name: 'Eğitim', path: '/egitim' },
     { name: 'Etkinlikler', path: '/etkinlikler' },
     { name: 'Hakkımızda', path: '/hakkimizda' }
   ];
@@ -78,6 +77,8 @@ export function PublicHeader() {
 
           <div className="md:hidden flex items-center">
             <button
+              aria-label="Gezinme menüsünü aç/kapat"
+              aria-expanded={isOpen}
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-505 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
             >

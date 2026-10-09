@@ -6,56 +6,52 @@ import { Search, ChevronDown, HelpCircle, ArrowRight } from 'lucide-react';
 
 const sssItems = [
   {
-    q: "Event4Network nedir?",
-    a: "Event4Network, nitelikli iş insanlarını değerlendirme süreciyle bir araya getiren, güvene dayalı iş ilişkileri ve nitelikli referanslar oluşturan seçici bir networking ekosistemidir."
+    "q": "Event4Network nedir?",
+    "a": "Event4Network, şirket bilgileriyle normal üyelik kaydı yapılabilen; iş ilişkileri, grup buluşmaları ve güvene dayalı yönlendirmeler sunan bir networking platformudur."
   },
   {
-    q: "Herkes katılabilir mi?",
-    a: "Hayır. Event4Network seçici bir yapıya sahiptir. Başvurular; adayın sektörü, iş yapma biçimi, mevcut grup yapısı, meslek koltuğu uygunluğu, temsil gücü ve gruba sağlayabileceği katkılar doğrultusunda değerlendirilir."
+    "q": "Herkes üye olabilir mi?",
+    "a": "Şirket adı, geçerli ve tekil VKN/TCKN, vergi dairesi, şirket adresi ve il bilgisiyle kayıt olabilirsiniz. Davetiye ve üyelik için ön onay gerekmez; kapalı gruba kabul ayrı bir süreçtir."
   },
   {
-    q: "Üyelik neden değerlendirme ile ilerler?",
-    a: "Ekosistem içerisindeki güveni, dengeyi ve iş yönlendirme kalitesini korumak için üyelikler ön değerlendirme görüşmesi, meslek koltuğu uygunluğu ve profil incelemesi aşamalarından geçer."
+    "q": "Üye olmak için hangi bilgiler gerekir?",
+    "a": "Şirket adı, VKN/TCKN, vergi dairesi, şirket/fatura adresi, il ve iletişim bilgileri zorunludur. Vergi levhası dosyası yüklemek gerekmez. Bir vergi numarası yalnız bir hesapta kullanılabilir; hesap silinse de numara yeniden kayda açılamaz."
   },
   {
-    q: "Başvuru yapmak üyelik garantisi midir?",
-    a: "Hayır. Başvuru yapmak üyelik garantisi oluşturmaz. Başvurular, grubun dengesi, meslek koltuğu boşluğu ve karşılıklı değer potansiyeli doğrultusunda incelenir."
+    "q": "Üyelik ve abonelik aynı şey mi?",
+    "a": "Hayır. Kayıt hesabınızı oluşturur. Gruplara başvuru göndermek için aktif abonelik gerekir; güncel paketler giriş sonrası Üyelik İşlemleri alanındadır. Abonelik satın almak gruba otomatik kabul sağlamaz."
   },
   {
-    q: "Üyelik süreci nasıl ilerler?",
-    a: "Süreç; başvuru formu iletimi, ön profil incelemesi, ön görüşme, uygun bir toplantıya tanışma/konuk katılımı ve son uygunluk değerlendirmesi adımlarından oluşur."
+    "q": "Gruba nasıl başvururum?",
+    "a": "Aktif abonelikle panelinizde grupları, analizlerini, doluluğu ve üyelerin mesleklerini inceleyin. Katıl ile istek gönderin. Başkan telefon görüşmesini kaydettikten sonra kabul veya ret verir; sonucu panelinizden izleyebilirsiniz."
   },
   {
-    q: "Toplantılar nasıl gerçekleşir?",
-    a: "Event4Network grupları disiplinli bir takvim dahilinde, çoğunlukla online olarak düzenli toplantılar gerçekleştirir. Bununla birlikte yüz yüze kahve görüşmeleri ve ortak ağ buluşmaları da planlanır."
+    "q": "Grup kapasitesi kaç kişidir?",
+    "a": "Kapalı gruplarda başkan hariç en fazla 35 üye bulunur. Kapasite ve meslek koltuğu uygunluğu başvuru sürecinde kontrol edilir."
   },
   {
-    q: "Birebir görüşmeler neden önemlidir?",
-    a: "Birebir görüşmeler (1-on-1), üyelerin birbirlerinin iş süreçlerini, hedeflerini ve referans çevrelerini detaylıca tanımasını sağlayarak asıl güven ilişkisinin kurulduğu aşamadır."
+    "q": "Toplantılar nasıl gerçekleşir?",
+    "a": "Grupların toplantı ve etkinlik takvimlerini panelinizden takip edebilirsiniz. Katılım koşulları ve kayıt durumları ilgili etkinlikte gösterilir."
   },
   {
-    q: "Üyelerden ne beklenir?",
-    a: "Üyelerimizden toplantılara düzenli katılım, birebir görüşmeler yapmaları, profesyonel temsil kurallarına uymaları ve gruba karşılıklı değer/referans yönlendirmeleriyle katkı sunmaları beklenir."
+    "q": "Birebir görüşmeler neden önemlidir?",
+    "a": "Birebir görüşmeler üyelerin birbirlerinin iş süreçlerini, hedeflerini ve referans çevrelerini tanımasına yardımcı olur."
   },
   {
-    q: "Nitelikli iş yönlendirmesi nedir?",
-    a: "Üyelerin kendi çevrelerindeki gerçek ihtiyaç sahiplerini, güvendikleri diğer grup üyelerine referans kanalıyla yönlendirmesidir. Bu yöntem, soğuk satış aramaları yerine sıcak ve güvenilir iş kapıları açar."
+    "q": "Etkinlikler herkese açık mı?",
+    "a": "Her etkinliğin katılım ve ödeme koşulları kendi ekranında gösterilir. Abonelik satın almak bütün etkinliklerin ücretsiz olduğu anlamına gelmez."
   },
   {
-    q: "Aynı sektörden kişiler aynı grupta yer alabilir mi?",
-    a: "Event4Network’te grup içi rekabeti önlemek için 'Meslek Koltuğu' sistemi uygulanır. Bu doğrultuda her grupta her meslek dalından yalnızca tek bir temsilci yer alabilir."
+    "q": "Ücretlendirme nasıl öğrenilir?",
+    "a": "Giriş yaptıktan sonra Üyelik İşlemleri alanında güncel abonelik paketlerini ve ödeme tutarlarını inceleyebilirsiniz. Kayıt için ön değerlendirme görüşmesi şartı yoktur."
   },
   {
-    q: "Etkinlikler herkese açık mı?",
-    a: "Etkinliklerimizin bir kısmı sadece üyelere özel kapalı davetlerken, bazı networking ve eğitim etkinlikleri kamuya açık/ziyaretçi katılımına uygundur."
+    "q": "Topluluk kanalına katılmak grup üyeliği sağlar mı?",
+    "a": "Hayır. Açık lonca ve WhatsApp topluluk kanalları farklıdır; bu kanallara katılım E4N aboneliği veya kapalı gruba kabul sağlamaz. Pardus ayrı, ücretsiz ve seçici bir yapıdır."
   },
   {
-    q: "Ücretlendirme nasıl öğrenilir?",
-    a: "Event4Network yıllık üyelik modeliyle çalışmaktadır. Üyelik katılım koşulları ve detayları, ön değerlendirme görüşmesi olumlu geçen adaylarla paylaşılmaktadır."
-  },
-  {
-    q: "Uygun görülmeyen başvurulara ne olur?",
-    a: "Meslek koltuğu doluluğu veya diğer kriterler nedeniyle uygun görülmeyen başvurular veri politikamıza uygun olarak arşivlenir ve gelecekte yeni gruplar açıldığında öncelikli olarak değerlendirilebilir."
+    "q": "Grup başvurum reddedilirse hesabım silinir mi?",
+    "a": "Grup kararı ve normal üyelik hesabı ayrıdır. Başvurunuzun durumunu panelinizden takip edebilirsiniz; ret, otomatik sonraki dönem kabulü veya önceliği sağlamaz."
   }
 ];
 
@@ -176,10 +172,10 @@ export function SSS() {
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-lg h-14 px-8 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto"
             >
-              Başvuru Yap <ArrowRight className="ml-2 h-5 w-5" />
+              Üye Ol <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button
               size="lg"

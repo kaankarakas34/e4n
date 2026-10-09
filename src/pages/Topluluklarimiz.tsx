@@ -143,6 +143,7 @@ export function Topluluklarimiz() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none mb-6">
             E4N Topluluklarına Katılın
           </h1>
+          <p className="text-slate-300 text-sm mt-4 max-w-3xl mx-auto">Bu açık topluluk kanalları ayrı bir üyelik türü değildir. WhatsApp veya lonca kanalına katılım, E4N aboneliği ve kapalı grup kabulü sağlamaz.</p>
           <p className="text-lg sm:text-xl text-slate-300 mb-8 leading-relaxed max-w-3xl mx-auto font-light">
             Ücretsiz topluluklarımıza katılıp etkinliklerimizden anında haberdar olun, sektörel gelişmeleri takip edin ve birçok profesyonelle tanışma şansı yakalayın.
           </p>
@@ -164,11 +165,11 @@ export function Topluluklarimiz() {
                 E4N TOPLULUK GİRİŞ KAPISI
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
-                Ücretsiz Topluluk Profili Oluşturun
+                Normal Üyelik Hesabı Oluşturun
               </h2>
               
               <p className="text-slate-650 text-base leading-relaxed mb-8 max-w-xl mx-auto">
-                Event4Network, kapalı ve seçici bir iş dünyası kulübüdür. Loncalara katılarak ağımızdaki seçkin iş insanlarını takip etmek, deneyimlerini izlemek ve dışarıya açık etkinliklerimizi takip etmek için ücretsiz Topluluk Profili oluşturun.
+                Şirket bilgilerinizle normal üyelik hesabınızı açabilirsiniz. Açık topluluk kanalları ve kapalı grup kabulü farklıdır; kapalı grup başvurusu için aktif abonelik gerekir.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -176,7 +177,7 @@ export function Topluluklarimiz() {
                   onClick={() => navigate('/auth/register')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl bg-red-600 hover:bg-red-550 text-white font-bold text-sm tracking-wide shadow-lg shadow-red-200 transition-all transform active:scale-95"
                 >
-                  Topluluk Profili Oluştur
+                  Üye Ol
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button

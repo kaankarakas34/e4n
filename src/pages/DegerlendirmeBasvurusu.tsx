@@ -242,7 +242,7 @@ export function DegerlendirmeBasvurusu() {
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 mb-4">Başvurunuz değerlendirme sürecine alınmıştır.</h1>
           <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-            Event4Network’e gösterdiğiniz ilgi için teşekkür ederiz. Başvurunuz, topluluğun nitelik standardı ve karşılıklı değer ilkesi doğrultusunda incelenecektir.<br /><br />
+            Event4Network’e gösterdiğiniz ilgi için teşekkür ederiz. Başvurunuz, ziyaretçi iletişim talebi olarak incelenecektir.<br /><br />
             Uygunluk halinde sizinle iletişime geçilecektir.
           </p>
           <Button
@@ -261,11 +261,11 @@ export function DegerlendirmeBasvurusu() {
   return (
     <div className="bg-gray-50 min-h-screen py-16">
       <Helmet>
-        <title>Ön Değerlendirme Başvurusu | Event4Network</title>
+        <title>Ziyaretçi Başvurusu | Event4Network</title>
         <meta name="description" content="Event4Network’e katılım ön değerlendirme süreciyle ilerler. İş profilinizi, profesyonel deneyiminizi ve topluluğa katabileceğiniz değeri paylaşarak başvurunuzu iletin." />
-        <meta property="og:title" content="Ön Değerlendirme Başvurusu | Event4Network" />
+        <meta property="og:title" content="Ziyaretçi Başvurusu | Event4Network" />
         <meta property="og:description" content="Event4Network’e katılım, iş profili, profesyonel temsil gücü ve karşılıklı değer potansiyeli doğrultusunda yapılan ön değerlendirme süreciyle ilerler." />
-        <link rel="canonical" href="https://www.event4network.com/degerlendirme-basvurusu" />
+        <link rel="canonical" href="https://www.event4network.com/ziyaretci-basvurusu" />
       </Helmet>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
@@ -305,12 +305,12 @@ export function DegerlendirmeBasvurusu() {
                 Ön Değerlendirme Süreci
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-                Ön Değerlendirme Başvurusu
+                Ziyaretçi Başvurusu
               </h1>
               <p className="text-gray-300 text-sm sm:text-base max-w-2xl leading-relaxed">
                 Event4Network’e katılım, doğrudan kayıt sistemiyle değil; ön değerlendirme süreciyle ilerler.<br /><br />
                 Bu form, sizi, işinizi, profesyonel deneyiminizi ve Event4Network topluluğuna katabileceğiniz değeri daha iyi anlayabilmemiz için hazırlanmıştır.<br /><br />
-                Başvurular; iş profili, profesyonel temsil gücü, faaliyet alanı, networke sağlayabileceğiniz katkı ve mevcut yapı ile uygunluk doğrultusunda değerlendirilir. Formu doldurmanız üyelik garantisi oluşturmaz. Uygun görülen başvurular için sizinle iletişime geçilir.
+                Bu form ziyaretçi iletişim talebi içindir; normal üyelik hesabı oluşturmaz. Normal üyelik için Üye Ol alanından şirket bilgilerinizle kayıt olun. Kapalı grup başvurusu ise aktif abonelik sonrası panelden yapılır.
               </p>
             </div>
           </div>
@@ -551,7 +551,7 @@ export function DegerlendirmeBasvurusu() {
                       </div>
                     </div>
                     <span className="text-sm text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors font-medium">
-                      Başvuru formunu doldurmanın üyelik garantisi oluşturmadığını; başvuruların uygunluk ve karşılıklı değer potansiyeli doğrultusunda değerlendirileceğini kabul ediyorum. *
+                      Başvuru formunu doldurmanın normal üyelik hesabı veya gruba kabul oluşturmadığını; başvuruların uygunluk ve karşılıklı değer potansiyeli doğrultusunda değerlendirileceğini kabul ediyorum. *
                     </span>
                   </label>
                   {errors.application_consent && <p className="mt-1 text-xs text-red-500 pl-8">{errors.application_consent.message}</p>}
@@ -594,7 +594,7 @@ export function DegerlendirmeBasvurusu() {
             </div>
             
             <p className="text-center text-xs text-gray-400 mt-6 pt-4 border-t border-gray-50">
-              Event4Network’e yapılan başvurular; topluluğun nitelik standardı, uygunluk ve karşılıklı değer ilkesi doğrultusunda incelenir. Başvuru formunu doldurmak üyelik garantisi oluşturmaz.
+              Event4Network’e yapılan başvurular; topluluğun nitelik standardı, uygunluk ve karşılıklı değer ilkesi doğrultusunda incelenir. Başvuru formunu doldurmak normal üyelik hesabı veya gruba kabul oluşturmaz.
             </p>
           </form>
         </div>

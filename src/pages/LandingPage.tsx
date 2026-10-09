@@ -138,10 +138,10 @@ export function LandingPage() {
                 <Button
                   size="lg"
                   variant="primary"
-                  onClick={() => navigate('/degerlendirme-basvurusu')}
+                  onClick={() => navigate('/auth/register')}
                   className="text-base font-bold px-8 h-14 bg-red-600 hover:bg-red-500 shadow-xl shadow-red-900/30 transform hover:-translate-y-0.5 transition-all w-full sm:w-auto"
                 >
-                  Üyelik Başvurusu Yap
+                  Üye Ol
                 </Button>
                 <Button
                   size="lg"
@@ -262,7 +262,7 @@ export function LandingPage() {
                 </div>
                 <h3 className="font-bold text-slate-900 mb-2">Nitelikli Topluluk</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Sadece iş profili ve değer katma hedefleri onaylanmış elit yöneticiler yer alır.
+                  Şirket bilgileriyle kayıt olan üyeler, kapalı gruplara başkan görüşmesi ve kabul kararıyla katılır.
                 </p>
               </div>
 
@@ -364,13 +364,13 @@ export function LandingPage() {
             {[
               {
                 step: "01",
-                title: "Başvuru ve Ön Değerlendirme",
-                desc: "E4N’e katılım başvuru süreciyle başlar. Adayın iş alanı, profili, beklentileri ve platforma sağlayabileceği katkı değerlendirilir."
+                title: "Normal Üyelik Kaydı",
+                desc: "Şirket bilgilerinizle normal üyelik kaydı açın. Kayıt için davetiye ve ön onay gerekmez; kapalı gruba başvuru aktif abonelik, başkan görüşmesi ve kabul kararıyla ilerler."
               },
               {
                 step: "02",
-                title: "Tanışma ve Uyum Görüşmesi",
-                desc: "Başvuru sonrasında adayla bir ön görüşme yapılır. Bu görüşmede adayın E4N’den ne beklediği, hangi çevrelere ulaşmak istediği ve mevcut üyelerle nasıl bir değer alışverişi oluşturabileceği anlaşılır."
+                title: "Abonelik ve Grup Başvurusu",
+                desc: "Aktif abonelikle grupların analizlerini ve üyelerin mesleklerini inceleyin. Katıl ile gönderdiğiniz istek başkana görüşme görevi olarak düşer; telefon görüşmesinin ardından başkan kabul veya ret verir."
               },
               {
                 step: "03",
@@ -590,19 +590,19 @@ export function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-4">KATILIM SÜRECİ</span>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-6">
-            E4N’e Katılmak İçin Başvurun
+            E4N’e Üye Olun
           </h2>
           <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
-            Event4Network, kapalı ve seçici bir iş dünyası kulübüdür. Kulüp üyeliği yalnızca sınırlı kontenjanla ve detaylı bir ön değerlendirme süreciyle gerçekleşir. Değerlendirme sürecine başvurarak uygunluğunuzu sorgulatabilir veya dışarıya açık ücretsiz topluluklarımıza katılarak ağımızdaki profesyonelleri takip edebilir, etkinliklerimizi izleyebilirsiniz.
+            Şirket bilgilerinizle normal üyelik kaydı açın. Kayıt için davetiye ve ön onay gerekmez; kapalı gruba başvuru aktif abonelik, başkan görüşmesi ve kabul kararıyla ilerler. Açık topluluk kanalları ve kapalı grup üyeliği farklıdır.
           </p>
           <div className="flex justify-center">
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-lg h-16 px-12 bg-red-600 hover:bg-red-550 hover:scale-105 transform transition-all shadow-xl font-bold rounded-xl"
             >
-              Değerlendirme Başvurusu Yap <ArrowRight className="ml-2 w-5 h-5" />
+              Üye Ol <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
         </div>

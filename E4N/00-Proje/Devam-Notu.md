@@ -1,5 +1,11 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel teslim — P33 / E4N-105 ve abonelik canlı yayını
+
+- be40450 abonelik düzeltmeleri main/production READY (dpl_4zfBfAXLt7tdRBPbi5UVGjFXBzv2), canlı asset/yeni durum/anon401 doğrulandı. E4N-163 D07 ve sağlayıcı sandbox kalanlarıyla açık.
+- P33: normal hesap → abonelik → grup keşfi/istek → başkan görüşmesi/kararı anlatımı 7 sayfa, menü/footer ve abonelik vaatlerinde birleştirildi. Eski ziyaretçi refId korunur; eğitim girişleri ertelendi. Yeni API/veri kuralı veya migration yok. 23 browser/API/PG/sahte sağlayıcı/finalDB/reload, own-read ve build PASS. Kanıt [[E4N/09-Dogrulama/P33-Normal-Uyelik-Site-Anlatimi-2026-10-09]]. Yayın/commit sonucu paket kapanışında ayrıca kaydedilir.
+- E4N-109/111 bütün kalan kapsamlarıyla açık; 162 referans ve 163/165 ürün kararlarını uydurma. Mobil/LMS son aşamada.
+
 ## Son teslim — abonelik denetim düzeltmeleri / E4N-163
 - 9 Ekim kullanıcı düzeltme istedi: ortak yayımlanmış fiyat kataloğu + sunucu tutar/kod doğrulaması; tarayıcıda keyfi 3.000 TL indirim kaldırıldı. Yenileme kalan dönem üzerine eklenir; kullanıcı kilidi/eşzamanlı ödeme ve UTC ay sonu korunur. SUSPENDED ve diğer kısıtlı hesaplar yeni ödeme başlatamaz; sonradan gelen kısıtlama ödeme sonucuyla kalkmaz. Web kendi kayıt kaynağından aktif/bitmiş/abonesiz/kısıtlı/bilinmeyen gösterir.
 - Payment-flow gerçek API/PG/sahte sağlayıcı ve ek fiyat/yenileme/ay sonu/askı regresyonları; modal/API/own-read; build PASS. Yerel browser 3/3/finalDB/reload ve Abonelik aktif PASS. Kanıt [[E4N/09-Dogrulama/Abonelik-Uctan-Uca-Denetim-2026-10-09]], output/subscription-fix-*. Tam web/SEC kabulü değil.

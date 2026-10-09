@@ -59,7 +59,7 @@ export function MembershipPage() {
             price: membershipPrices['1_MONTH'],
             netPrice: '6.000 TL + KDV',
             monthly: '7.200 TL KDV Dahil',
-            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri']
+            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu']
         },
         {
             plan: '6_MONTHS' as MembershipPlan,
@@ -67,7 +67,7 @@ export function MembershipPage() {
             price: membershipPrices['6_MONTHS'],
             netPrice: '32.500 TL + KDV',
             monthly: 'Ort. 6.500 TL KDV Dahil / ay',
-            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%10 Etkinlik İndirimi']
+            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu']
         },
         {
             plan: '12_MONTHS' as MembershipPlan,
@@ -75,7 +75,7 @@ export function MembershipPage() {
             price: membershipPrices['12_MONTHS'],
             netPrice: '57.500 TL + KDV',
             monthly: 'Ort. 5.750 TL KDV Dahil / ay',
-            features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%20 Etkinlik İndirimi', 'Öncelikli Destek'],
+            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
             popular: true
         }
     ];

@@ -1,3 +1,4 @@
+import { membershipJourney } from '../content/membershipJourney';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
@@ -49,10 +50,10 @@ export function E4NNedir() {
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-8 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto shadow-lg shadow-red-900/30"
             >
-              Değerlendirme Başvurusu Yap
+              Üye Ol
             </Button>
             <Button
               size="lg"
@@ -194,7 +195,7 @@ export function E4NNedir() {
                     "Düzenli temas ve 1 Online + 1 Yüz Yüze sistemi",
                     "Tamamlayıcı meslekler arasında rakipsiz iş birlikleri",
                     "Hedef listeler üzerinden stratejik referans akışı",
-                    "Platformun kalitesini koruyan seçici üyelik yapısı"
+                    "Açık normal üyelik ve görüşmeyle kapalı grup kabulü"
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-sm text-slate-800 font-medium">
                       <Check className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -233,9 +234,9 @@ export function E4NNedir() {
               <div className="grid sm:grid-cols-2 gap-6">
                 <ul className="space-y-4">
                   {[
-                    "Ana toplantıların en az yüzde 70’ine katılmaları,",
-                    "Ayda en az bir üye ile birebir görüşme yapmaları,",
-                    "Kendilerine yapılan yönlendirmelere en geç iki iş günü içerisinde dönüş yapmaları,",
+                    "Grubun toplantı takvimine uygun biçimde katılım göstermeleri,",
+                    "Üyelerle birebir görüşmelere zaman ayırmaları,",
+                    "Kendilerine yapılan yönlendirmelere özenle ve zamanında dönüş yapmaları,",
                     "Katılamayacakları toplantıları mümkünse önceden bildirmeleri,"
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
@@ -257,7 +258,7 @@ export function E4NNedir() {
                   ))}
                   <li className="flex items-center gap-3 text-sm text-red-400 font-bold bg-white/5 p-3 rounded-xl border border-white/10 mt-2">
                     <Zap className="w-4 h-4 flex-shrink-0" />
-                    <span>Üyeliğin devamı bu aktif katılım disiplinine bağlıdır.</span>
+                    <span>Grup içindeki ilişkiler düzenli katılım ve karşılıklı katkıyla gelişir.</span>
                   </li>
                 </ul>
               </div>
@@ -365,20 +366,15 @@ export function E4NNedir() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-bold text-red-600 uppercase tracking-widest">SÜREÇ</span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
-              Platforma Kabul Süreci
+              Normal Üyelik ve Grup Katılımı
             </h2>
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Platform kalitesini ve sektörel dengeleri korumak adına üyelikler belirli aşamalardan geçerek onaylanır.
+              Şirket bilgilerinizle normal üyelik kaydı açın. Kayıt için davetiye ve ön onay gerekmez; kapalı gruba başvuru aktif abonelik, başkan görüşmesi ve kabul kararıyla ilerler.
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { num: "01", title: "Başvuru", desc: "Aday, temel şirket bilgilerini ve E4N'e katılma motivasyonunu iletir." },
-              { num: "02", title: "Ön Görüşme", desc: "Adayın hedefleri, beklentileri ve platforma katabileceği değer değerlendirilir." },
-              { num: "03", title: "Uyum Analizi", desc: "E4N ekibi adayın platform kültürüyle ve sektörel yapıyla uyumunu inceler." },
-              { num: "04", title: "Kabul ve Başlangıç", desc: "Değerlendirmesi tamamlanan adaylar oryantasyonla gruba dahil edilir." }
-            ].map((step, idx) => (
+            {membershipJourney.map((step, idx) => (
               <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-red-150 transition-colors">
                 <div>
                   <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full inline-block mb-4">Adım {step.num}</span>
@@ -404,10 +400,10 @@ export function E4NNedir() {
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-10 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto shadow-lg shadow-red-950/50"
             >
-              Hemen Başvurun
+              Üye Ol
             </Button>
             <Button
               size="lg"

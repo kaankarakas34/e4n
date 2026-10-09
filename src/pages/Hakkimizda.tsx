@@ -72,7 +72,7 @@ export function Hakkimizda() {
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900 text-sm">Seçicilik ve Standart</h4>
-                  <p className="text-gray-500 text-xs">Maksimum verimlilik ve güven için her üye ön incelemeye tabi tutulur.</p>
+                  <p className="text-gray-500 text-xs">Normal üyelik kaydı açıktır; kapalı grup başvurularını görüşme sonrası grup başkanı değerlendirir.</p>
                 </div>
               </div>
             </div>
@@ -134,7 +134,7 @@ export function Hakkimizda() {
               {
                 icon: Award,
                 title: 'Seçicilik',
-                desc: 'Üyelerimizin iş geçmişi, temsil gücü ve meslek koltuğu durumlarını hassasiyetle eleriz.'
+                desc: 'Kapalı grup başvurularında meslek koltuğu ve kapasiteyi korur, başkan görüşmesiyle katılımı değerlendiririz.'
               },
               {
                 icon: Landmark,

@@ -12,7 +12,7 @@ export function PublicFooter() {
               <Logo className="h-8 w-auto cursor-pointer" />
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed mb-4">
-              Nitelikli iş insanlarını değerlendirme süreciyle bir araya getiren, güvene dayalı iş ilişkileri ve nitelikli referanslar oluşturan seçici bir networking ekosistemidir.
+              Şirket bilgilerinizle normal üyelik kaydı açın. Kayıt için davetiye ve ön onay gerekmez; kapalı gruba başvuru aktif abonelik, başkan görüşmesi ve kabul kararıyla ilerler.
             </p>
             <div className="flex items-center gap-4 text-gray-500 text-sm">
               <a

@@ -264,11 +264,11 @@ export function Dashboard() {
                     <input 
                       type="text" 
                       readOnly 
-                      value={`${window.location.origin}/degerlendirme-basvurusu?refId=${user.id}`} 
+                      value={`${window.location.origin}/ziyaretci-basvurusu?refId=${user.id}`}
                       className="flex-1 rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm p-2 border"
                     />
                     <Button onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/degerlendirme-basvurusu?refId=${user.id}`);
+                      navigator.clipboard.writeText(`${window.location.origin}/ziyaretci-basvurusu?refId=${user.id}`);
                       alert('Davet linki kopyalandı!');
                     }}>
                       Kopyala

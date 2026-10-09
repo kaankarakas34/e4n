@@ -1,6 +1,6 @@
 import {MembershipHistory} from './pages/MembershipHistory';
 import {MembershipRecords} from './pages/MembershipRecords';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import React, { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { LandingPage } from './pages/LandingPage';
@@ -159,7 +159,7 @@ function App() {
               <Route path="/auth/pending" element={<PendingApproval />} />
 
               {/* Legacy Redirects for SEO & backward compatibility */}
-              <Route path="/ziyaretci-ol" element={<Navigate to="/degerlendirme-basvurusu" replace />} />
+              <Route path="/ziyaretci-ol" element={<Navigate to="/ziyaretci-basvurusu" replace />} />
               <Route path="/public-events" element={<Navigate to="/etkinlikler" replace />} />
               <Route path="/is-agi-rehberi" element={<Navigate to="/blog" replace />} />
               <Route path="/is-agi-rehberi/:slug" element={<Navigate to="/blog/:slug" replace />} />
@@ -168,8 +168,8 @@ function App() {
               <Route element={<MainPublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/e4n-nedir" element={<E4NNedir />} />
-                <Route path="/egitim" element={<Egitim />} />
-                <Route path="/egitim-basvuru" element={<EgitimBasvuru />} />
+                <Route path="/egitim" element={<Navigate to="/uyelik" replace />} />
+                <Route path="/egitim-basvuru" element={<Navigate to="/uyelik" replace />} />
                 <Route path="/nasil-calisir" element={<NasilCalisir />} />
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />
@@ -178,7 +178,8 @@ function App() {
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/sikca-sorulan-sorular" element={<SSS />} />
-                <Route path="/degerlendirme-basvurusu" element={<DegerlendirmeBasvurusu />} />
+                <Route path="/degerlendirme-basvurusu" element={<LegacyMembershipEntry />} />
+                <Route path="/ziyaretci-basvurusu" element={<DegerlendirmeBasvurusu />} />
                 <Route path="/topluluklarimiz" element={<Topluluklarimiz />} />
                 <Route path="/ziyaretci" element={<VisitorPaymentPage />} />
                 <Route path="/iletisim" element={<ContactPage />} />
@@ -288,4 +289,11 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasEr
     }
     return this.props.children as any;
   }
+}
+
+function LegacyMembershipEntry() {
+  const { search } = useLocation();
+  // Keep existing visitor referral links; they are separate from normal membership.
+  const target = new URLSearchParams(search).has('refId') ? '/ziyaretci-basvurusu' : '/auth/register';
+  return <Navigate to={target + search} replace />;
 }

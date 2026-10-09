@@ -25,16 +25,16 @@ export function NasilCalisir() {
     {
       num: "01",
       icon: ClipboardList,
-      title: "Başvuru ve Ön Değerlendirme",
-      desc: "Katılım süreci başvuru ile başır. Adayın iş alanı, profili, beklentileri ve platforma sağlayabileceği potansiyel katkılar ekibimiz tarafından detaylıca incelenir.",
-      details: "Form doldurulduktan sonra ilk aşamada sektörel çakışma olmaması ve meslek grubunun topluluk yapısına uygunluğu incelenir."
+      title: "Normal Üyelik Kaydı",
+      desc: "Şirket bilgilerinizle normal üyelik kaydı açın. Kayıt için davetiye ve ön onay gerekmez; kapalı gruba başvuru aktif abonelik, başkan görüşmesi ve kabul kararıyla ilerler.",
+      details: "Şirket adı, VKN/TCKN, vergi dairesi, adres ve il bilgisi zorunludur. Bir vergi numarası yalnız bir hesapta kullanılabilir."
     },
     {
       num: "02",
       icon: UserCheck,
-      title: "Tanışma ve Uyum Görüşmesi",
-      desc: "Başvuru sonrasında adayla birebir bir ön görüşme yapılır. E4N’den ne beklediğiniz, hangi iş çevrelerine ulaşmak istediğiniz ve mevcut üyelerle nasıl bir değer alışverişi oluşturabileceğiniz anlaşılır.",
-      details: "Bu görüşme hem platformun adayı hem de adayın platformu daha yakından tanıması için karşılıklı bir uyum değerlendirmesidir."
+      title: "Abonelik, Grup Keşfi ve Başkan Görüşmesi",
+      desc: "Aktif abonelikle grup analizlerini, doluluğu ve üyelerin mesleklerini inceleyip Katıl ile başvurun. Başvuru başkana görüşme görevi ve bildirim olarak düşer.",
+      details: "Başkan sizi arar, görüşmeyi kaydeder ve kabul veya ret verir. Abonelik satın almak gruba otomatik kabul sağlamaz."
     },
     {
       num: "03",
@@ -70,7 +70,7 @@ export function NasilCalisir() {
     <div className="bg-white min-h-screen pt-20">
       <SEO
         title="Nasıl Çalışır? | Event4Network Seçici Networking"
-        description="Event4Network networking modelinin işleyişi. Değerlendirme süreci, toplantı periyotları, birebir görüşmeler ve güvene dayalı iş yönlendirme sistemini keşfedin."
+        description="Event4Network networking modelinin işleyişi. Normal üyelik, abonelik, grup görüşmesi, toplantı periyotları, birebir görüşmeler ve güvene dayalı iş yönlendirme sistemini keşfedin."
         canonical="https://www.event4network.com/nasil-calisir"
       />
 
@@ -93,10 +93,10 @@ export function NasilCalisir() {
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-8 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto shadow-lg shadow-red-900/30"
             >
-              Değerlendirme Başvurusu Yap
+              Üye Ol
             </Button>
             <Button
               size="lg"
@@ -327,16 +327,16 @@ export function NasilCalisir() {
             Yeni Dönem Networking Modelinde Yerinizi Alın
           </h2>
           <p className="text-lg text-gray-350 mb-10 max-w-2xl mx-auto font-light">
-            Eğer siz de rastgele kartvizit toplamak yerine güvene dayalı, stratejik ve sürdürülebilir bir iş çevresi inşa etmek istiyorsanız, ön değerlendirme sürecinizi bugün başlatın.
+            Eğer siz de rastgele kartvizit toplamak yerine güvene dayalı, stratejik ve sürdürülebilir bir iş çevresi inşa etmek istiyorsanız, şirket bilgilerinizle hesabınızı açın; abonelik ve grup başvurusu adımlarını panelinizden izleyin.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/degerlendirme-basvurusu')}
+              onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-10 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto"
             >
-              Hemen Başvurun
+              Üye Ol
             </Button>
             <Button
               size="lg"

@@ -20,10 +20,10 @@ try{
  const port=Number(ports.stdout.match(/127\.0\.0\.1:(\d+)/)?.[1]);assert.ok(port);
  pool=new pg.Pool({host:'127.0.0.1',port,user:'e4n_isolated_test',database:'e4n_isolated_test',password:'local_fixture_only'});
  const base={name:'Synthetic signup',password:'Synthetic_Signup_2026!',phone:'05000000000',profession:'Synthetic Engineer',company:'Synthetic company',city:'Fixture',taxNumber:'0000000001',kvkkConsent:true,explicitConsent:true,marketingConsent:false};
- const call=async(method,url,body,actor)=>{const token=actor?jwt.sign({id:actor,role:actor===fixture.ids.admin?'ADMIN':'MEMBER'},'web_browser_fixture_only'):null;return fetch(fixture.apiBase+'/api'+url,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(20000)});};
+ const call=async(method,url,body,actor)=>{const token=actor?jwt.sign({id:actor,role:actor===fixture.ids.admin?'ADMIN':'MEMBER'},'web_browser_fixture_only'):null;return fetch(fixture.apiBase+'/api'+url,{method,headers:{'Content-Type':'application/json','Connection':'close',...(token?{Authorization:'Bearer '+token}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(20000)});};
  const post=b=>call('POST','/auth/register',b);const email=()=>randomUUID()+'@example.invalid';
  const race=await Promise.all(Array.from({length:8},()=>post({...base,email:email()})));assert.equal(race.filter(r=>r.status===201).length,1);assert.equal(race.filter(r=>r.status===409).length,7);
- const result=await race.find(r=>r.status===201).json();assert.equal(result.role,'MEMBER');assert.equal(result.account_status,'UNSUBSCRIBED');assert.equal(result.tax_number,undefined);assert.equal(result.password_hash,undefined);
+ const bodies=await Promise.all(race.map(r=>r.json()));const result=bodies[race.findIndex(r=>r.status===201)];assert.equal(result.role,'MEMBER');assert.equal(result.account_status,'UNSUBSCRIBED');assert.equal(result.tax_number,undefined);assert.equal(result.password_hash,undefined);
  const row=(await pool.query('SELECT * FROM users WHERE id=$1',[result.id])).rows[0];assert.equal(row.company_registration,true);assert.equal(row.tax_number,base.taxNumber);assert.equal(row.subscription_plan,null);assert.equal(row.subscription_end_date,null);assert.equal(row.password_hash.startsWith('$2'),true);assert.equal((await pool.query('SELECT count(*)::int n FROM group_members WHERE user_id=$1',[result.id])).rows[0].n,0);
  assert.equal((await call('POST','/auth/login',{email:row.email.toUpperCase(),password:base.password})).status,200);
  assert.equal((await call('POST','/groups/'+fixture.ids.emptyGroup+'/join',{},result.id)).status,403);
@@ -69,6 +69,6 @@ try{
   }finally{browser(['close']);}
  }
  console.log('Normal registration PASS: PG17/schema26, 8-way race, VKN/TCKN + no invitation/approval, no subscription/group grant, login, role/protected/consent validation, profile/admin/visitor writers, atomic rollback, deleted-account reservation, immutable private registry, legacy normalized role/identity migration and replay. No live writes/mail/payment.');
-}catch(e){console.error(e.stack);process.exitCode=1;}finally{
+}catch(e){console.error(e.stack);if(e.cause)console.error('Fixture transport cause:',e.cause.code??e.cause.message);process.exitCode=1;}finally{
  await pool?.end();if(fixture)await fetch(fixture.controlBase+'/stop',{method:'POST',headers:{'x-fixture-key':fixture.secret}}).catch(()=>{});else child.kill();await exited;log.end();
 }

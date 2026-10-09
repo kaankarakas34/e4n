@@ -731,6 +731,16 @@ export const api = {
   async getScorecard(userId: string = 'me') {
     return await request(`/reports/scorecard/${encodeURIComponent(userId)}`);
   },
+  async evaluateLowScoreRemovals(params: { periodKey: string; threshold?: number; groupId?: string }) {
+    const search = new URLSearchParams();
+    search.set('periodKey', params.periodKey);
+    if (params.threshold) search.set('threshold', String(params.threshold));
+    if (params.groupId) search.set('groupId', params.groupId);
+    return await request(`/reports/low-score-evaluations?${search.toString()}`);
+  },
+  async applyLowScoreRemovals(data: { periodKey: string; threshold?: number; groupId?: string; exemptUserIds?: string[]; reasonNote?: string }) {
+    return await request('/reports/apply-low-score-removals', { method: 'POST', body: JSON.stringify(data) });
+  },
 
   // Meeting Requests (One-to-Ones)
   async getMyMeetingRequests(userId: string) {

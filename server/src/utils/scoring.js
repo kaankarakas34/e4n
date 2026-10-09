@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import pool from '../config/db.js';
+import { setMembershipOperationContext } from '../membership-operation-context.js';
 
 export const SCORE_RULES = {
   version: '2026.1',
@@ -767,3 +768,273 @@ export const calculateChampions = async (periodType, startDate, endDate) => {
     client.release();
   }
 };
+
+// 4. Evaluate Low-Score Removals (Puan Düşüklüğü Çıkarma Önizleme/Değerlendirme)
+export const evaluateLowScoreRemovals = async ({ periodKey, threshold = 50, groupId = null }, client = null) => {
+  const db = client || pool;
+  if (!isValidPeriodKey(periodKey)) {
+    throw new Error('Geçersiz dönem anahtarı (YYYY-MM formatı bekleniyor)');
+  }
+  const thresh = parseInt(threshold, 10);
+  if (!Number.isInteger(thresh) || thresh <= 0) {
+    throw new Error('Geçerli bir puan eşiği girilmelidir');
+  }
+
+  // 1. Check if period is finalized
+  const settingKey = `period_finalized:${periodKey}`;
+  const finalCheck = await db.query('SELECT value FROM system_settings WHERE key = $1', [settingKey]);
+  if (!finalCheck.rowCount || !finalCheck.rows[0].value) {
+    const err = new Error('Yalnızca kesinleştirilmiş dönem puanları üzerinden çıkarma değerlendirmesi yapılabilir');
+    err.code = 'PERIOD_NOT_FINALIZED';
+    err.status = 400;
+    throw err;
+  }
+
+  const finalData = JSON.parse(finalCheck.rows[0].value);
+  const finalizedMembers = finalData.members || [];
+
+  // Check past removals for this period
+  const removalSettingKey = `low_score_removals:${periodKey}`;
+  const remCheck = await db.query('SELECT value FROM system_settings WHERE key = $1', [removalSettingKey]);
+  const pastRemovals = remCheck.rowCount && remCheck.rows[0].value ? JSON.parse(remCheck.rows[0].value) : { executions: [], removedUserIds: [] };
+  const alreadyRemovedInPeriod = new Set(pastRemovals.removedUserIds || []);
+
+  // Filter candidates: score < threshold and has groupId
+  let candidates = finalizedMembers.filter(m => m.score < thresh && m.groupId);
+  if (groupId) {
+    candidates = candidates.filter(m => m.groupId === groupId);
+  }
+
+  // Check live membership status and president role
+  const evaluatedCandidates = [];
+  for (const c of candidates) {
+    const memRes = await db.query(`
+      SELECT gm.status, gm.role AS member_role, u.role AS user_role, to_jsonb(u)->>'group_title' AS group_title, g.name AS current_group_name
+      FROM group_members gm
+      JOIN users u ON u.id = gm.user_id
+      JOIN groups g ON g.id = gm.group_id
+      WHERE gm.group_id = $1 AND gm.user_id = $2
+    `, [c.groupId, c.userId]);
+
+    const isCurrentlyMember = memRes.rowCount > 0 && memRes.rows[0].status === 'ACTIVE';
+    const isPresident = memRes.rowCount > 0 && (
+      memRes.rows[0].member_role === 'PRESIDENT' ||
+      memRes.rows[0].user_role === 'PRESIDENT' ||
+      memRes.rows[0].group_title === 'PRESIDENT'
+    );
+    const alreadyProcessed = alreadyRemovedInPeriod.has(c.userId);
+
+    let status = 'ELIGIBLE';
+    if (alreadyProcessed) {
+      status = 'ALREADY_REMOVED_FOR_PERIOD';
+    } else if (!isCurrentlyMember) {
+      status = 'ALREADY_INACTIVE';
+    } else if (isPresident) {
+      status = 'EXEMPT_PRESIDENT';
+    }
+
+    evaluatedCandidates.push({
+      userId: c.userId,
+      name: c.name,
+      profession: c.profession,
+      groupId: c.groupId,
+      groupName: c.groupName || (memRes.rows[0]?.current_group_name ?? null),
+      score: c.score,
+      threshold: thresh,
+      period: periodKey,
+      status,
+      eligibleForRemoval: status === 'ELIGIBLE',
+      isPresident,
+      alreadyRemoved: alreadyProcessed || !isCurrentlyMember,
+    });
+  }
+
+  const eligibleCount = evaluatedCandidates.filter(c => c.eligibleForRemoval).length;
+  const exemptCount = evaluatedCandidates.filter(c => c.status === 'EXEMPT_PRESIDENT').length;
+  const alreadyInactiveCount = evaluatedCandidates.filter(c => c.status === 'ALREADY_INACTIVE' || c.status === 'ALREADY_REMOVED_FOR_PERIOD').length;
+
+  return {
+    periodKey,
+    threshold: thresh,
+    groupId: groupId || null,
+    isFinalized: true,
+    finalizedAt: finalData.finalizedAt,
+    summary: {
+      totalCandidates: evaluatedCandidates.length,
+      eligibleCount,
+      exemptCount,
+      alreadyInactiveCount,
+    },
+    candidates: evaluatedCandidates,
+  };
+};
+
+// 5. Apply Low-Score Removals (Puan Düşüklüğü Otomatik / İncelemeli Çıkarma Yürütme)
+export const applyLowScoreRemovals = async ({
+  periodKey,
+  threshold = 50,
+  groupId = null,
+  exemptUserIds = [],
+  reasonNote = '',
+  adminUserId,
+}, client = null) => {
+  const db = client || pool;
+  if (!isValidPeriodKey(periodKey)) {
+    throw new Error('Geçersiz dönem anahtarı (YYYY-MM formatı bekleniyor)');
+  }
+  const thresh = parseInt(threshold, 10);
+  if (!Number.isInteger(thresh) || thresh <= 0) {
+    throw new Error('Geçerli bir puan eşiği girilmelidir');
+  }
+
+  // 1. Evaluate first
+  const evaluation = await evaluateLowScoreRemovals({ periodKey, threshold: thresh, groupId }, db);
+  const exemptSet = new Set((exemptUserIds || []).map(String));
+
+  const removalSettingKey = `low_score_removals:${periodKey}`;
+  const remCheck = await db.query('SELECT value FROM system_settings WHERE key = $1', [removalSettingKey]);
+  const pastRecord = remCheck.rowCount && remCheck.rows[0].value ? JSON.parse(remCheck.rows[0].value) : { executions: [], removedUserIds: [] };
+  const removedUserIdsSet = new Set(pastRecord.removedUserIds || []);
+
+  const results = [];
+  let removedCount = 0;
+  let skippedCount = 0;
+
+  const ownClient = !client;
+  const conn = client || await pool.connect();
+
+  try {
+    if (ownClient) await conn.query('BEGIN');
+
+    for (const cand of evaluation.candidates) {
+      if (exemptSet.has(cand.userId)) {
+        results.push({
+          userId: cand.userId,
+          name: cand.name,
+          groupId: cand.groupId,
+          score: cand.score,
+          action: 'SKIPPED_EXEMPT',
+          reason: 'Yönetici tarafından muaf tutuldu',
+        });
+        skippedCount++;
+        continue;
+      }
+
+      if (!cand.eligibleForRemoval) {
+        results.push({
+          userId: cand.userId,
+          name: cand.name,
+          groupId: cand.groupId,
+          score: cand.score,
+          action: `SKIPPED_${cand.status}`,
+          reason: cand.status === 'EXEMPT_PRESIDENT' ? 'Grup başkanı muafiyeti' : 'Üye zaten grupta aktif değil',
+        });
+        skippedCount++;
+        continue;
+      }
+
+      // Execute removal
+      // 1. Set operation context for trigger
+      await setMembershipOperationContext(conn, adminUserId, 'MEMBER_REMOVAL');
+
+      // 2. Delete member row from group_members
+      const delRes = await conn.query(
+        'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2 RETURNING user_id',
+        [cand.groupId, cand.userId]
+      );
+
+      if (delRes.rowCount > 0) {
+        // 3. User account status remains ACTIVE (R12 rule)
+        await conn.query(
+          "UPDATE users SET updated_at = NOW() WHERE id = $1 AND account_status = 'ACTIVE'",
+          [cand.userId]
+        );
+
+        // 4. Create notification with payload
+        const note = reasonNote && reasonNote.trim()
+          ? reasonNote.trim()
+          : `${periodKey} dönemi puan düşüklüğü (Puan: ${cand.score} < ${thresh})`;
+
+        const payload = JSON.stringify({
+          category: 'LOW_SCORE',
+          categoryLabel: 'Puan Düşüklüğü',
+          note,
+          groupId: cand.groupId,
+          groupName: cand.groupName,
+          periodKey,
+          score: cand.score,
+          threshold: thresh,
+        });
+
+        const notifMsg = `${cand.groupName} grubundan çıkarıldınız. Neden: Puan Düşüklüğü. Açıklama: ${note} ::: ${payload}`;
+        await conn.query(
+          "INSERT INTO notifications(user_id,type,title,message,action_url) VALUES($1,'REMOVAL','Gruptan Çıkarılma',$2,'/membership-history')",
+          [cand.userId, notifMsg]
+        );
+
+        removedUserIdsSet.add(cand.userId);
+        removedCount++;
+
+        results.push({
+          userId: cand.userId,
+          name: cand.name,
+          groupId: cand.groupId,
+          groupName: cand.groupName,
+          score: cand.score,
+          action: 'REMOVED',
+          reasonCategory: 'LOW_SCORE',
+          reasonNote: note,
+        });
+      } else {
+        results.push({
+          userId: cand.userId,
+          name: cand.name,
+          groupId: cand.groupId,
+          score: cand.score,
+          action: 'SKIPPED_NOT_FOUND',
+          reason: 'Grup üyelik kaydı bulunamadı',
+        });
+        skippedCount++;
+      }
+    }
+
+    // Save removal record in system_settings
+    const executionRecord = {
+      executedAt: new Date().toISOString(),
+      executedBy: adminUserId,
+      threshold: thresh,
+      groupId: groupId || null,
+      removedCount,
+      skippedCount,
+      results,
+    };
+
+    pastRecord.executions.push(executionRecord);
+    pastRecord.removedUserIds = Array.from(removedUserIdsSet);
+
+    await conn.query(`
+      INSERT INTO system_settings (key, value, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+    `, [removalSettingKey, JSON.stringify(pastRecord)]);
+
+    if (ownClient) await conn.query('COMMIT');
+
+    return {
+      success: true,
+      periodKey,
+      threshold: thresh,
+      totalEvaluated: evaluation.candidates.length,
+      removedCount,
+      skippedCount,
+      results,
+      executedAt: executionRecord.executedAt,
+    };
+  } catch (err) {
+    if (ownClient) await conn.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    if (ownClient) conn.release();
+  }
+};
+

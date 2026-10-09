@@ -1,5 +1,14 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel teslim — P23 / E4N-95 tamamlandı
+
+- **E4N-95 (P23) Done:** Puana bağlı otomatik / incelemeli gruptan çıkarma motoru kuruldu.
+  - Kesinleşmiş dönem şartı: Yalnızca kesinleştirilmiş dönem puanları (`period_finalized:${periodKey}`) üzerinden değerlendirme yapılır; kesinleşmemiş dönem istekleri `400 PERIOD_NOT_FINALIZED` ile reddedilir.
+  - API'ler: `GET /api/reports/low-score-evaluations` (yönetici önizlemesi; başkan muafiyeti `EXEMPT_PRESIDENT`, aktiflik kontrolü ve aday listesi) ve `POST /api/reports/apply-low-score-removals` (atomik çıkarma yürütmesi; `exemptUserIds` muafiyeti, `LOW_SCORE` gerekçesi ve notu).
+  - Güvenceler: R12 gereği kullanıcının genel E4N hesap statüsü (`users.account_status = 'ACTIVE'`) ve dış hakları korunur. `group_membership_history` trigger'ı ve `notifications` tablosuna `LOW_SCORE` / `MEMBER_REMOVAL` olarak işlenir.
+  - Tekrar güvenliği: `low_score_removals:${periodKey}` kaydı ile aynı dönemde mükerrer çalıştırmada sıfır yeni çıkarma ve sıfır mükerrer bildirim/geçmiş kaydı üretilir.
+  - Testler: `server/test/low-score-removal-contract.mjs`, `server/test/monthly-score-finalization-contract.mjs`, `server/test/score-ledger-contract.mjs`, `server/test/route-ownership-contract.mjs` (195 rota, 30 sağlayıcı), `npm run check`, `npm run build` ve `node server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu) PASS. Kanıt [[E4N/09-Dogrulama/P23-Puana-Bagli-Otomatik-Cikarma-2026-10-09]].
+
 ## Güncel teslim — P22 / E4N-94 tamamlandı
 
 - **E4N-94 (P22) Done:** Ay sonlarında puanların dondurulması motoru (`finalizePeriod` -> `system_settings` üzerinde `period_finalized:${periodKey}` kaydı, idempotent replay), gerekçeli idari puan düzeltmesi (`applyScoreAdjustment` -> `score_adjustments`, canlı skor ve `sourceKind: ADJUSTMENT` defter entegrasyonu), aylık puanlar/liderlik tablosu (`GET /api/reports/monthly-scores`) ve son 6 aylık UTC-safe üye karnesi (`GET /api/reports/scorecard/:userId`) tamamlandı.

@@ -54,7 +54,7 @@ import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
-import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard } from './utils/scoring.js';
+import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard, evaluateLowScoreRemovals, applyLowScoreRemovals } from './utils/scoring.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -357,6 +357,51 @@ app.get('/api/reports/scorecard/:userId', authenticateToken, async (req, res) =>
   } catch (e) {
     if (e.message === 'Üye bulunamadı') return res.status(404).json({ error: e.message });
     res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/reports/low-score-evaluations', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Yalnızca yöneticiler çıkarma önizlemesi yapabilir' });
+    }
+    const { periodKey, threshold, groupId } = req.query;
+    if (!periodKey) {
+      return res.status(400).json({ error: 'Dönem anahtarı (periodKey) zorunludur' });
+    }
+    const result = await evaluateLowScoreRemovals({
+      periodKey,
+      threshold: threshold ? parseInt(threshold, 10) : 50,
+      groupId: groupId || null,
+    });
+    res.json(result);
+  } catch (e) {
+    const status = e.status || (e.code === 'PERIOD_NOT_FINALIZED' ? 400 : 500);
+    res.status(status).json({ error: e.message, code: e.code });
+  }
+});
+
+app.post('/api/reports/apply-low-score-removals', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Yalnızca yöneticiler puana bağlı çıkarma işlemini çalıştırabilir' });
+    }
+    const { periodKey, threshold, groupId, exemptUserIds, reasonNote } = req.body || {};
+    if (!periodKey) {
+      return res.status(400).json({ error: 'Dönem anahtarı (periodKey) zorunludur' });
+    }
+    const result = await applyLowScoreRemovals({
+      periodKey,
+      threshold: threshold ? parseInt(threshold, 10) : 50,
+      groupId: groupId || null,
+      exemptUserIds: Array.isArray(exemptUserIds) ? exemptUserIds : [],
+      reasonNote: reasonNote || '',
+      adminUserId: req.user.id,
+    });
+    res.json(result);
+  } catch (e) {
+    const status = e.status || (e.code === 'PERIOD_NOT_FINALIZED' ? 400 : 500);
+    res.status(status).json({ error: e.message, code: e.code });
   }
 });
 

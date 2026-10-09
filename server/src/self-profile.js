@@ -1,3 +1,4 @@
+import {companyWriteError} from './company-registration.js';
 import {createHash} from 'node:crypto';
 
 const limits = {name:100,profession:100,phone:20,city:100,website:2048,bio:5000,linkedin_profile:255,company:255,tax_number:50,tax_office:100,billing_address:5000};
@@ -46,7 +47,7 @@ export function installSelfProfile(app,{pool,authenticateToken}) {
       await client.query('COMMIT'); res.json(result);
     } catch(e) {
       if(client) await client.query('ROLLBACK').catch(()=>{});
-      res.status(e.status||500).json({error:e.status?e.message:'Profil kaydedilemedi veya okunamadı. Durumu kontrol edip tekrar deneyin.'});
+      const mapped=companyWriteError(e);res.status(mapped?.status??e.status??500).json(mapped??{error:e.status?e.message:'Profil kaydedilemedi veya okunamadı. Durumu kontrol edip tekrar deneyin.'});
     } finally { client?.release(); }
   };
   app.get('/api/user/profile-settings',authenticateToken,handle(false));

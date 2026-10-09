@@ -149,7 +149,7 @@ function App() {
               />
               <Route
                 path="/auth/register-community"
-                element={!user ? <Register isCommunity={true} /> : <Navigate to="/dashboard" replace />}
+                element={!user ? <Navigate to={'/auth/register'+window.location.search} replace /> : <Navigate to="/dashboard" replace />}
               />
               <Route
                 path="/auth/forgot-password"

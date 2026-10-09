@@ -173,7 +173,7 @@ export function Topluluklarimiz() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <button
-                  onClick={() => navigate('/auth/register-community')}
+                  onClick={() => navigate('/auth/register')}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl bg-red-600 hover:bg-red-550 text-white font-bold text-sm tracking-wide shadow-lg shadow-red-200 transition-all transform active:scale-95"
                 >
                   Topluluk Profili Oluştur

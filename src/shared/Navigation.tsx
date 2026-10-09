@@ -64,9 +64,7 @@ export function Navigation() {
   const groupsLink = { name: 'Gruplar', href: '/chapter-management', icon: Users };
   const managementLink = { name: 'Grup Yönetimi', href: '/group-management', icon: Briefcase };
 
-  if (user?.role === 'COMMUNITY_MEMBER') {
-    navigation = baseMemberNavigation;
-  } else if (isAdmin) {
+  if (isAdmin) {
     navigation = adminNavigation;
   } else {
     // Start with base (Dashboard)
@@ -136,7 +134,7 @@ export function Navigation() {
           {/* User dropdown & Notifications */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
             {/* Messages */}
-            {user?.role !== 'COMMUNITY_MEMBER' && (
+            {user && (
               <Link to="/messages" className="text-gray-400 hover:text-gray-500 relative">
                 <MessageCircle className="h-6 w-6" />
               </Link>

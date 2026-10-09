@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,25);
+  assert.equal((await applyVersionedSchema()).applied.length,26);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -105,13 +105,13 @@ async function main() {
   const call=(method,p,body,actor=owner)=>fetch(base+'/api'+p,{method,headers:{'Content-Type':'application/json',...(actor?{Authorization:'Bearer '+token(actor)}:{})},body:body===undefined?undefined:JSON.stringify(body)});
   const get=async(actor=owner)=>{const r=await call('GET','/user/profile-settings',undefined,actor);assert.equal(r.status,200);assert.match(r.headers.get('cache-control'),/private.*no-store/);return r.json();};
   const initial=await get();assert.equal(initial.ownerId,owner);assert.equal(initial.website,null);assert.equal(initial.bio,null);assert.ok(!JSON.stringify(initial).includes('private-'));
-  const payload={name:'  Owner saved  ',profession:'',phone:'',city:' İzmir ',website:' https://example.invalid/contact ',bio:' Profile biography ',linkedin_profile:'https://www.linkedin.com/in/example',company:'New company',tax_number:'1234',tax_office:'Office',billing_address:'Invoice address',expectedRevision:initial.revision};
+  const payload={name:'  Owner saved  ',profession:'',phone:'',city:' İzmir ',website:' https://example.invalid/contact ',bio:' Profile biography ',linkedin_profile:'https://www.linkedin.com/in/example',company:'New company',tax_number:'0000001234',tax_office:'Office',billing_address:'Invoice address',expectedRevision:initial.revision};
   const r=await call('PUT','/users/me',payload);assert.equal(r.status,200);const saved=await r.json();assert.equal(saved.name,'Owner saved');assert.equal(saved.profession,'');assert.equal(saved.phone,null);assert.equal(saved.city,'İzmir');assert.equal(saved.bio,'Profile biography');assert.notEqual(saved.revision,initial.revision);
   assert.deepEqual(await get(),saved);assert.equal((await get(other)).name,'Other');
   assert.equal((await call('PUT','/users/me',payload)).status,200); // Same content with stale revision is a safe replay.
   const races=await Promise.all(Array.from({length:8},(_,i)=>call('PUT','/users/me',{bio:'Race '+i,expectedRevision:saved.revision})));
   assert.equal(races.filter(r=>r.status===200).length,1);assert.equal(races.filter(r=>r.status===409).length,7);
-  const winner=await get();assert.equal(winner.website,saved.website);assert.equal(winner.tax_number,'1234');
+  const winner=await get();assert.equal(winner.website,saved.website);assert.equal(winner.tax_number,'0000001234');
   for(const bad of [{role:'ADMIN'},{email:'changed@invalid'},{id:other},{name:''},{phone:'x'.repeat(21)},{bio:'x'.repeat(5001)},{website:'javascript:alert(1)'},{website:'https://user:password@example.invalid'},{website:'example.invalid'},{phone:3},{bio:'a\u0000b'},{expectedRevision:3,name:'x'},{expectedRevision:['a'.repeat(64)],name:'x'},{expectedRevision:null,name:'x'},{},[]])assert.equal((await call('PUT','/users/me',bad)).status,400);
   assert.equal((await call('GET','/user/profile-settings?ownerId='+other)).status,400);
   assert.equal((await call('PUT','/users/me',{name:'No login'},null)).status,401);
@@ -128,14 +128,14 @@ async function main() {
   assert.equal((await api.getProfileSettings(owner)).id,owner);await assert.rejects(()=>api.getProfileSettings(other));
   let staleCalls=0;const originalOwnerFetch=globalThis.fetch;globalThis.fetch=async()=>{staleCalls++;throw Error('Stale owner must never send a write');};await assert.rejects(()=>api.updateMe({name:'Stale owner'},other));assert.equal(staleCalls,0);globalThis.fetch=originalOwnerFetch;assert.equal((await get()).name,'Owner saved');
   assert.equal((await api.updateMe({phone:'',city:'',website:'',bio:''},owner,winner.revision)).bio,null);
-  const billing=await api.updateMe({company:' Typed company ',tax_number:'4321',tax_office:'Typed office',billing_address:'Typed address'});assert.equal(billing.company,'Typed company');assert.equal(billing.name,'Owner saved');
+  const billing=await api.updateMe({company:' Typed company ',tax_number:'0000004321',tax_office:'Typed office',billing_address:'Typed address'});assert.equal(billing.company,'Typed company');assert.equal(billing.name,'Owner saved');
   const originalFetch=globalThis.fetch;
   for(const patch of [{ownerId:other},{id:other},{profileSettingsVersion:2},{password_hash:'secret'},{revision:'bad'},{company:'False acknowledgement'},{phone:42}]){
     globalThis.fetch=async()=>new Response(JSON.stringify({...billing,...patch}),{headers:{'Content-Type':'application/json'}});await assert.rejects(()=>api.updateMe({company:'Typed company'},owner));
   }
   globalThis.fetch=originalFetch;
-  const before=(await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0];await pool.query("ALTER TABLE users DROP COLUMN website,DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'");assert.deepEqual((await applyVersionedSchema()).applied,['0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0],before);
-  console.log('Self profile PASS: fresh25/repeat0/22upgrade, actual Express/PG17/TS, owner-only minimal DTO, partial save and clear, billing compatibility, URL/length/type/protected-field validation, 8-way stale CAS, safe replay, transaction rollback/redaction, private visibility and false ACK guards. No live writes/mail/payment.');
+  const before=(await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0];await pool.query("ALTER TABLE users DROP COLUMN website,DROP COLUMN bio; ALTER TABLE group_membership_history DROP COLUMN operation_context; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'");assert.deepEqual((await applyVersionedSchema()).applied,['0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0],before);
+  console.log('Self profile PASS: fresh26/repeat0/22upgrade, actual Express/PG17/TS, owner-only minimal DTO, partial save and clear, billing compatibility, URL/length/type/protected-field validation, 8-way stale CAS, safe replay, transaction rollback/redaction, private visibility and false ACK guards. No live writes/mail/payment.');
 }
 let exitCode = 0;
 try {

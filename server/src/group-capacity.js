@@ -1,3 +1,4 @@
+import {companyWriteError} from './company-registration.js';
 // Interim guard for the existing groups/group_members model. Power teams are separate.
 export const CLOSED_GROUP_LIMIT = 35;
 export const isUuid = value => typeof value === 'string' && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
@@ -55,6 +56,7 @@ export async function enforceGroupCapacity(client, ids) {
   return rows;
 }
 export function sendGroupMutationError(res, error) {
+  const companyError=companyWriteError(error);if(companyError)return res.status(companyError.status).json(companyError);
   if (error.status) return res.status(error.status).json({ error: error.message, code: error.code });
   if (error.code === '23514' && error.constraint === 'group_members_capacity_check') {
     return res.status(409).json({ error:'Grup dolu: başkan hariç en fazla 35 üye kabul edilebilir.', code:'GROUP_CAPACITY_FULL' });

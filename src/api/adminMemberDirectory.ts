@@ -17,15 +17,14 @@ export function validMemberDirectory(d:any,owner:string):d is MemberDirectory {
   return memberships<=50000;
 }
 export const directoryStatus=(value:string|null)=>{
-  const labels:Record<string,string>={ACTIVE:'Aktif',INACTIVE:'Pasif',PENDING:'Bekliyor',REQUESTED:'Talep edildi',DRAFT:'Taslak'};
+  const labels:Record<string,string>={UNSUBSCRIBED:'Abonelik yok',ACTIVE:'Aktif',INACTIVE:'Pasif',PENDING:'Bekliyor',REQUESTED:'Talep edildi',DRAFT:'Taslak'};
   return value&&Object.prototype.hasOwnProperty.call(labels,value)?labels[value]:value?`Diğer durum (${value})`:'Bilinmiyor';
 };
-export function filterDirectory(members:DirectoryMember[],filters:{tab:'members'|'community';search:string;role:string;status:string;group:string}):DirectoryMember[] {
+export function filterDirectory(members:DirectoryMember[],filters:{search:string;role:string;status:string;group:string}):DirectoryMember[] {
   const search=filters.search.trim().toLocaleLowerCase('tr-TR');
   const role=filters.role.startsWith('VALUE:')?filters.role.slice(6):filters.role;
   const status=filters.status.startsWith('VALUE:')?filters.status.slice(6):filters.status;
-  return members.filter(m=>(filters.tab==='community'?m.role==='COMMUNITY_MEMBER':m.role!=='COMMUNITY_MEMBER')
-    &&(!search||[m.name,m.email,m.company,m.profession,m.city].some(v=>v?.toLocaleLowerCase('tr-TR').includes(search)))
+  return members.filter(m=>(!search||[m.name,m.email,m.company,m.profession,m.city].some(v=>v?.toLocaleLowerCase('tr-TR').includes(search)))
     &&(filters.role==='ALL'||(filters.role==='UNKNOWN'?m.role===null:m.role===role))
     &&(filters.status==='ALL'||(filters.status==='UNKNOWN'?m.account_status===null:m.account_status===status))
     &&(filters.group==='ALL'||(filters.group==='NONE'?m.groups.length===0:m.groups.some(g=>g.id===filters.group))));

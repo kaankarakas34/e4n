@@ -1,6 +1,6 @@
 import {documentTransport} from './api';
 export const documentCategories={GENERAL:'Genel',EDUCATION:'Eğitim',LEGAL:'Hukuki',MARKETING:'Pazarlama'};
-export const documentRoles=['ADMIN','PRESIDENT','VICE_PRESIDENT','MEMBER','SECRETARY_TREASURER','COMMUNITY_MEMBER'];
+export const documentRoles=['ADMIN','PRESIDENT','VICE_PRESIDENT','MEMBER','SECRETARY_TREASURER'];
 export interface LibraryDocument {id:string;title:string;description:string;category:keyof typeof documentCategories;filename:string;mime_type:string;size_bytes:number;uploaded_by:string;allowed_roles:string[];created_at:string;canArchive:boolean}
 export interface DocumentLibrary {ownerId:string;canUpload:boolean;documents:LibraryDocument[]}
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);

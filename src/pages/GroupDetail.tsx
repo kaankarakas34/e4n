@@ -760,23 +760,31 @@ export function GroupDetail() {
                                                         {new Date(visitor.visited_at).toLocaleDateString()}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${visitor.status === 'CONVERTED' ? 'bg-green-100 text-green-800' :
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${['JOINED','CONVERTED'].includes(visitor.status) ? 'bg-green-100 text-green-800' :
                                                             'bg-blue-100 text-blue-800'
                                                             }`}>
-                                                            {visitor.status === 'CONVERTED' ? 'Üye Oldu' : 'Ziyaret Etti'}
+                                                            {['JOINED','CONVERTED'].includes(visitor.status) ? 'Üye Oldu' : 'Ziyaret Etti'}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        {isAdminView && visitor.status !== 'CONVERTED' && (
+                                                        {isAdminView && !['JOINED','CONVERTED'].includes(visitor.status) && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="text-indigo-600 hover:text-indigo-900"
                                                                 onClick={async () => {
                                                                     if (confirm(`${visitor.name} adlı ziyaretçiyi üye yapmak istiyor musunuz?`)) {
-                                                                        await api.convertVisitorToMember(visitor.id);
+                                                                        const company = prompt('Şirket adı (zorunlu):', visitor.company || '');
+                                                                        if (!company?.trim()) return;
+                                                                        const tax = prompt('VKN (10 hane) veya şahıs işletmesi TCKN (11 hane):');
+                                                                        if (!tax) return;
+                                                                        try { await api.convertVisitorToMember(visitor.id, company.trim(), tax); } catch (error: any) {
+                                                                            let message = 'Üye oluşturulamadı.';
+                                                                            try { message = JSON.parse(error.responseBody).error || message; } catch {}
+                                                                            alert(message); return;
+                                                                        }
                                                                         // Update local state
-                                                                        setVisitors(visitors.map(v => v.id === visitor.id ? { ...v, status: 'CONVERTED' } : v));
+                                                                        setVisitors(visitors.map(v => v.id === visitor.id ? { ...v, status: 'JOINED' } : v));
                                                                         // Refresh members
                                                                         const upgradedMembers = await api.getMembers();
                                                                         setMembers(upgradedMembers.slice(0, 50)); // Simplified fetch

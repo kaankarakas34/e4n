@@ -92,13 +92,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 24 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length !== 26 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=24')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=26')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -108,9 +108,9 @@ async function main() {
   `);
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
-  if (tableCount !== 46) throw new Error(`Repository schema bootstrap expected 46 tables, found ${tableCount}`);
+  if (tableCount !== 48) throw new Error(`Repository schema bootstrap expected 48 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'; DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'; DROP TABLE web_job_runs; DELETE FROM schema_migrations WHERE version='0018_web_job_runs'; DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'; DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'; DROP TABLE web_job_runs; DELETE FROM schema_migrations WHERE version='0018_web_job_runs'; DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
@@ -133,7 +133,7 @@ async function main() {
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
   const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
-  if (visitorUpgrade.applied.length !== 20 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+  if (visitorUpgrade.applied.length !== 22 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
       || visitorUpgrade.applied[1] !== '0006_registration_consents'
       || visitorUpgrade.applied[2] !== '0007_meeting_requests'
       || visitorUpgrade.applied[3] !== '0008_payment_initiation'
@@ -211,8 +211,8 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 23
-        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 46 || !legacyRowsPreserved) {
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 25
+        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 48 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
   } finally { await legacyPool.end(); }
@@ -500,7 +500,7 @@ async function main() {
       || statusHttpBaseline.powerTeamReject !== 400 || statusHttpBaseline.powerTeamStatusAfterReject !== 'REQUESTED'
       || statusHttpBaseline.moveMember !== 200 || statusHttpBaseline.sourceStatusAfterMove !== 'INACTIVE'
       || statusHttpBaseline.targetRowsAfterMove !== 1 || statusHttpBaseline.visitorConvertAsMember !== 403
-      || statusHttpBaseline.visitorConvertAsAdmin !== 500 || statusHttpBaseline.visitorStatusAfterConvert !== 'ATTENDED'
+      || statusHttpBaseline.visitorConvertAsAdmin !== 400 || statusHttpBaseline.visitorStatusAfterConvert !== 'ATTENDED'
       || statusHttpBaseline.conversionUsersAdded !== 0) {
     throw new Error(`Status HTTP baseline changed: ${JSON.stringify(statusHttpBaseline)}`);
   }
@@ -590,8 +590,8 @@ async function main() {
     signal: AbortSignal.timeout(10_000),
   });
   const noInviteUserCount = (await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE email = 'no-invite@example.invalid'")).rows[0].count;
-  if (noInviteRegistration.status !== 403 || noInviteUserCount !== 0) {
-    throw new Error('Active registration invite gate baseline changed');
+  if (noInviteRegistration.status !== 400 || noInviteUserCount !== 0) {
+    throw new Error('Company/tax-required public signup boundary changed');
   }
   const noCompanyCommunityRegistration = await fetch(`${base}/api/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -603,13 +603,7 @@ async function main() {
   const communityWithoutCompany = (await pool.query(
     "SELECT account_status, role, company, kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE email = 'no-company-community@example.invalid'",
   )).rows;
-  if (noCompanyCommunityRegistration.status !== 201 || communityWithoutCompany.length !== 1
-      || communityWithoutCompany[0].account_status !== 'ACTIVE' || communityWithoutCompany[0].role !== 'COMMUNITY_MEMBER'
-      || communityWithoutCompany[0].company !== '' || communityWithoutCompany[0].kvkk_consent !== false
-      || communityWithoutCompany[0].marketing_consent !== false || communityWithoutCompany[0].explicit_consent !== false
-      || !communityWithoutCompany[0].consent_date) {
-    throw new Error(`No-company community registration baseline changed: ${JSON.stringify({ status: noCompanyCommunityRegistration.status, body: noCompanyCommunityBody, rows: communityWithoutCompany })}`);
-  }
+  if (noCompanyCommunityRegistration.status !== 400 || communityWithoutCompany.length !== 0) throw new Error('Removed community signup must reject and create no account');
   const pendingApplicantId = randomUUID();
   const approvalProfessionId = randomUUID();
   const deleteProfessionId = randomUUID();
@@ -1474,8 +1468,8 @@ async function main() {
     fixtureAdminLogin: adminLogin.status,
     registrationWithoutInvite: { status: noInviteRegistration.status, rowsAdded: noInviteUserCount },
     communityRegistrationWithoutCompany: { status: noCompanyCommunityRegistration.status,
-      rowsAdded: communityWithoutCompany.length, accountStatus: communityWithoutCompany[0].account_status,
-      companyBlank: communityWithoutCompany[0].company === '' },
+      rowsAdded: communityWithoutCompany.length, accountStatus: communityWithoutCompany[0]?.account_status ?? null,
+      companyBlank: communityWithoutCompany[0]?.company === '' },
     adminMembersAsMember: adminMembersAsMember.status,
     adminMembersAsAdmin: adminMembers.status,
     adminMembersHasCompanyField: adminMemberRows.length > 0 && Object.hasOwn(adminMemberRows[0], 'company'),

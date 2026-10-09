@@ -1,7 +1,7 @@
 import multer from 'multer';
 import {createHash} from 'node:crypto';
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
-const roles=['ADMIN','PRESIDENT','VICE_PRESIDENT','MEMBER','SECRETARY_TREASURER','COMMUNITY_MEMBER'];
+const roles=['ADMIN','PRESIDENT','VICE_PRESIDENT','MEMBER','SECRETARY_TREASURER'];
 const categories=['GENERAL','EDUCATION','LEGAL','MARKETING'];
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const columns='id,title,description,category,filename,mime_type,size_bytes,uploaded_by,allowed_roles,created_at,archived_at';

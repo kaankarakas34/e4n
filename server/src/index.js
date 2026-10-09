@@ -1,3 +1,5 @@
+import {installNormalRegistration} from './normal-registration.js';
+import {companyIdentity,companyWriteError} from './company-registration.js';
 import {setMembershipOperationContext} from './membership-operation-context.js';
 import { installNotifications } from './notifications.js';
 import {installSelfProfile} from './self-profile.js';
@@ -466,71 +468,7 @@ function authenticateToken(req, res, next) {
 
 /* --- AUTH ENDPOINTS --- */
 
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, password, phone, city, profession, kvkkConsent, marketingConsent, explicitConsent, token, role, company, linkedin_profile, position } = req.body;
-    const isCommunity = role === 'COMMUNITY_MEMBER';
-
-    // Validate invite token if public registration is closed
-    if (!isCommunity) {
-      if (!token) {
-        return res.status(403).json({ error: 'Üyelik sadece davetiye ile mümkündür.' });
-      }
-
-      try {
-        jwt.verify(token, SECRET_KEY);
-      } catch (e) {
-        return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş davetiye.' });
-      }
-    }
-
-    // Check existing
-    const existing = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (existing.rows.length > 0) return res.status(409).json({ error: 'Bu e-posta adresi zaten kayıtlı.' });
-
-    // Handle Profession
-    if (profession) {
-      const profRes = await pool.query('SELECT id FROM professions WHERE LOWER(name) = LOWER($1)', [profession]);
-      if (profRes.rows.length === 0) {
-        await pool.query(
-          "INSERT INTO professions (name, category, status) VALUES ($1, 'Genel', 'PENDING') ON CONFLICT DO NOTHING",
-          [profession]
-        );
-      }
-    }
-
-    // Hash Password
-    let passwordHash = null;
-    if (password) {
-      passwordHash = await bcrypt.hash(password, 10);
-    }
-
-    const { rows } = await pool.query(
-      `INSERT INTO users (email, password_hash, name, profession, phone, company, kvkk_consent, marketing_consent, explicit_consent, consent_date, account_status, role, linkedin_profile, position, city) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14) RETURNING id, email, name, role`,
-      [
-        email, 
-        passwordHash, 
-        name, 
-        profession, 
-        phone, 
-        company || '', 
-        kvkkConsent || false, 
-        marketingConsent || false, 
-        explicitConsent || false,
-        isCommunity ? 'ACTIVE' : 'PENDING',
-        isCommunity ? 'COMMUNITY_MEMBER' : 'MEMBER',
-        linkedin_profile || '',
-        position || '',
-        city || ''
-      ]
-    );
-    res.status(201).json(rows[0]);
-  } catch (e) {
-    if (e.code === '23505') return res.status(409).json({ error: 'Email already exists' });
-    res.status(500).json({ error: e.message });
-  }
-});
+installNormalRegistration(app,{pool});
 
 /* --- PUBLIC ENDPOINTS --- */
 app.get('/api/public/members/search', async (req, res) => {
@@ -834,7 +772,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city FROM users WHERE id = $1', [req.user.id]);
+    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -952,40 +890,18 @@ app.get('/api/visitors', authenticateToken, async (req, res) => {
 });
 
 // Convert Visitor to Member
-app.post('/api/visitors/:id/convert', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  const { id } = req.params;
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // 1. Get Visitor Details
-    const vRes = await client.query('SELECT * FROM visitors WHERE id = $1', [id]);
-    if (vRes.rows.length === 0) return res.status(404).json({ error: 'Ziyaretçi bulunamadı' });
-    const v = vRes.rows[0];
-
-    // 2. Update Visitor Status
-    await client.query("UPDATE visitors SET status = 'CONVERTED' WHERE id = $1", [id]);
-
-    // 3. Create User if not exists
-    const userCheck = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [v.email]);
-    if (userCheck.rows.length === 0) {
-      await client.query(
-        `INSERT INTO users (name, email, phone, company, profession, account_status, role) 
-         VALUES ($1, $2, $3, $4, $5, 'PENDING', 'MEMBER')`,
-        [v.name, v.email, v.phone, v.company, v.profession]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
+app.post('/api/visitors/:id/convert',authenticateToken,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');let client;
+ try{
+  if(!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).some(k=>!['company','tax_number'].includes(k)))throw groupError('INVALID_INPUT','Geçersiz şirket bilgileri.',400);
+  client=await pool.connect();await beginGroupMutation(client);await requireCurrentAdmin(client,req.user.id);
+  const v=(await client.query('SELECT * FROM visitors WHERE id=$1 FOR UPDATE',[req.params.id])).rows[0];if(!v)throw groupError('NOT_FOUND','Ziyaretçi bulunamadı.',404);
+  const identity=companyIdentity(req.body.company??v.company,req.body.tax_number);
+  const existing=(await client.query('SELECT id,tax_number FROM users WHERE lower(email)=lower($1) FOR UPDATE',[v.email])).rows[0];
+  if(existing){if(existing.tax_number!==identity.tax_number)throw groupError('IDENTITY_CONFLICT','Kayıtlı hesabın şirket bilgileriyle eşleşmiyor.',409);}
+  else await client.query("INSERT INTO users(name,email,phone,company,profession,tax_number,account_status,role,company_registration,password_hash) VALUES($1,lower($2),$3,$4,$5,$6,'UNSUBSCRIBED','MEMBER',true,NULL)",[v.name,v.email,v.phone,identity.company,v.profession??'',identity.tax_number]);
+  await client.query("UPDATE visitors SET status='JOINED' WHERE id=$1",[req.params.id]);await client.query('COMMIT');res.json({success:true});
+ }catch(e){if(client)await client.query('ROLLBACK').catch(()=>{});const mapped=companyWriteError(e);if(mapped)res.status(mapped.status).json(mapped);else sendGroupMutationError(res,e);}finally{client?.release();}
 });
 
 app.post('/api/visitors', authenticateToken, async (req, res) => {

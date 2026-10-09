@@ -7,16 +7,13 @@ import { api } from '../api/api';
 import { LegalModal, LegalTexts } from '../shared/LegalModals';
 import { ProfessionSelect } from '../components/ProfessionSelect';
 
-interface RegisterProps {
-  isCommunity?: boolean;
-}
-
-export function Register({ isCommunity = false }: RegisterProps) {
+export function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [modalType, setModalType] = useState<'membership' | 'clarification' | 'explicit' | null>(null);
 
   const [formData, setFormData] = useState({
@@ -33,8 +30,6 @@ export function Register({ isCommunity = false }: RegisterProps) {
     kvkkConsent: false,
     marketingConsent: false,
     explicitConsent: false,
-    linkedin_profile: '',
-    position: '',
     city: ''
   });
 
@@ -45,32 +40,26 @@ export function Register({ isCommunity = false }: RegisterProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('Şifreler eşleşmiyor!');
-      return;
-    }
-    
-    // KVKK and Explicit Consent must be accepted
-    if (!formData.kvkkConsent || !formData.explicitConsent) {
-      alert('Devam etmek için Aydınlatma ve Açık Rıza metinlerini onaylamalısınız.');
+      setError('Şifreler eşleşmiyor!');
       return;
     }
 
+    // KVKK and Explicit Consent must be accepted
+    if (!formData.kvkkConsent || !formData.explicitConsent) {
+      setError('Devam etmek için kayıt metinlerini onaylamalısınız.');
+      return;
+    }
+
+    setError('');
     setLoading(true);
     try {
-      if (isCommunity) {
-        await api.requestRegistration({
-          ...formData,
-          role: 'COMMUNITY_MEMBER'
-        });
-        alert('Kayıt işleminiz başarıyla oluşturulmuştur. Şimdi giriş yapabilirsiniz.');
-        navigate('/auth/login');
-      } else {
-        await api.requestRegistration({ ...formData, token });
-        setSubmitted(true);
-      }
+      await api.requestRegistration({ ...formData, token });
+      setSubmitted(true);
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert(error?.message || 'Kayıt işlemi başarısız. Lütfen tekrar deneyin.');
+      let message = 'Kayıt işlemi başarısız. Lütfen tekrar deneyin.';
+      try { const body = JSON.parse(error.responseBody); if (typeof body.error === 'string') message = body.error; } catch {}
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -151,46 +140,14 @@ export function Register({ isCommunity = false }: RegisterProps) {
               </svg>
             </div>
             <CardTitle className="text-xl font-bold text-gray-900 mb-2">
-              {isCommunity ? 'Kayıt Başarılı!' : 'Başvurunuz Alındı'}
+              Üyeliğiniz oluşturuldu
             </CardTitle>
             <p className="text-gray-600 mb-6">
-              {isCommunity 
-                ? 'Topluluk üyeliğiniz başarıyla oluşturulmuştur. Hemen giriş yapabilirsiniz.' 
-                : 'Üyelik başvurunuz başarıyla alınmıştır. Yöneticilerimiz bilgilerinizi kontrol ettikten sonra üyeliğinizi onaylayacaktır. Onay sonrası e-posta ile bilgilendirileceksiniz.'}
+              Hemen giriş yapabilirsiniz. Gruplara başvurmak için aktif abonelik gerekir.
             </p>
             <Button onClick={() => navigate('/auth/login')} variant="primary" className="w-full">
               Giriş Yap
             </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!token && !isCommunity) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-full max-w-md px-4 py-8">
-          <Card className="text-center p-6">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <CardTitle className="text-xl font-bold text-gray-900 mb-2">Üyelik Davetiye ile Mümkündür</CardTitle>
-            <p className="text-gray-600 mb-6 font-medium">
-              Platformumuza sadece yöneticiler tarafından gönderilen özel davetiye bağlantıları ile üye olunabilmektedir. 
-              <br /><br />
-              Sistemimize dahil olmak için ziyaretçi başvuru formunu doldurabilirsiniz.
-            </p>
-            <div className="flex flex-col space-y-3">
-              <Button onClick={() => navigate('/degerlendirme-basvurusu')} variant="primary" className="w-full">
-                Ziyaretçi Formunu Doldur
-              </Button>
-              <Button onClick={() => navigate('/')} variant="outline" className="w-full">
-                Ana Sayfaya Dön
-              </Button>
-            </div>
           </Card>
         </div>
       </div>
@@ -203,30 +160,22 @@ export function Register({ isCommunity = false }: RegisterProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-center text-2xl font-bold text-red-600">
-              {isCommunity ? 'Topluluk Üye Kayıt Formu' : 'Üyelik Başvuru Formu'}
+              Üye Ol
             </CardTitle>
-            <p className="text-center text-sm text-gray-500 mt-2">
-              {isCommunity 
-                ? 'Ücretsiz topluluk üyesi olarak etkinliklerimize katılabilir ve tüm duyurulardan haberdar olabilirsiniz.' 
-                : 'Formu doldurarak üyelik talebinizi iletebilirsiniz. Başvurunuz incelendikten sonra size dönüş yapılacaktır.'}
-            </p>
-            {isCommunity && (
-              <div className="mt-3 text-center text-xs text-red-700 font-bold bg-red-50 p-2.5 rounded-xl border border-red-100">
-                ⚠️ Önemli Not: Ücretsiz topluluk üyeliği, İş İnsanları Kulübü üyeliği değildir.
-              </div>
-            )}
+            <p className="text-center text-sm text-gray-500 mt-2">Şirket bilgilerinizle doğrudan üye olun. Davetiye veya yönetici onayı gerekmez. Grup başvurusu için abonelik gerekir.</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && <p role="alert" className="text-red-700">{error}</p>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column: Personal Info */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900 border-b pb-2">Kişisel Bilgiler</h3>
                   <div className="space-y-3">
-                    <Input required data-name="name" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
-                    <Input required data-name="email" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
-                    <Input required data-name="phone" placeholder="05xx xxx xx xx" type="tel" value={formData.phone} onChange={handleChange} />
-                    <Input required data-name="city" placeholder="Bulunduğunuz İl" value={formData.city} onChange={handleChange} />
+                    <Input required data-name="name" aria-label="Ad Soyad" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
+                    <Input required data-name="email" aria-label="E-posta Adresi" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
+                    <Input required data-name="phone" aria-label="Telefon" placeholder="05xx xxx xx xx" type="tel" value={formData.phone} onChange={handleChange} />
+                    <Input required data-name="city" aria-label="Bulunduğunuz İl" placeholder="Bulunduğunuz İl" value={formData.city} onChange={handleChange} />
                   </div>
                 </div>
 
@@ -239,31 +188,19 @@ export function Register({ isCommunity = false }: RegisterProps) {
                       onChange={(val) => setFormData(prev => ({ ...prev, profession: val }))}
                       className="border-red-200 focus:border-red-500"
                     />
-                    
-                    <Input 
-                      data-name="company" 
-                      placeholder={isCommunity ? "Şirket İsmi (İsteğe bağlı)" : "Şirket İsmi"} 
-                      required={!isCommunity}
-                      value={formData.company} 
-                      onChange={handleChange} 
+
+                    <Input
+                      data-name="company"
+                      placeholder="Şirket İsmi" aria-label="Şirket İsmi"
+                      required
+                      value={formData.company}
+                      onChange={handleChange}
                     />
 
-                    {isCommunity && (
-                      <>
-                        <Input 
-                          data-name="linkedin_profile" 
-                          placeholder="LinkedIn Profil Linki (İsteğe bağlı)" 
-                          value={formData.linkedin_profile} 
-                          onChange={handleChange} 
-                        />
-                        <Input 
-                          data-name="position" 
-                          placeholder="Pozisyon / Ünvan (İsteğe bağlı - Beyaz yaka ise)" 
-                          value={formData.position} 
-                          onChange={handleChange} 
-                        />
-                      </>
-                    )}
+                    <Input required data-name="taxNumber" aria-label="VKN veya TCKN" placeholder="VKN (10 hane) / TCKN (11 hane)" inputMode="numeric" pattern="([0-9]{10}|[1-9][0-9]{10})" maxLength={11} value={formData.taxNumber} onChange={handleChange} />
+                    <p className="text-xs text-gray-500">Şahıs işletmelerinde TCKN kabul edilir. Her numara yalnızca bir hesaba bağlanır; hesap silinse de kayıtlı kalır.</p>
+                    <Input data-name="taxOffice" aria-label="Vergi Dairesi" placeholder="Vergi Dairesi (isteğe bağlı)" value={formData.taxOffice} onChange={handleChange} />
+                    <Input data-name="billingAddress" aria-label="Fatura Adresi" placeholder="Fatura Adresi (isteğe bağlı)" value={formData.billingAddress} onChange={handleChange} />
                   </div>
                 </div>
               </div>
@@ -272,8 +209,8 @@ export function Register({ isCommunity = false }: RegisterProps) {
               <div className="pt-4">
                 <h3 className="font-medium text-gray-900 border-b pb-2 mb-4">Güvenlik</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input required data-name="password" placeholder="Şifre Oluştur" type="password" value={formData.password} onChange={handleChange} />
-                  <Input required data-name="confirmPassword" placeholder="Şifre Tekrar" type="password" value={formData.confirmPassword} onChange={handleChange} />
+                  <Input required data-name="password" aria-label="Şifre Oluştur" placeholder="Şifre Oluştur" type="password" value={formData.password} onChange={handleChange} />
+                  <Input required data-name="confirmPassword" aria-label="Şifre Tekrar" placeholder="Şifre Tekrar" type="password" value={formData.confirmPassword} onChange={handleChange} />
                 </div>
               </div>
 
@@ -320,7 +257,7 @@ export function Register({ isCommunity = false }: RegisterProps) {
 
               <div className="pt-4">
                 <Button disabled={loading} variant="primary" className="w-full h-12 text-lg shadow-lg shadow-red-200">
-                  {loading ? 'İşleniyor...' : isCommunity ? 'Topluluk Üyesi Olarak Katıl' : 'Başvuruyu Gönder'}
+                  {loading ? 'İşleniyor...' : 'Üye Ol'}
                 </Button>
               </div>
 

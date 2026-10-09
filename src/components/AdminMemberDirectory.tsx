@@ -8,7 +8,7 @@ const when=(v:string|null)=>v?new Date(v).toLocaleString('tr-TR'):'Tarih bilinmi
 export function AdminMemberDirectory({onOpenManagement}:{onOpenManagement:()=>void}) {
   const {user,token}=useAuthStore();const context=`${user?.id}:${user?.role}:${token}`;
   const [data,setData]=useState<MemberDirectory|null>(null),[loadedFor,setLoadedFor]=useState(''),[error,setError]=useState(''),[refresh,setRefresh]=useState(0);
-  const [tab,setTab]=useState<'members'|'community'>('members'),[search,setSearch]=useState(''),[role,setRole]=useState('ALL'),[status,setStatus]=useState('ALL'),[group,setGroup]=useState('ALL');
+  const [search,setSearch]=useState(''),[role,setRole]=useState('ALL'),[status,setStatus]=useState('ALL'),[group,setGroup]=useState('ALL');
   const [selected,setSelected]=useState<DirectoryMember|null>(null);
   useEffect(()=>{let cancelled=false;setData(null);setLoadedFor('');setError('');setSelected(null);setSearch('');setRole('ALL');setStatus('ALL');setGroup('ALL');
     if(user?.role==='ADMIN'&&token)adminMemberDirectoryApi.read(user.id).then(result=>{if(!cancelled){setData(result);setLoadedFor(context);}}).catch(()=>{if(!cancelled)setError('Hesap dizini yüklenemedi. Tekrar deneyin.');});
@@ -17,7 +17,7 @@ export function AdminMemberDirectory({onOpenManagement}:{onOpenManagement:()=>vo
   if(user?.role!=='ADMIN')return <div className="p-8">Erişim Kısıtlı</div>;
   if(!token)return <div role="alert" className="p-8">Oturum bulunamadı. Yeniden giriş yapın.</div>;
   const members=data?.members??[];
-  const rows=filterDirectory(members,{tab,search,role,status,group});
+  const rows=filterDirectory(members,{search,role,status,group});
   const roles=[...new Set(members.map(m=>m.role).filter((r):r is string=>r!==null))].sort();
   const statuses=[...new Set(members.map(m=>m.account_status).filter((r):r is string=>r!==null))].sort();
   const groups=new Map(members.flatMap(m=>m.groups.map(g=>[g.id,g.name] as const)));
@@ -25,7 +25,7 @@ export function AdminMemberDirectory({onOpenManagement}:{onOpenManagement:()=>vo
     <p className="text-sm text-gray-600">Her hesap bir kez listelenir. Hesap durumu ile grup ve üyelik kaydı durumları ayrı gösterilir; bu ekran hak veya abonelik onayı hesaplamaz.</p>
     {error?<div role="alert"><p>{error}</p><Button onClick={()=>setRefresh(n=>n+1)}>Tekrar dene</Button></div>:loadedFor!==context?<p role="status">Yükleniyor...</p>:<>
       <p className="text-sm text-gray-500">Okuma zamanı: {when(data!.asOf)} · Toplam {members.length} hesap</p>
-      <div className="flex gap-3">{(['members','community'] as const).map(t=><Button key={t} variant={tab===t?'primary':'outline'} onClick={()=>{setTab(t);setSelected(null);}}>{t==='members'?'Üye hesapları':'Topluluk hesapları'} ({members.filter(m=>t==='community'?m.role==='COMMUNITY_MEMBER':m.role!=='COMMUNITY_MEMBER').length})</Button>)}</div>
+      <p>Üye hesapları ({members.length})</p>
       <div className="grid md:grid-cols-4 gap-3"><label>Hesap ara<input aria-label="Hesap ara" className="border rounded p-2 w-full" value={search} onChange={e=>setSearch(e.target.value)} /></label>
         <label>Rol<select aria-label="Rol filtresi" className="border rounded p-2 w-full" value={role} onChange={e=>setRole(e.target.value)}><option value="ALL">Tüm roller</option><option value="UNKNOWN">Rol bilinmiyor</option>{roles.map(r=><option key={r} value={`VALUE:${r}`}>{r}</option>)}</select></label>
         <label>Hesap durumu<select aria-label="Hesap durumu filtresi" className="border rounded p-2 w-full" value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">Tüm durumlar</option><option value="UNKNOWN">Durum bilinmiyor</option>{statuses.map(s=><option key={s} value={`VALUE:${s}`}>{directoryStatus(s)}</option>)}</select></label>

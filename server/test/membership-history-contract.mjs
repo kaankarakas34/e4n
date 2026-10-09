@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,25);
+  assert.equal((await applyVersionedSchema()).applied.length,26);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -123,8 +123,8 @@ async function main() {
   assert.equal((await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid='group_membership_history'::regclass")).rows[0].relrowsecurity,true);
   for(const role of ['anon','authenticated']){await pool.query('CREATE ROLE '+role);assert.equal((await pool.query("SELECT has_table_privilege($1,'group_membership_history','SELECT') ok",[role])).rows[0].ok,false);}
   // Actual 19-version upgrade seeds one observation, never invents old joins/removals.
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0020_group_membership_history','0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(await count(),1);for(const role of ['anon','authenticated'])assert.equal((await pool.query("SELECT has_function_privilege($1,'e4n_capture_membership_history()','EXECUTE') ok",[role])).rows[0].ok,false);assert.equal((await pool.query('SELECT operation FROM group_membership_history')).rows[0].operation,'BASELINE');
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0020_group_membership_history','0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(await count(),1);for(const role of ['anon','authenticated'])assert.equal((await pool.query("SELECT has_function_privilege($1,'e4n_capture_membership_history()','EXECUTE') ok",[role])).rows[0].ok,false);assert.equal((await pool.query('SELECT operation FROM group_membership_history')).rows[0].operation,'BASELINE');
   for(let i=0;i<105;i++)await pool.query('UPDATE group_members SET joined_at=$1 WHERE user_id=$2',[new Date(1700000000000+i),member]);
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port;
   const call=(url,id=member)=>fetch(base+'/api'+url,{headers:id?{Authorization:'Bearer '+jwt.sign({id,role:'ADMIN'},process.env.JWT_SECRET)}:{}});
@@ -145,8 +145,8 @@ async function main() {
 
   // Upgrade an existing24 ledger without attributing any earlier change.
   const priorLedger=JSON.stringify((await pool.query('SELECT id,user_id,operation,recorded_at,before_state,after_state FROM group_membership_history ORDER BY id')).rows);
-  await pool.query("ALTER TABLE group_membership_history DROP COLUMN operation_context; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);
+  await pool.query("ALTER TABLE group_membership_history DROP COLUMN operation_context; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0025_membership_operation_context','0026_open_normal_registration']);assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal(JSON.stringify((await pool.query('SELECT id,user_id,operation,recorded_at,before_state,after_state FROM group_membership_history ORDER BY id')).rows),priorLedger);
   assert.equal((await pool.query('SELECT count(*)::int n FROM group_membership_history WHERE operation_context IS NOT NULL')).rows[0].n,0);
   const triggerConfig=(await pool.query("SELECT prosecdef,proconfig FROM pg_proc WHERE oid='e4n_capture_membership_history()'::regprocedure")).rows[0];assert.equal(triggerConfig.prosecdef,false);assert.ok(triggerConfig.proconfig.some(x=>x.includes('search_path=pg_catalog, public')));
@@ -207,7 +207,7 @@ async function main() {
   }finally{await traceConnection.query('ROLLBACK').catch(()=>{});traceConnection.release();}
   console.log('Membership operation context PASS: all mounted application/status/removal/transfer/role/shuffle/group+user deletion writers; snapshot preservation, owner/admin DTO, no-op, forged-body/current-role denial, same-operation transfer, local commit/rollback isolation and malformed context atomic rollback.');
 
-  console.log('Membership history PASS: fresh25/repeat0/19upgrade, truthful baseline, atomic insert/update/delete+rollback+outage, no-op replay, rename and cascading delete survival, identity reassignment owner separation, immutable/ACL/RLS/truncate, real JWT/admin/current-role/owner, 106 rows microsecond keyset paging, DTO/error recovery, no live writes/providers.');
+  console.log('Membership history PASS: fresh26/repeat0/19upgrade, truthful baseline, atomic insert/update/delete+rollback+outage, no-op replay, rename and cascading delete survival, identity reassignment owner separation, immutable/ACL/RLS/truncate, real JWT/admin/current-role/owner, 106 rows microsecond keyset paging, DTO/error recovery, no live writes/providers.');
 }
 
 let exitCode=0;

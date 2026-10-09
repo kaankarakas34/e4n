@@ -64,12 +64,12 @@ export function PublicHeader() {
                     Giriş Yap
                   </Button>
                 </Link>
-                <Link to="/degerlendirme-basvurusu">
+                <Link to="/auth/register">
                   <Button
                     variant="primary"
                     className="shadow-md hover:shadow-lg shadow-red-200"
                   >
-                    Katıl
+                    Üye Ol
                   </Button>
                 </Link>
               </>
@@ -132,11 +132,11 @@ export function PublicHeader() {
                   variant="primary"
                   onClick={() => {
                     setIsOpen(false);
-                    navigate('/degerlendirme-basvurusu');
+                    navigate('/auth/register');
                   }}
                   className="w-full justify-center shadow-md shadow-red-200"
                 >
-                  Katıl
+                  Üye Ol
                 </Button>
               </>
             )}

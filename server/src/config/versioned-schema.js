@@ -42,6 +42,7 @@ const eventRegistrationStatusSql = readFileSync(path.join(serverDir, 'supabase/m
 const eventAttendanceVerificationSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008092049_event_attendance_verification.sql'), 'utf8');
 const selfProfileFieldsSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008145443_self_profile_fields.sql'), 'utf8');
 const groupMeetingAttendanceSql = readFileSync(path.join(serverDir, 'supabase/migrations/20261008191226_group_meeting_attendance.sql'), 'utf8');
+const normalRegistrationSql=readFileSync(path.join(serverDir,'supabase/migrations/20261009083750_open_normal_registration.sql'),'utf8');
 const membershipContextSql=readFileSync(path.join(serverDir,'supabase/migrations/20261009073843_membership_operation_context.sql'),'utf8');
 const versions = [
   { version: '0001_init_schema', checksum: checksum(initSql), apply: client => client.query(initSql) },
@@ -69,6 +70,7 @@ const versions = [
   { version: '0023_self_profile_fields', checksum: checksum(selfProfileFieldsSql), apply: client => client.query(selfProfileFieldsSql) },
   { version: '0024_group_meeting_attendance', checksum: checksum(groupMeetingAttendanceSql), apply: client => client.query(groupMeetingAttendanceSql) },
   { version: '0025_membership_operation_context', checksum: checksum(membershipContextSql), apply: client => client.query(membershipContextSql) },
+  { version: '0026_open_normal_registration', checksum: checksum(normalRegistrationSql), apply: client => client.query(normalRegistrationSql) },
 ];
 
 // Captured twice from init.sql without demo seeds on isolated PostgreSQL 17.11.

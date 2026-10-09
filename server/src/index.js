@@ -1607,10 +1607,18 @@ const eventReadUser = req => {
     return typeof claims.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(claims.id) ? claims : null;
   } catch { return null; }
 };
+const eventAdmin = async req => {
+  const claims = eventReadUser(req);
+  if (!claims) return false;
+  const { rows } = await pool.query('SELECT role FROM users WHERE id = $1', [claims.id]);
+  return rows[0]?.role === 'ADMIN';
+};
 app.get('/api/events', async (req, res) => {
   const { type, group_id, limit, mode } = req.query;
   try {
     const reqUser = eventReadUser(req);
+    const isAdmin = await eventAdmin(req);
+    if (mode === 'admin' && !isAdmin) return res.sendStatus(reqUser ? 403 : 401);
     res.set('Cache-Control', 'private, no-store');
     let query = `
       SELECT e.*, g.name as group_name,
@@ -1641,7 +1649,7 @@ app.get('/api/events', async (req, res) => {
       query += ' ORDER BY e.start_at DESC';
     } else {
       // Public view
-      query += " AND e.status = 'PUBLISHED' AND COALESCE(e.end_at, e.start_at) >= NOW()";
+      query += " AND e.status = 'PUBLISHED' AND e.is_public = TRUE AND COALESCE(e.end_at, e.start_at) >= NOW()";
       query += ' ORDER BY e.pinned DESC NULLS LAST, e.start_at ASC';
     }
 
@@ -1653,8 +1661,6 @@ app.get('/api/events', async (req, res) => {
     const { rows } = await pool.query(query, params);
     
     // Auth check for online_link visibility
-    const isAdmin = (reqUser && (String(reqUser.role).toUpperCase() === 'ADMIN' || String(reqUser.role).toUpperCase() === 'SUPER_ADMIN')) || mode === 'admin';
-
     const sanitizedRows = rows.map(r => {
       const copy = { ...r };
       if (!isAdmin) {
@@ -1675,6 +1681,7 @@ app.get('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const reqUser = eventReadUser(req);
+    const isAdmin = await eventAdmin(req);
     res.set('Cache-Control', 'private, no-store');
     const { rows } = await pool.query(`
       SELECT e.*, g.name as group_name,
@@ -1695,19 +1702,19 @@ app.get('/api/events/:id', async (req, res) => {
     const event = rows[0];
 
     // Auth check for online_link visibility
-    const isAdmin = reqUser && reqUser.role === 'ADMIN';
+    if (!isAdmin && (event.status !== 'PUBLISHED' || event.is_public !== true)) return res.sendStatus(404);
 
     if (!isAdmin) {
       delete event.online_link;
     }
 
     // Participants list
-    const attRes = await pool.query(`
+    const attRes = isAdmin ? await pool.query(`
       SELECT u.id, u.name, u.avatar, u.profession, a.status 
       FROM attendance a
       JOIN users u ON a.user_id = u.id 
       WHERE a.event_id = $1
-    `, [id]);
+    `, [id]) : { rows: [] };
 
     event.attendees = attRes.rows;
     res.json(event);
@@ -1718,13 +1725,20 @@ app.get('/api/events/:id', async (req, res) => {
 app.post('/api/events', authenticateToken, async (req, res) => {
   const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency, online_link } = req.body;
   try {
+    if (!(await eventAdmin(req))) return res.sendStatus(403);
+    if (typeof title !== 'string' || !title.trim() || title.length > 255
+      || !Number.isFinite(Date.parse(start_at)) || (end_at != null && (!Number.isFinite(Date.parse(end_at)) || Date.parse(end_at) < Date.parse(start_at)))
+      || !['education', 'meeting', 'one_to_one', 'visitor', 'social'].includes(type)
+      || (status != null && !['DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED'].includes(status))
+      || (max_attendees != null && (!Number.isSafeInteger(Number(max_attendees)) || Number(max_attendees) < 1))
+      || (price != null && (!Number.isFinite(Number(price)) || Number(price) < 0))) return res.status(400).json({ error: 'Invalid event fields' });
     const { rows } = await pool.query(
       `INSERT INTO events(title, description, location, start_at, end_at, created_by, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status, pinned, max_attendees, generate_tickets, price, currency, online_link)
        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *, 0::int AS attendees_count`,
       [title, description, location, start_at, end_at, req.user.id, is_public, type, group_id, has_equal_opportunity_badge, city, is_online, status || 'PUBLISHED', pinned || false, max_attendees || 50, generate_tickets || false, price || 0, currency || 'TRY', online_link || null]
     );
     res.status(201).json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(e.code === '23503' || e.code === '23514' ? 400 : 500).json({ error: e.code === '23503' || e.code === '23514' ? 'Invalid event relation' : 'Event creation failed' }); }
 });
 
 // Update Event
@@ -1733,6 +1747,19 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
   const { title, description, location, start_at, end_at, is_public, type, group_id, has_equal_opportunity_badge, status, city, is_online, pinned, max_attendees, generate_tickets, price, currency, online_link } = req.body;
 
   try {
+    if (!(await eventAdmin(req))) return res.sendStatus(403);
+    if (title !== undefined && (typeof title !== 'string' || !title.trim() || title.length > 255)) return res.status(400).json({ error: 'Invalid title' });
+    if (start_at !== undefined && !Number.isFinite(Date.parse(start_at))) return res.status(400).json({ error: 'Invalid start date' });
+    if (end_at !== undefined && end_at !== null && !Number.isFinite(Date.parse(end_at))) return res.status(400).json({ error: 'Invalid end date' });
+    if (type !== undefined && !['education', 'meeting', 'one_to_one', 'visitor', 'social'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
+    if (status !== undefined && !['DRAFT', 'PUBLISHED', 'CANCELLED', 'COMPLETED'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    if (max_attendees !== undefined && (!Number.isSafeInteger(Number(max_attendees)) || Number(max_attendees) < 1)) return res.status(400).json({ error: 'Invalid capacity' });
+    if (price !== undefined && (!Number.isFinite(Number(price)) || Number(price) < 0)) return res.status(400).json({ error: 'Invalid price' });
+    const current = await pool.query('SELECT start_at, end_at FROM events WHERE id = $1', [id]);
+    if (!current.rowCount) return res.sendStatus(404);
+    const effectiveStart = start_at ?? current.rows[0].start_at;
+    const effectiveEnd = end_at === undefined ? current.rows[0].end_at : end_at;
+    if (effectiveEnd != null && Date.parse(effectiveEnd) < Date.parse(effectiveStart)) return res.status(400).json({ error: 'End date precedes start date' });
     const fields = [];
     const values = [];
     let idx = 1;
@@ -1756,7 +1783,7 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
     if (currency !== undefined) { fields.push(`currency = $${idx++} `); values.push(currency); }
     if (online_link !== undefined) { fields.push(`online_link = $${idx++} `); values.push(online_link); }
 
-    if (fields.length === 0) return res.json({ message: 'No changes' });
+    if (fields.length === 0) return res.status(400).json({ error: 'No changes' });
 
     values.push(id);
     const { rows } = await pool.query(
@@ -1764,16 +1791,27 @@ app.put('/api/events/:id', authenticateToken, async (req, res) => {
         (SELECT COUNT(*)::int FROM attendance a JOIN users u ON u.id = a.user_id WHERE a.event_id = events.id) AS attendees_count`,
       values
     );
+    if (!rows.length) return res.sendStatus(404);
     res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(e.code === '23503' || e.code === '23514' ? 400 : 500).json({ error: e.code === '23503' || e.code === '23514' ? 'Invalid event relation' : 'Event update failed' }); }
 });
 
 // Delete Event
 app.delete('/api/events/:id', authenticateToken, async (req, res) => {
+  let client;
   try {
-    await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    if (!(await eventAdmin(req))) return res.sendStatus(403);
+    client = await pool.connect();
+    await client.query('BEGIN');
+    const event = await client.query('SELECT id FROM events WHERE id = $1 FOR UPDATE', [req.params.id]);
+    if (!event.rowCount) { await client.query('ROLLBACK'); return res.sendStatus(404); }
+    const linked = await client.query('SELECT EXISTS(SELECT 1 FROM attendance WHERE event_id=$1) OR EXISTS(SELECT 1 FROM event_tickets WHERE event_id=$1) AS used', [req.params.id]);
+    if (linked.rows[0].used) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'Katılımcısı veya bileti olan etkinliği silmek yerine iptal edin.' }); }
+    await client.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    await client.query('COMMIT');
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { if (client) await client.query('ROLLBACK').catch(() => {}); res.status(500).json({ error: 'Event deletion failed' }); }
+  finally { client?.release(); }
 });
 
 app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {

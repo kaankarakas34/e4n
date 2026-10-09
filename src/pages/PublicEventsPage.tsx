@@ -11,7 +11,7 @@ export function PublicEventsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getEvents()
+    api.getPublicEvents()
       .then((data: any) => {
         // Filter only public events that are published
         const publicEvents = data.filter((e: any) => e.is_public && e.status === 'PUBLISHED');

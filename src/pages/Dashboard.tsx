@@ -292,7 +292,7 @@ function CommunityDashboard({ user }: { user: any }) {
 
     useEffect(() => {
         setEventsLoading(true);
-        api.getEvents().then(data => {
+        api.getPublicEvents().then(data => {
             const now = new Date();
             const upcoming = (data || [])
                 .filter((e: any) => e.status === 'PUBLISHED' && new Date(e.start_at) >= now)

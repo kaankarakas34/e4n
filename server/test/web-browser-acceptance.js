@@ -84,6 +84,21 @@ async page=>{
     await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).waitFor();
     await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
+  await test('public-event-list-uses-public-api',async()=>{
+    const start=requests.length;
+    await page.goto(f.webBase+'/etkinlikler');
+    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
+    check(requests.slice(start).some(r=>r.path==='/api/events'&&r.status===200),'Public event request missing');
+    check(!requests.slice(start).some(r=>r.path==='/api/events'&&r.status===403),'Public page requested administrator list');
+  });
+  await test('admin-event-linked-delete-explains-cancel',async()=>{
+    await visit('/admin/events','Etkinlik Yönetimi');
+    const card=page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');
+    await card.getByRole('button',{name:'Sil',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'katılımcı veya bilet kaydı var'}).waitFor();
+    check(requests.some(r=>r.method==='DELETE'&&r.path==='/api/events/'+f.ids.event&&r.status===409),'Linked event deletion was not rejected');
+    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
+  });
   await test('admin-event-new-booking-is-not-attendance',async()=>{
     await page.goto(f.webBase+'/event/'+f.ids.event);
     await page.getByRole('button',{name:'Hemen Kayıt Ol',exact:true}).click();

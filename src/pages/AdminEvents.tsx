@@ -299,7 +299,9 @@ export function AdminEvents() {
         await deleteEvent(eventId);
         if (isCurrent()) fetchEvents();
       } catch (error) {
-        if (isCurrent()) setEventWriteError('Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.');
+        if (isCurrent()) setEventWriteError((error as { status?: number })?.status === 409
+          ? 'Bu etkinliğin katılımcı veya bilet kaydı var. Kayıt geçmişini korumak için etkinliği iptal edin.'
+          : 'Etkinlik silme sonucu doğrulanamadı. Kayıtları kontrol edin.');
       } finally {
         eventWriteBusy.current = false; if (alive.current) setEventWritePending(false);
       }

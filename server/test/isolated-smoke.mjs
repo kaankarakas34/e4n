@@ -1058,7 +1058,7 @@ async function main() {
   const healthBody = await health.json();
   const events = await fetch(`${base}/api/events`, { signal: AbortSignal.timeout(10_000) });
   const publicEvents = await events.json();
-  const adminEvents = await fetch(`${base}/api/events?mode=admin`, { signal: AbortSignal.timeout(10_000) });
+  const adminEvents = await fetch(`${base}/api/events?mode=admin`, { headers: adminHeaders, signal: AbortSignal.timeout(10_000) });
   const allEvents = await adminEvents.json();
   const eventRows = (await pool.query('SELECT title, status FROM events ORDER BY title')).rows;
 
@@ -1360,7 +1360,7 @@ async function main() {
   if ((await getCountEvent()).attendees_count !== 0) throw new Error('Empty event list count failed');
   await pool.query("INSERT INTO attendance (event_id, user_id, status) VALUES ($1, $2, 'PRESENT'), ($1, $3, 'ABSENT')", [countEvent.id, userId, otherUserId]);
   const countList = await getCountEvent();
-  const countDetail = await (await fetch(`${base}/api/events/${countEvent.id}`)).json();
+  const countDetail = await (await fetch(`${base}/api/events/${countEvent.id}`, { headers: adminHeaders })).json();
   const countDialog = await (await fetch(`${base}/api/events/${countEvent.id}/attendance`, { headers: adminHeaders })).json();
   const countPublic = await (await fetch(`${base}/api/events`)).json();
   if (countList.attendees_count !== 2 || countDialog.length !== 2 || countDetail.attendees_count !== 2
@@ -1377,6 +1377,39 @@ async function main() {
   const countDialogAfter = await (await fetch(`${base}/api/events/${countEvent.id}/attendance`, { headers: adminHeaders })).json();
   if (countRemove.status !== 200 || countAfterRemove.attendees_count !== 1 || countDialogAfter.length !== 1) throw new Error('Removal did not refresh participant count');
   console.log('Participant count PASS: new/empty=0, mixed attendance=2, edit=2, denied removal=2, admin removal=1; no list identities.');
+  const eventCommand = (method, url, headers, body) => fetch(`${base}/api/events${url}`, {
+    method, headers, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(10_000),
+  });
+  const eventFixture = { title: 'Event lifecycle fixture', start_at: '2099-02-01T20:00:00Z', end_at: '2099-02-01T21:00:00Z', type: 'meeting', is_public: true, online_link: 'https://meeting.example.invalid/private' };
+  const memberEvent = await eventCommand('POST', '', { ...authHeaders, 'Content-Type': 'application/json' }, eventFixture);
+  const anonymousAdminList = await eventCommand('GET', '?mode=admin', {});
+  const memberAdminList = await eventCommand('GET', '?mode=admin', authHeaders);
+  const forgedAdminHeaders = { Authorization: `Bearer ${jwt.sign({ id: userId, role: 'ADMIN' }, process.env.JWT_SECRET)}` };
+  const forgedAdminList = await eventCommand('GET', '?mode=admin', forgedAdminHeaders);
+  const forgedAdminWrite = await eventCommand('POST', '', { ...forgedAdminHeaders, 'Content-Type': 'application/json' }, eventFixture);
+  const badEvent = await eventCommand('POST', '', jsonAdminHeaders, { ...eventFixture, end_at: '2099-01-01T21:00:00Z' });
+  if (memberEvent.status !== 403 || anonymousAdminList.status !== 401 || memberAdminList.status !== 403
+      || forgedAdminList.status !== 403 || forgedAdminWrite.status !== 403 || badEvent.status !== 400) throw new Error('Event lifecycle authorization/validation failed');
+  const createdResponse = await eventCommand('POST', '', jsonAdminHeaders, eventFixture);
+  const createdEvent = await createdResponse.json();
+  if (createdResponse.status !== 201 || !createdEvent.id) throw new Error('Admin event create failed');
+  const guestEvent = await (await eventCommand('GET', `/${createdEvent.id}`, {})).json();
+  const adminEvent = await (await eventCommand('GET', `/${createdEvent.id}`, adminHeaders)).json();
+  const memberEdit = await eventCommand('PUT', `/${createdEvent.id}`, { ...authHeaders, 'Content-Type': 'application/json' }, { title: 'Forged edit' });
+  const memberEventDelete = await eventCommand('DELETE', `/${createdEvent.id}`, authHeaders);
+  const invalidEdit = await eventCommand('PUT', `/${createdEvent.id}`, jsonAdminHeaders, { max_attendees: 0 });
+  const missingEdit = await eventCommand('PUT', `/${randomUUID()}`, jsonAdminHeaders, { title: 'Missing' });
+  if (guestEvent.online_link !== undefined || guestEvent.attendees?.length !== 0 || adminEvent.online_link !== eventFixture.online_link
+      || memberEdit.status !== 403 || memberEventDelete.status !== 403 || invalidEdit.status !== 400 || missingEdit.status !== 404) throw new Error('Event read/write boundary failed');
+  const editResponse = await eventCommand('PUT', `/${createdEvent.id}`, jsonAdminHeaders, { title: 'Event lifecycle edited', status: 'DRAFT' });
+  const hiddenDraft = await eventCommand('GET', `/${createdEvent.id}`, {});
+  const deleteResponse = await eventCommand('DELETE', `/${createdEvent.id}`, adminHeaders);
+  const missingDelete = await eventCommand('DELETE', `/${createdEvent.id}`, adminHeaders);
+  const linkedDelete = await eventCommand('DELETE', `/${countEvent.id}`, adminHeaders);
+  if (editResponse.status !== 200 || (await editResponse.json()).title !== 'Event lifecycle edited'
+      || hiddenDraft.status !== 404 || deleteResponse.status !== 200 || missingDelete.status !== 404 || linkedDelete.status !== 409
+      || !(await getCountEvent())) throw new Error('Event edit/draft/delete/history integrity failed');
+  console.log('Event lifecycle PASS: admin-only list/mutations, public detail redaction, validation, draft isolation, linked-record protection and precise acknowledgements.');
   console.log(JSON.stringify({
     isolated: true,
     postgresImage: 'postgres:17',

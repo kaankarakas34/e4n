@@ -56,3 +56,9 @@ Kullanıcının netleştirdiği kayıt koşulu: şirket adı, VKN/TCKN, vergi da
 ## Login kayıt alanı düzeltmesi
 - Kullanıcı isteğiyle giriş ekranındaki eski topluluk üyeliği başlığı/açıklaması kaldırıldı. Normal üyelik bilgilerini açıklayan Üye Ol bağlantısı doğrudan /auth/register rotasına gider; gerçek Link, klavye odağı ve mevcut görsel düzen kullanılır. Eski link için geriye uyumluluk yönlendirmesi korunur. Bu aynı E4N-161 kayıt akışının düzeltmesidir, ayrı küçük görev değildir.
 - Doğrulama: tsc -b PASS; login içinde eski topluluk/register-community metni yok, doğrudan normal register Link hedefi ve App rotası kontrol edildi. Bu görsel/metin değişikliği için API/DB veya bütün browser kabulü yeniden çalıştırılmadı.
+
+## Login production yayını — kullanıcı onayıyla 9 Ekim
+- Canlı eski main7ead169 üzerine yalnız Login.tsx düzeltmesi uygulandı; production commit c5d6323, main fast-forward push. Managed checkout e4n-login-production; build PASS.
+- Vercel dpl_EQFvR7rHDNRiouU8Jnw69RouE5PK, target production/READY; event4network.com ve www aynı c5d6323 commit'ine bağlı.
+- Canlı browser PASS: topluluk üyeliği metni yok, Üye Ol görünür, href /auth/register, tıklayınca normal kayıt rotası açılıyor. Form gönderimi/ödeme/mail yapılmadı.
+- SELECT-only canlı şema kontrolü: schema_migrations ve company_tax_registry yok, company_registration alanı ve required billing constraint yok. Bu nedenle bütün foundation dalı production'a taşınmadı. Yeni açık normal üyelik API'si ve dört zorunlu alan/tekillik henüz canlı değildir; kontrollü canlı DB geçişi ve üyelik sürümü ayrıca gerekiyor. Production mevcut kayıt backend'ini kullanır.

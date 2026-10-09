@@ -6,6 +6,7 @@
 - Normal üyelik kayıt kapısında davetiye/admin üyelik onayı kaldırılır.
 - Vergi numarası ve şirket bilgisi yeterlidir; vergi levhası dosyası zorunlu değildir.
 - Bir vergi numarası en fazla bir kişiye bağlı olabilir; ikinci kayıt tüm yazım yollarında engellenir.
+- Aynı gün sonraki kullanıcı kararı: davetiye şartı kalkarken üyelik referans ilişkisi korunur; kimin kimin referansı olduğu bilinir. Grup isteği için aktif abonelik zorunlu; kayıt olmak abonelik değildir.
 - Üye grup seçer, analizleri ve aktif üyelerin mesleklerini inceler, Katıl ile başvurur.
 - Başvuru ilgili grup başkanına görüşme görevi + uygulama bildirimi + e-posta olarak düşer. Başkan telefon görüşmesini kaydettikten sonra kendisi kabul/ret verir; admin son onayı zorunlu değildir.
 
@@ -71,8 +72,10 @@ P16/E4N-88 hizmet sınıflandırması grup meslek koltuğuna bağlıdır; salt m
 
 - Vergi numarasının ülke/tür kapsamı ve normalizasyonu; şirket sahipliğine dair şimdilik resmi doğrulama istenmedi.
 - Eski aynı numaralı hesaplarda sahip kim; numarasız eski üyeler nasıl tamamlar; hesap kapanınca numara tekrar kullanılabilir mi?
-- Yeni kayıt hemen gruba başvurabilir mi, ödeme önce mi? Kayıt onayı kalkması ödeme şartını kendiliğinden kaldırmaz (mevcut account_status/payment çakışması düzeltilecek).
+- Yeni karar: grup isteği için abonelik zorunlu. Ücret/dönem/grace haklarının ayrıntıları açık; mevcut account_status/payment çakışması düzeltilecek. Referanssız kayıt politikası/seçim yöntemi ayrıca açık.
 - Grubun görülebilir analiz KPI'ları, dolu/meslek koltuğu uygun olmayan gruba başvuru/bekleme davranışı, eşzamanlı farklı grup başvuruları.
 - Başkanı olmayan/çelişen grupta görev kime gider; başkan değişince görev devri; görüşme için süre/hatırlatma/ulaşılamama ve admin istisnası.
 
 Bu açıklar bütün denetimi engellemez; bağımsız teknik tasarım devam edebilir, bağlı davranış kullanıcı kararı olmadan seçilmez.
+
+Sonraki yönlendirmeyle yeni parent160 ve161–165 başlangıç kuyruğu oluşturuldu; bu denetimdeki iki-paket eşlemesi tarihsel hazırlıktır. Güncel uygulama sırası [[E4N/07-Sprintler/Baslangic-Akisi-Oncelik-Plani-2026-10-09]]; eski ve yeni kayıtlar ayrı teslim sayılmaz.

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import {canonicalProvince} from './turkey-provinces.js';
 import {companyIdentity,companyWriteError} from './company-registration.js';
 const fail=(message)=>Object.assign(Error(message),{status:400});
 const text=(body,key,max,required=true)=>{const v=body[key];if(v!==undefined&&typeof v!=='string')throw fail('Geçersiz kayıt bilgisi.');const s=(v??'').trim();if((required&&!s)||s.length>max||s.includes('\0'))throw fail('Kayıt alanları eksik veya geçersiz.');return s;};
@@ -9,7 +10,8 @@ export function installNormalRegistration(app,{pool}){
    const b=req.body;if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(req.query).length)throw fail('Geçersiz kayıt isteği.');
    const allowed=['name','email','password','confirmPassword','phone','city','profession','company','tax_number','taxNumber','tax_office','taxOffice','billing_address','billingAddress','kvkkConsent','explicitConsent','marketingConsent','token','role'];
    if(Object.keys(b).some(k=>!allowed.includes(k))||b.role!==undefined&&b.role!=='MEMBER')throw fail('Geçersiz kayıt alanı veya rol.');
-   const name=text(b,'name',100),email=text(b,'email',255).toLowerCase(),phone=text(b,'phone',20),city=text(b,'city',100),profession=text(b,'profession',100);
+   const name=text(b,'name',100),email=text(b,'email',255).toLowerCase(),phone=text(b,'phone',20),city=canonicalProvince(text(b,'city',100)),profession=text(b,'profession',100);
+   if(!city)throw fail('Geçerli bir il seçin.');
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw fail('Geçerli e-posta girin.');
    const password=b.password;if(typeof password!=='string'||password.length<8||Buffer.byteLength(password,'utf8')>72)throw fail('Şifre en az 8 karakter olmalı ve 72 baytı aşmamalıdır.');
    if(b.confirmPassword!==undefined&&b.confirmPassword!==password)throw fail('Şifreler eşleşmiyor.');

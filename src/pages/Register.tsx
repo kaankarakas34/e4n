@@ -6,6 +6,7 @@ import { Button } from '../shared/Button';
 import { api } from '../api/api';
 import { LegalModal, LegalTexts } from '../shared/LegalModals';
 import { ProfessionSelect } from '../components/ProfessionSelect';
+import { TURKEY_PROVINCES } from '../../server/src/turkey-provinces.js';
 
 export function Register() {
   const navigate = useNavigate();
@@ -175,7 +176,11 @@ export function Register() {
                     <Input required data-name="name" aria-label="Ad Soyad" placeholder="Ad Soyad" value={formData.name} onChange={handleChange} />
                     <Input required data-name="email" aria-label="E-posta Adresi" placeholder="E-posta Adresi" type="email" value={formData.email} onChange={handleChange} />
                     <Input required data-name="phone" aria-label="Telefon" placeholder="05xx xxx xx xx" type="tel" value={formData.phone} onChange={handleChange} />
-                    <Input required data-name="city" aria-label="Bulunduğunuz İl" placeholder="Bulunduğunuz İl" value={formData.city} onChange={handleChange} />
+                    <label className="block text-sm text-gray-700" htmlFor="registration-city">Bulunduğunuz İl</label>
+                    <select id="registration-city" required name="city" aria-label="Bulunduğunuz İl" autoComplete="address-level1" className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none" value={formData.city} onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}>
+                      <option value="">İl seçin</option>
+                      {TURKEY_PROVINCES.map(city => <option key={city} value={city}>{city}</option>)}
+                    </select>
                   </div>
                 </div>
 

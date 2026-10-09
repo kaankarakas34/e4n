@@ -1,5 +1,8 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## En son — zorunlu standart il kaydı
+- Kayıtta 81 il seçimi + API geçerli il kontrolü/standart `users.city` kaydı. İstanbul/Ankara/İzmir grup ayrımı henüz kapalı; her ilde en az70 kişi ön koşulu. Otomatik etkinleştirme/sayım durumları uydurulmadı; E4N-164 açık. [[E4N/01-Kararlar/Il-Bilgisi-ve-Grup-Ayrimi-2026-10-09]]. Normal registration PG17/API/veri sözleşmesi +3/3 kayıt browser PASS; build PASS. Kanıt output/normal-registration-browser-1791552929583/report.json ve output/province-registration.log. Main/foundation push ile yayınlanır; üretimde gerçek kayıt açılmaz.
+
 ## En son — canlı yayın tamamlandı
 - Kullanıcı tüm yapılanları canlıya alma yetkisi ve DB parolasını sağladı. main/foundation ürün SHA2fefd8a push; production dpl_7NZF4USEqSCdsToRdfeYPQQdFSfN READY/custom domains www.event4network.com ve event4network.com doğrulandı. Normal üyelik formu ve API canlı; eski source-only/not-live satırları aşağıda tarihseldir.
 - Tam PG17 yedeği + gerçek public restore34tablo/581satır; 27 gerçek geçiş/repeat0, drift rollback ve veri koruma PASS. Canlı28kullanıcı,11normalrolgeçişi,3kalıcıvergi rezervasyonu. RLS/client revoke47tablo, anonymous47/47denial ve ownerAPI PASS. Blog2tablo/4functionwarn, parola rotasyonu ve kapsamlıSEC açık; secrets Git'e eklenmedi, eski gömülü helper/config kaldırıldı.

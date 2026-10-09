@@ -3,7 +3,7 @@
 ## Güncel teslim — P33 / E4N-105 ve abonelik canlı yayını
 
 - be40450 abonelik düzeltmeleri main/production READY (dpl_4zfBfAXLt7tdRBPbi5UVGjFXBzv2), canlı asset/yeni durum/anon401 doğrulandı. E4N-163 D07 ve sağlayıcı sandbox kalanlarıyla açık.
-- P33: normal hesap → abonelik → grup keşfi/istek → başkan görüşmesi/kararı anlatımı 7 sayfa, menü/footer ve abonelik vaatlerinde birleştirildi. Eski ziyaretçi refId korunur; eğitim girişleri ertelendi. Yeni API/veri kuralı veya migration yok. 23 browser/API/PG/sahte sağlayıcı/finalDB/reload, own-read ve build PASS. Kanıt [[E4N/09-Dogrulama/P33-Normal-Uyelik-Site-Anlatimi-2026-10-09]]. Yayın/commit sonucu paket kapanışında ayrıca kaydedilir.
+- P33 / E4N-105 Done: normal hesap → abonelik → grup keşfi/istek → başkan görüşmesi/kararı anlatımı 7 sayfa, menü/footer ve abonelik vaatlerinde birleştirildi. Eski ziyaretçi refId korunur; eğitim girişleri ertelendi. Yeni API/veri kuralı veya migration yok. 23 browser/API/PG/sahte sağlayıcı/finalDB/reload, own-read ve build PASS. Ürün c0194f2 main/foundation push; production dpl_BkC4UaKscRGgbPw5uZ8cyokctQMQ READY. www/event4network alias, yeni index-CrF9EWTe.js/metin/anon401 doğrulandı. Kanıt [[E4N/09-Dogrulama/P33-Normal-Uyelik-Site-Anlatimi-2026-10-09]]. Bu paketi tekrar uygulama.
 - E4N-109/111 bütün kalan kapsamlarıyla açık; 162 referans ve 163/165 ürün kararlarını uydurma. Mobil/LMS son aşamada.
 
 ## Son teslim — abonelik denetim düzeltmeleri / E4N-163

@@ -30,6 +30,7 @@ compiled = compiled.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_
   `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.ownMembershipHooks;`);
 compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, source) => {
   if (source === 'react/jsx-runtime') return line.replace(source, import.meta.resolve(source));
+  if (source === 'react-router-dom') return 'const useNavigate = () => () => {};';
   if (source === '../stores/authStore') return 'const useAuthStore = globalThis.ownMembershipAuth;';
   if (source === '../stores/membershipStore') return 'const useMembershipStore = globalThis.ownMembershipStore;';
   if (source === '../api/api') return 'const api = globalThis.ownMembershipApi;';

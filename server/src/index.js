@@ -55,7 +55,9 @@ import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentR
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
-const scheduleCron = process.env.NODE_ENV === 'test' ? () => undefined : cron.schedule.bind(cron);
+// Serverless instances cannot own a reliable scheduler. Audited jobs run via the API;
+// production scheduling is activated separately when its provider/policy gate is ready.
+const scheduleCron = process.env.NODE_ENV === 'test' || process.env.VERCEL ? () => undefined : cron.schedule.bind(cron);
 const PORT = process.env.PORT || 4000;
 const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
 

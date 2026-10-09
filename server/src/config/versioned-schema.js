@@ -79,9 +79,12 @@ const versions = [
 // This is only a known legacy Docker starting point, not the live Supabase schema.
 const legacyInitCatalogChecksum = 'd7a001bc5a1dbb9361108c811ae610f8266da31a5e84fdc0530949f8ae616f09';
 const legacyInitSourceChecksum = 'e0946a07494ee6bbce09bfc0d7c5bb934d0937b1db7d7b902d1b5090ced9c947';
+// 9 October production backup, restored with all public rows/ACL before review.
+const reviewedProductionCatalogChecksum = 'ebf1356134a29ea627d185931083ed730d6550fb9d0c5fa55b3b517b985bedc5';
+const productionBaselineAccessSql = readFileSync(path.join(serverDir,'supabase/migrations/20261009125645_production_baseline_access.sql'),'utf8');
 
 // Rehearsal only. Live Supabase requires a separately reviewed migration path.
-export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = false } = {}) {
+export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = false, reconcileReviewedProduction = false } = {}) {
   const client = await dbPool.connect();
   try {
     await client.query('BEGIN');
@@ -96,12 +99,21 @@ export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = fa
     const { rows: appliedRows } = await client.query('SELECT version, checksum FROM schema_migrations');
     const appliedByVersion = new Map(appliedRows.map(row => [row.version, row.checksum]));
     let adoptedLegacyInit = false;
+    let reconciledProductionCatalog = null;
     if (appliedRows.length === 0) {
       const { rows } = await client.query(`
         SELECT COUNT(*)::int AS count FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> 'schema_migrations'
       `);
       if (rows[0].count !== 0) {
+        if (reconcileReviewedProduction) {
+          if (versions[0].checksum !== legacyInitSourceChecksum) throw new Error('Reviewed reconciliation init source changed');
+          const catalog = await readPublicSchemaCatalog(client);
+          if (checksum(JSON.stringify(catalog)) !== reviewedProductionCatalogChecksum) throw new Error('Production catalog drifted from reviewed backup');
+          // Execute the idempotent init reconciliation; do not stamp unexecuted migrations.
+          // Existing columns, rows, privileges and RLS remain in place.
+          reconciledProductionCatalog = reviewedProductionCatalogChecksum;
+        } else {
         if (!adoptLegacyInit) throw new Error('Existing unversioned schema requires reviewed baseline adoption');
         if (versions[0].checksum !== legacyInitSourceChecksum) {
           throw new Error('init.sql changed since the legacy adoption baseline was reviewed');
@@ -114,6 +126,7 @@ export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = fa
           [versions[0].version, versions[0].checksum]);
         appliedByVersion.set(versions[0].version, versions[0].checksum);
         adoptedLegacyInit = true;
+        }
       }
     }
     for (const version of appliedByVersion.keys()) {
@@ -136,8 +149,13 @@ export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = fa
       await client.query('INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)', [item.version, item.checksum]);
       newlyApplied.push(item.version);
     }
+    if (reconciledProductionCatalog) {
+      await client.query(productionBaselineAccessSql);
+      await client.query('ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS baseline_catalog_sha256 TEXT; ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS execution_origin TEXT; ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS baseline_access_sha256 TEXT');
+      await client.query("UPDATE schema_migrations SET baseline_catalog_sha256=$1, execution_origin='reviewed_production_reconciliation', baseline_access_sha256=$2 WHERE version='0001_init_schema'",[reconciledProductionCatalog,checksum(productionBaselineAccessSql)]);
+    }
     await client.query('COMMIT');
-    return { applied: newlyApplied, adoptedLegacyInit, totalVersions: versions.length };
+    return { applied: newlyApplied, adoptedLegacyInit, reconciledProductionCatalog, totalVersions: versions.length };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

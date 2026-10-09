@@ -98,8 +98,10 @@ async function main() {
   for(const id of [group,other])await pool.query("INSERT INTO groups(id,name,status) VALUES($1::uuid,$1::text,'ACTIVE')",[id]);
   await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT'),($1,$3,'ACTIVE','MEMBER'),($4,$5,'ACTIVE','PRESIDENT')",[group,president,member,other,foreign]);
   const stable=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
-  await pool.query("ALTER TABLE event_attendance_verifications DROP CONSTRAINT event_attendance_verifications_after_status_check; ALTER TABLE event_attendance_verifications ADD CONSTRAINT event_attendance_verifications_after_status_check CHECK(after_status IN ('REGISTERED','PRESENT','ABSENT')); DELETE FROM schema_migrations WHERE version IN ('0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration','0027_required_company_billing')");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration','0027_required_company_billing']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
+  // Recheck migration 24's constraint repair without forging a downgrade of later migrations.
+  await pool.query("ALTER TABLE event_attendance_verifications DROP CONSTRAINT event_attendance_verifications_after_status_check; ALTER TABLE event_attendance_verifications ADD CONSTRAINT event_attendance_verifications_after_status_check CHECK(after_status IN ('REGISTERED','PRESENT','ABSENT'))");
+  await pool.query(readFileSync(path.join(serverDir,'supabase/migrations/20261008191226_group_meeting_attendance.sql'),'utf8'));
+  assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('No real mail allowed');}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port;
   const token=id=>jwt.sign({id,role:'ADMIN'},process.env.JWT_SECRET,{expiresIn:'1h'});

@@ -189,6 +189,31 @@ async function main() {
   // A second president is rejected at the database boundary rather than becoming ambiguous.
   await add(outsider,destination);
   await assert.rejects(add(await user('PRESIDENT'),destination),e=>e.code==='23514'&&e.constraint==='group_members_single_president');
-  console.log('Group capacity PASS: PG17 app and direct-SQL races, 35 members plus president, migration refuses ambiguous legacy rows, DB trigger blocks capacity/second-president/user-demotion violations, replay, transfer and shuffle rollback, current actor boundaries, power-team 36 unaffected, typed catalog/detail capacity. No live DB/mail/payment.');
+  // Existing closed-group removal uses the same current-role and transaction boundary.
+  const rosterGroup=await group(),rosterPresident=await user(),requested=await user(),active=await user();
+  await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT')",[rosterGroup,rosterPresident]);
+  await add(requested,rosterGroup,'REQUESTED');await add(active,rosterGroup);
+  const remove=(id,actor=admin,body={},suffix='')=>call(`/groups/${rosterGroup}/members/${id}${suffix}`,body,actor,'DELETE');
+  assert.equal((await remove(requested,null)).status,401);
+  assert.equal((await remove(requested,ordinary)).status,403); // forged ADMIN claim
+  assert.equal((await remove(requested,outsider)).status,403);
+  assert.equal((await remove(requested,admin,{extra:true})).status,400);
+  assert.equal((await remove(requested,admin,{},'?userId='+active)).status,400);
+  assert.equal((await remove('invalid')).status,400);
+  const deletion=await remove(requested,rosterPresident);assert.equal(deletion.status,200);
+  assert.equal(deletion.headers.get('cache-control'),'private, no-store');
+  assert.deepEqual(await deletion.json(),{success:true,removed:true,groupId:rosterGroup,userId:requested});
+  assert.equal((await remove(requested,rosterPresident)).status,404);
+  assert.equal((await pool.query("SELECT count(*)::int n FROM group_membership_history WHERE user_id=$1 AND operation='DELETE'",[requested])).rows[0].n,1);
+  await pool.query("UPDATE group_members SET role='MEMBER' WHERE user_id=$1 AND group_id=$2",[rosterPresident,rosterGroup]);
+  assert.equal((await remove(active,rosterPresident)).status,403);
+  const absentActor=randomUUID();assert.equal((await remove(active,absentActor)).status,401);
+  await pool.query(`CREATE FUNCTION fail_roster_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.user_id='${active}'::uuid AND NEW.operation='DELETE' THEN RAISE EXCEPTION 'Fixture history unavailable'; END IF; RETURN NEW; END $$; CREATE TRIGGER fail_roster_history BEFORE INSERT ON group_membership_history FOR EACH ROW EXECUTE FUNCTION fail_roster_history()`);
+  assert.equal((await remove(active)).status,500);
+  assert.equal((await pool.query('SELECT 1 FROM group_members WHERE user_id=$1 AND group_id=$2',[active,rosterGroup])).rowCount,1);
+  await pool.query('DROP TRIGGER fail_roster_history ON group_membership_history; DROP FUNCTION fail_roster_history()');
+  const removals=await Promise.all([remove(active),remove(active)]);assert.deepEqual(removals.map(r=>r.status).sort(),[200,404]);
+  assert.equal((await pool.query("SELECT count(*)::int n FROM group_membership_history WHERE user_id=$1 AND operation='DELETE'",[active])).rows[0].n,1);
+  console.log('Group capacity/roster PASS: PG17 races, capacity, transfer/shuffle rollback, current actor boundaries, removal acknowledgement/404, history rollback and one concurrent deletion. No live DB/mail/payment.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{if(appServer)await new Promise(r=>appServer.close(r));if(pool)await pool.end();if(containerStarted)docker(['stop','--time','3',container]);}process.exit(code);

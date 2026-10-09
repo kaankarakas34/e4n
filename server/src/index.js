@@ -2750,9 +2750,9 @@ app.get('/api/user/group-requests', authenticateToken, async (req, res) => {
 // Update Group Member Status (Approve/Reject)
 app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) => {
   res.set('Cache-Control','private, no-store');
-  const {status}=req.body;
-  if(!isUuid(req.params.id)||!isUuid(req.params.userId)||!['ACTIVE','INACTIVE','REQUESTED'].includes(status)
-      ||Object.keys(req.body).some(key=>key!=='status'))return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
+  const {status}=req.body||{};
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)||!['ACTIVE','INACTIVE','REQUESTED'].includes(status)
+      ||Object.keys(req.query).length||Object.keys(req.body||{}).some(key=>key!=='status'))return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
   let client;
   try {
     client=await pool.connect();await beginGroupMutation(client);
@@ -2815,24 +2815,19 @@ app.put('/api/power-teams/:id/members/:userId', authenticateToken, async (req, r
 
 // Remove Group Member (Reject/Kick)
 app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)
+      ||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
+  let client;
   try {
-    // Authorization check
-    if (req.user.role !== 'ADMIN') {
-      const isPresident = await pool.query(
-        "SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2 AND role = 'PRESIDENT' AND status = 'ACTIVE'",
-        [req.params.id, req.user.id]
-      );
-      if (isPresident.rows.length === 0) {
-        return res.status(403).json({ error: 'Bu işlem için yetkiniz bulunmamaktadır.' });
-      }
-    }
-
-    await pool.query(
-      `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
-      [req.params.id, req.params.userId]
-    );
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    client=await pool.connect();await beginGroupMutation(client);
+    await requireGroupManager(client,req.user.id,req.params.id);
+    const result=await client.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId]);
+    if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
+    await client.query('COMMIT');
+    res.json({success:true,groupId:req.params.id,userId:req.params.userId,removed:true});
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
+  finally{client?.release();}
 });
 
 // Remove Power Team Member (Reject/Kick)

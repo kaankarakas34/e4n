@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { api } from '../api/api';
+import {useGroupMemberActions} from '../hooks/useGroupMemberActions';
 import {groupMeetingAttendanceApi, type MeetingAttendanceCommand, type MeetingObservation} from '../api/groupMeetingAttendance';
 import {
     Users,
@@ -33,7 +34,8 @@ export function GroupManagerDashboard() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [loadedFor, setLoadedFor] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
-    const readContext = `${user?.id}:${user?.role}`;
+    const readContext = `${user?.id}:${user?.role}:${token}`;
+    const memberActions=useGroupMemberActions({scope:readContext+":"+selectedGroup?.id,groupId:selectedGroup?.id,onMembers:setMembers});
     const [meetings, setMeetings] = useState<any[]>([]);
     const [attendanceData, setAttendanceData] = useState<Record<string, string>>({}); // memberId -> status
     const [viewingMeeting, setViewingMeeting] = useState<any>(null);
@@ -193,18 +195,7 @@ export function GroupManagerDashboard() {
         return () => { cancelled = true; };
     }, [viewingMeeting?.id, loadedFor, readContext, meetingDetailRetry]);
 
-    const handleGroupRequest = async (userId: string, status: 'ACTIVE' | 'REJECTED') => {
-        if (!selectedGroup) return;
-        try {
-            await api.updateGroupMemberStatus(selectedGroup.id, userId, status);
-            // Refresh members
-            const all = await api.getGroupMembers(selectedGroup.id);
-            setMembers(all);
-            alert(`İstek ${status === 'ACTIVE' ? 'onaylandı' : 'reddedildi'}.`);
-        } catch (e) {
-            alert('İşlem başarısız.');
-        }
-    };
+    const handleGroupRequest = (userId:string,status:'ACTIVE'|'REJECTED') => memberActions.run(status==='ACTIVE'?'approve':'remove',userId);
 
     const handlePTRequest = async (userId: string, status: 'ACTIVE' | 'REJECTED') => {
         if (!myPowerTeam) return;
@@ -300,7 +291,7 @@ export function GroupManagerDashboard() {
                             {tab.label}
                             {tab.id === 'APPLICATIONS' && (
                                 (() => {
-                                    const count = (members.filter((m: any) => m.status === 'PENDING').length) +
+                                    const count = (members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length) +
                                         (myPowerTeam ? ptMembers.filter((m: any) => m.status === 'PENDING').length : 0);
                                     return count > 0 ? (
                                         <span className="ml-2 bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>
@@ -736,6 +727,7 @@ export function GroupManagerDashboard() {
                 {/* CONTENT: APPLICATIONS */}
                 {activeTab === 'APPLICATIONS' && (
                     <div className="space-y-6">
+                        {memberActions.error&&<div role="alert" className="p-3 text-red-700">{memberActions.error} <Button disabled={memberActions.busy} onClick={memberActions.refresh}>Listeyi kontrol et</Button></div>}
                         {/* Group Applications */}
                         <Card>
                             <CardHeader>
@@ -745,11 +737,11 @@ export function GroupManagerDashboard() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {members.filter((m: any) => m.status === 'PENDING').length === 0 ? (
+                                {members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length === 0 ? (
                                     <p className="text-gray-500 text-sm">Bekleyen grup katılım isteği yok.</p>
                                 ) : (
                                     <div className="space-y-4">
-                                        {members.filter((m: any) => m.status === 'PENDING').map((m: any) => (
+                                        {members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').map((m: any) => (
                                             <div key={m.id} className="flex flex-col sm:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                                                 <div className="flex items-center mb-3 sm:mb-0">
                                                     <Link to={`/profile/${m.id}`} className="flex items-center group">
@@ -766,7 +758,7 @@ export function GroupManagerDashboard() {
                                                     </Link>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <Button variant="outline" size="sm" onClick={() => handleGroupRequest(m.id, 'REJECTED')} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                    <Button variant="outline" size="sm" disabled={memberActions.blocked} onClick={() => handleGroupRequest(m.id, 'REJECTED')} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                                         Reddet
                                                     </Button>
                                                     <Button variant="primary" size="sm" onClick={() => handleGroupRequest(m.id, 'ACTIVE')}>

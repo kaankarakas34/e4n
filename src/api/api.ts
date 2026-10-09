@@ -516,7 +516,9 @@ export const api = {
   },
 
   async deleteGroupMember(groupId: string, userId: string) {
-    return await request(`/groups/${groupId}/members/${userId}`, { method: 'DELETE' });
+    const result=await request(`/groups/${groupId}/members/${userId}`, { method: 'DELETE' });
+    if(result?.success!==true||result?.removed!==true||result?.groupId!==groupId||result?.userId!==userId)throw new Error('Grup üye sonucu doğrulanamadı. Listeyi yenileyip sonucu kontrol edin.');
+    return result;
   },
 
   async deletePowerTeamMember(ptId: string, userId: string) {

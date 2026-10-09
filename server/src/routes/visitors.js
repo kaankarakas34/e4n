@@ -28,16 +28,37 @@ router.get('/', authenticateToken, async (req, res) => {
 
 // Add Visitor
 router.post('/', authenticateToken, async (req, res) => {
-    const { name, email, phone, company, profession, visited_at, group_id } = req.body;
+    const { id, name, email, phone, company, profession, visited_at, group_id } = req.body;
     try {
-        const { rows } = await pool.query(
-            `INSERT INTO visitors(inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
-             VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'INVITED') RETURNING *`,
-            [req.user.id, name, email, phone, company, profession, visited_at, group_id]
-        );
-        // Recalc
-        await calculateMemberScore(req.user.id);
-        res.status(201).json(rows[0]);
+        let resultRow;
+        let inserted = false;
+        if (id) {
+            const insertRes = await pool.query(
+                `INSERT INTO visitors(id, inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
+                 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, 'INVITED')
+                 ON CONFLICT (id) DO NOTHING RETURNING *`,
+                [id, req.user.id, name, email, phone, company, profession, visited_at, group_id]
+            );
+            if (insertRes.rowCount > 0) {
+                resultRow = insertRes.rows[0];
+                inserted = true;
+            } else {
+                const existing = await pool.query('SELECT * FROM visitors WHERE id = $1', [id]);
+                resultRow = existing.rows[0];
+            }
+        } else {
+            const insertRes = await pool.query(
+                `INSERT INTO visitors(inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
+                 VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'INVITED') RETURNING *`,
+                [req.user.id, name, email, phone, company, profession, visited_at, group_id]
+            );
+            resultRow = insertRes.rows[0];
+            inserted = true;
+        }
+        if (inserted) {
+            await calculateMemberScore(req.user.id);
+        }
+        res.status(inserted ? 201 : 200).json(resultRow);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

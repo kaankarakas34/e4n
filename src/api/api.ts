@@ -702,6 +702,19 @@ export const api = {
   async getAttendanceReport() {
     return await request('/reports/attendance-stats');
   },
+  async getScoreLedger(params?: { userId?: string; period?: string; sourceKind?: string; lookbackMonths?: number }) {
+    const search = new URLSearchParams();
+    if (params?.userId) search.set('userId', params.userId);
+    if (params?.period) search.set('period', params.period);
+    if (params?.sourceKind) search.set('sourceKind', params.sourceKind);
+    if (params?.lookbackMonths) search.set('lookbackMonths', String(params.lookbackMonths));
+    const qs = search.toString();
+    return await request(`/reports/score-ledger${qs ? `?${qs}` : ''}`);
+  },
+  async getScoreReconciliation(userId?: string) {
+    const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+    return await request(`/reports/score-reconciliation${qs}`);
+  },
 
   // Meeting Requests (One-to-Ones)
   async getMyMeetingRequests(userId: string) {

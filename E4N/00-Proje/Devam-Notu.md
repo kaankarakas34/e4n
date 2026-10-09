@@ -1,5 +1,19 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel teslim — P21 / E4N-93 tamamlandı
+
+- **E4N-93 (P21) Done:** Aylık puan olay defteri (`score-ledger`) ve tekrar güvenliği (`idempotency_key`) kuruldu.
+  - Kaynak faaliyetler: Katılım (`PRESENT`: +10, `ABSENT`: -10, `LATE`: +5, `SUBSTITUTE`: +10; `REGISTERED` kesinlikle 0 puan), iç referans (+10), dış referans (+5), başarılı ciro bonusu (+5), ziyaretçi (+10), birebir görüşme (+10).
+  - Tekrar anahtarı: `${source_kind}:${source_id}` ile tekilleştirme. `POST /api/visitors` opsiyonel `id` desteğiyle idempotent hale getirildi (`ON CONFLICT (id) DO NOTHING`), mükerrer çağrılarda 200 dönüp skoru artırmaz; eski `id`siz çağrılarda 201 dönerek baseline'ı korur.
+  - API'ler: `GET /api/reports/score-ledger` (dönem/kaynak dökümü, üye/admin yetkisi) ve `GET /api/reports/score-reconciliation` (canlı skor ile defter karşılaştırması; uydurma geçmiş kayıt yok, drift/unreconciledLegacyScore raporu).
+  - Şema sürümü 28, tablo sayısı 50 olarak sabit kaldı. `traffic-lights` kontratı korundu.
+  - Testler: `server/test/score-ledger-contract.mjs`, `server/test/isolated-smoke.mjs`, `server/test/referral-contract.mjs`, `server/test/personal-reports-contract.mjs`, `server/test/admin-reports-contract.mjs`, `server/test/group-application-workflow-contract.mjs`, `server/test/membership-history-contract.mjs`, `npm run test:routes`, `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P21-Aylik-Puan-Olay-Defteri-2026-10-09]].
+
+## Güncel teslim — P19 / E4N-91 tamamlandı
+
+- **E4N-91 (P19) Done:** Gruptan çıkarılma gerekçeleri (`LOW_SCORE`, `ATTENDANCE`, `VOLUNTARY`, `ADMIN_DISCIPLINARY`) ve açıklama notu, ilk çıkarılmada beklemesiz başvuru (D02), 2. çıkarılmada 1 dönem (4 ay / 120 gün) grup başvuru yasağı (`403 REMOVAL_BAN_ACTIVE` - D03/D04/R11), başkan başvuru kuyruğunda önceki çıkarılma geçmişinin (`removal_history`) gösterimi ve geçmiş ekranı çıkarılma kartı rozetleri tamamlandı.
+- Testler: `server/test/group-application-workflow-contract.mjs`, `server/test/membership-history-contract.mjs`, `npm run check`, `npm run build` ve `node server/test/isolated-smoke.mjs` PASS. Commit `5bd8da4` `codex/e4n-sprint1-foundation` dalına pushlandı. Kanıt [[E4N/09-Dogrulama/P19-Gecmis-Nedeni-ve-Cikarilma-Baglari-2026-10-09]].
+
 ## Güncel teslim — BAŞ-03 / E4N-163 ve BAŞ-05 / E4N-165 tamamlandı
 
 - **E4N-163 (BAŞ-03) Done:** D07 5 günlük gecikme hatırlatma akışı ve 5. gün sonu hesap kısıtlaması (`RESTRICTED`), kısıtlanan haklar / borç ödeme istisnası ve borç kapandıktan sonra `account_status = 'ACTIVE'` olarak otomatik yeniden açılma tamamlandı. `server/test/payment-flow.mjs` ve `server/test/subscription-reminder-contract.mjs` PASS. Kanıt [[E4N/09-Dogrulama/Abonelik-Uctan-Uca-Denetim-2026-10-09]].

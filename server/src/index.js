@@ -54,6 +54,7 @@ import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
+import { calculateMemberScore, getScoreLedger, reconcileUserScore } from './utils/scoring.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -257,124 +258,44 @@ scheduleCron('59 23 31 12 *', async () => {
 
 
 /* --- HELPER: SCORING ENGINE --- */
-const calculateMemberScore = async (userId, transactionClient = null) => {
-  // Scoring Weights
-  const SCORES = {
-    ATTENDANCE: 10,
-    ABSENT: -10,
-    LATE: 5,
-    SUBSTITUTE: 10,
-    REFERRAL_INTERNAL: 10,
-    REFERRAL_EXTERNAL: 5,
-    VISITOR: 10,
-    ONE_TO_ONE: 10,
-    EDUCATION_UNIT: 0,
-    SUCCESSFUL_BUSINESS: 5 // Ciro girişi
-  };
+// calculateMemberScore is imported from ./utils/scoring.js
 
-  const client = transactionClient || await pool.connect();
-  try {
-    // 1. Attendance Score - Last 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const [attRes, refRes, visRes, otoRes, eduRes] = await Promise.all([
-      client.query(`
-            SELECT status, count(*) as count 
-            FROM attendance 
-            WHERE user_id = $1 AND created_at > $2
-            GROUP BY status
-        `, [userId, sixMonthsAgo]),
-      client.query(`
-            SELECT type, status, count(*) as count 
-            FROM referrals 
-            WHERE giver_id = $1 AND created_at > $2
-            GROUP BY type, status
-        `, [userId, sixMonthsAgo]),
-      client.query(`
-            SELECT count(*) as count 
-            FROM visitors 
-            WHERE inviter_id = $1 AND visited_at > $2 AND status IN ('ATTENDED', 'JOINED')
-        `, [userId, sixMonthsAgo]),
-      client.query(`
-            SELECT count(*) as count 
-            FROM one_to_ones 
-            WHERE requester_id = $1 AND meeting_date > $2
-        `, [userId, sixMonthsAgo]),
-      client.query(`
-            SELECT sum(hours) as total_hours 
-            FROM education 
-            WHERE user_id = $1 AND completed_date > $2
-        `, [userId, sixMonthsAgo])
-    ]);
-
-    let score = 0;
-
-    // 1. Attendance Processing
-    attRes.rows.forEach(r => {
-      if (r.status === 'PRESENT') score += (r.count * SCORES.ATTENDANCE);
-      else if (r.status === 'ABSENT') score += (r.count * SCORES.ABSENT);
-      else if (r.status === 'LATE') score += (r.count * SCORES.LATE);
-      else if (r.status === 'SUBSTITUTE') score += (r.count * SCORES.SUBSTITUTE);
-    });
-
-    // 2. Referrals Processing
-    refRes.rows.forEach(r => {
-      // Base points for referral type
-      if (r.type === 'INTERNAL') score += (r.count * SCORES.REFERRAL_INTERNAL);
-      else if (r.type === 'EXTERNAL') score += (r.count * SCORES.REFERRAL_EXTERNAL);
-
-      // Extra points for Successful Business (Ciro)
-      if (r.status === 'SUCCESSFUL') {
-        score += (r.count * SCORES.SUCCESSFUL_BUSINESS);
-      }
-    });
-
-    // 3. Visitors Processing
-    score += (parseInt(visRes.rows[0].count) * SCORES.VISITOR);
-
-    // 4. One-to-Ones Processing
-    score += (parseInt(otoRes.rows[0].count) * SCORES.ONE_TO_ONE);
-
-    // 5. Education Processing
-    score += (Math.floor(parseFloat(eduRes.rows[0].total_hours || 0)) * SCORES.EDUCATION_UNIT);
-
-    // Normalize Score (0-100)
-    const finalScore = Math.min(Math.max(score, 0), 100);
-
-    // Determine Color
-    let color = 'GREY';
-    if (finalScore >= 70) color = 'GREEN';
-    else if (finalScore >= 50) color = 'YELLOW';
-    else if (finalScore >= 30) color = 'RED';
-    else color = 'GREY';
-
-    // Update User
-    await client.query(`
-            UPDATE users 
-            SET performance_score = $1, performance_color = $2, updated_at = NOW() 
-            WHERE id = $3
-        `, [finalScore, color, userId]);
-
-    // Record History
-    await client.query(`
-            INSERT INTO user_score_history (user_id, score, color) VALUES ($1, $2, $3)
-        `, [userId, finalScore, color]);
-
-    return { score: finalScore, color };
-
-  } catch (e) {
-    if (transactionClient) throw e;
-    console.error('Scoring error:', e);
-  } finally {
-    if (!transactionClient) client.release();
-  }
-};
 
 /* --- NEW ENDPOINTS: NOTIFICATIONS --- */
 installNotifications(app,{pool,authenticateToken});
 
 /* --- NEW ENDPOINTS: REPORTS --- */
+app.get('/api/reports/score-ledger', authenticateToken, async (req, res) => {
+  try {
+    const targetUserId = req.query.userId || req.user.id;
+    if (targetUserId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Bu üyenin puan defterini görüntüleme yetkiniz yok' });
+    }
+    const ledger = await getScoreLedger(targetUserId, {
+      period: req.query.period,
+      sourceKind: req.query.sourceKind,
+      lookbackMonths: req.query.lookbackMonths ? parseInt(req.query.lookbackMonths, 10) : undefined,
+    });
+    res.json(ledger);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/reports/score-reconciliation', authenticateToken, async (req, res) => {
+  try {
+    const targetUserId = req.query.userId || req.user.id;
+    if (targetUserId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Bu üyenin puan uzlaşmasını görüntüleme yetkiniz yok' });
+    }
+    const report = await reconcileUserScore(targetUserId);
+    res.json(report);
+  } catch (e) {
+    if (e.message === 'User not found') return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/reports/traffic-lights', authenticateToken, async (req, res) => {
   // Return performance metrics for all members in user's chapter (or all if Admin)
   try {
@@ -909,17 +830,39 @@ app.post('/api/visitors/:id/convert',authenticateToken,async(req,res)=>{
 });
 
 app.post('/api/visitors', authenticateToken, async (req, res) => {
-  const { name, profession, phone, email, visitedAt, status } = req.body;
+  const { id, name, profession, phone, email, visitedAt, status } = req.body;
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO visitors(inviter_id, name, profession, phone, email, visited_at, status) 
-       VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING * `,
-      [req.user.id, name, profession, phone, email, visitedAt, status || 'ATTENDED']
-    );
-    // Recalculate Score
-    await calculateMemberScore(req.user.id);
+    let resultRow;
+    let inserted = false;
+    if (id) {
+      const insertRes = await pool.query(
+        `INSERT INTO visitors(id, inviter_id, name, profession, phone, email, visited_at, status) 
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+         ON CONFLICT (id) DO NOTHING RETURNING *`,
+        [id, req.user.id, name, profession, phone, email, visitedAt, status || 'ATTENDED']
+      );
+      if (insertRes.rowCount > 0) {
+        resultRow = insertRes.rows[0];
+        inserted = true;
+      } else {
+        const existing = await pool.query('SELECT * FROM visitors WHERE id = $1', [id]);
+        resultRow = existing.rows[0];
+      }
+    } else {
+      const insertRes = await pool.query(
+        `INSERT INTO visitors(inviter_id, name, profession, phone, email, visited_at, status) 
+         VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING * `,
+        [req.user.id, name, profession, phone, email, visitedAt, status || 'ATTENDED']
+      );
+      resultRow = insertRes.rows[0];
+      inserted = true;
+    }
+    // Recalculate Score only if newly inserted
+    if (inserted) {
+      await calculateMemberScore(req.user.id);
+    }
 
-    res.status(201).json(rows[0]);
+    res.status(inserted ? 201 : 200).json(resultRow);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

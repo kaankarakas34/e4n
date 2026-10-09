@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-09",
+  "sourceCommit": "96c68113e2530320ed5eb6de5b40d20f611b5827",
+  "scope": "Current code and isolated mounted API/schema review; live deployment not inspected",
+  "syntheticOnly": true,
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "normalRegistration": {
+    "status": 403,
+    "error": "Üyelik sadece davetiye ile mümkündür."
+  },
+  "communityRegistration": {
+    "statuses": [
+      201,
+      201
+    ],
+    "roles": [
+      "COMMUNITY_MEMBER",
+      "COMMUNITY_MEMBER"
+    ],
+    "accountStatuses": [
+      "ACTIVE",
+      "ACTIVE"
+    ],
+    "savedTaxNumbers": [
+      null,
+      null
+    ]
+  },
+  "concurrentDuplicateTaxWrites": {
+    "accepted": 2,
+    "expectedPolicyMaximum": 1
+  },
+  "cleanup": "PASS",
+  "policyCompliance": "FAIL: target open registration and tax uniqueness are not implemented",
+  "reproduction": "PASS",
+  "rawReport": "output/registration-group-audit.json",
+  "decisionNote": "E4N/06-Gap-Analizi/Uyelik-Kayit-Grup-Basvuru-Denetimi-2026-10-09.md",
+  "existingTasks": [
+    "E4N-75",
+    "E4N-84",
+    "E4N-85",
+    "E4N-105",
+    "E4N-74",
+    "E4N-90",
+    "E4N-102",
+    "E4N-103",
+    "E4N-92"
+  ],
+  "implementationChanged": false
+}

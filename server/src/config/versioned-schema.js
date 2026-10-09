@@ -81,6 +81,9 @@ const legacyInitCatalogChecksum = 'd7a001bc5a1dbb9361108c811ae610f8266da31a5e84f
 const legacyInitSourceChecksum = 'e0946a07494ee6bbce09bfc0d7c5bb934d0937b1db7d7b902d1b5090ced9c947';
 // 9 October production backup, restored with all public rows/ACL before review.
 const reviewedProductionCatalogChecksum = 'ebf1356134a29ea627d185931083ed730d6550fb9d0c5fa55b3b517b985bedc5';
+// PG17.6 deparses the same 18 varchar-array CHECKs with an outer text[] cast.
+// Both complete catalogs were compared against the same restored data backup.
+const reviewedLiveCatalogChecksum = 'dbf0b95589036323d57af0b2c70b25386d7511cac9da85bec55024350402549c';
 const productionBaselineAccessSql = readFileSync(path.join(serverDir,'supabase/migrations/20261009125645_production_baseline_access.sql'),'utf8');
 
 // Rehearsal only. Live Supabase requires a separately reviewed migration path.
@@ -109,10 +112,11 @@ export async function applyVersionedSchema({ dbPool = pool, adoptLegacyInit = fa
         if (reconcileReviewedProduction) {
           if (versions[0].checksum !== legacyInitSourceChecksum) throw new Error('Reviewed reconciliation init source changed');
           const catalog = await readPublicSchemaCatalog(client);
-          if (checksum(JSON.stringify(catalog)) !== reviewedProductionCatalogChecksum) throw new Error('Production catalog drifted from reviewed backup');
+          const catalogChecksum=checksum(JSON.stringify(catalog));
+          if (![reviewedProductionCatalogChecksum,reviewedLiveCatalogChecksum].includes(catalogChecksum)) throw new Error('Production catalog drifted from reviewed backup');
           // Execute the idempotent init reconciliation; do not stamp unexecuted migrations.
           // Existing columns, rows, privileges and RLS remain in place.
-          reconciledProductionCatalog = reviewedProductionCatalogChecksum;
+          reconciledProductionCatalog = catalogChecksum;
         } else {
         if (!adoptLegacyInit) throw new Error('Existing unversioned schema requires reviewed baseline adoption');
         if (versions[0].checksum !== legacyInitSourceChecksum) {

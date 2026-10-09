@@ -1,6 +1,7 @@
 import {groupApplicationTransport as transport} from './api';
 export interface DiscoveredGroup {id:string;name:string;city:string|null;meeting_time:string|null;members:{id:string;name:string;profession:string;company:string|null;president:boolean|null}[];member_count:number;capacity:number;available_seats:number;president:string|null;president_ready:boolean;own_status:string|null;application_state:string|null}
-export interface Application {id:string;group_id?:string;group_name?:string;user_id?:string;name?:string;phone?:string|null;company?:string|null;profession?:string;state:string;created_at:string;interview_at:string|null;interview_note?:string|null;decision_note?:string|null;mail_state?:string}
+export interface RemovalHistoryItem {created_at:string;category:string;category_label:string;note:string;group_name:string}
+export interface Application {id:string;group_id?:string;group_name?:string;user_id?:string;name?:string;phone?:string|null;company?:string|null;profession?:string;state:string;created_at:string;interview_at:string|null;interview_note?:string|null;decision_note?:string|null;mail_state?:string;removal_history?:RemovalHistoryItem[]}
 function owner(v:any,id:string){if(!v||v.ownerId!==id)throw Error('Başvuru yanıtının sahibi doğrulanamadı.');return v;}
 const states=['AWAITING_CALL','INTERVIEWED','ACCEPTED','REJECTED'];
 function applications(v:any,id:string){owner(v,id);if(!Array.isArray(v.applications)||v.applications.some((a:any)=>typeof a.id!=='string'||!states.includes(a.state)||typeof a.created_at!=='string'))throw Error('Başvuru listesi doğrulanamadı.');return v.applications as Application[];}

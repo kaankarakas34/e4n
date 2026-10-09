@@ -517,8 +517,15 @@ export const api = {
     return await request(`/admin/members/${id}`, { method: 'DELETE' });
   },
 
-  async deleteGroupMember(groupId: string, userId: string) {
-    const result=await request(`/groups/${groupId}/members/${userId}`, { method: 'DELETE' });
+  async deleteGroupMember(groupId: string, userId: string, reason?: { category?: string; note?: string }) {
+    const result=await request(`/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE',
+      headers: reason ? { 'Content-Type': 'application/json' } : undefined,
+      body: reason ? JSON.stringify({
+        reason_category: reason.category,
+        reason_note: reason.note
+      }) : undefined
+    });
     if(result?.success!==true||result?.removed!==true||result?.groupId!==groupId||result?.userId!==userId)throw new Error('Grup üye sonucu doğrulanamadı. Listeyi yenileyip sonucu kontrol edin.');
     return result;
   },

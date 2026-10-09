@@ -66,6 +66,38 @@ try{
  // Recover a legacy requested row in an atomic migration rehearsal; rollback restores fixture.
  const upgrade=await pool.connect();try{await upgrade.query('BEGIN');await upgrade.query('DROP TABLE group_application_mail,group_applications; ALTER TABLE notifications DROP COLUMN action_url');const legacy=randomUUID();await upgrade.query("INSERT INTO users(id,name,email,profession) VALUES($1,'Synthetic legacy applicant',$2,'Legacy profession')",[legacy,legacy+'@example.invalid']);await upgrade.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED')",[browserGroup,legacy]);await upgrade.query(fs.readFileSync(path.join(root,'server/supabase/migrations/20261009140000_group_application_workflow.sql'),'utf8'));const recovered=(await upgrade.query('SELECT state,president_id FROM group_applications WHERE user_id=$1',[legacy])).rows[0];assert.equal(recovered.state,'AWAITING_CALL');assert.equal(recovered.president_id,president);assert.equal((await upgrade.query("SELECT relrowsecurity FROM pg_class WHERE oid='group_applications'::regclass")).rows[0].relrowsecurity,true);await upgrade.query('ROLLBACK');}finally{upgrade.release();}
  await pool.query('UPDATE users SET password_hash=(SELECT password_hash FROM users WHERE id=$2) WHERE id=$1',[second,president]);
+ // Removal reason, queue visibility and 2nd removal 120-day ban
+ const banUser=randomUUID();await pool.query("INSERT INTO users(id,name,email,profession,account_status,subscription_plan,subscription_end_date,phone,company) VALUES($1,'Ban Candidate','ban@example.invalid','Ban Candidate','ACTIVE','1_MONTH',now()+interval '1 month','05000000001','Ban Company')",[banUser]);
+ const banGroup1=randomUUID(),banGroup2=randomUUID();
+ await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Ban Group 1','ACTIVE'),($2,'Ban Group 2','ACTIVE')",[banGroup1,banGroup2]);
+ await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT'),($3,$2,'ACTIVE','PRESIDENT')",[banGroup1,president,banGroup2]);
+ const j1=await call(banUser,'POST',`/groups/${banGroup1}/join`,{});assert.equal(j1.status,200);
+ const a1=(await j1.json()).application.id;
+ await call(president,'POST',`/group-applications/${a1}/interview`,{note:'Initial interview'});
+ await call(president,'POST',`/group-applications/${a1}/decision`,{note:'Accepted 1',decision:'ACCEPTED'});
+ const del1=await call(president,'DELETE',`/groups/${banGroup1}/members/${banUser}`,{reason_category:'LOW_SCORE',reason_note:'Puan düşüklüğü'});
+ assert.equal(del1.status,200);
+ const del1Body=await del1.json();
+ assert.equal(del1Body.reasonCategory,'LOW_SCORE');
+ assert.equal(del1Body.reasonNote,'Puan düşüklüğü');
+ const j2=await call(banUser,'POST',`/groups/${banGroup2}/join`,{});assert.equal(j2.status,200);
+ const a2=(await j2.json()).application.id;
+ const b2Queue=await (await call(president,'GET',`/groups/${banGroup2}/applications`)).json();
+ const banAppInQueue=b2Queue.applications.find(a=>a.id===a2);
+ assert.ok(banAppInQueue);
+ assert.equal(banAppInQueue.removal_history.length,1);
+ assert.equal(banAppInQueue.removal_history[0].category,'LOW_SCORE');
+ assert.equal(banAppInQueue.removal_history[0].group_name,'Ban Group 1');
+ assert.equal(banAppInQueue.removal_history[0].note,'Puan düşüklüğü');
+ await call(president,'POST',`/group-applications/${a2}/interview`,{note:'Second chance interview'});
+ await call(president,'POST',`/group-applications/${a2}/decision`,{note:'Accepted 2',decision:'ACCEPTED'});
+ const del2=await call(president,'DELETE',`/groups/${banGroup2}/members/${banUser}`,{reason_category:'ATTENDANCE',reason_note:'Toplantı devamsızlığı'});
+ assert.equal(del2.status,200);
+ const j3=await call(banUser,'POST',`/groups/${banGroup1}/join`,{});
+ assert.equal(j3.status,403);
+ const j3Body=await j3.json();
+ assert.equal(j3Body.code,'REMOVAL_BAN_ACTIVE');
+ assert.ok(j3Body.error.includes('1 dönem'));
  if(process.argv[2]){
   const cli=process.argv[2],session='e4n-application-'+Date.now(),runDir=path.join(root,'output','group-application-browser-'+Date.now());fs.mkdirSync(runDir,{recursive:true});
   const browser=args=>spawnSync(process.execPath,[cli,...args,'--session='+session],{cwd:root,encoding:'utf8',windowsHide:true,timeout:150000,maxBuffer:2e6});

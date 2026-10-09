@@ -58,6 +58,14 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
   if(!subscribed(u))throw groupError('SUBSCRIPTION_REQUIRED','Gruba başvurmak için aktif abonelik gerekir.',403);
   if(!(await c.query("SELECT id FROM groups WHERE id=$1 AND status='ACTIVE' FOR UPDATE",[req.params.id])).rowCount)throw groupError('GROUP_NOT_FOUND','Aktif grup bulunamadı.',404);
+  const removalStats=(await c.query("SELECT count(*)::int AS removal_count, max(recorded_at) AS last_removed_at FROM group_membership_history WHERE user_id=$1 AND operation='DELETE' AND operation_context->>'action'='MEMBER_REMOVAL'",[req.user.id])).rows[0];
+  if(removalStats&&removalStats.removal_count>=2&&removalStats.last_removed_at){
+    const daysSince=(Date.now()-new Date(removalStats.last_removed_at).getTime())/(1000*60*60*24);
+    if(daysSince<120){
+      const daysLeft=Math.ceil(120-daysSince);
+      throw groupError('REMOVAL_BAN_ACTIVE',`İki kez gruptan çıkarılma nedeniyle 4 aylık (1 dönem) grup başvuru yasağınız bulunmaktadır. Kalan süre: ${daysLeft} gün.`,403);
+    }
+  }
   const existing=(await c.query('SELECT id,state FROM group_applications WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
   if(existing)return {ownerId:req.user.id,application:existing};
   const otherPending=(await c.query("SELECT a.id,g.name group_name FROM group_applications a JOIN groups g ON g.id=a.group_id WHERE a.user_id=$1 AND a.group_id<>$2 AND a.state IN ('AWAITING_CALL','INTERVIEWED') LIMIT 1",[req.user.id,req.params.id])).rows[0];
@@ -79,7 +87,17 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   ORDER BY a.created_at,a.id LIMIT 200`,[req.user.id])).rows})));
  app.get('/api/groups/:id/applications',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id))throw groupError('INVALID_REQUEST','Geçersiz grup.',400);await currentPresident(c,req.user.id,req.params.id);
-  return {ownerId:req.user.id,groupId:req.params.id,applications:(await c.query(`SELECT a.id,a.user_id,u.name,u.phone,u.company,u.profession,a.state,a.created_at,a.interview_at,a.interview_note,a.decision_note,COALESCE(CASE WHEN m.state='SENDING' AND m.updated_at<now()-interval '2 minutes' THEN 'UNKNOWN' ELSE m.state END,'QUEUED') mail_state,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a JOIN users u ON u.id=a.user_id LEFT JOIN group_application_mail m ON m.application_id=a.id WHERE a.group_id=$1 ORDER BY a.created_at DESC LIMIT 200`,[req.params.id])).rows};
+  const VALID_REASONS={LOW_SCORE:'Puan Düşüklüğü',ATTENDANCE:'Devamsızlık',VOLUNTARY:'Kendi İsteğiyle Ayrılma',ADMIN_DISCIPLINARY:'Disiplin / İdari Karar'};
+  const applications=(await c.query(`SELECT a.id,a.user_id,u.name,u.phone,u.company,u.profession,a.state,a.created_at,a.interview_at,a.interview_note,a.decision_note,COALESCE(CASE WHEN m.state='SENDING' AND m.updated_at<now()-interval '2 minutes' THEN 'UNKNOWN' ELSE m.state END,'QUEUED') mail_state,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a JOIN users u ON u.id=a.user_id LEFT JOIN group_application_mail m ON m.application_id=a.id WHERE a.group_id=$1 ORDER BY a.created_at DESC LIMIT 200`,[req.params.id])).rows;
+  for(const app of applications){
+    const notifs=(await c.query("SELECT message,created_at FROM notifications WHERE user_id=$1 AND type='REMOVAL' ORDER BY created_at DESC LIMIT 5",[app.user_id])).rows;
+    app.removal_history=notifs.map(n=>{
+      const parts=n.message.split(':::');let category='ADMIN_DISCIPLINARY',note='',groupName='';
+      try{if(parts[1]){const p=JSON.parse(parts[1].trim());category=p.category||category;note=p.note||'';groupName=p.groupName||'';}}catch{}
+      return {created_at:n.created_at,category,category_label:VALID_REASONS[category]||category,note,group_name:groupName};
+    });
+  }
+  return {ownerId:req.user.id,groupId:req.params.id,applications};
  }));
  app.post('/api/group-applications/:id/:action',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id)||!['interview','decision','retry-mail'].includes(req.params.action))throw groupError('INVALID_REQUEST','Geçersiz başvuru işlemi.',400);

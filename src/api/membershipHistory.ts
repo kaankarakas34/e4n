@@ -1,7 +1,8 @@
 import {referralTransport} from './api';
 export interface MembershipState {group_id:string;group_name:string|null;role:string|null;status:string|null;joined_at:string|null}
 export interface MembershipOperationContext {actorId:string;actorName:string|null;action:'APPLICATION'|'MEMBER_STATUS'|'MEMBER_REMOVAL'|'MEMBER_TRANSFER'|'ROLE_ASSIGNMENT'|'SHUFFLE'|'GROUP_DELETION'|'USER_DELETION';operationId:string}
-export interface MembershipEvent {id:string;user_id:string;user_name:string|null;operation:'BASELINE'|'INSERT'|'UPDATE'|'DELETE';recorded_at:string;operation_context:MembershipOperationContext|null;before_state:MembershipState|null;after_state:MembershipState|null}
+export interface RemovalReason {category:string;category_label:string;note:string;group_name?:string}
+export interface MembershipEvent {id:string;user_id:string;user_name:string|null;operation:'BASELINE'|'INSERT'|'UPDATE'|'DELETE';recorded_at:string;operation_context:MembershipOperationContext|null;before_state:MembershipState|null;after_state:MembershipState|null;removal_reason?:RemovalReason|null}
 export interface HistoryPage {version:1;ownerId:string;targetId:string;asOf:string;total:number;events:MembershipEvent[];next:{beforeAt:string;beforeId:string}|null}
 const uuid=(v:any)=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 const nullable=(v:any)=>v===null||typeof v==='string';

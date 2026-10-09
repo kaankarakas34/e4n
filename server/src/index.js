@@ -2725,8 +2725,13 @@ app.put('/api/power-teams/:id/members/:userId',authenticateToken,async(req,res)=
 // Remove Group Member (Reject/Kick)
 app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res) => {
   res.set('Cache-Control','private, no-store');
-  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)
-      ||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)||Object.keys(req.query).length)return res.status(400).json({error:'Geçersiz grup üye işlemi.'});
+  const b=req.body||{};
+  if(Object.keys(b).some(k=>!['reason_category','reason_note'].includes(k)))return res.status(400).json({error:'Geçersiz grup üye işlemi alanı.'});
+  const VALID_REASONS={LOW_SCORE:'Puan Düşüklüğü',ATTENDANCE:'Devamsızlık',VOLUNTARY:'Kendi İsteğiyle Ayrılma',ADMIN_DISCIPLINARY:'Disiplin / İdari Karar'};
+  const category=b.reason_category?String(b.reason_category).trim().toUpperCase():'ADMIN_DISCIPLINARY';
+  if(!VALID_REASONS[category])return res.status(400).json({error:'Geçersiz çıkarılma gerekçesi.'});
+  const note=typeof b.reason_note==='string'?b.reason_note.trim().slice(0,500):'';
   let client;
   try {
     client=await pool.connect();await beginGroupMutation(client);
@@ -2735,8 +2740,11 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
     if((await client.query("SELECT id FROM group_applications WHERE group_id=$1 AND user_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED')",[req.params.id,req.params.userId])).rowCount)throw groupError('APPLICATION_WORKFLOW_REQUIRED','Başvuruyu görüşme kuyruğundan sonuçlandırın.');
     const result=await client.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId]);
     if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
+    const groupName=(await client.query('SELECT name FROM groups WHERE id=$1',[req.params.id])).rows[0]?.name||'Grup';
+    const payload=JSON.stringify({category,categoryLabel:VALID_REASONS[category],note,groupId:req.params.id,groupName});
+    await client.query("INSERT INTO notifications(user_id,type,title,message,action_url) VALUES($1,'REMOVAL','Gruptan Çıkarılma',$2,'/membership-history')",[req.params.userId,`${groupName} grubundan çıkarıldınız. Neden: ${VALID_REASONS[category]}.${note?' Açıklama: '+note:''} ::: ${payload}`]);
     await client.query('COMMIT');
-    res.json({success:true,groupId:req.params.id,userId:req.params.userId,removed:true});
+    res.json({success:true,groupId:req.params.id,userId:req.params.userId,removed:true,reasonCategory:category,reasonNote:note});
   }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
   finally{client?.release();}
 });

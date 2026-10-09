@@ -22,13 +22,13 @@ export function useGroupMemberActions({scope,kind='group',groupId,onMembers,onRe
         ||new Set(rows.map(row=>row.id)).size!==rows.length)throw Error('Üye listesi doğrulanamadı.');
     return rows as GroupMemberRow[];
   }
-  async function run(action:Action,userId:string){
+  async function run(action:Action,userId:string,reason?:{category?:string;note?:string}){
     if(lock.current||review.current||!uuid(groupId)||!uuid(userId))return;
     const context=current.current,operation={};lock.current=operation;setState({scope,busy:true,error:'',needsReview:false});
     let acknowledged=false;
     try{
       if(action==='approve')await (kind==='power-team'?api.updatePowerTeamMemberStatus(groupId!,userId,'ACTIVE'):api.updateGroupMemberStatus(groupId!,userId,'ACTIVE'));
-      else await (kind==='power-team'?api.deletePowerTeamMember(groupId!,userId):api.deleteGroupMember(groupId!,userId));
+      else await (kind==='power-team'?api.deletePowerTeamMember(groupId!,userId):api.deleteGroupMember(groupId!,userId,reason));
       acknowledged=true;
       if(current.current!==context)return;
       const rows=await readMembers();if(current.current!==context)return;

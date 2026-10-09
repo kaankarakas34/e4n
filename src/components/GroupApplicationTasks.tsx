@@ -1,0 +1,8 @@
+import {useEffect,useState} from 'react';import {Link} from 'react-router-dom';
+import {useAuthStore} from '../stores/authStore';import {groupApplicationsApi,applicationError} from '../api/groupApplications';
+export function GroupApplicationTasks(){
+ const {user,token}=useAuthStore();const context=`${user?.id}:${token}`;const [snapshot,setSnapshot]=useState<{context:string;tasks:Awaited<ReturnType<typeof groupApplicationsApi.tasks>>}|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0);
+ useEffect(()=>{let cancelled=false;setSnapshot(null);setError('');if(user?.id)groupApplicationsApi.tasks(user.id).then(tasks=>{if(!cancelled)setSnapshot({context,tasks});}).catch(e=>{if(!cancelled)setError(applicationError(e));});return()=>{cancelled=true;};},[context,retry]);
+ if(!error&&(!snapshot||snapshot.context!==context||!snapshot.tasks.length))return null;
+ return <section aria-label="Grup görüşme görevlerim" className="border rounded bg-white p-4 mb-4"><h2 className="font-semibold">Grup görüşme görevlerim</h2>{error&&<p role="alert">{error}</p>}<button className="underline text-sm" onClick={()=>setRetry(n=>n+1)}>Görevleri yenile</button>{snapshot?.context===context&&snapshot.tasks.map(t=><p key={t.id}><Link className="underline text-indigo-700" to={`/group-management?tab=applications&group=${t.group_id}`}>{t.applicant_name} — {t.group_name}: {t.state==='AWAITING_CALL'?'Telefon görüşmesini yap':'Görüşme sonrası karar ver'}</Link></p>)}</section>;
+}

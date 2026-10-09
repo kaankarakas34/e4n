@@ -1,5 +1,5 @@
 import { notificationTransport as webApi } from './api';
-export interface Notification {id:string;title:string;message:string;type:string;read:boolean|null;created_at:string}
+export interface Notification {id:string;title:string;message:string;type:string;read:boolean|null;created_at:string;action_url?:string|null}
 export interface NotificationSnapshot {notificationVersion:1;ownerId:string;notifications:Notification[];total:number;unreadCount:number;notification?:Notification}
 const validRow=(v:any):v is Notification=>v&&typeof v.id==='string'&&['title','message','type'].every(k=>typeof v[k]==='string')&&(v.read===null||typeof v.read==='boolean')&&typeof v.created_at==='string'&&Number.isFinite(Date.parse(v.created_at));
 function validated(v:any,owner:string):NotificationSnapshot {

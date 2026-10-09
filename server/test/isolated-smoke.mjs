@@ -92,13 +92,13 @@ async function main() {
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
   const firstMigration = await applyVersionedSchema();
   const secondMigration = await applyVersionedSchema();
-  if (firstMigration.applied.length !== 27 || secondMigration.applied.length !== 0) {
+  if (firstMigration.applied.length!==28 || secondMigration.applied.length !== 0) {
     throw new Error('Versioned schema setup did not apply exactly once');
   }
   const migrationCommand = spawnSync(process.execPath, ['src/config/run-versioned-schema.js'], {
     cwd: serverDir, env: process.env, encoding: 'utf8', timeout: 30_000, windowsHide: true,
   });
-  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=27')) {
+  if (migrationCommand.status !== 0 || !migrationCommand.stdout.includes('applied=0 total=28')) {
     throw new Error(`Versioned migration command failed: ${migrationCommand.stderr || migrationCommand.stdout}`);
   }
 
@@ -108,9 +108,9 @@ async function main() {
   `);
   const tableCount = tableResult.rows[0].count;
   const postgresVersion = (await pool.query('SHOW server_version')).rows[0].server_version;
-  if (tableCount !== 48) throw new Error(`Repository schema bootstrap expected 48 tables, found ${tableCount}`);
+  if (tableCount !== 50) throw new Error(`Repository schema bootstrap expected 50 tables, found ${tableCount}`);
   // Rehearse an already-versioned 0001-0004 database with an existing visitor row.
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0027_required_company_billing'; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'; DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'; DROP TABLE web_job_runs; DELETE FROM schema_migrations WHERE version='0018_web_job_runs'; DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DROP TABLE group_application_mail,group_applications; ALTER TABLE notifications DROP COLUMN action_url; DELETE FROM schema_migrations WHERE version='0028_group_application_workflow'; DELETE FROM schema_migrations WHERE version='0027_required_company_billing'; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'; DROP TABLE shuffle_execution_history; DROP FUNCTION e4n_preserve_shuffle_execution(); DELETE FROM schema_migrations WHERE version='0019_shuffle_execution_history'; DROP TABLE web_job_runs; DELETE FROM schema_migrations WHERE version='0018_web_job_runs'; DROP TABLE subscription_reminder_deliveries; DELETE FROM schema_migrations WHERE version='0017_subscription_reminder_delivery'; DROP TRIGGER IF EXISTS users_group_capacity_write ON users; DROP TRIGGER IF EXISTS group_members_capacity_write ON group_members; DROP FUNCTION IF EXISTS e4n_check_user_group_capacity_write(); DROP FUNCTION IF EXISTS e4n_check_group_capacity_write(); DELETE FROM schema_migrations WHERE version='0016_group_capacity_invariant'; ALTER TABLE group_members DROP CONSTRAINT group_members_status_check; ALTER TABLE group_members ADD CONSTRAINT group_members_status_check CHECK(status IN('ACTIVE','REQUESTED')); ALTER TABLE users DROP COLUMN group_title; DELETE FROM schema_migrations WHERE version='0015_group_membership_state'");
   await pool.query("ALTER TABLE groups DROP COLUMN meeting_time, DROP COLUMN meeting_link; DELETE FROM schema_migrations WHERE version='0014_group_meeting_settings'");
   await pool.query("DROP TABLE invoice_files; DELETE FROM schema_migrations WHERE version='0013_invoice_files'");
   await pool.query("DROP TABLE document_files,document_library; DELETE FROM schema_migrations WHERE version='0012_document_library'");
@@ -133,7 +133,7 @@ async function main() {
   const visitorUpgrade = await applyVersionedSchema();
   const oldVisitor = await pool.query('SELECT name, inviter_id FROM public_visitors WHERE id = $1', [oldVisitorId]);
   const oldConsent = (await pool.query('SELECT kvkk_consent, marketing_consent, explicit_consent, consent_date FROM users WHERE id = $1', [oldConsentUserId])).rows[0];
-  if (visitorUpgrade.applied.length !== 23 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
+  if (visitorUpgrade.applied.length !== 24 || visitorUpgrade.applied[0] !== '0005_public_visitor_inviter'
       || visitorUpgrade.applied[1] !== '0006_registration_consents'
       || visitorUpgrade.applied[2] !== '0007_meeting_requests'
       || visitorUpgrade.applied[3] !== '0008_payment_initiation'
@@ -211,8 +211,8 @@ async function main() {
     `);
     const legacyUserCount = await legacyPool.query('SELECT COUNT(*)::int AS count FROM users WHERE id = $1', [legacyUserId]);
     legacyRowsPreserved = legacyUserCount.rows[0].count === 1;
-    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 26
-        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 48 || !legacyRowsPreserved) {
+    if (!legacyAdoption.adoptedLegacyInit || legacyAdoption.applied.length !== 27
+        || legacyRepeat.applied.length !== 0 || legacyTableCount.rows[0].count !== 50 || !legacyRowsPreserved) {
       throw new Error('Known init.sql database did not upgrade safely');
     }
   } finally { await legacyPool.end(); }
@@ -442,14 +442,14 @@ async function main() {
       statuses.push(result.status); bodies.push(result.ok ? await result.json() : null);
     }
     const expected = role === 'ANON' ? 401 : role === 'INVALID' ? 403 : 200;
-    if (statuses.some(status => status !== expected)) throw new Error(`Group read role baseline changed: ${role}/${statuses}`);
-    if (expected === 200 && (bodies[0].id !== auditGroupId || bodies[0].member_count !== 2 || !Array.isArray(bodies[0].meeting_dates)
+    if (statuses.some((status,index) => status !== (role==='PRESIDENT'&&index===1?403:expected))) throw new Error(`Group read role baseline changed: ${role}/${statuses}`);
+    if (expected === 200 && role !== 'PRESIDENT' && (bodies[0].id !== auditGroupId || bodies[0].member_count !== 2 || !Array.isArray(bodies[0].meeting_dates)
         || bodies[1].length !== 2 || bodies[3].length !== 2 || !bodies[2].some(team => team.id === auditTeamId)
         || bodies[1].some(member => !Object.hasOwn(member, 'full_name') || !Object.hasOwn(member, 'email') || Object.hasOwn(member, 'password_hash'))
         || !bodies[1].some(member => member.status === 'REQUESTED') || !bodies[3].every(member => member.group_title === 'MEMBER'))) {
       throw new Error('Group/team read shape changed');
     }
-    readContract.push({ role, statuses, includesEmail: expected === 200, groupCountIncludesRequested: expected === 200 });
+    readContract.push({ role, statuses, includesEmail: expected === 200 && role !== 'PRESIDENT', groupCountIncludesRequested: expected === 200 });
   }
   const missingGroup = await fetch(`${base}/api/groups/${randomUUID()}`, { headers: adminHeaders });
   const missingMembers = await fetch(`${base}/api/groups/${randomUUID()}/members`, { headers: adminHeaders });
@@ -530,8 +530,8 @@ async function main() {
     pendingPowerTeamJoin: pendingPowerTeamJoin.status };
   if (membershipGateBaseline.accountStatus !== 'ACTIVE' || membershipGateBaseline.hasPlan || membershipGateBaseline.hasEndDate
       || !membershipGateBaseline.companyMissing
-      || membershipGateBaseline.activeGroupJoin !== 200 || membershipGateBaseline.activePowerTeamJoin !== 200
-      || membershipGateBaseline.groupRequestStatuses.join(',') !== 'REQUESTED'
+      || membershipGateBaseline.activeGroupJoin !== 403 || membershipGateBaseline.activePowerTeamJoin !== 200
+      || membershipGateBaseline.groupRequestStatuses.includes('REQUESTED')
       || membershipGateBaseline.pendingGroupJoin !== 403 || membershipGateBaseline.pendingPowerTeamJoin !== 403) {
     throw new Error(`Membership gate baseline changed: ${JSON.stringify(membershipGateBaseline)}`);
   }

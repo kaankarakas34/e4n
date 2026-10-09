@@ -5,6 +5,7 @@ import path from 'node:path';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites=[
+  ['group-application-workflow-contract','Subscription-gated discovery/application/president interview/decision/mail workflow'],
   ['normal-registration-contract','Open signup mandatory company fields, tax identity race/deletion guard and legacy migration'],
   ['group-meeting-attendance-contract','Group-scoped explicit bulk meeting attendance, immutable history and canonical retry'],
   ['auth-refresh-contract','Session refresh stale response and transient failure guards'],

@@ -1,3 +1,4 @@
+import {GroupDiscovery} from '../components/GroupDiscovery';
 import { AcceptedConnectionsPanel } from '../components/AcceptedConnectionsPanel';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +14,6 @@ import { PowerTeams } from './PowerTeams';
 export function ChapterManagement() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [groups, setGroups] = useState<Array<{ id: string; name: string }>>([]);
   const [powerTeams, setPowerTeams] = useState<Array<{ id: string; name: string; description?: string }>>([]);
   const [members, setMembers] = useState<Array<{ id: string; name: string; profession: string }>>([]);
   const [query, setQuery] = useState('');
@@ -29,16 +29,13 @@ export function ChapterManagement() {
   const [viewEntity, setViewEntity] = useState<{ type: 'GROUP' | 'POWER_TEAM'; id: string; name: string; description?: string } | null>(null);
   const [entityMembers, setEntityMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [pendingGroupIds, setPendingGroupIds] = useState<string[]>([]);
   const [pendingPTIds, setPendingPTIds] = useState<string[]>([]);
 
   useEffect(() => {
-    api.getGroups().then(setGroups).catch(() => { });
     api.getPowerTeams().then(setPowerTeams).catch(() => { });
     if (user?.id) {
       api.getUserGroups(user.id).then(setMyGroup).catch(() => { });
       api.getUserPowerTeams(user.id).then(setMyPowerTeams).catch(() => { });
-      api.getUserGroupRequests(user.id).then(setPendingGroupIds).catch(() => { });
       api.getUserPowerTeamRequests(user.id).then(setPendingPTIds).catch(() => { });
     }
   }, [user?.id]);
@@ -90,15 +87,6 @@ export function ChapterManagement() {
     setMembers(res || []);
   };
 
-  const requestGroup = async (groupId: string) => {
-    if (!user?.id) return;
-    try {
-      await api.requestJoinGroup(user.id, groupId);
-      setPendingGroupIds(prev => [...prev, groupId]);
-    } catch (error) {
-      console.error('Failed to request group join:', error);
-    }
-  };
 
   const requestPowerTeam = async (ptId: string) => {
     if (!user?.id) return;
@@ -115,9 +103,6 @@ export function ChapterManagement() {
     index === self.findIndex((g) => g.name === group.name)
   );
 
-  const uniqueAllGroups = groups.filter((group, index, self) =>
-    index === self.findIndex((g) => g.name === group.name)
-  );
 
   const uniquePowerTeams = powerTeams.filter((pt, index, self) =>
     index === self.findIndex((p) => p.name === pt.name)
@@ -207,44 +192,9 @@ export function ChapterManagement() {
             </div>
 
             <div className={`mt-6 grid grid-cols-1 ${myGroup.length === 0 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-6`}>
-              {myGroup.length === 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tüm Gruplar</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {uniqueAllGroups.map(g => {
-                        const isMember = myGroup.some(mg => mg.name === g.name);
-                        const isPending = pendingGroupIds.includes(g.id);
-                        return (
-                          <li key={g.id} className="flex items-center justify-between p-3 border rounded-md">
-                            <span className="text-sm text-gray-900">{g.name}</span>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => setViewEntity({ type: 'GROUP', id: g.id, name: g.name })}>
-                                İncele
-                              </Button>
-                              {isMember ? (
-                                <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full flex items-center">Üyesiniz</span>
-                              ) : isPending ? (
-                                <Button variant="secondary" size="sm" disabled className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                  İstek Gönderildi
-                                </Button>
-                              ) : (
-                                <Button variant="primary" size="sm" onClick={() => requestGroup(g.id)}>
-                                  Katıl
-                                </Button>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
+              <GroupDiscovery />
 
-              <Card>
+<Card>
                 <CardHeader>
                   <CardTitle>Tüm Loncalar</CardTitle>
                   <div className="mt-2">
@@ -490,7 +440,7 @@ export function ChapterManagement() {
                 : myPowerTeams.some(pt => pt.id === viewEntity?.id);
 
               const isPending = viewEntity?.type === 'GROUP'
-                ? pendingGroupIds.includes(viewEntity.id)
+                ? false
                 : !!(viewEntity && pendingPTIds.includes(viewEntity.id));
 
               if (isMember) {
@@ -509,13 +459,13 @@ export function ChapterManagement() {
                 );
               }
 
+              if (viewEntity?.type === 'GROUP') return null;
               return (
                 <Button variant="primary" onClick={() => {
-                  if (viewEntity?.type === 'GROUP') requestGroup(viewEntity.id);
-                  else if (viewEntity) requestPowerTeam(viewEntity.id);
+                  if (viewEntity) requestPowerTeam(viewEntity.id);
                   setViewEntity(null);
                 }}>
-                  {viewEntity?.name} {viewEntity?.type === 'GROUP' ? 'Grubuna' : 'Loncaya'} Katıl
+                  {viewEntity?.name} Loncaya Katıl
                 </Button>
               );
             })()}

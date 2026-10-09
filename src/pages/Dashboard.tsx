@@ -12,6 +12,7 @@ import { ChampionsWidget } from '../shared/ChampionsWidget';
 import { QuickActions } from '../shared/QuickActions';
 import { ActivitySummary } from '../shared/ActivitySummary';
 import { TasksCard } from '../shared/TasksCard';
+import {GroupApplicationTasks} from '../components/GroupApplicationTasks';
 import { GroupMembersWidget } from '../shared/GroupMembersWidget';
 import { FriendRequestsWidget } from '../shared/FriendRequestsWidget';
 import { VisitorInviteWidget } from '../shared/VisitorInviteWidget';
@@ -167,6 +168,7 @@ export function Dashboard() {
             />
 
             {/* Tasks between performance and quick actions */}
+            <GroupApplicationTasks />
             <TasksCard />
 
             {/* Quick Actions moved to right column */}

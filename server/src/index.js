@@ -1,3 +1,4 @@
+import {installGroupApplications} from './group-applications.js';
 import {installNormalRegistration} from './normal-registration.js';
 import {companyIdentity,companyWriteError} from './company-registration.js';
 import {setMembershipOperationContext} from './membership-operation-context.js';
@@ -1470,6 +1471,9 @@ app.get('/api/groups/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/groups/:id/members', authenticateToken, async (req, res) => {
   try {
+    if(!isUuid(req.params.id))return res.status(400).json({error:'Geçersiz grup.'});
+    const access=await pool.query("SELECT u.id FROM users u WHERE u.id=$1 AND (u.role='ADMIN' OR EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=$2 AND gm.user_id=u.id AND gm.status='ACTIVE'))",[req.user.id,req.params.id]);
+    if(!access.rowCount)return res.status(403).json({error:'Grup üyelerini görüntüleme yetkiniz yok. Grup inceleme alanını kullanın.'});
     // Return all users that are members of this group
     const { rows } = await pool.query(
       `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, gm.status, gm.joined_at as created_at,
@@ -2636,26 +2640,7 @@ app.get('/api/groups/:id/visitors', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Join Group Request
-app.post('/api/groups/:id/join', authenticateToken, async (req, res) => {
-  res.set('Cache-Control','private, no-store');
-  if(!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz grup başvurusu.'});
-  let client;
-  try {
-    client=await pool.connect();await beginGroupMutation(client);
-    const actor=(await client.query('SELECT account_status FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
-    if(!actor)throw groupError('UNAUTHENTICATED','Oturum bulunamadı.',401);
-    if(actor.account_status!=='ACTIVE')throw groupError('PAYMENT_REQUIRED','Üyelik ödemesi tamamlanmadığı için gruplara katılım sağlayamazsınız. Lütfen ödeme yapınız.',403);
-    await setMembershipOperationContext(client,req.user.id,'APPLICATION');
-    if(!(await client.query('SELECT id FROM groups WHERE id=$1',[req.params.id])).rows.length)throw groupError('GROUP_NOT_FOUND','Grup bulunamadı.',404);
-    let row=(await client.query('SELECT * FROM group_members WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
-    if(row){
-      if(!['ACTIVE','REQUESTED'].includes(row.status))row=(await client.query("UPDATE group_members SET status='REQUESTED' WHERE group_id=$1 AND user_id=$2 RETURNING *",[req.params.id,req.user.id])).rows[0];
-    }else row=(await client.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED') RETURNING *",[req.params.id,req.user.id])).rows[0];
-    await client.query('COMMIT');res.json(row);
-  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
-  finally{client?.release();}
-});
+installGroupApplications(app,{pool,authenticateToken});
 
 // Get User's Pending Group Requests
 app.get('/api/user/group-requests', authenticateToken, async (req, res) => {
@@ -2680,6 +2665,7 @@ app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) =
     client=await pool.connect();await beginGroupMutation(client);
     await requireGroupManager(client,req.user.id,req.params.id);
     await setMembershipOperationContext(client,req.user.id,'MEMBER_STATUS');
+    if((await client.query("SELECT id FROM group_applications WHERE group_id=$1 AND user_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED')",[req.params.id,req.params.userId])).rowCount)throw groupError('APPLICATION_WORKFLOW_REQUIRED','Başvuruyu görüşme kuyruğundan sonuçlandırın.');
     const {rows}=await client.query('UPDATE group_members SET status=$1 WHERE group_id=$2 AND user_id=$3 RETURNING *',[status,req.params.id,req.params.userId]);
     if(!rows.length)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
     if(status==='ACTIVE')await enforceGroupCapacity(client,[req.params.id]);
@@ -2738,6 +2724,7 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
     client=await pool.connect();await beginGroupMutation(client);
     await requireGroupManager(client,req.user.id,req.params.id);
     await setMembershipOperationContext(client,req.user.id,'MEMBER_REMOVAL');
+    if((await client.query("SELECT id FROM group_applications WHERE group_id=$1 AND user_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED')",[req.params.id,req.params.userId])).rowCount)throw groupError('APPLICATION_WORKFLOW_REQUIRED','Başvuruyu görüşme kuyruğundan sonuçlandırın.');
     const result=await client.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId]);
     if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
     await client.query('COMMIT');

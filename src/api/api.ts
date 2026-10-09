@@ -821,5 +821,9 @@ export const api = {
 export default api;
 
 export const webGroupsTransport = { read: () => request('/me/web-groups') };
+export const groupApplicationTransport = {
+ get:(path:string,owner:string)=>request(path,undefined,false,owner),
+ post:(path:string,body:unknown,owner:string)=>request(path,{method:'POST',body:JSON.stringify(body)},false,owner),
+};
 
 export const webActivitiesTransport = { read: () => request('/me/web-activities') };

@@ -19,7 +19,7 @@ async function main(){
   for(const key of ['DATABASE_URL','POSTGRES_URL','SUPABASE_DB_URL'])delete process.env[key];
   Object.assign(process.env,{DOTENV_CONFIG_PATH:path.join(serverDir,'test','.nonexistent-env'),DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:dbUser,DB_PASSWORD:dbPassword,DB_NAME:dbName,NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'isolated_fixture_signing_key'});
   ({default:pool}=await import('../src/config/db.js'));for(let i=0;i<20;i++){try{await pool.query('SELECT 1');break;}catch{if(i===19)throw Error('Database connection failed');await new Promise(r=>setTimeout(r,500));}}
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');assert.equal((await applyVersionedSchema()).applied.length,27);assert.equal((await applyVersionedSchema()).applied.length,0);
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');assert.equal((await applyVersionedSchema()).applied.length,28);assert.equal((await applyVersionedSchema()).applied.length,0);
   const {runSubscriptionReminders,scheduleSubscriptionReminders,subscriptionReminderLock}=await import('../src/cron/subscription-reminders.js');
   const reference=new Date('2026-01-10T12:00:00Z'),ids=[];
   for(const [i,days] of [3,1,-1,-3,-5].entries()){

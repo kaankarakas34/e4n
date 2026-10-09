@@ -33,12 +33,12 @@ try{
   const port=Number(docker(['port',container,'5432/tcp']).match(/127\.0\.0\.1:(\d+)/)?.[1]);if(!port)throw Error('No loopback port');
   for(const key of ['DATABASE_URL','POSTGRES_URL','SUPABASE_DB_URL','SUPABASE_SERVICE_ROLE_KEY','SMTP_PASSWORD','SMTP_PASS'])delete process.env[key];
   Object.assign(process.env,{DB_HOST:'127.0.0.1',DB_PORT:String(port),DB_USER:'e4n_isolated_test',DB_PASSWORD:'local_fixture_only',DB_NAME:'e4n_isolated_test',NODE_ENV:'test',VERCEL:'1',JWT_SECRET:'web_browser_fixture_only',DOTENV_CONFIG_PATH:path.join(root,'server/test/.nonexistent-env'),SMTP_HOST:'127.0.0.1',WEB_JOB_INVOCATION_ENABLED:'true',CRON_SECRET:'isolated_browser_cron_secret_32_chars'});
-  nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'local-fake'};}});
+  nodemailer.createTransport=()=>({sendMail:async()=>{mails++;return{messageId:'local-fake',accepted:['local@example.invalid']};}});
   ({default:pool}=await import('../src/config/db.js'));
   let sqlReady=false;
   for(let attempt=0;attempt<30;attempt++){try{await pool.query('SELECT 1');sqlReady=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,500));}}
   if(!sqlReady)throw Error('Disposable fixture did not accept a SQL connection');
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==27)throw Error('Unexpected schema version count');
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==28)throw Error('Unexpected schema version count');
   const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice','pastEvent','paidEvent','rosterGuild'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);

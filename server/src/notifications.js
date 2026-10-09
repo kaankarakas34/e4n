@@ -1,6 +1,6 @@
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 const failure=(status,message)=>Object.assign(new Error(message),{status});
-const columns='id,title,message,type,read,created_at';
+const columns='id,title,message,type,read,created_at,action_url';
 export function installNotifications(app,{pool,authenticateToken}) {
   const handle=(mode,legacy=false)=>async(req,res)=>{
     res.set('Cache-Control','private, no-store');let client;

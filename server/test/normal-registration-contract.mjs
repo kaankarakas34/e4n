@@ -15,7 +15,7 @@ try{
  const ref=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Fixture timeout')),60000);child.stdout.on('data',b=>{log.write(b);stdout+=b;const p=stdout.match(/WEB_BROWSER_READY ([^\r\n]+)/)?.[1];if(p){clearTimeout(timer);resolve(p);}});child.stderr.on('data',b=>log.write(b));child.once('error',reject);exited.then(()=>{clearTimeout(timer);if(!stdout.includes('WEB_BROWSER_READY'))reject(Error('Fixture exited'));});});
  fixture=JSON.parse(fs.readFileSync(path.resolve(root,ref),'utf8'));
  for(const k of ['apiBase','controlBase'])assert.equal(new URL(fixture[k]).hostname,'127.0.0.1');
- assert.equal(fixture.schemaVersions,27);assert.equal(fixture.productionWrites,false);
+ assert.equal(fixture.schemaVersions,28);assert.equal(fixture.productionWrites,false);
  const ports=spawnSync('docker',['port',fixture.container,'5432/tcp'],{encoding:'utf8',windowsHide:true});
  const port=Number(ports.stdout.match(/127\.0\.0\.1:(\d+)/)?.[1]);assert.ok(port);
  pool=new pg.Pool({host:'127.0.0.1',port,user:'e4n_isolated_test',database:'e4n_isolated_test',password:'local_fixture_only'});
@@ -74,7 +74,7 @@ try{
    const account=(await pool.query('SELECT role,account_status,tax_number,tax_office,billing_address,subscription_end_date FROM users WHERE email=$1',[signupEmail])).rows[0];assert.deepEqual(account,{role:'MEMBER',account_status:'UNSUBSCRIBED',tax_number:'0000000100',tax_office:'Browser Tax Office',billing_address:'Browser Company Address',subscription_end_date:null});console.log('Registration browser PASS: '+report.passed+'/3; actual UI/API/final DB; '+path.relative(root,runDir));
   }finally{browser(['close']);}
  }
- console.log('Normal registration PASS: PG17/schema27, mandatory company/tax/office/address, 8-way race, VKN/TCKN + no invitation/approval, no subscription/group grant, login, role/protected/consent validation, profile/admin/visitor writers, atomic rollback, deleted-account reservation, immutable private registry, legacy normalized role/identity migration and replay. No live writes/mail/payment.');
+ console.log('Normal registration PASS: PG17/schema28, mandatory company/tax/office/address, 8-way race, VKN/TCKN + no invitation/approval, no subscription/group grant, login, role/protected/consent validation, profile/admin/visitor writers, atomic rollback, deleted-account reservation, immutable private registry, legacy normalized role/identity migration and replay. No live writes/mail/payment.');
 }catch(e){console.error(e.stack);if(e.cause)console.error('Fixture transport cause:',e.cause.code??e.cause.message);process.exitCode=1;}finally{
  await pool?.end();if(fixture)await fetch(fixture.controlBase+'/stop',{method:'POST',headers:{'x-fixture-key':fixture.secret}}).catch(()=>{});else child.kill();await exited;log.end();
 }

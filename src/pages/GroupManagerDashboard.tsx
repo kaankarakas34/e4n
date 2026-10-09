@@ -1,3 +1,5 @@
+import {GroupApplicationQueue} from '../components/GroupApplicationQueue';
+import {useSearchParams} from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -25,11 +27,14 @@ import {
 
 export function GroupManagerDashboard() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, token } = useAuthStore();
     const [myGroups, setMyGroups] = useState<any[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>(searchParams.get('tab')==='applications'?'APPLICATIONS':'OVERVIEW');
+    const requestedGroupId=searchParams.get('group');
+    useEffect(()=>{if(searchParams.get('tab')==='applications')setActiveTab('APPLICATIONS');},[searchParams]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [loadedFor, setLoadedFor] = useState<string | null>(null);
@@ -137,7 +142,8 @@ export function GroupManagerDashboard() {
                 let allMembers: any[] = [], groupMeetings: any[] = [], groupVisitors: any[] = [];
                 let acts: any[] = [], subs: any[] = [], refs: any[] = [];
                 if (groups.length > 0) {
-                    const groupId = groups[0].id;
+                    const requestedGroup=searchParams.get('group');
+                    const groupId = groups.find(g=>g.id===requestedGroup)?.id ?? groups[0].id;
                     if (typeof groupId !== 'string' || !groupId) throw new Error('Invalid group id');
                     detail = list(await api.getGroups()).find(g => g.id === groupId);
                     if (!detail) throw new Error('Group detail missing');
@@ -173,7 +179,7 @@ export function GroupManagerDashboard() {
         };
         loadData();
         return () => { cancelled = true; };
-    }, [user?.id, user?.role, readContext, retryCount]);
+    }, [user?.id, user?.role, readContext, retryCount, requestedGroupId]);
 
     useEffect(() => {
         let cancelled = false;
@@ -716,49 +722,7 @@ export function GroupManagerDashboard() {
                 {activeTab === 'APPLICATIONS' && (
                     <div className="space-y-6">
                         {memberActions.error&&<div role="alert" className="p-3 text-red-700">{memberActions.error} <Button disabled={memberActions.busy} onClick={memberActions.refresh}>Listeyi kontrol et</Button></div>}
-                        {/* Group Applications */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center">
-                                    <Users className="h-5 w-5 mr-3 text-indigo-600" />
-                                    Grup Katılım Başvuruları
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length === 0 ? (
-                                    <p className="text-gray-500 text-sm">Bekleyen grup katılım isteği yok.</p>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').map((m: any) => (
-                                            <div key={m.id} className="flex flex-col sm:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                                                <div className="flex items-center mb-3 sm:mb-0">
-                                                    <Link to={`/profile/${m.id}`} className="flex items-center group">
-                                                        <div className="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold mr-3 group-hover:bg-indigo-200 transition-colors">
-                                                            {m.full_name ? m.full_name.charAt(0) : 'U'}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-bold text-gray-900 group-hover:text-indigo-600 group-hover:underline">
-                                                                {m.full_name || m.name}
-                                                            </h4>
-                                                            <p className="text-xs text-gray-500">{m.profession} • {m.city}</p>
-                                                            <p className="text-xs text-gray-400 mt-0.5">Başvuru: {new Date(m.created_at).toLocaleDateString()}</p>
-                                                        </div>
-                                                    </Link>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button variant="outline" size="sm" disabled={memberActions.blocked} onClick={() => handleGroupRequest(m.id, 'REJECTED')} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                        Reddet
-                                                    </Button>
-                                                    <Button variant="primary" size="sm" onClick={() => handleGroupRequest(m.id, 'ACTIVE')}>
-                                                        Onayla
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <GroupApplicationQueue groupId={selectedGroup.id} onChanged={() => setRetryCount(n => n + 1)} />
 
                         {/* Power Team Applications */}
                         {ptActions.error&&<div role="alert" className="p-3 text-red-700">{ptActions.error} <Button disabled={ptActions.busy} onClick={ptActions.refresh}>Listeyi kontrol et</Button></div>}

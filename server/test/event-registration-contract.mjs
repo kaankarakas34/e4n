@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,27);
+  assert.equal((await applyVersionedSchema()).applied.length,28);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -100,8 +100,8 @@ async function main() {
   await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'ABSENT')",[one,alice]);
   // Rehearse the pre-0021 constraint upgrade with an existing actual legacy row.
   const legacyBefore=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; ALTER TABLE group_membership_history DROP COLUMN operation_context; DELETE FROM schema_migrations WHERE version='0027_required_company_billing'; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; ALTER TABLE attendance DROP CONSTRAINT attendance_status_check; ALTER TABLE attendance ADD CONSTRAINT attendance_status_check CHECK(status IN ('PRESENT','ABSENT','LATE','SUBSTITUTE','MEDICAL'))");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration','0027_required_company_billing']);
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; ALTER TABLE group_membership_history DROP COLUMN operation_context; DROP TABLE group_application_mail,group_applications; ALTER TABLE notifications DROP COLUMN action_url; DELETE FROM schema_migrations WHERE version='0028_group_application_workflow'; DELETE FROM schema_migrations WHERE version='0027_required_company_billing'; DELETE FROM schema_migrations WHERE version='0026_open_normal_registration'; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; ALTER TABLE attendance DROP CONSTRAINT attendance_status_check; ALTER TABLE attendance ADD CONSTRAINT attendance_status_check CHECK(status IN ('PRESENT','ABSENT','LATE','SUBSTITUTE','MEDICAL'))");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context','0026_open_normal_registration','0027_required_company_billing','0028_group_application_workflow']);
   assert.equal((await applyVersionedSchema()).applied.length,0);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),legacyBefore,'Constraint upgrade never rewrites legacy attendance');
   await assert.rejects(pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'INVALID')",[two,alice]),e=>e.code==='23514');

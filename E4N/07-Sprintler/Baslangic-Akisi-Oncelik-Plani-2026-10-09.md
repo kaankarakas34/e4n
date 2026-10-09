@@ -6,7 +6,7 @@ Topluluk üyeliği/COMMUNITY_MEMBER kalkar, normal üyelik açılır. Üye ol he
 
 ## Yeni Linear görevleri
 
-Kullanıcı yeni görevler istedi; mevcut denetim/yol haritası kayıtları korunup yeni teslim kuyruğuna bağlandı. Yeni parent: [E4N-160 — BAŞLANGIÇ](https://linear.app/e4n/issue/E4N-160/baslangic-acik-uyelik-referans-abonelik-grup-gorusmesi), Acil/Backlog. Kod uygulanmadı; görev oluşturmak Done değildir.
+Kullanıcı yeni görevler istedi; mevcut denetim/yol haritası kayıtları korunup yeni teslim kuyruğuna bağlandı. Yeni parent: [E4N-160 — BAŞLANGIÇ](https://linear.app/e4n/issue/E4N-160/baslangic-acik-uyelik-referans-abonelik-grup-gorusmesi), Acil/Backlog. 161 ürün paketi491ec05/kabul5c9deaa ile tamamlandı; yalnız görev oluşturmak Done değildir. Kanıt: [[E4N/09-Dogrulama/BAS-01-Acik-Normal-Uyelik-Vergi-Tekilligi-2026-10-09]].
 
 | Sıra | Yeni görev | Öncelik/büyüklük | Eski ilgili kapsam |
 |---|---|---|---|
@@ -16,7 +16,7 @@ Kullanıcı yeni görevler istedi; mevcut denetim/yol haritası kayıtları koru
 | 4 | [E4N-164 — BAŞ-04 Grup seçimi, gerçek analiz ve meslek görünümü](https://linear.app/e4n/issue/E4N-164/bas-04-uye-icin-grup-secimi-gercek-analizler-ve-meslek-gorunumu) | Yüksek / L |102,103 |
 | 5 | [E4N-165 — BAŞ-05 Başvuru/görüşme görevi/bildirim/mail/kabul-ret](https://linear.app/e4n/issue/E4N-165/bas-05-grup-basvurusu-baskan-gorusme-gorevibildirimmail-kabul-veya-ret) | Acil / XL |90,102,103,92 |
 
-Beş görev Backlog. Çalışma sırası1→2→3→4→5. Gerçek bağımlılıklar:161 blocks162/163/164;163+164 blocks165. Keşif verisi, abonelik API'si tamamlanana kadar bağımsız hazırlanabilir; final Katıl davranışı abonelik kapısıyla aynı kaynaktan olmalı. İlk başlatılacak161; mobil/LMS ve küçük bağımsız UI işleri önüne geçmez.
+161 Done;162–165 Backlog. Çalışma sırası1→2→3→4→5. Gerçek bağımlılıklar:161 blocks162/163/164;163+164 blocks165. Keşif verisi, abonelik API'si tamamlanana kadar bağımsız hazırlanabilir; final Katıl davranışı abonelik kapısıyla aynı kaynaktan olmalı. 161 tamamlandı, sıradaki162; mobil/LMS ve küçük bağımsız UI işleri önüne geçmez.
 
 Eski84/85/105/90/102/103/92 açıklamaları yeni görev bağlantılarıyla güncellendi. Aynı kapsam eski ve yeni kayıtta ayrı teslim/progress sayılmaz. Eski kayıtlar kalan geniş hedefleri ve geçmiş kanıtları korur; gerçek kabul olmadan kapatılmaz.
 
@@ -32,8 +32,10 @@ Parent160 bütün başlangıç akışı aynı sürümde gerçek browser→API→
 
 ## Hâlâ açık ayrıntılar
 
-Vergi numarası ülke/tür; eski duplicate/silme sonrası reuse; numarasız legacy üyelerin geçişi. Referanssız kaydın politikası ve referrer seçiminin kod/link/kişi yöntemi. Kullanıcı davetiye zorunlu değil dedi; referans zorunlu veya opsiyonel kararı bu cümleden çıkarılmaz. Abonelik ücret/dönem/grace hakları/yeniden açılma. Keşif KPI'ları; meslek/dolu grup ve çoklu başvuru; başkan yok/değişim/SLA/admin istisnası.
+Türkiye VKN/şahıs TCKN ve silme sonrası kalıcı rezervasyon kesinleşti. Eski duplicate sahibi ve numarasız legacy üyelerin tamamlama politikası açık. Referanssız kaydın politikası ve referrer seçiminin kod/link/kişi yöntemi. Kullanıcı davetiye zorunlu değil dedi; referans zorunlu veya opsiyonel kararı bu cümleden çıkarılmaz. Abonelik ücret/dönem/grace hakları/yeniden açılma. Keşif KPI'ları; meslek/dolu grup ve çoklu başvuru; başkan yok/değişim/SLA/admin istisnası.
 
 Bağlı ürün davranışı uydurulmaz; bağımsız teknik hazırlık devam eder. Canlı DB/deploy/gerçek ödeme-mail yok, izole doğrulama. MobilSprint7/LMS Sprint8 ertelenmiş; rol/veri sınırları ilgili paketlerde test edilir, kapsamlı güvenlik Sprint6.
 
 Mevcut kanıt: [[E4N/06-Gap-Analizi/Uyelik-Kayit-Grup-Basvuru-Denetimi-2026-10-09]]. Bugünkü işlem Linear plan/kapsam/bağımlılık güncellemesidir; çalışma zamanı kodu değişmedi.
+
+9 Ekim uygulama:161 açık normal kayıt/tekillik/kalıcı rezervasyon/geçiş provası API+web+DB+test+build ile tamamlandı; canlı migration yok.162 referans yöntemi sorusu açık.

@@ -79,3 +79,7 @@ P16/E4N-88 hizmet sınıflandırması grup meslek koltuğuna bağlıdır; salt m
 Bu açıklar bütün denetimi engellemez; bağımsız teknik tasarım devam edebilir, bağlı davranış kullanıcı kararı olmadan seçilmez.
 
 Sonraki yönlendirmeyle yeni parent160 ve161–165 başlangıç kuyruğu oluşturuldu; bu denetimdeki iki-paket eşlemesi tarihsel hazırlıktır. Güncel uygulama sırası [[E4N/07-Sprintler/Baslangic-Akisi-Oncelik-Plani-2026-10-09]]; eski ve yeni kayıtlar ayrı teslim sayılmaz.
+
+## 9 Ekim uygulama sonrası
+
+İlk denetim geçmiş durumdur. E4N-161 ile açık kayıt, normal rol, şirket/VKN-TCKN zorunluluğu, DB ikinci sahip engeli ve silme sonrası rezervasyon uygulandı; registry özel, eski role geçişi ve preflight hazır. Referans/abonelik kanıtı/keşif/görüşme gereksinimleri162–165 içinde açık. [[E4N/09-Dogrulama/BAS-01-Acik-Normal-Uyelik-Vergi-Tekilligi-2026-10-09]]. Canlı migration henüz yapılmadı.

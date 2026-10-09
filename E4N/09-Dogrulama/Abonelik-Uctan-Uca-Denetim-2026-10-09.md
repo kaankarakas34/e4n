@@ -1,6 +1,16 @@
 # Abonelik uçtan uca denetimi — 9 Ekim 2026
 
-Görev: E4N-163 (In Progress / Acil). İstek: üyenin girişten abonelik satın almaya ve hak kazanmasına kadar sorun denetimi. Ürün düzeltmesi veya yeni üretim dağıtımı yapılmadı.
+Görev: E4N-163 (In Progress / Acil). İstek: üyenin girişten abonelik satın almaya ve hak kazanmasına kadar sorun denetimi, ardından kullanıcı talebiyle düzeltme. İlk denetim bulguları aşağıda tarihsel kanıttır.
+
+## 9 Ekim düzeltme teslimi
+
+- Fiyat: mevcut yayımlanmış 7.200 / 39.000 / 69.000 TL tek ortak katalogda; server membership plan/tutar eşleşmesini banka çağrısından önce zorunlu tutuyor. 1 TL ve yanlış paket, katalog dışındaki yeni 4/8 aylık satış, onaysız indirim kodu reddediliyor. Eski 4/8 aylık plan kayıtları okunabilir ve önceden başlatılmış işlemin sağlayıcı doğrulaması korunur. Ücret kararı değişmedi. Tarayıcıdaki keyfi 3.000 TL promo mantığı kaldırıldı; üyelik referans ilişkisine dokunulmadı.
+- Yenileme: gelecek bitiş tarihi varsa buradan, yoksa bugünden satın alınan ay eklenir. Kullanıcı satır kilidi farklı faturaların eşzamanlı tahsilatında süre kaybını önler; UTC ay sonu geçerli son güne sınırlandırılır. Kalan sürenin korunması dışında paket dönüşümü/ücret farkı kuralı eklenmedi.
+- Kısıtlama: ACTIVE/UNSUBSCRIBED/PENDING dışındaki hesapta yeni ödeme başlatma 403. Ödeme başlatıldıktan sonra gelen kısıtlama, sağlayıcı SUCCESS sonrası da korunur; tahsilat kaybolmadan dönem kaydı yazılır, kısıtlı hesap gruba başvuramaz.
+- Ekran: kendi güncel profilindeki hesap durumu + plan + bitiş birlikte gösterilir. Aktif/süresi dolmuş/abonesiz/kısıtlı/bilinmeyen ayrılır; persist edilmiş admin liste verisi kullanılmaz.
+- Kabul: payment-flow gerçek API/PG/sahte sağlayıcı PASS (yanlış fiyat/kodda banka çağrısı yok, doğru üç plan tutarı, farklı iki eşzamanlı fatura, 31 Ocak→28 Şubat→28 Mart, ödeme sonrası askı korunması, süresi bitmiş abonelik ve eski ownership/idempotency/rollback kontrolleri). Own-read, modal lifecycle, ödeme API kontratları PASS. `npm run build` PASS; mevcut bundle büyüklüğü uyarıları sürüyor.
+- Gerçek yerel browser/API/PG kabulü 3/3; fatura→kart→sahte banka sonucu→kalıcı ACTIVE/1_MONTH/7.200 TL→reload PASS; Durum artık `Abonelik aktif`, issues=[] ve screenshot doğrulandı. Yerel kanıtlar `output/subscription-fix-*`; gerçek ödeme/mail yok.
+- **Açık kalan:** D07 gecikmenin başlangıcı/kısıtlanan haklar ve üretim job/env etkinleştirmesi; gerçek sağlayıcı sandbox yetkilendirmesi. Bu düzeltme için production deploy yapılmadı. E4N-163 bütün kapsamıyla DONE değil. Günlük mail kuralı için kullanıcıya tek açıklama sorusu gönderildi; yanıt olmadan varsayım/gerçek mail yok.
 
 ## Öncelikli bulgular
 

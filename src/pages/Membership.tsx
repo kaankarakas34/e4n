@@ -1,4 +1,5 @@
 import {useNavigate} from 'react-router-dom';
+import {membershipPrices} from '../../shared/membership-pricing.js';
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
@@ -11,7 +12,7 @@ import { api } from '../api/api';
 export function MembershipPage() {
     const navigate=useNavigate();
     const { user } = useAuthStore();
-    const [record, setRecord] = useState<{ id: string; subscription_plan?: string | null; subscription_end_date?: string | null } | null>(null);
+    const [record, setRecord] = useState<{ id: string; subscription_plan?: string | null; subscription_end_date?: string | null; account_status?: string | null } | null>(null);
     const [readState, setReadState] = useState<{ userId?: string; loading: boolean; error: string | null }>({ loading: true, error: null });
     const [retry, setRetry] = useState(0);
 
@@ -25,10 +26,11 @@ export function MembershipPage() {
             if (cancelled) return;
             if (!data || data.id !== userId ||
                 (data.subscription_plan != null && typeof data.subscription_plan !== 'string') ||
-                (data.subscription_end_date != null && typeof data.subscription_end_date !== 'string')) {
+                (data.subscription_end_date != null && typeof data.subscription_end_date !== 'string') ||
+                (data.account_status != null && typeof data.account_status !== 'string')) {
                 throw new Error('Invalid own profile response');
             }
-            setRecord({ id: data.id, subscription_plan: data.subscription_plan, subscription_end_date: data.subscription_end_date });
+            setRecord({ id: data.id, subscription_plan: data.subscription_plan, subscription_end_date: data.subscription_end_date, account_status: data.account_status });
             setReadState({ userId, loading: false, error: null });
         }).catch(() => {
             if (cancelled) return;
@@ -41,6 +43,11 @@ export function MembershipPage() {
     const readReady = readState.userId === user?.id && !readState.loading;
     const ownRecord = readReady && !readState.error && record?.id === user?.id ? record : null;
     const endDate = ownRecord?.subscription_end_date ? new Date(ownRecord.subscription_end_date) : null;
+    const subscriptionStatus = !ownRecord?.account_status ? 'Durum doğrulanamadı' :
+        !['ACTIVE','UNSUBSCRIBED','PENDING'].includes(ownRecord.account_status) ? 'Hesap kısıtlı' :
+        !ownRecord.subscription_plan || !endDate || Number.isNaN(endDate.getTime()) ? 'Aktif abonelik yok' :
+        endDate <= new Date() ? 'Abonelik süresi doldu' :
+        ownRecord.account_status === 'ACTIVE' ? 'Abonelik aktif' : 'Abonelik etkin değil';
 
     const [selectedPlan, setSelectedPlan] = useState<{ plan: MembershipPlan, price: number, title: string } | null>(null);
     const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -49,7 +56,7 @@ export function MembershipPage() {
         {
             plan: '1_MONTH' as MembershipPlan,
             title: 'Aylık Paket',
-            price: 7200,
+            price: membershipPrices['1_MONTH'],
             netPrice: '6.000 TL + KDV',
             monthly: '7.200 TL KDV Dahil',
             features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri']
@@ -57,7 +64,7 @@ export function MembershipPage() {
         {
             plan: '6_MONTHS' as MembershipPlan,
             title: '6 Aylık Paket',
-            price: 39000,
+            price: membershipPrices['6_MONTHS'],
             netPrice: '32.500 TL + KDV',
             monthly: 'Ort. 6.500 TL KDV Dahil / ay',
             features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%10 Etkinlik İndirimi']
@@ -65,7 +72,7 @@ export function MembershipPage() {
         {
             plan: '12_MONTHS' as MembershipPlan,
             title: '12 Aylık Paket',
-            price: 69000,
+            price: membershipPrices['12_MONTHS'],
             netPrice: '57.500 TL + KDV',
             monthly: 'Ort. 5.750 TL KDV Dahil / ay',
             features: ['Tüm Etkinliklere Erişim', 'Networking Ağma Katılım', 'Eğitim Materyalleri', '%20 Etkinlik İndirimi', 'Öncelikli Destek'],
@@ -136,7 +143,7 @@ export function MembershipPage() {
                             </div>
                             <div>
                                 <span className="block text-gray-500">Durum</span>
-                                <span>Veri yok</span>
+                                <span>{subscriptionStatus}</span>
                             </div>
                             <div>
                                 <span className="block text-gray-500">Bitiş Tarihi</span>

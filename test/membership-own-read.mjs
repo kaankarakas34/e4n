@@ -1,3 +1,4 @@
+globalThis.ownMembershipPrices = (await import('../shared/membership-pricing.js')).membershipPrices;
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
@@ -30,6 +31,7 @@ compiled = compiled.replace(/import React, \{([^}]+)\} from ['"]react['"];?/, (_
   `import React from '${import.meta.resolve('react')}'; const {${names}} = globalThis.ownMembershipHooks;`);
 compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line, names, source) => {
   if (source === 'react/jsx-runtime') return line.replace(source, import.meta.resolve(source));
+  if (source === '../../shared/membership-pricing.js') return `const membershipPrices = ${JSON.stringify(globalThis.ownMembershipPrices)};`;
   if (source === 'react-router-dom') return 'const useNavigate = () => () => {};';
   if (source === '../stores/authStore') return 'const useAuthStore = globalThis.ownMembershipAuth;';
   if (source === '../stores/membershipStore') return 'const useMembershipStore = globalThis.ownMembershipStore;';
@@ -66,8 +68,17 @@ response = async () => ({ id: user.id, subscription_plan: '4_MONTHS', subscripti
 await retry();
 assert.ok(hasText('Kayıtlı Üyelik Bilgileri'));
 assert.ok(hasText('4 Aylık Paket'));
-assert.equal(hasText('Aktif'), false); // Account status is not a confirmed subscription entitlement.
-assert.ok(hasText('Veri yok'));
+assert.ok(hasText('Abonelik aktif'));
+for (const [account_status, subscription_plan, subscription_end_date, label] of [
+  ['SUSPENDED','1_MONTH','2031-01-01','Hesap kısıtlı'],
+  ['ACTIVE','1_MONTH','2020-01-01','Abonelik süresi doldu'],
+  ['UNSUBSCRIBED',null,null,'Aktif abonelik yok'],
+  [null,'1_MONTH','2031-01-01','Durum doğrulanamadı'],
+]) {
+  user = {...user,id:user.id+'-status'};
+  response = async () => ({id:user.id,account_status,subscription_plan,subscription_end_date});
+  render(); commitEffect(); await flush(); assert.ok(hasText(label));
+}
 const alerts = [];
 globalThis.alert = text => alerts.push(text);
 const select = nodes(render()).find(node => node.type === 'Button' && node.props?.onClick?.toString().includes('handleSelectPlan'));

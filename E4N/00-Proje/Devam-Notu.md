@@ -1,9 +1,9 @@
 # E4N devam durumu — 9 Ekim 2026
 
-## Son denetim — abonelik satın alma / E4N-163
-- 9 Ekim: istemci fiyatı (12 ay/1 TL), yenilemede süre kaybı (273 gün), ödeme ile SUSPENDED→ACTIVE hataları izole API/PG/sahte sağlayıcıda tekrarlandı. Durum alanı sabit Veri yok; production job invocation yapılandırması eksik görünüyor. E4N-163 Acil/InProgress; kabul maddeleri ve yorum güncellendi. Ürün düzeltmesi/deploy yok. Kanıt [[E4N/09-Dogrulama/Abonelik-Uctan-Uca-Denetim-2026-10-09]]. Fiyat/grace/paket geçişi kuralları uydurulmaz.
-- Payment flow, modal lifecycle, API ve own-read testleri PASS; own-read router mock düzeltildi. Canlı sağlayıcı anahtarları sensitive, yetkilendirme doğrulanmadı; gerçek ödeme/mail yok. Eski ownerless PENDING kayıtları yeni akış hatası sayma.
-
+## Son teslim — abonelik denetim düzeltmeleri / E4N-163
+- 9 Ekim kullanıcı düzeltme istedi: ortak yayımlanmış fiyat kataloğu + sunucu tutar/kod doğrulaması; tarayıcıda keyfi 3.000 TL indirim kaldırıldı. Yenileme kalan dönem üzerine eklenir; kullanıcı kilidi/eşzamanlı ödeme ve UTC ay sonu korunur. SUSPENDED ve diğer kısıtlı hesaplar yeni ödeme başlatamaz; sonradan gelen kısıtlama ödeme sonucuyla kalkmaz. Web kendi kayıt kaynağından aktif/bitmiş/abonesiz/kısıtlı/bilinmeyen gösterir.
+- Payment-flow gerçek API/PG/sahte sağlayıcı ve ek fiyat/yenileme/ay sonu/askı regresyonları; modal/API/own-read; build PASS. Yerel browser 3/3/finalDB/reload ve Abonelik aktif PASS. Kanıt [[E4N/09-Dogrulama/Abonelik-Uctan-Uca-Denetim-2026-10-09]], output/subscription-fix-*. Tam web/SEC kabulü değil.
+- E4N-163 InProgress: günlük5mail başlangıcı/kısıtlanan haklar D07 açık, soru gönderildi; job/env gerçek mail etkinleştirme ve sağlayıcı sandbox kabulü kalan. Gerçek ödeme/mail/production write/deploy yok. Ücret/paket dönüşümü/grace kuralları uydurulmaz. İlk denetimin 4 kod bulgusu yeni teslimle giderildi; tekrar hata olarak uygulama.
 
 ## En son — BAŞ-03/04/05 bütün grup başvuru paketi
 - Ürün 0004f8d main/foundation origin'e push. Canlı migration28: 28 kullanıcı korunuyor, 0 aktif grup/başvuru/outbox; RLS/client deny doğrulandı. Production dpl_DmdeFzUGdSoFxZfoaLRT6Lf4imyS READY; canlı www/event4network/e4n alias ve yeni asset+anon401 doğrulandı. E4N-164 Done;163/165 kalan kararlar için In Progress,162 Backlog.
@@ -49,4 +49,3 @@ Bu not+git → yalnız ilgili Linear görevi/karar/kod. Linear durum kaynağı; 
 - Son login düzeltmesi: topluluk üyeliği alanı kaldırıldı; Üye Ol doğrudan /auth/register normal kayıt formuna gider. Kanıt aynı BAŞ-01 notunda.
 
 - Kullanıcı production yayını istedi: Login.tsx düzeltmesi eski canlı main üzerine ayrı c5d6323 commit'iyle main'e push edildi. Vercel production READY/custom domains c5d6323, canlı browser link/metin PASS. Ana foundation branch267f7f5 kodu korunuyor. Canlı SELECT-only incelemede yeni normal kayıt migration26/27 yapıları yok; yeni üyelik API'si yayında değil. İleride main/foundation birleşirken aynı Login hunk'ı korunmalı; canlı DB geçişi ayrı iş. Ayrıntı BAŞ-01 notunda.
-

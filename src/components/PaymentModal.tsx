@@ -45,9 +45,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
         billing_address: ''
     });
 
-    // Promo code state
-    const [promoCode, setPromoCode] = useState('');
-    const [promoApplied, setPromoApplied] = useState(false);
+    // Persisted attempts keep their recorded amount for safe reconciliation.
     const [finalAmount, setFinalAmount] = useState(amount);
 
     // Card details state
@@ -79,7 +77,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 if (attempt.current !== version || currentContext.current !== paymentContext) return;
                 const restored = saved ? {...saved,context:paymentContext} : null;
                 receiptRef.current = restored; setReceipt(restored);
-                if (saved) { setFinalAmount(saved.amount); setPromoApplied(saved.amount !== amount); }
+                if (saved) { setFinalAmount(saved.amount); }
                 setRestoredFor(paymentContext);
             }).catch(() => {
                 if (attempt.current === version && currentContext.current === paymentContext)
@@ -109,8 +107,6 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                 billing_address: initialBillingData?.billing_address || user?.billing_address || ''
             });
             setFinalAmount(amount);
-            setPromoCode('');
-            setPromoApplied(false);
             setStep(1);
             setError('');
             setCardData({
@@ -146,19 +142,6 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             ...prev,
             [name]: name === 'cardName' ? value : formattedValue
         }));
-    };
-
-    const handleApplyPromo = () => {
-        const validCodes = ['E4N3000', 'REF3000', 'KOD3000', 'E4N3K', '3000'];
-        if (validCodes.includes(promoCode.toUpperCase().trim())) {
-            setFinalAmount(3000);
-            setPromoApplied(true);
-            setError('');
-        } else {
-            setError('Geçersiz referans kodu.');
-            setPromoApplied(false);
-            setFinalAmount(amount);
-        }
     };
 
     const handleBillingSubmit = async (e: React.FormEvent) => {
@@ -224,7 +207,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                     receiptRef.current = null; setReceipt(null); setError('Ödeme sağlayıcısı işlemi başarısız olarak doğruladı.'); return;
                 }
                 if (!['SUCCESS','PAID'].includes(status.status)) { setError('Ödeme henüz kesinleşmedi. Yeni ödeme başlatmadan işlem durumunu kontrol edin.'); return; }
-                await onSuccess({ cardName: cardData.cardName, finalAmount:payment.amount, promoApplied, invoiceId:payment.invoiceId });
+                await onSuccess({ cardName: cardData.cardName, finalAmount:payment.amount,  invoiceId:payment.invoiceId });
                 await clearPaymentAttempt(paymentContext,payment.requestKey);
             } catch {
                 if (isCurrent()) setError('Ödeme bildirimi işlenemedi. Tekrar ödeme yapmadan işlem durumunu kontrol edin.');
@@ -346,7 +329,7 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
             if (!isCurrent()) return;
             if (result.invoice_id !== payment.invoiceId || result.action_type !== action.type || Math.round(result.amount*100) !== Math.round(payment.amount*100)) throw new Error('Ödeme eşleşmedi');
             if (['SUCCESS','PAID'].includes(result.status)) {
-                await onSuccess({cardName:cardData.cardName,finalAmount:payment.amount,promoApplied,invoiceId:payment.invoiceId});
+                await onSuccess({cardName:cardData.cardName,finalAmount:payment.amount,invoiceId:payment.invoiceId});
                 await clearPaymentAttempt(paymentContext,payment.requestKey);
             } else if (result.status === 'FAILED') {
                 await clearPaymentAttempt(paymentContext,payment.requestKey);
@@ -370,9 +353,6 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                     <div className="text-right">
                         <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Ödenecek Tutar</p>
                         <div className="flex flex-col items-end">
-                            {promoApplied && (
-                                <span className="text-xs line-through text-gray-400">₺{amount.toLocaleString('tr-TR')}</span>
-                            )}
                             <span className="text-lg font-extrabold text-indigo-600">₺{finalAmount.toLocaleString('tr-TR')} <span className="text-xs font-normal text-gray-500">KDV Dahil</span></span>
                         </div>
                     </div>
@@ -432,32 +412,6 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                                 rows={3}
                             />
                         </div>
-
-                        {isMembership && (
-                            <div className="mt-4 pt-4 border-t border-gray-100">
-                                <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">Referans / İndirim Kodu</label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        name="promoCode"
-                                        placeholder="Varsa özel kodunuzu giriniz"
-                                        value={promoCode}
-                                        onChange={(e) => setPromoCode(e.target.value)}
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleApplyPromo}
-                                        disabled={!promoCode.trim() || canCheck}
-                                    >
-                                        Uygula
-                                    </Button>
-                                </div>
-                                {promoApplied && (
-                                    <p className="text-xs text-green-600 font-semibold mt-1">✓ Referans kodu başarıyla uygulandı! Fiyat ₺3.000 (KDV Dahil) olarak güncellendi.</p>
-                                )}
-                            </div>
-                        )}
 
                         <div className="mt-6 pt-4 border-t border-gray-100">
                             <Button

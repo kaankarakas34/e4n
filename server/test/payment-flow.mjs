@@ -121,7 +121,7 @@ async function main() {
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');
   const base=`http://127.0.0.1:${appServer.address().port}/api`;
   const call=async(path,user,body,method='POST')=>fetch(base+path,{method,headers:{'Content-Type':'application/json',...(user?{Authorization:`Bearer ${jwt.sign({id:user,role:'MEMBER'},process.env.JWT_SECRET)}`}:{})},...(method==='GET'?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)});
-  const payload=(type='membership',data={user_id:ids[0],plan:'1_MONTH',amount:1})=>({requestKey:randomUUID(),cardNumber:'1111111111111111',cardHolderName:'Synthetic Fixture',expiryMonth:'12',expiryYear:'2030',cvv:'111',total:100,action:{type,data}});
+  const payload=(type='membership',data={user_id:ids[0],plan:'1_MONTH',amount:1})=>({requestKey:randomUUID(),cardNumber:'1111111111111111',cardHolderName:'Synthetic Fixture',expiryMonth:'12',expiryYear:'2030',cvv:'111',total:type==='membership'?7200:100,action:{type,data}});
   const create=async(type,data)=>{const r=await call('/payment/pay',type==='visitor_registration'?null:ids[0],payload(type,data));assert.equal(r.status,200);const json=await r.json();assert.ok(json.receiptToken);assert.ok(json.invoiceId);return json;};
   const beforeCalls=providerCalls;
   assert.equal((await call('/payment/pay',null,payload())).status,401);
@@ -139,7 +139,8 @@ async function main() {
   assert.equal(initiated.filter(r=>r.recoveryOnly===true).length,2);
   assert.equal(dispatches,dispatchBefore+1);
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM payment_transactions WHERE request_key=$1',[repeated.requestKey])).rows[0].count,1);
-  assert.equal((await call('/payment/pay',ids[0],{...repeated,total:101})).status,409);
+  assert.equal((await call('/payment/pay',ids[0],{...repeated,total:101})).status,400);
+  assert.equal((await call('/payment/pay',ids[0],{...repeated,total:39000,action:{type:'membership',data:{user_id:ids[0],plan:'6_MONTHS'}}})).status,409);
   assert.equal((await call('/payment/pay',ids[1],{...repeated,action:{type:'membership',data:{user_id:ids[1],plan:'1_MONTH'}}})).status,409);
   assert.equal(dispatches,dispatchBefore+1);
   const reordered={...repeated,action:{data:{amount:1,plan:'1_MONTH',user_id:ids[0]},type:'membership'}};
@@ -165,22 +166,22 @@ async function main() {
   await pool.query('UPDATE users SET subscription_end_date=NULL,last_membership_payment_amount=NULL WHERE id=$1',[ids[0]]);
   const payment=await create();const invoice=payment.invoiceId;
   const row=() =>pool.query('SELECT * FROM payment_transactions WHERE merchant_oid=$1',[invoice]).then(r=>r.rows[0]);
-  assert.equal((await row()).user_id,ids[0]);assert.equal((await row()).action_data.amount,100);
+  assert.equal((await row()).user_id,ids[0]);assert.equal((await row()).action_data.amount,7200);
   assert.equal((await call('/payment/status',ids[1],{invoiceId:invoice})).status,404);
   assert.equal((await call('/payment/status',null,{invoiceId:invoice,receiptToken:'wrong'})).status,404);
   const cb=(outcome='success',method='POST')=>call(`/payment/sipay-callback/${outcome}${method==='GET'?`?invoice_id=${invoice}`:''}`,null,{invoice_id:invoice},method);
   assert.ok((await (await cb('success','GET')).text()).includes('"status":"pending"'));assert.equal((await row()).status,'PENDING');
   let own=(await pool.query('SELECT subscription_end_date FROM users WHERE id=$1',[ids[0]])).rows[0];assert.equal(own.subscription_end_date,null);
-  results.set(invoice,{...results.get(invoice),status_code:100,transaction_status:'Completed',transaction_amount:99});
+  results.set(invoice,{...results.get(invoice),status_code:100,transaction_status:'Completed',transaction_amount:7199});
   assert.equal((await cb()).status,409);assert.equal((await row()).status,'PENDING');
-  results.set(invoice,{...results.get(invoice),transaction_amount:100,invoice_id:'another-invoice'});
+  results.set(invoice,{...results.get(invoice),transaction_amount:7200,invoice_id:'another-invoice'});
   assert.equal((await cb()).status,502);assert.equal((await row()).status,'PENDING');
   results.set(invoice,{...results.get(invoice),invoice_id:invoice,transaction_type:'PreAuth'});
   assert.ok((await (await cb()).text()).includes('"status":"pending"'));
   results.set(invoice,{...results.get(invoice),transaction_type:'Auth'});
   const race=await Promise.all([cb(),cb('fail'),cb('success','GET')]);assert.ok(race.every(r=>r.status===200));
   assert.equal((await row()).status,'SUCCESS');
-  own=(await pool.query('SELECT subscription_end_date,last_membership_payment_amount FROM users WHERE id=$1',[ids[0]])).rows[0];assert.ok(own.subscription_end_date);assert.equal(Number(own.last_membership_payment_amount),100);
+  own=(await pool.query('SELECT subscription_end_date,last_membership_payment_amount FROM users WHERE id=$1',[ids[0]])).rows[0];assert.ok(own.subscription_end_date);assert.equal(Number(own.last_membership_payment_amount),7200);
   const end=own.subscription_end_date.getTime();
   results.set(invoice,{...results.get(invoice),status_code:68,transaction_status:'Failed'});
   await cb('fail');assert.equal((await row()).status,'SUCCESS');
@@ -264,6 +265,37 @@ async function main() {
   const {request_key,request_fingerprint,initiation_state,...preserved}=oldAfter;
   assert.deepEqual(preserved,oldBefore);assert.deepEqual([request_key,request_fingerprint,initiation_state],[null,null,null]);
   await assert.rejects(pool.query('UPDATE payment_transactions SET request_key=$1 WHERE merchant_oid=$2',[randomUUID(),orphan]),e=>e.code==='23514');
+
+  // Subscription audit regressions: no underpayment/provider dispatch, no lost days or lifted suspension.
+  const dispatchBeforeInvalid=dispatches;
+  for(const plan of ['1_MONTH','6_MONTHS','12_MONTHS','4_MONTHS','8_MONTHS','toString']){
+    assert.equal((await call('/payment/pay',ids[0],{...payload('membership',{plan,user_id:ids[0]}),total:1})).status,400);
+  }
+  assert.equal((await call('/payment/pay',ids[0],{...payload(),promoCode:'E4N3000'})).status,400);
+  assert.equal(dispatches,dispatchBeforeInvalid);
+  for (const [plan,total] of [['6_MONTHS',39000],['12_MONTHS',69000]]) {
+    const response=await call('/payment/pay',ids[0],{...payload('membership',{plan,user_id:ids[0]}),total});
+    assert.equal(response.status,200);
+    const receipt=await response.json();
+    assert.equal(Number(results.get(receipt.invoiceId).transaction_amount),total);
+    assert.equal(Number((await pool.query('SELECT amount FROM payment_transactions WHERE merchant_oid=$1',[receipt.invoiceId])).rows[0].amount),total);
+  }
+  const settleMembership=async(payment)=>{results.set(payment.invoiceId,{...results.get(payment.invoiceId),status_code:100,transaction_status:'Completed'});const r=await call('/payment/status',null,{invoiceId:payment.invoiceId,receiptToken:payment.receiptToken});assert.equal(r.status,200);assert.equal((await r.json()).status,'SUCCESS');};
+  await pool.query("UPDATE users SET account_status='ACTIVE',subscription_plan='1_MONTH',subscription_end_date='2030-01-31T12:15:00Z' WHERE id=$1",[ids[0]]);
+  const renewA=await create(),renewB=await create();
+  await Promise.all([settleMembership(renewA),settleMembership(renewB)]);
+  const renewed=(await pool.query('SELECT subscription_end_date FROM users WHERE id=$1',[ids[0]])).rows[0];
+  assert.equal(renewed.subscription_end_date.toISOString(),'2030-03-28T12:15:00.000Z');
+  // A restriction imposed after dispatch is preserved when the bank settles.
+  const beforeRestriction=await create();
+  await pool.query("UPDATE users SET account_status='SUSPENDED' WHERE id=$1",[ids[0]]);
+  assert.equal((await call('/payment/pay',ids[0],payload())).status,403);
+  await settleMembership(beforeRestriction);
+  assert.equal((await pool.query('SELECT account_status FROM users WHERE id=$1',[ids[0]])).rows[0].account_status,'SUSPENDED');
+  await pool.query("UPDATE users SET account_status='UNSUBSCRIBED',subscription_end_date='2020-01-01' WHERE id=$1",[ids[0]]);
+  const fresh=await create();await settleMembership(fresh);
+  const freshState=(await pool.query('SELECT subscription_end_date,account_status FROM users WHERE id=$1',[ids[0]])).rows[0];
+  assert.ok(freshState.subscription_end_date>new Date());assert.equal(freshState.account_status,'ACTIVE');
   console.log('Local gateway + Express + PostgreSQL: ownership, receipt boundary, provider proof/hash/amount/preauth, callback race/repeat/late-fail, rollback/retry, membership/event/guest effects passed. No real provider, payment or email.');
 }
 let exitCode=0;

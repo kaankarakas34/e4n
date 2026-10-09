@@ -1,4 +1,5 @@
 import {installGroupApplications} from './group-applications.js';
+import {membershipPrices} from '../../shared/membership-pricing.js';
 import {installNormalRegistration} from './normal-registration.js';
 import {companyIdentity,companyWriteError} from './company-registration.js';
 import {setMembershipOperationContext} from './membership-operation-context.js';
@@ -1900,7 +1901,14 @@ app.post('/api/payment/pay', async (req, res) => {
         || !(await pool.query('SELECT id FROM events WHERE id=$1',[action.data.event_id])).rowCount)) return res.status(404).json({error:'Etkinlik bulunamadı.'});
     } catch { return res.status(500).json({error:'Ödeme hesabı doğrulanamadı.'}); }
     action.data = {...action.data,user_id:req.user.id,amount};
-    if (action.type === 'membership' && !['1_MONTH','4_MONTHS','6_MONTHS','8_MONTHS','12_MONTHS'].includes(action.data.plan)) return res.status(400).json({error:'Geçersiz plan.'});
+    if (action.type === 'membership') {
+      const expected = typeof action.data.plan === 'string' && Object.hasOwn(membershipPrices,action.data.plan) ? membershipPrices[action.data.plan] : null;
+      if (!expected || amount !== expected || req.body.promoCode || action.data.promoCode) return res.status(400).json({error:'Paket veya ödeme tutarı güncel fiyatla eşleşmiyor. Paket seçimini yenileyin.'});
+      let account;
+      try { account = (await pool.query('SELECT account_status FROM users WHERE id=$1',[req.user.id])).rows[0]; }
+      catch { return res.status(503).json({error:'Ödeme hesabı doğrulanamadı.'}); }
+      if (!account || !['ACTIVE','UNSUBSCRIBED','PENDING'].includes(account.account_status)) return res.status(403).json({error:'Kısıtlı hesap için ödeme başlatılamaz.'});
+    }
   } else if (typeof action.data.email !== 'string' || !action.data.email.trim() || typeof action.data.name !== 'string' || !action.data.name.trim()) {
     return res.status(400).json({error:'Ziyaretçi bilgileri eksik.'});
   }

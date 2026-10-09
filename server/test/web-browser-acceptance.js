@@ -84,21 +84,6 @@ async page=>{
     await page.getByText('Kayıtlı — yoklama yapılmadı',{exact:true}).waitFor();
     await page.getByText('PRESENT — yoklama ayrıntısını açın',{exact:true}).waitFor();
   });
-  await test('public-event-list-uses-public-api',async()=>{
-    const start=requests.length;
-    await page.goto(f.webBase+'/etkinlikler');
-    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
-    check(requests.slice(start).some(r=>r.path==='/api/events'&&r.status===200),'Public event request missing');
-    check(!requests.slice(start).some(r=>r.path==='/api/events'&&r.status===403),'Public page requested administrator list');
-  });
-  await test('admin-event-linked-delete-explains-cancel',async()=>{
-    await visit('/admin/events','Etkinlik Yönetimi');
-    const card=page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');
-    await card.getByRole('button',{name:'Sil',exact:true}).click();
-    await page.getByRole('alert').filter({hasText:'katılımcı veya bilet kaydı var'}).waitFor();
-    check(requests.some(r=>r.method==='DELETE'&&r.path==='/api/events/'+f.ids.event&&r.status===409),'Linked event deletion was not rejected');
-    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
-  });
   await test('admin-event-new-booking-is-not-attendance',async()=>{
     await page.goto(f.webBase+'/event/'+f.ids.event);
     await page.getByRole('button',{name:'Hemen Kayıt Ol',exact:true}).click();
@@ -446,7 +431,7 @@ async page=>{
   async function ownEdit(){await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('button',{name:'Profili Düzenle',exact:true}).click();await page.getByLabel('Ad Soyad',{exact:true}).waitFor();}
 
   await test('self-profile-settings-read-error-retry',async()=>{
-    const pattern='**/api/user/profile-settings';await page.route(pattern,route=>route.fulfill({status:500,json:{error:'Isolated profile read failure'}}));await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('alert').filter({hasText:'Profil yüklenemedi'}).waitFor();check(await page.getByRole('button',{name:'Profili Düzenle',exact:true}).count()===0,'Failed profile read showed editable old data');await page.unroute(pattern);await page.getByRole('button',{name:'Tekrar Dene',exact:true}).click();await page.getByRole('button',{name:'Profili Düzenle',exact:true}).waitFor();
+    const pattern='**/api/user/profile-settings';await page.route(pattern,route=>route.fulfill({status:500,json:{error:'Isolated profile read failure'}}));try{await page.goto(f.webBase+'/profile/'+f.ids.member);await page.getByRole('alert').filter({hasText:'Profil yüklenemedi'}).waitFor();check(await page.getByRole('button',{name:'Profili Düzenle',exact:true}).count()===0,'Failed profile read showed editable old data');}finally{await page.unroute(pattern);}await page.getByRole('button',{name:'Tekrar Dene',exact:true}).click();await page.getByRole('button',{name:'Profili Düzenle',exact:true}).waitFor();
   });
 
   await test('self-profile-save-clear-reload-and-canonical-store',async()=>{
@@ -497,6 +482,22 @@ async page=>{
   });
   await test('notifications-owner-switch-private-window',async()=>{
     await login('president');await page.getByRole('button',{name:'Bildirimler',exact:true}).click();check(await page.getByText('Owned notification body',{exact:true}).count()===0,'Member notices leaked');
+  });
+  await test('public-event-list-uses-public-api',async()=>{
+    await page.evaluate(()=>localStorage.clear());
+    const start=requests.length;
+    await page.goto(f.webBase+'/etkinlikler');
+    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
+    check(requests.slice(start).some(r=>r.path==='/api/events'&&r.status===200),'Public event request missing');
+    check(!requests.slice(start).some(r=>r.path==='/api/events'&&r.status===401),'Public page requested administrator list');
+  });
+  await test('admin-event-linked-delete-explains-cancel',async()=>{
+    await login('admin');await visit('/admin/events','Etkinlik Yönetimi');
+    const card=page.getByText('Browser Participant Event',{exact:true}).locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]');
+    await card.getByRole('button',{name:'Sil',exact:true}).click();
+    await page.getByRole('alert').filter({hasText:'katılımcı veya bilet kaydı var'}).waitFor();
+    check(requests.some(r=>r.method==='DELETE'&&r.path==='/api/events/'+f.ids.event&&r.status===409),'Linked event deletion was not rejected');
+    await page.getByText('Browser Participant Event',{exact:true}).first().waitFor();
   });
   const failed=cases.filter(r=>r.status==='FAIL').length;
   return {scope:'Full application browser against disposable actual Express/PostgreSQL, existing flows only',cases,passed:cases.length-failed,failed,pageErrors,externalBlocked:[...new Set(external)],requests,releaseReady:false,productionWrites:false,realMail:false,realPayment:false};

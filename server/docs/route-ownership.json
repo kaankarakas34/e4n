@@ -306,283 +306,283 @@
       "method": "POST",
       "path": "/api/events",
       "provider": "src/index.js",
-      "line": 1725
+      "line": 1736
     },
     {
       "method": "PUT",
       "path": "/api/events/:id",
       "provider": "src/index.js",
-      "line": 1745
+      "line": 1756
     },
     {
       "method": "DELETE",
       "path": "/api/events/:id",
       "provider": "src/index.js",
-      "line": 1800
+      "line": 1811
     },
     {
       "method": "DELETE",
       "path": "/api/admin/members/:id",
       "provider": "src/index.js",
-      "line": 1817
+      "line": 1828
     },
     {
       "method": "POST",
       "path": "/api/payment/pay",
       "provider": "src/index.js",
-      "line": 1938
+      "line": 1949
     },
     {
       "method": "POST",
       "path": "/api/visitor-invite",
       "provider": "src/index.js",
-      "line": 2192
+      "line": 2203
     },
     {
       "method": "GET",
       "path": "/api/visitor-invite/verify",
       "provider": "src/index.js",
-      "line": 2245
+      "line": 2256
     },
     {
       "method": "POST",
       "path": "/api/visitors/apply",
       "provider": "src/index.js",
-      "line": 2281
+      "line": 2292
     },
     {
       "method": "GET",
       "path": "/api/admin/public-visitors",
       "provider": "src/index.js",
-      "line": 2349
+      "line": 2360
     },
     {
       "method": "GET",
       "path": "/api/public-visitors",
       "provider": "src/index.js",
-      "line": 2349
+      "line": 2360
     },
     {
       "method": "PUT",
       "path": "/api/admin/public-visitors/:id/status",
       "provider": "src/index.js",
-      "line": 2363
+      "line": 2374
     },
     {
       "method": "GET",
       "path": "/api/courses",
       "provider": "src/index.js",
-      "line": 2485
+      "line": 2496
     },
     {
       "method": "GET",
       "path": "/api/courses/:id",
       "provider": "src/index.js",
-      "line": 2499
+      "line": 2510
     },
     {
       "method": "GET",
       "path": "/api/lms/exams",
       "provider": "src/index.js",
-      "line": 2513
+      "line": 2524
     },
     {
       "method": "GET",
       "path": "/api/admin/system-settings",
       "provider": "src/index.js",
-      "line": 2521
+      "line": 2532
     },
     {
       "method": "POST",
       "path": "/api/admin/system-settings",
       "provider": "src/index.js",
-      "line": 2530
+      "line": 2541
     },
     {
       "method": "POST",
       "path": "/api/admin/visitors/:id/send-membership-invite",
       "provider": "src/index.js",
-      "line": 2543
+      "line": 2554
     },
     {
       "method": "DELETE",
       "path": "/api/admin/visitors/:id",
       "provider": "src/index.js",
-      "line": 2576
+      "line": 2587
     },
     {
       "method": "DELETE",
       "path": "/api/groups/:id",
       "provider": "src/index.js",
-      "line": 2601
+      "line": 2612
     },
     {
       "method": "GET",
       "path": "/api/groups/:id/activities",
       "provider": "src/index.js",
-      "line": 2612
+      "line": 2623
     },
     {
       "method": "GET",
       "path": "/api/power-teams",
       "provider": "src/index.js",
-      "line": 2629
+      "line": 2640
     },
     {
       "method": "DELETE",
       "path": "/api/power-teams/:id",
       "provider": "src/index.js",
-      "line": 2636
+      "line": 2647
     },
     {
       "method": "GET",
       "path": "/api/power-teams/:id/members",
       "provider": "src/index.js",
-      "line": 2644
+      "line": 2655
     },
     {
       "method": "GET",
       "path": "/api/power-teams/:id/referrals",
       "provider": "src/index.js",
-      "line": 2658
+      "line": 2669
     },
     {
       "method": "GET",
       "path": "/api/power-teams/:id/synergy",
       "provider": "src/index.js",
-      "line": 2673
+      "line": 2684
     },
     {
       "method": "GET",
       "path": "/api/groups/:id/visitors",
       "provider": "src/index.js",
-      "line": 2685
+      "line": 2696
     },
     {
       "method": "POST",
       "path": "/api/groups/:id/join",
       "provider": "src/index.js",
-      "line": 2700
+      "line": 2711
     },
     {
       "method": "GET",
       "path": "/api/user/group-requests",
       "provider": "src/index.js",
-      "line": 2720
+      "line": 2731
     },
     {
       "method": "PUT",
       "path": "/api/groups/:id/members/:userId",
       "provider": "src/index.js",
-      "line": 2732
+      "line": 2743
     },
     {
       "method": "POST",
       "path": "/api/power-teams/:id/join",
       "provider": "src/index.js",
-      "line": 2750
+      "line": 2761
     },
     {
       "method": "GET",
       "path": "/api/user/power-team-requests",
       "provider": "src/index.js",
-      "line": 2774
+      "line": 2785
     },
     {
       "method": "PUT",
       "path": "/api/power-teams/:id/members/:userId",
       "provider": "src/index.js",
-      "line": 2786
+      "line": 2797
     },
     {
       "method": "DELETE",
       "path": "/api/groups/:id/members/:userId",
       "provider": "src/index.js",
-      "line": 2798
+      "line": 2809
     },
     {
       "method": "DELETE",
       "path": "/api/power-teams/:id/members/:userId",
       "provider": "src/index.js",
-      "line": 2820
+      "line": 2831
     },
     {
       "method": "POST",
       "path": "/api/shuffle/save",
       "provider": "src/index.js",
-      "line": 2833
+      "line": 2844
     },
     {
       "method": "GET",
       "path": "/api/champions",
       "provider": "src/index.js",
-      "line": 2905
+      "line": 2916
     },
     {
       "method": "POST",
       "path": "/api/admin/assign-role",
       "provider": "src/index.js",
-      "line": 2920
+      "line": 2931
     },
     {
       "method": "GET",
       "path": "/api/memberships",
       "provider": "src/index.js",
-      "line": 2994
+      "line": 3005
     },
     {
       "method": "POST",
       "path": "/api/memberships",
       "provider": "src/index.js",
-      "line": 3029
+      "line": 3040
     },
     {
       "method": "PUT",
       "path": "/api/memberships/:id",
       "provider": "src/index.js",
-      "line": 3076
+      "line": 3087
     },
     {
       "method": "POST",
       "path": "/api/memberships/extend",
       "provider": "src/index.js",
-      "line": 3121
+      "line": 3132
     },
     {
       "method": "POST",
       "path": "/api/memberships/:id/remind",
       "provider": "src/index.js",
-      "line": 3164
+      "line": 3175
     },
     {
       "method": "GET",
       "path": "/api/payments/history",
       "provider": "src/index.js",
-      "line": 3201
+      "line": 3212
     },
     {
       "method": "GET",
       "path": "/api/admin/accounting/payments",
       "provider": "src/index.js",
-      "line": 3219
+      "line": 3230
     },
     {
       "method": "DELETE",
       "path": "/api/admin/accounting/payments/:type/:id",
       "provider": "src/index.js",
-      "line": 3285
+      "line": 3296
     },
     {
       "method": "GET",
       "path": "/api/lms/courses",
       "provider": "src/index.js",
-      "line": 3315
+      "line": 3326
     },
     {
       "method": "GET",
       "path": "/api/groups/:id/substitutes",
       "provider": "src/index.js",
-      "line": 3320
+      "line": 3331
     },
     {
       "method": "GET",

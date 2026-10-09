@@ -6,11 +6,11 @@ import {createHash} from 'node:crypto';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),cli=process.argv[2];
 if(!cli||!fs.existsSync(cli))throw Error('Pass the installed Playwright CLI entry path');
 const runDir=path.join(root,'output','group-roster',new Date().toISOString().replace(/[:.]/g,'-'));fs.mkdirSync(runDir,{recursive:true});
-const packageFiles=['server/src/index.js','server/test/group-capacity-contract.mjs','server/test/group-roster-browser.js','server/test/run-group-roster-browser.mjs','src/api/api.ts','src/hooks/useGroupMemberActions.ts','src/pages/AdminGroupDetail.tsx','src/pages/GroupDetail.tsx','src/pages/GroupManagerDashboard.tsx'];
+const packageFiles=['server/test/web-browser-fixture.mjs','server/src/index.js','server/test/group-capacity-contract.mjs','server/test/group-roster-browser.js','server/test/run-group-roster-browser.mjs','src/api/api.ts','src/hooks/useGroupMemberActions.ts','src/pages/AdminGroupDetail.tsx','src/pages/GroupDetail.tsx','src/pages/GroupManagerDashboard.tsx'];
 const source=()=>{const hash=createHash('sha256');for(const file of packageFiles)hash.update(file+'\0').update(fs.readFileSync(path.join(root,file)));return hash.digest('hex');};
 const sourceBefore=source();
 const child=spawn(process.execPath,[path.join(root,'server/test/web-browser-fixture.mjs')],{cwd:root,windowsHide:true,env:{...process.env},stdio:['ignore','pipe','pipe']});
-const log=fs.createWriteStream(path.join(runDir,'fixture.log'));let stdout='',fixture;
+const log=fs.createWriteStream(path.join(runDir,'fixture.log'));let stdout='',fixture,report,reportPath;
 const exit=new Promise(resolve=>child.once('exit',code=>resolve(code)));
 const session='e4n-roster-'+Date.now();const call=args=>spawnSync(process.execPath,[cli,'-s='+session,...args],{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024,timeout:180000});
 try{
@@ -28,15 +28,21 @@ try{
   if(call(['open','about:blank']).status!==0)throw Error('Isolated browser open failed');
   const result=call(['run-code','--filename',codeFile]);fs.writeFileSync(path.join(runDir,'browser-cli.log'),(result.stdout||'')+(result.stderr||''));
   const payload=result.stdout?.match(/### Result\r?\n([^\r\n]+)/)?.[1];if(result.status!==0||!payload)throw Error('Browser returned no complete report');
-  const report=JSON.parse(payload),stateResponse=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(30000)});if(!stateResponse.ok)throw Error('Final DB read failed');
+  report=JSON.parse(payload);const stateResponse=await fetch(fixture.controlBase+'/state',{headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(30000)});if(!stateResponse.ok)throw Error('Final DB read failed');
   const state=await stateResponse.json(),deletions=id=>state.membershipHistory.filter(h=>h.user_id===id&&h.operation==='DELETE').length;
   const valid=!state.group.some(m=>m.user_id===fixture.ids.member||m.user_id===fixture.ids.applicant)&&state.group.some(m=>m.user_id===fixture.ids.president&&m.status==='ACTIVE')&&deletions(fixture.ids.applicant)===3&&deletions(fixture.ids.member)===1;
   report.cases.push({name:'final-roster-and-immutable-history',status:valid?'PASS':'FAIL'});report.passed=report.cases.filter(c=>c.status==='PASS').length;report.failed=report.cases.length-report.passed;
   report.commit=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).stdout.trim();report.finalState={group:state.group,applicantDeletions:deletions(fixture.ids.applicant),memberDeletions:deletions(fixture.ids.member)};
   report.sourceBefore=sourceBefore;report.sourceAfter=source();report.dirty=!!spawnSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8',windowsHide:true}).stdout.trim();
   if(report.sourceAfter!==sourceBefore){report.cases.push({name:'unchanged-package-source',status:'FAIL'});report.failed++;}
-  fs.writeFileSync(path.join(runDir,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({report:path.relative(root,path.join(runDir,'report.json')),passed:report.passed,failed:report.failed,releaseReady:false}));process.exitCode=report.failed?1:0;
+  reportPath=path.join(runDir,'report.json');process.exitCode=report.failed?1:0;
 }finally{
   call(['close']);if(fixture)await fetch(fixture.controlBase+'/stop',{method:'POST',headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)}).catch(()=>{});else child.kill();
-  await Promise.race([exit,new Promise(resolve=>setTimeout(resolve,15000))]);if(child.exitCode===null)child.kill();log.end();
+  const closed=await Promise.race([exit,new Promise(resolve=>setTimeout(()=>resolve('TIMEOUT'),15000))]);
+  if(child.exitCode===null)child.kill();log.end();
+  if(report){report.cleanup={status:closed===0?'PASS':'FAIL',fixtureExitCode:closed};
+    if(closed!==0){report.cases.push({name:'owned-fixture-cleanup',status:'FAIL'});report.failed++;process.exitCode=1;}
+    fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(JSON.stringify({report:path.relative(root,reportPath),passed:report.passed,failed:report.failed,cleanup:report.cleanup.status,releaseReady:false}));
+  }
+ 
 }

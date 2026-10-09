@@ -21,7 +21,8 @@
     "events:completion:inspect": "node src/cron/run-event-completion.js",
     "routes:inspect": "node tools/route-ownership.mjs",
     "test:routes": "node test/route-ownership-static.mjs && node test/route-ownership-contract.mjs",
-    "test:web-rehearsal": "node test/web-release-rehearsal.mjs"
+    "test:web-rehearsal": "node test/web-release-rehearsal.mjs",
+    "test:guild-roster-browser": "node test/run-guild-roster-browser.mjs"
   },
   "dependencies": {
     "@types/express": "^5.0.6",

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import pool from '../config/db.js';
 
 export const SCORE_RULES = {
@@ -31,13 +32,31 @@ export const SCORE_RULES = {
   },
 };
 
-function formatPeriodKey(date) {
+export function formatPeriodKey(date) {
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return null;
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 }
+
+export function isValidPeriodKey(period) {
+  return typeof period === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(period);
+}
+
+// Retrieve stored score adjustments from system_settings
+export const getStoredAdjustments = async (client = null) => {
+  const db = client || pool;
+  try {
+    const res = await db.query("SELECT value FROM system_settings WHERE key = 'score_adjustments'");
+    if (res.rowCount && res.rows[0].value) {
+      return JSON.parse(res.rows[0].value);
+    }
+  } catch (err) {
+    console.error('Error fetching score_adjustments:', err);
+  }
+  return [];
+};
 
 export const buildScoreEvents = async (userId, options = {}, client = null) => {
   const db = client || pool;
@@ -51,7 +70,7 @@ export const buildScoreEvents = async (userId, options = {}, client = null) => {
     cutoffDate.setMonth(cutoffDate.getMonth() - lookbackMonths);
   }
 
-  const [attRes, refRes, visRes, otoRes, eduRes] = await Promise.all([
+  const [attRes, refRes, visRes, otoRes, eduRes, adjustments] = await Promise.all([
     db.query(`
       SELECT 
         a.id, 
@@ -113,6 +132,7 @@ export const buildScoreEvents = async (userId, options = {}, client = null) => {
       WHERE user_id = $1
       ORDER BY completed_date DESC
     `, [userId]),
+    getStoredAdjustments(db),
   ]);
 
   const rawEvents = [];
@@ -225,7 +245,7 @@ export const buildScoreEvents = async (userId, options = {}, client = null) => {
     });
   }
 
-  // 5. Education Events (Ağırlık 0 ise 0 puanlı kayıtlar isteğe bağlı denetim için)
+  // 5. Education Events
   for (const row of eduRes.rows) {
     const points = Math.floor(parseFloat(row.hours || 0)) * SCORE_RULES.weights.EDUCATION_UNIT;
     if (points > 0) {
@@ -243,6 +263,26 @@ export const buildScoreEvents = async (userId, options = {}, client = null) => {
         idempotencyKey: `EDUCATION:${row.id}`,
         correctionOfId: null,
         description: `Eğitim Katılımı (${row.title || 'Eğitim'})`,
+      });
+    }
+  }
+
+  // 6. Score Adjustment Events (Gerekçeli İdari Düzeltmeler)
+  for (const adj of adjustments) {
+    if (adj.userId === userId) {
+      const occurredAt = new Date(adj.appliedAt);
+      rawEvents.push({
+        id: `adj-${adj.id}`,
+        userId,
+        sourceKind: 'ADJUSTMENT',
+        sourceId: adj.id,
+        periodKey: adj.periodKey,
+        points: adj.points,
+        ruleVersion: SCORE_RULES.version,
+        occurredAt: occurredAt.toISOString(),
+        idempotencyKey: adj.idempotencyKey || `ADJUSTMENT:${adj.id}`,
+        correctionOfId: adj.correctionOfId || null,
+        description: `İdari Puan Düzeltmesi (${adj.reason}): ${adj.points > 0 ? '+' : ''}${adj.points}`,
       });
     }
   }
@@ -319,6 +359,7 @@ export const getScoreLedger = async (userId, options = {}, client = null) => {
     VISITOR: 0,
     ONE_TO_ONE: 0,
     EDUCATION: 0,
+    ADJUSTMENT: 0,
   };
 
   let totalScoreRaw = 0;
@@ -394,6 +435,272 @@ export const reconcileUserScore = async (userId, client = null) => {
     activeEventsCount: activeEvents.length,
     ruleVersion: SCORE_RULES.version,
     lookbackMonths: SCORE_RULES.lookbackMonths,
+  };
+};
+
+/* --- P22: FINALIZATION & ADJUSTMENTS --- */
+
+// 1. Period Finalization (Ay Kapanışı / Dondurma)
+export const finalizePeriod = async (periodKey, adminUserId, client = null) => {
+  if (!isValidPeriodKey(periodKey)) {
+    throw new Error('Geçersiz dönem anahtarı (YYYY-MM formatı bekleniyor)');
+  }
+  const db = client || pool;
+  const settingKey = `period_finalized:${periodKey}`;
+
+  // Idempotency: Check if period is already finalized
+  const existing = await db.query('SELECT value FROM system_settings WHERE key = $1', [settingKey]);
+  if (existing.rowCount && existing.rows[0].value) {
+    const data = JSON.parse(existing.rows[0].value);
+    return {
+      isAlreadyFinalized: true,
+      ...data,
+    };
+  }
+
+  // Calculate scores for all members in this period
+  const membersRes = await db.query(`
+    SELECT u.id, u.name, u.profession, gm.group_id, g.name AS group_name
+    FROM users u
+    LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
+    LEFT JOIN groups g ON gm.group_id = g.id
+    WHERE u.account_status = 'ACTIVE'
+    ORDER BY u.name ASC
+  `);
+
+  const finalizedMembers = [];
+  let totalScoreSum = 0;
+  const colorDist = { GREEN: 0, YELLOW: 0, RED: 0, GREY: 0 };
+
+  for (const m of membersRes.rows) {
+    const ledger = await getScoreLedger(m.id, { period: periodKey }, db);
+    const score = ledger.totalScore;
+    const color = ledger.color;
+
+    colorDist[color] = (colorDist[color] || 0) + 1;
+    totalScoreSum += score;
+
+    finalizedMembers.push({
+      userId: m.id,
+      name: m.name,
+      profession: m.profession,
+      groupId: m.group_id || null,
+      groupName: m.group_name || null,
+      score,
+      color,
+      sources: ledger.bySource,
+      eventsCount: ledger.eventsCount,
+    });
+
+    // Record finalized snapshot into user_score_history
+    await db.query(`
+      INSERT INTO user_score_history (user_id, score, color, created_at)
+      VALUES ($1, $2, $3, NOW())
+    `, [m.id, score, color]);
+  }
+
+  const memberCount = finalizedMembers.length;
+  const averageScore = memberCount > 0 ? Number((totalScoreSum / memberCount).toFixed(1)) : 0;
+
+  const finalizationData = {
+    periodKey,
+    finalizedAt: new Date().toISOString(),
+    finalizedBy: adminUserId,
+    ruleVersion: SCORE_RULES.version,
+    memberCount,
+    isFinalized: true,
+    summary: {
+      averageScore,
+      colorDistribution: colorDist,
+    },
+    members: finalizedMembers,
+  };
+
+  // Store in system_settings
+  await db.query(`
+    INSERT INTO system_settings (key, value, updated_at)
+    VALUES ($1, $2, NOW())
+    ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+  `, [settingKey, JSON.stringify(finalizationData)]);
+
+  return {
+    isAlreadyFinalized: false,
+    ...finalizationData,
+  };
+};
+
+// 2. Apply Reasoned Score Adjustment (Gerekçeli Puan Düzeltme)
+export const applyScoreAdjustment = async ({ userId, periodKey, points, reason, adminUserId }, client = null) => {
+  if (!isValidPeriodKey(periodKey)) {
+    throw new Error('Geçersiz dönem anahtarı (YYYY-MM formatı bekleniyor)');
+  }
+  if (!reason || typeof reason !== 'string' || reason.trim().length < 3) {
+    throw new Error('Düzeltme gerekçesi en az 3 karakter olmalıdır');
+  }
+  const pts = parseInt(points, 10);
+  if (!Number.isInteger(pts) || pts === 0) {
+    throw new Error('Geçerli bir puan düzeltmesi girilmelidir (0 hariç)');
+  }
+
+  const db = client || pool;
+  const userCheck = await db.query('SELECT id, name FROM users WHERE id = $1', [userId]);
+  if (!userCheck.rowCount) throw new Error('Üye bulunamadı');
+
+  const adjustments = await getStoredAdjustments(db);
+  const adjId = randomUUID();
+  const newAdjustment = {
+    id: adjId,
+    userId,
+    periodKey,
+    points: pts,
+    reason: reason.trim(),
+    appliedBy: adminUserId,
+    appliedAt: new Date().toISOString(),
+    idempotencyKey: `ADJUSTMENT:${adjId}`,
+  };
+
+  adjustments.push(newAdjustment);
+
+  await db.query(`
+    INSERT INTO system_settings (key, value, updated_at)
+    VALUES ('score_adjustments', $1, NOW())
+    ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()
+  `, [JSON.stringify(adjustments)]);
+
+  // Recalculate member's live score
+  const updatedScore = await calculateMemberScore(userId, db);
+
+  return {
+    adjustment: newAdjustment,
+    updatedScore,
+  };
+};
+
+// 3. Monthly Scores Table / Leaderboard (Aylık Puan Tablosu)
+export const getMonthlyScores = async ({ periodKey = null, groupId = null } = {}, client = null) => {
+  const db = client || pool;
+  const targetPeriod = periodKey || formatPeriodKey(new Date());
+
+  if (!isValidPeriodKey(targetPeriod)) {
+    throw new Error('Geçersiz dönem anahtarı (YYYY-MM formatı bekleniyor)');
+  }
+
+  const settingKey = `period_finalized:${targetPeriod}`;
+  const finalCheck = await db.query('SELECT value FROM system_settings WHERE key = $1', [settingKey]);
+
+  let members = [];
+  let isFinalized = false;
+  let finalizedAt = null;
+
+  if (finalCheck.rowCount && finalCheck.rows[0].value) {
+    const data = JSON.parse(finalCheck.rows[0].value);
+    isFinalized = true;
+    finalizedAt = data.finalizedAt;
+    members = data.members;
+    if (groupId) {
+      members = members.filter(m => m.groupId === groupId);
+    }
+  } else {
+    // Dynamic calculation for unfinalized period
+    let sql = `
+      SELECT u.id, u.name, u.profession, gm.group_id, g.name AS group_name
+      FROM users u
+      LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.status = 'ACTIVE'
+      LEFT JOIN groups g ON gm.group_id = g.id
+      WHERE u.account_status = 'ACTIVE'
+    `;
+    const params = [];
+    if (groupId) {
+      params.push(groupId);
+      sql += ` AND gm.group_id = $${params.length}`;
+    }
+    sql += ' ORDER BY u.name ASC';
+
+    const usersRes = await db.query(sql, params);
+    for (const u of usersRes.rows) {
+      const ledger = await getScoreLedger(u.id, { period: targetPeriod }, db);
+      members.push({
+        userId: u.id,
+        name: u.name,
+        profession: u.profession,
+        groupId: u.group_id || null,
+        groupName: u.group_name || null,
+        period: targetPeriod,
+        score: ledger.totalScore,
+        color: ledger.color,
+        ruleVersion: SCORE_RULES.version,
+        sources: ledger.bySource,
+        eventsCount: ledger.eventsCount,
+        isFinalized: false,
+      });
+    }
+  }
+
+  // Sort by score DESC, then name ASC
+  members.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+
+  const totalMembers = members.length;
+  const totalScoreSum = members.reduce((sum, m) => sum + m.score, 0);
+  const averageScore = totalMembers > 0 ? Number((totalScoreSum / totalMembers).toFixed(1)) : 0;
+  const colorDistribution = { GREEN: 0, YELLOW: 0, RED: 0, GREY: 0 };
+  for (const m of members) colorDistribution[m.color] = (colorDistribution[m.color] || 0) + 1;
+
+  return {
+    period: targetPeriod,
+    isFinalized,
+    finalizedAt,
+    ruleVersion: SCORE_RULES.version,
+    memberCount: totalMembers,
+    summary: {
+      averageScore,
+      colorDistribution,
+    },
+    members,
+  };
+};
+
+// 4. Member Scorecard (Üye Karnesi)
+export const getMemberScorecard = async (userId, options = {}, client = null) => {
+  const db = client || pool;
+  const userRes = await db.query('SELECT id, name, profession, performance_score, performance_color, created_at FROM users WHERE id = $1', [userId]);
+  if (!userRes.rowCount) throw new Error('Üye bulunamadı');
+  const user = userRes.rows[0];
+
+  const lookbackPeriods = options.lookbackPeriods || 6;
+  const currentDate = new Date();
+  const periodsData = [];
+
+  for (let i = 0; i < lookbackPeriods; i++) {
+    const d = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() - i, 1));
+    const pKey = formatPeriodKey(d);
+    const ledger = await getScoreLedger(userId, { period: pKey }, db);
+
+    // Check if period was finalized
+    const finalRes = await db.query("SELECT value FROM system_settings WHERE key = $1", [`period_finalized:${pKey}`]);
+    const isFinal = finalRes.rowCount > 0;
+
+    periodsData.push({
+      period: pKey,
+      score: ledger.totalScore,
+      color: ledger.color,
+      eventsCount: ledger.eventsCount,
+      sources: ledger.bySource,
+      isFinalized: isFinal,
+    });
+  }
+
+  const allActiveLedger = await getScoreLedger(userId, { lookbackMonths: SCORE_RULES.lookbackMonths }, db);
+
+  return {
+    userId: user.id,
+    name: user.name,
+    profession: user.profession,
+    currentScore: user.performance_score,
+    currentColor: user.performance_color,
+    ruleVersion: SCORE_RULES.version,
+    sourcesSummary: allActiveLedger.bySource,
+    recentEvents: allActiveLedger.events.slice(0, 10),
+    periodsTrend: periodsData,
   };
 };
 

@@ -54,7 +54,7 @@ import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
-import { calculateMemberScore, getScoreLedger, reconcileUserScore } from './utils/scoring.js';
+import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard } from './utils/scoring.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
@@ -292,6 +292,70 @@ app.get('/api/reports/score-reconciliation', authenticateToken, async (req, res)
     res.json(report);
   } catch (e) {
     if (e.message === 'User not found') return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/reports/monthly-scores', authenticateToken, async (req, res) => {
+  try {
+    const report = await getMonthlyScores({
+      periodKey: req.query.period,
+      groupId: req.query.groupId,
+    });
+    res.json(report);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/reports/finalize-period', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Dönem kesinleştirme işlemi için yönetici yetkisi gereklidir' });
+    }
+    const { period } = req.body || {};
+    if (!period) {
+      return res.status(400).json({ error: 'Dönem belirtilmelidir (YYYY-MM)' });
+    }
+    const result = await finalizePeriod(period, req.user.id);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/reports/score-adjustment', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Puan düzeltme işlemi için yönetici yetkisi gereklidir' });
+    }
+    const { userId, period, points, reason } = req.body || {};
+    if (!userId || !period || points === undefined || !reason) {
+      return res.status(400).json({ error: 'Eksik parametre: userId, period, points ve reason zorunludur' });
+    }
+    const result = await applyScoreAdjustment({
+      userId,
+      periodKey: period,
+      points,
+      reason,
+      adminUserId: req.user.id,
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.get('/api/reports/scorecard/:userId', authenticateToken, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId === 'me' ? req.user.id : req.params.userId;
+    if (targetUserId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Bu üyenin karnesini görüntüleme yetkiniz yok' });
+    }
+    const scorecard = await getMemberScorecard(targetUserId);
+    res.json(scorecard);
+  } catch (e) {
+    if (e.message === 'Üye bulunamadı') return res.status(404).json({ error: e.message });
     res.status(500).json({ error: e.message });
   }
 });

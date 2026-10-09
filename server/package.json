@@ -19,6 +19,7 @@
     "test:champion-job": "node test/champion-calculation-contract.mjs",
     "test:subscription-reminder": "node test/subscription-reminder-contract.mjs",
     "test:score-ledger": "node test/score-ledger-contract.mjs",
+    "test:score-finalization": "node test/monthly-score-finalization-contract.mjs",
     "events:completion:inspect": "node src/cron/run-event-completion.js",
     "routes:inspect": "node tools/route-ownership.mjs",
     "test:routes": "node test/route-ownership-static.mjs && node test/route-ownership-contract.mjs",

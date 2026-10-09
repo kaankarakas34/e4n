@@ -715,6 +715,22 @@ export const api = {
     const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
     return await request(`/reports/score-reconciliation${qs}`);
   },
+  async getMonthlyScores(params?: { period?: string; groupId?: string }) {
+    const search = new URLSearchParams();
+    if (params?.period) search.set('period', params.period);
+    if (params?.groupId) search.set('groupId', params.groupId);
+    const qs = search.toString();
+    return await request(`/reports/monthly-scores${qs ? `?${qs}` : ''}`);
+  },
+  async finalizePeriod(period: string) {
+    return await request('/reports/finalize-period', { method: 'POST', body: JSON.stringify({ period }) });
+  },
+  async adjustMemberScore(data: { userId: string; period: string; points: number; reason: string }) {
+    return await request('/reports/score-adjustment', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async getScorecard(userId: string = 'me') {
+    return await request(`/reports/scorecard/${encodeURIComponent(userId)}`);
+  },
 
   // Meeting Requests (One-to-Ones)
   async getMyMeetingRequests(userId: string) {

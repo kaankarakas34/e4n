@@ -1,5 +1,10 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel teslim — P22 / E4N-94 tamamlandı
+
+- **E4N-94 (P22) Done:** Ay sonlarında puanların dondurulması motoru (`finalizePeriod` -> `system_settings` üzerinde `period_finalized:${periodKey}` kaydı, idempotent replay), gerekçeli idari puan düzeltmesi (`applyScoreAdjustment` -> `score_adjustments`, canlı skor ve `sourceKind: ADJUSTMENT` defter entegrasyonu), aylık puanlar/liderlik tablosu (`GET /api/reports/monthly-scores`) ve son 6 aylık UTC-safe üye karnesi (`GET /api/reports/scorecard/:userId`) tamamlandı.
+- Testler: `server/test/monthly-score-finalization-contract.mjs`, `server/test/score-ledger-contract.mjs`, `server/test/route-ownership-contract.mjs` (193 rota, 30 sağlayıcı), `npm run check`, `npm run build` ve `node server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu) PASS. Kanıt [[E4N/09-Dogrulama/P22-Aylik-Puan-Kesinlestirme-ve-Tablo-2026-10-09]].
+
 ## Güncel teslim — P21 / E4N-93 tamamlandı
 
 - **E4N-93 (P21) Done:** Aylık puan olay defteri (`score-ledger`) ve tekrar güvenliği (`idempotency_key`) kuruldu.

@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "runId": "ff57a1fc-ae76-4ceb-b5a1-d1bb97eb7bbe",
+  "startedAt": "2026-10-09T07:15:13.091Z",
+  "scope": "Fresh existing non-LMS web API/data/build/browser rehearsal",
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "releaseReady": false,
+  "technicalPass": true,
+  "steps": [
+    {
+      "name": "api-data",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:15:13.751Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-09T07:19:58.319Z",
+      "log": "output\\web-rehearsal\\2026-10-09T07-15-13-091Z\\api-data.log"
+    },
+    {
+      "name": "build",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:19:58.322Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-09T07:20:46.071Z",
+      "log": "output\\web-rehearsal\\2026-10-09T07-15-13-091Z\\build.log"
+    },
+    {
+      "name": "fixture",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:20:46.072Z",
+      "descriptor": "output\\web-browser\\2026-10-09T07-20-46-634Z\\fixture.json"
+    },
+    {
+      "name": "browser",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:20:53.166Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-09T07:23:52.736Z",
+      "log": "output\\web-rehearsal\\2026-10-09T07-15-13-091Z\\browser.log"
+    },
+    {
+      "name": "group-roster-browser",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:23:52.748Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-09T07:24:50.539Z",
+      "log": "output\\web-rehearsal\\2026-10-09T07-15-13-091Z\\group-roster-browser.log"
+    },
+    {
+      "name": "guild-roster-browser",
+      "status": "PASS",
+      "startedAt": "2026-10-09T07:24:50.542Z",
+      "exitCode": 0,
+      "finishedAt": "2026-10-09T07:25:47.525Z",
+      "log": "output\\web-rehearsal\\2026-10-09T07-15-13-091Z\\guild-roster-browser.log"
+    }
+  ],
+  "gates": [
+    {
+      "id": "D01-D04",
+      "status": "BLOCKED",
+      "scope": "Monthly scoring, removal and application ban policy"
+    },
+    {
+      "id": "D05-D08-D10",
+      "status": "BLOCKED",
+      "scope": "Service classification, final admission, company proof and remaining membership policy"
+    },
+    {
+      "id": "SHUFFLE-CUTOFF",
+      "status": "BLOCKED",
+      "scope": "Exact payment cutoff, grace start, restricted rights and reopening policy"
+    },
+    {
+      "id": "P09-P10",
+      "status": "OPEN",
+      "scope": "Live schema adoption and group-scoped roles; database capacity invariant covered by migration 0016"
+    },
+    {
+      "id": "P26-P29",
+      "status": "OPEN",
+      "scope": "Historical attendance/ticket interpretation and full shuffle/history/notification acceptance"
+    },
+    {
+      "id": "BROWSER",
+      "status": "PASS",
+      "scope": "Fresh owned web, group and guild fixtures; actual web/API/database and final state reconciliation"
+    },
+    {
+      "id": "SEC-P38",
+      "status": "DEFERRED",
+      "scope": "Sprint 6 broad security and production release gate"
+    },
+    {
+      "id": "MOBILE-LMS",
+      "status": "EXCLUDED",
+      "scope": "Sprint 7 mobile and Sprint 8 course/exam work"
+    },
+    {
+      "id": "SOURCE",
+      "status": "PASS",
+      "scope": "Same commit and source/dependency/test/config digest before and after"
+    }
+  ],
+  "sourceBefore": {
+    "commit": "d3c6e96a313349ae195895eccdc5782183e14126",
+    "sha256": "f3419dc995ce30ff8aa9c480606c388b31319c7db132ff19a0d1ff81b359170e",
+    "fileCount": 328,
+    "dirty": false
+  },
+  "api": {
+    "report": "output\\web-acceptance\\2026-10-09T07-15-13-892Z\\report.json",
+    "passed": 39,
+    "failed": 0
+  },
+  "browser": {
+    "report": "output\\web-browser\\2026-10-09T07-20-46-634Z\\browser-report.json",
+    "passed": 89,
+    "failed": 0
+  },
+  "roster": [
+    {
+      "scope": "group",
+      "report": "output\\group-roster\\2026-10-09T07-23-52-945Z\\report.json",
+      "passed": 7,
+      "failed": 0,
+      "cleanup": {
+        "status": "PASS",
+        "fixtureExitCode": 0
+      }
+    },
+    {
+      "scope": "guild",
+      "report": "output\\guild-roster\\2026-10-09T07-24-50-638Z\\report.json",
+      "passed": 6,
+      "failed": 0,
+      "cleanup": {
+        "status": "PASS",
+        "fixtureExitCode": 0
+      }
+    }
+  ],
+  "browserTotal": 102,
+  "sourceAfter": {
+    "commit": "d3c6e96a313349ae195895eccdc5782183e14126",
+    "sha256": "f3419dc995ce30ff8aa9c480606c388b31319c7db132ff19a0d1ff81b359170e",
+    "fileCount": 328,
+    "dirty": false
+  },
+  "cleanup": {
+    "fixtureExitCode": 0,
+    "status": "PASS"
+  },
+  "finishedAt": "2026-10-09T07:25:47.944Z",
+  "localReport": "output/web-rehearsal/2026-10-09T07-15-13-091Z/report.json",
+  "earlierAttempt": {
+    "report": "output/web-rehearsal/2026-10-09T07-10-13-424Z/report.json",
+    "technicalPass": false,
+    "apiPassed": 38,
+    "apiFailed": 1,
+    "reason": "isolated-smoke expected500 for unsupported guild REJECTED; current route returns400 without changing the row. Corrected and rerun on frozen source."
+  }
+}

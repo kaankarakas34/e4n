@@ -98,11 +98,18 @@ async function main() {
   gateway=createServer(async(req,res)=>{
     let raw=''; for await(const part of req)raw+=part;
     const body=JSON.parse(raw);providerCalls++;
+    if(process.argv[2] && req.url==='/fixture/settle') {
+      assert.ok(results.has(body.invoice),'Only an existing isolated invoice may settle');
+      results.set(body.invoice,{...results.get(body.invoice),status_code:100,transaction_status:'Completed'});
+      res.end('ok');return;
+    }
     if(req.url==='/api/paySmart3D') {
       dispatches++;
       results.set(body.invoice_id,{status_code:69,transaction_status:'Pending',transaction_type:'Auth',invoice_id:body.invoice_id,transaction_amount:body.total});
       if(payRejectNext){payRejectNext=false;res.writeHead(502,{'Content-Type':'text/plain'});res.end('Synthetic lost response');return;}
-      res.setHeader('Content-Type','text/html');res.end('<form>Local synthetic 3DS</form>');return;
+      res.setHeader('Content-Type','text/html');res.end(process.argv[2]
+        ? `<button id="finish">Test bankasını tamamla</button><script>document.getElementById('finish').onclick=()=>fetch('http://127.0.0.1:${gateway.address().port}/fixture/settle',{method:'POST',body:JSON.stringify({invoice:'${body.invoice_id}'})}).then(()=>window.opener.postMessage({invoice_id:'${body.invoice_id}',status:'success'},'*'));</script>`
+        : '<form>Local synthetic 3DS</form>');return;
     }
     res.setHeader('Content-Type','application/json');
     if(req.url==='/api/token'){if(tokenRejectNext){tokenRejectNext=false;res.end(JSON.stringify({status_code:1,status_description:'Synthetic rejection'}));return;}res.end(JSON.stringify({status_code:100,data:{token:'synthetic-provider-token'}}));return;}
@@ -296,6 +303,7 @@ async function main() {
   const fresh=await create();await settleMembership(fresh);
   const freshState=(await pool.query('SELECT subscription_end_date,account_status FROM users WHERE id=$1',[ids[0]])).rows[0];
   assert.ok(freshState.subscription_end_date>new Date());assert.equal(freshState.account_status,'ACTIVE');
+  if(process.argv[2])await (await import('./payment-browser.mjs')).verifyPaymentBrowser({cli:process.argv[2],pool,userId:ids[0],apiBase:base.replace(/\/api$/,'')});
   console.log('Local gateway + Express + PostgreSQL: ownership, receipt boundary, provider proof/hash/amount/preauth, callback race/repeat/late-fail, rollback/retry, membership/event/guest effects passed. No real provider, payment or email.');
 }
 let exitCode=0;

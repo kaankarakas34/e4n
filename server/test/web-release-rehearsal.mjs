@@ -21,7 +21,7 @@ const env={...process.env,NODE_ENV:'test',DOTENV_CONFIG_PATH:path.join(root,'ser
 for(const key of ['DATABASE_URL','POSTGRES_URL','SUPABASE_DB_URL','SMTP_PASSWORD','SMTP_PASS','SUPABASE_SERVICE_ROLE_KEY'])delete env[key];
 function git(args){const r=spawnSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true});if(r.status!==0)throw Error('Could not record source identity');return r.stdout;}
 function source(){
-  const paths=git(['ls-files','-z','--cached','--others','--exclude-standard','--','src','server/src','server/test','server/tools','server/supabase','server/migrations','package.json','package-lock.json','server/package.json','server/package-lock.json','tsconfig*','vite.config.*','tailwind.config.*','postcss.config.*']);
+  const paths=git(['ls-files','-z','--cached','--others','--exclude-standard','--','src','shared','server/src','server/test','server/tools','server/supabase','server/migrations','package.json','package-lock.json','server/package.json','server/package-lock.json','tsconfig*','vite.config.*','tailwind.config.*','postcss.config.*']);
   const files=[...new Set(paths.split('\0').filter(Boolean))].sort();
   const hash=createHash('sha256');
   for(const file of files){hash.update(file+'\0');hash.update(fs.existsSync(path.join(root,file))?fs.readFileSync(path.join(root,file)):Buffer.from('[deleted]'));hash.update('\0');}
@@ -88,6 +88,16 @@ try{
     report.roster.push({scope:name,report:child.path,passed:child.data.passed,failed:child.data.failed,cleanup:child.data.cleanup});save();
   }
   report.browserTotal=report.browser.passed+report.roster.reduce((sum,row)=>sum+row.passed,0);
+  // New account and payment/application stories are independent disposable fixtures.
+  report.startup=[];
+  for(const [name,script] of [['registration','normal-registration-contract.mjs'],['subscription-site','payment-flow.mjs'],['application','group-application-workflow-contract.mjs']]) {
+    const child=outputReport((await step(name+'-browser',[path.join(root,'server/test',script),cli])).stdout);
+    if(child.data.failed!==0||child.data.cases.length!==child.data.passed
+        ||!child.data.cases.every(c=>c.status==='PASS')||!child.data.finalDatabase
+        ||child.data.productionWrites!==false||child.data.realMail!==false||child.data.realPayment!==false)throw Error(name+' startup evidence is incomplete');
+    report.startup.push({scope:name,report:child.path,passed:child.data.passed,failed:child.data.failed});save();
+  }
+  report.browserTotal+=report.startup.reduce((sum,row)=>sum+row.passed,0);
   report.gates=report.gates.map(g=>g.id==='BROWSER'?{...g,status:'PASS',scope:'Fresh owned web, group, guild and membership actor fixtures; actual web/API/database and final state reconciliation'}:g);
   report.sourceAfter=source();
   if(report.sourceAfter.sha256!==report.sourceBefore.sha256||report.sourceAfter.commit!==report.sourceBefore.commit)throw Error('Source changed during rehearsal; results cannot be combined');

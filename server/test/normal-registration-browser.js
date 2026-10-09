@@ -20,7 +20,7 @@ async page=>{
  });
  await test('old-community-link-preserves-query-public-header',async()=>{
   await page.goto(f.webBase+'/auth/register-community?token=legacy-source');await page.waitForURL('**/auth/register?token=legacy-source');await page.getByLabel('VKN veya TCKN').waitFor();
-  await page.evaluate(()=>localStorage.clear());await page.goto(f.webBase+'/');const link=page.getByRole('link',{name:'Üye Ol',exact:true});await link.waitFor();check(await link.getAttribute('href')==='/auth/register','Wrong signup target');
+  await page.evaluate(()=>localStorage.clear());await page.goto(f.webBase+'/');const link=page.getByRole('link',{name:'Üye Ol',exact:true}).first();await link.waitFor();check(await link.getAttribute('href')==='/auth/register','Wrong signup target');
  });
  return {passed:cases.filter(c=>c.status==='PASS').length,failed:cases.filter(c=>c.status==='FAIL').length,cases,productionWrites:false,realMail:false,realPayment:false};
 }

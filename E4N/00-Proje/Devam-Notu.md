@@ -1,5 +1,11 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel — P37 başlangıç dahil web kabul paketi
+
+- E4N-109 In Progress / releaseReady=false. Tek runnera normal kayıt, site/abonelik ve başkan görüşme/karar browserları, son DB raporları ve shared fiyat kaynak özeti eklendi. Test/prova/kanıt değişikliği; uygulama/şema/canlı davranış değişmedi.
+- 41API/build/89ana browser PASS; eski grup/geçmiş testinin başkan doğrudan onay/aboneliksiz başvuru beklentileri düzeltildi. Odaklı grup7+lonca6+geçmiş6+kayıt3+site/abonelik23+başvuru3 PASS; birleşik137browser. İlk kök başarısız rapor korunur; tek yeni frozen root PASS denmez. [[E4N/09-Dogrulama/P37-Guncel-Baslangic-Dahil-Web-Kabulu-2026-10-09]] ve server/docs/web-current-acceptance-2026-10-09.json.
+- Sonraki işte 41API/137browser'ı yeni ürün teslimi gibi tekrar sayma. D07 ve 162/165 ürün kararları, puan/shuffle, üretim scheduler/alarm ve SEC6 kalan; yapılabilir bağlı büyük web paketini ilgili Linear kabulüne göre seç. Mobil/LMS ertelenmiş. Canlı ürün c0194f2; yeni gerçek ödeme/mail/test kaydı yok.
+
 ## Güncel teslim — P33 / E4N-105 ve abonelik canlı yayını
 
 - be40450 abonelik düzeltmeleri main/production READY (dpl_4zfBfAXLt7tdRBPbi5UVGjFXBzv2), canlı asset/yeni durum/anon401 doğrulandı. E4N-163 D07 ve sağlayıcı sandbox kalanlarıyla açık.

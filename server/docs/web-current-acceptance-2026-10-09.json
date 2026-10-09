@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "scope": "Current non-LMS web acceptance; combined verified runs after test compatibility repairs",
+  "baseCommit": "e3350baf95e0e2fcebc55d37c26df2fd85680534",
+  "applicationSourceUnchangedAgainstBase": true,
+  "applicationSha256": "c2373e1c3cdcb0f0b07399edb0d805cd34775724eb0815e3102e67a7d774b34e",
+  "applicationFileCount": 294,
+  "api": {
+    "report": "output\\web-acceptance\\2026-10-09T18-18-53-104Z\\report.json",
+    "passed": 41,
+    "failed": 0
+  },
+  "build": "PASS",
+  "browserTotal": 137,
+  "browserFailed": 0,
+  "evidence": [
+    {
+      "scope": "existing-web",
+      "report": "output\\web-browser\\2026-10-09T18-25-39-202Z\\browser-report.json",
+      "passed": 89,
+      "failed": 0
+    },
+    {
+      "scope": "run-group-roster-browser.mjs",
+      "report": "output\\group-roster\\2026-10-09T18-36-16-883Z\\report.json",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "scope": "run-guild-roster-browser.mjs",
+      "report": "output\\guild-roster\\2026-10-09T18-37-01-621Z\\report.json",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "scope": "run-history-context-browser.mjs",
+      "report": "output\\history-context\\2026-10-09T18-40-13-847Z\\report.json",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "scope": "normal-registration-contract.mjs",
+      "report": "output\\normal-registration-browser-1791571267065\\report.json",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "scope": "group-application-workflow-contract.mjs",
+      "report": "output\\group-application-browser-1791571293981\\report.json",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "scope": "public-site-and-subscription",
+      "report": "output/payment-browser/2026-10-09T18-34-55-423Z/report.json",
+      "passed": 23,
+      "failed": 0
+    }
+  ],
+  "initialRoot": {
+    "report": "output/web-rehearsal/2026-10-09T18-18-51-943Z/report.json",
+    "technicalPass": false,
+    "reason": "Legacy test expected superseded president approval UI; preserved as failed"
+  },
+  "singleFrozenRootPass": false,
+  "releaseReady": false,
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false,
+  "remaining": [
+    "D07 grace/restrictions/reopening and provider sandbox",
+    "Membership reference method and president exceptions",
+    "Score/removal/ban and shuffle decisions",
+    "Production scheduler/alerts and broad Sprint 6 security"
+  ],
+  "finishedAt": "2026-10-09T18:42:59.639Z"
+}

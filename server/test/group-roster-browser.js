@@ -19,20 +19,20 @@ async page=>{
     await page.getByRole('button',{name:'Giriş Yap',exact:true}).click();await page.waitForURL('**/dashboard');
   }
   async function reapply(){
-    await login('applicant');const result=await page.evaluate(async group=>{const token=JSON.parse(localStorage.getItem('auth-storage')).state.token;const r=await fetch('http://localhost:4005/api/groups/'+group+'/join',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'});return r.status;},f.ids.group);check(result===200,'Fixture reapplication failed');
+    const result=await page.request.post(f.controlBase+'/legacy-roster-request',{headers:{'x-fixture-key':f.secret}});check(result.status()===200,'Legacy fixture seed failed');
   }
   const row=name=>page.locator('tr').filter({hasText:'Browser '+name}).first();
   const memberPath='/api/groups/'+f.ids.group+'/members/';
-  await test('manager-requested-visible-capacity-error',async()=>{
-    await login('president');await page.goto(f.webBase+'/group-management');await page.getByRole('button',{name:/Başvurular/}).click();
-    await page.getByText('Browser applicant',{exact:true}).waitFor();await page.getByRole('button',{name:'Onayla',exact:true}).click();
+  await test('admin-legacy-requested-visible-capacity-error',async()=>{
+    await login('admin');await page.goto(f.webBase+'/admin/groups/'+f.ids.group);
+    await row('applicant').waitFor();await page.getByRole('button',{name:'Onayla',exact:true}).click();
     await page.getByRole('alert').filter({hasText:'Grup dolu'}).waitFor();check(await page.getByRole('button',{name:'Reddet',exact:true}).isDisabled(),'Unverified operation was retryable');
     const writes=requests.filter(r=>r.method==='PUT'&&r.path===memberPath+f.ids.applicant).length;
     await page.getByRole('button',{name:'Listeyi kontrol et',exact:true}).click();await page.getByRole('button',{name:'Reddet',exact:true}).waitFor();
     check(requests.filter(r=>r.method==='PUT'&&r.path===memberPath+f.ids.applicant).length===writes,'Read reconciliation repeated mutation');
   });
-  await test('manager-rejects-requested-through-delete',async()=>{
-    await page.getByRole('button',{name:'Reddet',exact:true}).click();await page.getByText('Bekleyen grup katılım isteği yok.',{exact:true}).waitFor();
+  await test('admin-removes-legacy-requested-through-delete',async()=>{
+    await page.getByRole('button',{name:'Reddet',exact:true}).click();await row('applicant').waitFor({state:'detached'});
     check(requests.filter(r=>r.method==='DELETE'&&r.path===memberPath+f.ids.applicant&&r.status===200).length===1,'Rejection did not delete exact request once');
   });
   await test('admin-invalid-removal-ack-read-reconciliation',async()=>{

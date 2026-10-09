@@ -72,6 +72,18 @@ try{
     if(req.url==='/connections-seed'&&req.method==='POST'){
       await pool.query("INSERT INTO friend_requests(sender_id,receiver_id,status) VALUES($1,$2,'ACCEPTED'),($1,$3,'PENDING') ON CONFLICT(sender_id,receiver_id) DO NOTHING",[ids.member,ids.admin,ids.applicant]);res.end('seeded');return;
     }
+    if(req.url==='/legacy-roster-request'&&req.method==='POST'){
+      // Preserve a historical REQUESTED row without pretending that the new
+      // subscription/interview application flow can be bypassed by a user.
+      await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'REQUESTED','MEMBER')",[ids.group,ids.applicant]);
+      res.end('seeded');return;
+    }
+    if(req.url==='/history-application-ready'&&req.method==='POST'){
+      // Prepare an eligible paid applicant and one free seat in this owned fixture.
+      await pool.query("UPDATE users SET subscription_plan='1_MONTH',subscription_end_date=now()+interval '1 month' WHERE id=$1",[ids.applicant]);
+      await pool.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=(SELECT user_id FROM group_members WHERE group_id=$1 AND user_id NOT IN ($2,$3,$4) LIMIT 1)',[ids.group,ids.member,ids.president,ids.applicant]);
+      res.end('ready');return;
+    }
     if(req.url==='/connections-revoke'&&req.method==='POST'){
       await pool.query("UPDATE friend_requests SET status='REJECTED' WHERE sender_id=$1 AND receiver_id=$2",[ids.member,ids.admin]);res.end('updated');return;
     }

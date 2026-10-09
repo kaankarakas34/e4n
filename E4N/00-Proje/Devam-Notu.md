@@ -23,3 +23,5 @@ Bu not+git → yalnız ilgili Linear görevi/karar/kod. Linear durum kaynağı; 
 
 ## En son kullanıcı düzeltmesi — dört zorunlu şirket alanı
 - E4N-161: şirket adı, VKN/TCKN, vergi dairesi ve şirket/fatura adresi zorunlu. Web/API, profil-admin boşaltma engeli ve visitor dönüşümü düzeltildi. Yeni migration27, önceki26 checksum değişmedi; eksik legacy veriler UUID-only preflight v2 raporunda, uydurma yok. API/PG17 + browser3/3/finalDB, self-profile/upgrade/repeat, build ve local error-level advisor PASS. Kanıt aynı BAŞ-01 notunda; bütün web sürüm kabulü sayılmaz. Canlı migration/deploy yok. Sonraki162 referans seçimi yanıtı bekliyor;164 keşif hazırlığı bağımsız.
+
+- Son login düzeltmesi: topluluk üyeliği alanı kaldırıldı; Üye Ol doğrudan /auth/register normal kayıt formuna gider. Kanıt aynı BAŞ-01 notunda.

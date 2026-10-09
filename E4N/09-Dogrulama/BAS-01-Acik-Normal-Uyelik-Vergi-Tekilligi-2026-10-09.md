@@ -52,3 +52,7 @@ Kullanıcının netleştirdiği kayıt koşulu: şirket adı, VKN/TCKN, vergi da
 - Üretimde migration, dağıtım, gerçek mail veya ödeme yapılmadı. Önceki geniş kabul kanıtları tarihsel; burada bütün39API/102browser testlerinin yeniden çalıştığı iddia edilmiyor.
 
 - Düzeltmenin production build'i PASS. İlgili React form erişilebilirliği/required alanları tarayıcıda doğrulandı; ziyaretçi dönüşümünde boş/cancel işlem oluşturmaz. Test harness'lerinin fresh/upgrade/repeat beklentileri sürüm27'ye taşındı.
+
+## Login kayıt alanı düzeltmesi
+- Kullanıcı isteğiyle giriş ekranındaki eski topluluk üyeliği başlığı/açıklaması kaldırıldı. Normal üyelik bilgilerini açıklayan Üye Ol bağlantısı doğrudan /auth/register rotasına gider; gerçek Link, klavye odağı ve mevcut görsel düzen kullanılır. Eski link için geriye uyumluluk yönlendirmesi korunur. Bu aynı E4N-161 kayıt akışının düzeltmesidir, ayrı küçük görev değildir.
+- Doğrulama: tsc -b PASS; login içinde eski topluluk/register-community metni yok, doğrudan normal register Link hedefi ve App rotası kontrol edildi. Bu görsel/metin değişikliği için API/DB veya bütün browser kabulü yeniden çalıştırılmadı.

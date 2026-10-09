@@ -166,27 +166,23 @@ export function Login() {
 
           <div className="mt-8 pt-8 border-t border-gray-100">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center mb-6">
-              Kayıt ve Katılım Seçenekleri
+              Henüz hesabınız yok mu?
             </h3>
             
             <div className="max-w-md mx-auto">
-              {/* Option 2: Community Membership */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-1">Ücretsiz topluluk üyesi ol</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed mb-1">
-                    Etkinliklerimize katıl ve haberdar ol.
+                  <h4 className="text-sm font-bold text-slate-900 mb-1">E4N üyesi olun</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                    Şirket adı, VKN/TCKN, vergi dairesi ve adres bilgilerinizi girerek üyeliğinizi oluşturun.
                   </p>
-                  <span className="text-[10px] text-red-600 font-bold block mb-4">
-                    * Ücretsiz topluluk üyeliği, kulüp üyeliği değildir.
-                  </span>
                 </div>
-                <Button
-                  onClick={() => navigate('/auth/register-community')}
-                  className="w-full text-xs font-bold py-2 rounded-lg bg-red-600 hover:bg-red-600 border-none text-white shadow-sm"
+                <Link
+                  to="/auth/register"
+                  className="w-full text-center text-xs font-bold py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                 >
-                  Topluluk Üyesi Ol
-                </Button>
+                  Üye Ol
+                </Link>
               </div>
             </div>
           </div>

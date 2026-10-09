@@ -57,7 +57,7 @@ export async function enforceGroupCapacity(client, ids) {
 }
 export function sendGroupMutationError(res, error) {
   const companyError=companyWriteError(error);if(companyError)return res.status(companyError.status).json(companyError);
-  if (error.status) return res.status(error.status).json({ error: error.message, code: error.code });
+  if (error.status) return res.status(error.status).json({ error: error.message, code: error.code, ...(error.daysLeft !== undefined ? { daysLeft: error.daysLeft, bannedUntil: error.bannedUntil, removalCount: error.removalCount } : {}) });
   if (error.code === '23514' && error.constraint === 'group_members_capacity_check') {
     return res.status(409).json({ error:'Grup dolu: başkan hariç en fazla 35 üye kabul edilebilir.', code:'GROUP_CAPACITY_FULL' });
   }

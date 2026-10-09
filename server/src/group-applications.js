@@ -42,17 +42,27 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   if(result.mailId)await deliverApplicationMail(pool,result.mailId).catch(()=>{});
   delete result.mailId;res.json(result);
  }catch(e){if(c)await c.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,e);}finally{c?.release();}};
- app.get('/api/group-discovery',authenticateToken,route(async(c,req)=>{
-  if(Object.keys(req.query).length)throw groupError('INVALID_REQUEST','Geçersiz filtre.',400);
-  const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date FROM users WHERE id=$1',[req.user.id])).rows[0];
-  const groups=(await c.query(`SELECT g.id,g.name,to_jsonb(g)->>'city' city,to_jsonb(g)->>'meeting_time' meeting_time,g.meeting_dates,
-   COALESCE((SELECT json_agg(json_build_object('id',u.id,'name',u.name,'profession',u.profession,'company',u.company,'president',gm.role='PRESIDENT' OR u.role='PRESIDENT' OR to_jsonb(u)->>'group_title'='PRESIDENT') ORDER BY u.name,u.id) FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=g.id AND gm.status='ACTIVE'),'[]'::json) members,
-   (SELECT status FROM group_members WHERE group_id=g.id AND user_id=$1) own_status,
-   (SELECT state FROM group_applications WHERE group_id=g.id AND user_id=$1) application_state
-   FROM groups g WHERE g.status='ACTIVE' ORDER BY g.name,g.id LIMIT 501`,[req.user.id])).rows;
-  if(groups.length>500)throw groupError('CATALOG_LIMIT','Grup listesi sınırı aşıldı.',503);
-  return {ownerId:req.user.id,hasSubscription:!!subscribed(u),geographyEnabled:false,groups:groups.map(g=>{const presidents=g.members.filter(m=>m.president);const count=g.members.length-presidents.length;return {...g,member_count:count,capacity:35,available_seats:Math.max(0,35-count),president:presidents.length===1?presidents[0].name:null,president_ready:presidents.length===1};})};
- }));
+  app.get('/api/group-discovery',authenticateToken,route(async(c,req)=>{
+   if(Object.keys(req.query).length)throw groupError('INVALID_REQUEST','Geçersiz filtre.',400);
+   const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date FROM users WHERE id=$1',[req.user.id])).rows[0];
+   const removalStats=(await c.query("SELECT count(*)::int AS removal_count, max(recorded_at) AS last_removed_at FROM group_membership_history WHERE user_id=$1 AND operation='DELETE' AND operation_context->>'action'='MEMBER_REMOVAL'",[req.user.id])).rows[0];
+   let removalBan={active:false,daysLeft:0,bannedUntil:null,removalCount:removalStats?.removal_count||0};
+   if(removalStats&&removalStats.removal_count>=2&&removalStats.last_removed_at){
+     const daysSince=(Date.now()-new Date(removalStats.last_removed_at).getTime())/(1000*60*60*24);
+     if(daysSince<240){
+       const daysLeft=Math.ceil(240-daysSince);
+       const bannedUntil=new Date(new Date(removalStats.last_removed_at).getTime()+240*24*60*60*1000).toISOString();
+       removalBan={active:true,daysLeft,bannedUntil,removalCount:removalStats.removal_count};
+     }
+   }
+   const groups=(await c.query(`SELECT g.id,g.name,to_jsonb(g)->>'city' city,to_jsonb(g)->>'meeting_time' meeting_time,g.meeting_dates,
+    COALESCE((SELECT json_agg(json_build_object('id',u.id,'name',u.name,'profession',u.profession,'company',u.company,'president',gm.role='PRESIDENT' OR u.role='PRESIDENT' OR to_jsonb(u)->>'group_title'='PRESIDENT') ORDER BY u.name,u.id) FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=g.id AND gm.status='ACTIVE'),'[]'::json) members,
+    (SELECT status FROM group_members WHERE group_id=g.id AND user_id=$1) own_status,
+    (SELECT state FROM group_applications WHERE group_id=g.id AND user_id=$1) application_state
+    FROM groups g WHERE g.status='ACTIVE' ORDER BY g.name,g.id LIMIT 501`,[req.user.id])).rows;
+   if(groups.length>500)throw groupError('CATALOG_LIMIT','Grup listesi sınırı aşıldı.',503);
+   return {ownerId:req.user.id,hasSubscription:!!subscribed(u),geographyEnabled:false,removal_ban:removalBan,groups:groups.map(g=>{const presidents=g.members.filter(m=>m.president);const count=g.members.length-presidents.length;return {...g,member_count:count,capacity:35,available_seats:Math.max(0,35-count),president:presidents.length===1?presidents[0].name:null,president_ready:presidents.length===1};})};
+  }));
  app.post('/api/groups/:id/join',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id)||Object.keys(req.body??{}).length||Object.keys(req.query).length)throw groupError('INVALID_REQUEST','Geçersiz başvuru.',400);
   const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
@@ -61,11 +71,16 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   const removalStats=(await c.query("SELECT count(*)::int AS removal_count, max(recorded_at) AS last_removed_at FROM group_membership_history WHERE user_id=$1 AND operation='DELETE' AND operation_context->>'action'='MEMBER_REMOVAL'",[req.user.id])).rows[0];
   if(removalStats&&removalStats.removal_count>=2&&removalStats.last_removed_at){
     const daysSince=(Date.now()-new Date(removalStats.last_removed_at).getTime())/(1000*60*60*24);
-    if(daysSince<120){
-      const daysLeft=Math.ceil(120-daysSince);
-      throw groupError('REMOVAL_BAN_ACTIVE',`İki kez gruptan çıkarılma nedeniyle 4 aylık (1 dönem) grup başvuru yasağınız bulunmaktadır. Kalan süre: ${daysLeft} gün.`,403);
-    }
-  }
+     if(daysSince<240){
+       const daysLeft=Math.ceil(240-daysSince);
+       const bannedUntil=new Date(new Date(removalStats.last_removed_at).getTime()+240*24*60*60*1000).toISOString();
+       const err=groupError('REMOVAL_BAN_ACTIVE',`İki kez gruptan çıkarılma nedeniyle 8 aylık (2 dönem / 240 gün) grup başvuru yasağınız bulunmaktadır. Kalan süre: ${daysLeft} gün.`,403);
+       err.daysLeft=daysLeft;
+       err.bannedUntil=bannedUntil;
+       err.removalCount=removalStats.removal_count;
+       throw err;
+     }
+   }
   const existing=(await c.query('SELECT id,state FROM group_applications WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
   if(existing)return {ownerId:req.user.id,application:existing};
   const otherPending=(await c.query("SELECT a.id,g.name group_name FROM group_applications a JOIN groups g ON g.id=a.group_id WHERE a.user_id=$1 AND a.group_id<>$2 AND a.state IN ('AWAITING_CALL','INTERVIEWED') LIMIT 1",[req.user.id,req.params.id])).rows[0];

@@ -804,31 +804,31 @@
       "method": "POST",
       "path": "/api/groups/:id/join",
       "provider": "src/group-applications.js",
-      "line": 56
+      "line": 66
     },
     {
       "method": "GET",
       "path": "/api/group-applications/mine",
       "provider": "src/group-applications.js",
-      "line": 83
+      "line": 98
     },
     {
       "method": "GET",
       "path": "/api/group-applications/tasks",
       "provider": "src/group-applications.js",
-      "line": 84
+      "line": 99
     },
     {
       "method": "GET",
       "path": "/api/groups/:id/applications",
       "provider": "src/group-applications.js",
-      "line": 88
+      "line": 103
     },
     {
       "method": "POST",
       "path": "/api/group-applications/:id/:action",
       "provider": "src/group-applications.js",
-      "line": 102
+      "line": 117
     },
     {
       "method": "GET",

@@ -97,7 +97,12 @@ try{
  assert.equal(j3.status,403);
  const j3Body=await j3.json();
  assert.equal(j3Body.code,'REMOVAL_BAN_ACTIVE');
- assert.ok(j3Body.error.includes('1 dönem'));
+ assert.ok(j3Body.error.includes('2 dönem') || j3Body.error.includes('8 ay'));
+ const discRes=await call(banUser,'GET','/group-discovery');
+ assert.equal(discRes.status,200);
+ const discBody=await discRes.json();
+ assert.equal(discBody.removal_ban?.active,true);
+ assert.ok(discBody.removal_ban?.daysLeft>0);
  if(process.argv[2]){
   const cli=process.argv[2],session='e4n-application-'+Date.now(),runDir=path.join(root,'output','group-application-browser-'+Date.now());fs.mkdirSync(runDir,{recursive:true});
   const browser=args=>spawnSync(process.execPath,[cli,...args,'--session='+session],{cwd:root,encoding:'utf8',windowsHide:true,timeout:150000,maxBuffer:2e6});

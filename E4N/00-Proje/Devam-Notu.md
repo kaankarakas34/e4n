@@ -1,4 +1,14 @@
-# E4N devam durumu — 9 Ekim 2026
+# E4N devam durumu — 10 Ekim 2026
+
+## Güncel teslim — P24 / E4N-96 tamamlandı
+
+- **E4N-96 (P24) Done:** İkinci kez gruptan çıkarılan üyeler için 8 aylık (2 dönem / 240 gün) kapalı grup başvuru yasağı (`403 REMOVAL_BAN_ACTIVE` - R11, D03, D04) kuruldu.
+  - İlk çıkarılmada yeniden başvuru koşulu beklemesizdir (D02); 2. çıkarılmada 240 günlük yasak devreye girer.
+  - `POST /api/groups/:id/join` kapısında `daysLeft`, `bannedUntil` ve `removalCount` ile 403 engeli sağlandı.
+  - `GET /api/group-discovery` uç noktasında istemci ve web için `removal_ban` nesnesi sunuldu.
+  - Kapsam güvencesi: Yasak yalnızca kapalı grupları kısıtlar; lonca (Power Team) katılımı (`POST /api/power-teams/:id/join`) ve dış etkinlik/bilet hakları (`users.account_status = 'ACTIVE'`) açık kalır.
+  - 240 gün (8 ay) tamamlandığında yasak otomatik olarak kalkar ve başvuru yeniden açılır.
+  - Testler: `server/test/second-removal-ban-contract.mjs`, `server/test/group-application-workflow-contract.mjs`, `server/test/low-score-removal-contract.mjs`, `server/test/monthly-score-finalization-contract.mjs`, `server/test/score-ledger-contract.mjs`, `server/test/route-ownership-contract.mjs` (195 rota, 30 sağlayıcı), `npm run check`, `npm run build` ve `node server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu) PASS. Kanıt [[E4N/09-Dogrulama/P24-Ikinci-Cikarilmada-Sekiz-Ay-Yasagi-2026-10-10]].
 
 ## Güncel teslim — P23 / E4N-95 tamamlandı
 

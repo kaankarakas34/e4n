@@ -1702,7 +1702,18 @@ app.get('/api/events/:id', async (req, res) => {
     const event = rows[0];
 
     // Auth check for online_link visibility
-    if (!isAdmin && (event.status !== 'PUBLISHED' || event.is_public !== true)) return res.sendStatus(404);
+    if (!isAdmin) {
+      if (!['PUBLISHED', 'COMPLETED', 'CANCELLED'].includes(event.status)) return res.sendStatus(404);
+      if (event.is_public !== true) {
+        if (!reqUser) return res.sendStatus(404);
+        const access = await pool.query(`
+          SELECT EXISTS(SELECT 1 FROM users u WHERE u.id=$1) AND
+            ($1::uuid=$2::uuid OR EXISTS(SELECT 1 FROM attendance a WHERE a.event_id=$3 AND a.user_id=$1)
+              OR EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=$4 AND gm.user_id=$1 AND gm.status='ACTIVE')) AS allowed
+        `, [reqUser.id, event.created_by, id, event.group_id]);
+        if (!access.rows[0]?.allowed) return res.sendStatus(404);
+      }
+    }
 
     if (!isAdmin) {
       delete event.online_link;

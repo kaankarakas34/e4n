@@ -1405,10 +1405,21 @@ async function main() {
   const hiddenDraft = await eventCommand('GET', `/${createdEvent.id}`, {});
   const deleteResponse = await eventCommand('DELETE', `/${createdEvent.id}`, adminHeaders);
   const missingDelete = await eventCommand('DELETE', `/${createdEvent.id}`, adminHeaders);
+  const completedEdit = await eventCommand('PUT', `/${countEvent.id}`, jsonAdminHeaders, { status: 'COMPLETED' });
+  const completedRead = await eventCommand('GET', `/${countEvent.id}`, {});
   const linkedDelete = await eventCommand('DELETE', `/${countEvent.id}`, adminHeaders);
   if (editResponse.status !== 200 || (await editResponse.json()).title !== 'Event lifecycle edited'
-      || hiddenDraft.status !== 404 || deleteResponse.status !== 200 || missingDelete.status !== 404 || linkedDelete.status !== 409
+      || hiddenDraft.status !== 404 || deleteResponse.status !== 200 || missingDelete.status !== 404
+      || completedEdit.status !== 200 || completedRead.status !== 200 || linkedDelete.status !== 409
       || !(await getCountEvent())) throw new Error('Event edit/draft/delete/history integrity failed');
+  const privateResponse = await eventCommand('POST', '', jsonAdminHeaders, { ...eventFixture, title: 'Private event fixture', is_public: false });
+  const privateEvent = await privateResponse.json();
+  if (privateResponse.status !== 201 || !privateEvent.id) throw new Error('Private event create failed');
+  const privateGuest = await eventCommand('GET', `/${privateEvent.id}`, {});
+  const privateStranger = await eventCommand('GET', `/${privateEvent.id}`, authHeaders);
+  await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'REGISTERED')", [privateEvent.id,userId]);
+  const privateOwner = await eventCommand('GET', `/${privateEvent.id}`, authHeaders);
+  if (privateGuest.status !== 404 || privateStranger.status !== 404 || privateOwner.status !== 200) throw new Error('Private event participant boundary failed');
   console.log('Event lifecycle PASS: admin-only list/mutations, public detail redaction, validation, draft isolation, linked-record protection and precise acknowledgements.');
   console.log(JSON.stringify({
     isolated: true,

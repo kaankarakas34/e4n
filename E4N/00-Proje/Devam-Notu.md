@@ -1,5 +1,10 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## Güncel teslim — BAŞ-03 / E4N-163 ve BAŞ-05 / E4N-165 tamamlandı
+
+- **E4N-163 (BAŞ-03) Done:** D07 5 günlük gecikme hatırlatma akışı ve 5. gün sonu hesap kısıtlaması (`RESTRICTED`), kısıtlanan haklar / borç ödeme istisnası ve borç kapandıktan sonra `account_status = 'ACTIVE'` olarak otomatik yeniden açılma tamamlandı. `server/test/payment-flow.mjs` ve `server/test/subscription-reminder-contract.mjs` PASS. Kanıt [[E4N/09-Dogrulama/Abonelik-Uctan-Uca-Denetim-2026-10-09]].
+- **E4N-165 (BAŞ-05) Done:** Zenginleştirilmiş başvuru mail şablonu, `deliverPendingApplicationMails` outbox batch retry worker, 7 günlük başkan SLA aşım takibi (`sla_breached`, `days_waiting`) ve eşzamanlı çoklu grup başvurusu engeli (`409 CONCURRENT_APPLICATION_DENIED`) tamamlandı. `server/test/group-application-workflow-contract.mjs`, `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/BAS-03-04-05-Grup-Basvuru-Akisi-2026-10-09]].
+
 ## Güncel — P37 başlangıç dahil web kabul paketi
 
 - E4N-109 In Progress / releaseReady=false. Tek runnera normal kayıt, site/abonelik ve başkan görüşme/karar browserları, son DB raporları ve shared fiyat kaynak özeti eklendi. Test/prova/kanıt değişikliği; uygulama/şema/canlı davranış değişmedi.

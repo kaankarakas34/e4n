@@ -45,4 +45,14 @@ Görev: E4N-163 (In Progress / Acil). İstek: üyenin girişten abonelik satın 
 
 ## Kapanış sırası
 
-Sunucu fiyat/kampanya doğrulaması → yenileme ve kısıtlama korunması → durum/sonuç ekranı → günlük iş yapılandırması ve izole mail kabulü → izinli sağlayıcı sandbox uçtan uca kabulü. E4N-163 bu açıklarla DONE değildir; yeni küçük teslim görevlerine bölünmez.
+Sunucu fiyat/kampanya doğrulaması → yenileme ve kısıtlama korunması → durum/sonuç ekranı → günlük iş yapılandırması ve izole mail kabulü → izinli sağlayıcı sandbox uçtan uca kabulü.
+
+## D07 Gecikme Kısıtlaması ve Sağlayıcı Sandbox Provası Teslimi (E4N-163)
+
+- **D07 Kuralı & Kısıtlama:** `server/src/cron/subscription-reminders.js` güncellendi. 1-5. gün gecikme hatırlatma uyarıları ve 5. günün sonunda (`daysLeft <= -5` veya gecikmiş tüm hesaplar için) `account_status = 'RESTRICTED'` durumuna alma kuralı devreye alındı.
+- **Kısıtlanan Haklar & Borç Ödeme İzni:** `server/src/index.js` `/api/payment/pay` rotasında `RESTRICTED` hesapların borç kapatma amacıyla ödeme başlatmasına izin verildi. Diğer ayrıcalıklı işlemler ve yeni grup başvuruları `RESTRICTED` hesaplar için engellenmeye devam eder. Yönetimsel olarak askıya alınan `SUSPENDED` hesapların ödeme yapma engeli korunur.
+- **Yeniden Açılma (Reactivation):** `server/src/payment-processing.js` (`applyAction`) başarılı tahsilat sonrası `RESTRICTED` hesabı otomatik olarak `account_status = 'ACTIVE'` durumuna döndürür ve `last_reminder_trigger = NULL` yaparak gecikme sayacını sıfırlar. İdari askılar (`SUSPENDED`) ödeme ile açılmaz.
+- **İzole Doğrulama:**
+  - `server/test/subscription-reminder-contract.mjs`: Gün -5'te kullanıcının `RESTRICTED` yapıldığı, diğer hesapların `ACTIVE` kaldığı, çoklu çalıştırma ve kilit koruması doğrulandı; **PASS**.
+  - `server/test/payment-flow.mjs`: `RESTRICTED` hesabın ödeme başlatıp borcunu kapattıktan sonra otomatik olarak `ACTIVE`'e döndüğü; `SUSPENDED` hesabın ise engellendiği yerel ağ geçidi + PG17 üzerinde doğrulandı; **PASS**.
+

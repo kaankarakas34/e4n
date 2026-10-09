@@ -54,7 +54,7 @@ async function applyAction(client, tx) {
     const lastDay = new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()+1,0)).getUTCDate();
     end.setUTCDate(Math.min(day,lastDay));
     const changed = await client.query(`UPDATE users SET subscription_plan=$1,subscription_end_date=$2,
-      account_status=CASE WHEN account_status IN ('ACTIVE','UNSUBSCRIBED','PENDING') THEN 'ACTIVE' ELSE account_status END,
+      account_status=CASE WHEN account_status IN ('ACTIVE','UNSUBSCRIBED','PENDING','RESTRICTED') THEN 'ACTIVE' ELSE account_status END,
       last_reminder_trigger=NULL,last_membership_payment_amount=$4 WHERE id=$3 RETURNING id`,
     [data.plan,end.toISOString(),tx.user_id,tx.amount]);
     if (changed.rowCount !== 1) throw fail('Üyelik hesabı bulunamadı.');

@@ -8,9 +8,10 @@ function reminderCopy(user, daysLeft) {
     title: 'Üyelik Ödeme Hatırlatması',
     message: `Sayın ${user.name}, üyeliğinizin bitmesine ${daysLeft} gün kaldı. Hesabınızın kısıtlanmaması için lütfen en kısa sürede dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi gerçekleştiriniz.`,
   };
+  const overdueDay = Math.abs(daysLeft);
   return {
-    title: 'Gecikmiş Üyelik Ödemesi Uyarısı',
-    message: `Sayın ${user.name}, üyeliğinizin süresi dolalı ${Math.abs(daysLeft)} gün olmuştur. Hizmetlerinizin kesilmemesi için lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`,
+    title: overdueDay >= 5 ? 'Gecikmiş Üyelik Ödemesi — Son Uyarı (5. Gün)' : `Gecikmiş Üyelik Ödemesi Uyarısı (${overdueDay}. Gün)`,
+    message: `Sayın ${user.name}, üyeliğinizin süresi dolalı ${overdueDay} gün olmuştur. ${overdueDay >= 5 ? '5 günlük gecikme süresi dolduğu için hesabınız kısıtlanmaktadır.' : 'Hizmetlerinizin kesilmemesi için'} lütfen acilen dashboard üzerindeki Üyelik İşlemleri sayfasından ödemenizi tamamlayınız.`,
   };
 }
 
@@ -46,8 +47,15 @@ export async function runSubscriptionReminders(pool, {
         VALUES($1,'SYSTEM',$2,$3,false) RETURNING id`,[user.id,copy.title,copy.message])).rows[0];
       await client.query('UPDATE subscription_reminder_deliveries SET notification_id=$1 WHERE id=$2',[notification.id,delivery.id]);
       await client.query('UPDATE users SET last_reminder_trigger=$1 WHERE id=$2',[daysLeft,user.id]);
+      if(daysLeft <= -5) {
+        await client.query("UPDATE users SET account_status='RESTRICTED' WHERE id=$1 AND account_status='ACTIVE'",[user.id]);
+      }
       claimed.push({deliveryId:delivery.id,email:user.email,title:copy.title,message:copy.message});
     }
+    await client.query(`
+      UPDATE users SET account_status='RESTRICTED'
+      WHERE account_status='ACTIVE' AND subscription_end_date IS NOT NULL
+        AND ((subscription_end_date AT TIME ZONE 'UTC')::date - ($1::timestamptz AT TIME ZONE 'UTC')::date)::int < -5`,[now.toISOString()]);
     await client.query('COMMIT');client.release();client=undefined;
     let emailsSent=0,emailsUnknown=0,noEmail=0;
     for(const item of claimed){

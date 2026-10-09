@@ -1,6 +1,8 @@
 // Actual isolated Express/PG/browser. No production configuration or real mail/payment.
 import {spawn,spawnSync} from 'node:child_process';
 import fs from 'node:fs';import path from 'node:path';import {randomUUID} from 'node:crypto';import assert from 'node:assert/strict';import pg from 'pg';import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+nodemailer.createTransport=()=>({sendMail:async()=>({messageId:'fixture-retry',accepted:['fixture@example.invalid']})});
 const root=path.resolve(import.meta.dirname,'../..');fs.mkdirSync(path.join(root,'output'),{recursive:true});
 const child=spawn(process.execPath,['server/test/web-browser-fixture.mjs'],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});const log=fs.createWriteStream(path.join(root,'output/application-fixture.log'));let fixture,pool,stdout='';const exited=new Promise(r=>child.once('close',r));
 try{
@@ -18,12 +20,19 @@ try{
  assert.equal((await call(applicant,'POST',`/groups/${group}/join`,{})).status,409); // 35 members excludes president.
  await pool.query("DELETE FROM group_members WHERE group_id=$1 AND user_id=(SELECT user_id FROM group_members WHERE group_id=$1 AND user_id NOT IN ($2,$3,$4) LIMIT 1)",[group,president,applicant,fixture.ids.member]);
  const n=await count('notifications');const race=await Promise.all(Array.from({length:6},()=>call(applicant,'POST',`/groups/${group}/join`,{})));assert.ok(race.every(r=>r.status===200));const bodies=await Promise.all(race.map(r=>r.json()));const id=bodies[0].application.id;assert.ok(bodies.every(b=>b.application.id===id));assert.equal(await count('group_applications'),before+1);assert.equal(await count('notifications'),n+1);assert.equal(await count('group_application_mail'),1);
+ // Concurrent application to another group is blocked with 409
+ assert.equal((await call(applicant,'POST',`/groups/${emptyGroup}/join`,{})).status,409);
  assert.equal((await pool.query('SELECT state FROM group_application_mail WHERE application_id=$1',[id])).rows[0].state,'FAILED');
  const catalog=await (await call(applicant,'GET','/group-discovery')).json();assert.equal(catalog.hasSubscription,true);assert.equal(catalog.geographyEnabled,false);assert.equal(catalog.groups.find(g=>g.id===group).member_count,34);assert.ok(!JSON.stringify(catalog).includes('@example.invalid'));assert.ok(!catalog.groups.some(g=>g.members.some(m=>m.phone||m.tax_number||m.email)));
  assert.equal((await call(applicant,'GET',`/groups/${group}/members`)).status,403);
  assert.equal((await call(applicant,'GET',`/groups/${group}/applications`)).status,403);assert.equal((await call(admin,'GET',`/groups/${group}/applications`)).status,403);
  const queue=await (await call(president,'GET',`/groups/${group}/applications`)).json();assert.equal(queue.applications[0].id,id);
- const tasks=await (await call(president,'GET','/group-applications/tasks')).json();assert.equal(tasks.tasks[0].id,id);assert.equal((await (await call(applicant,'GET','/group-applications/tasks')).json()).tasks.length,0);
+ assert.equal(typeof queue.applications[0].sla_breached,'boolean');assert.equal(typeof queue.applications[0].days_waiting,'number');
+ const tasks=await (await call(president,'GET','/group-applications/tasks')).json();assert.equal(tasks.tasks[0].id,id);
+ assert.equal(typeof tasks.tasks[0].sla_breached,'boolean');assert.equal(typeof tasks.tasks[0].days_waiting,'number');
+ assert.equal((await (await call(applicant,'GET','/group-applications/tasks')).json()).tasks.length,0);
+ const myApps=await (await call(applicant,'GET','/group-applications/mine')).json();
+ assert.equal(typeof myApps.applications[0].sla_breached,'boolean');assert.equal(typeof myApps.applications[0].days_waiting,'number');
  assert.equal((await call(president,'POST',`/group-applications/${id}/decision`,{note:'Call first',decision:'ACCEPTED'})).status,409);
  assert.equal((await call(president,'PUT',`/groups/${group}/members/${applicant}`,{status:'ACTIVE'})).status,409);assert.equal((await call(president,'DELETE',`/groups/${group}/members/${applicant}`,{})).status,409);
  assert.equal((await call(applicant,'POST',`/group-applications/${id}/interview`,{note:'Forged admin JWT'})).status,403);
@@ -32,6 +41,10 @@ try{
  await pool.query("INSERT INTO email_configurations(smtp_host,smtp_port,smtp_user,smtp_pass,sender_email,is_active) VALUES('synthetic.invalid',587,'fixture','fixture','local@example.invalid',true)");
  assert.equal((await call(president,'POST',`/group-applications/${id}/retry-mail`,{})).status,200);assert.equal((await pool.query('SELECT state FROM group_application_mail WHERE application_id=$1',[id])).rows[0].state,'SENT');const attempts=(await pool.query('SELECT attempts FROM group_application_mail WHERE application_id=$1',[id])).rows[0].attempts;
  await call(president,'POST',`/group-applications/${id}/retry-mail`,{});assert.equal((await pool.query('SELECT attempts FROM group_application_mail WHERE application_id=$1',[id])).rows[0].attempts,attempts);
+ const {deliverPendingApplicationMails}=await import('../src/group-applications.js');
+ await pool.query("UPDATE group_application_mail SET state='FAILED',attempts=1 WHERE application_id=$1",[id]);
+ const retriedMails=await deliverPendingApplicationMails(pool);assert.equal(retriedMails.processed,1);
+ assert.equal((await pool.query('SELECT state FROM group_application_mail WHERE application_id=$1',[id])).rows[0].state,'SENT');
  const decisions=await Promise.all(Array.from({length:4},()=>call(president,'POST',`/group-applications/${id}/decision`,{note:'Synthetic accept',decision:'ACCEPTED'})));assert.ok(decisions.every(r=>r.status===200));assert.equal((await pool.query('SELECT status FROM group_members WHERE user_id=$1 AND group_id=$2',[applicant,group])).rows[0].status,'ACTIVE');assert.equal((await pool.query('SELECT state FROM group_applications WHERE id=$1',[id])).rows[0].state,'ACCEPTED');
  assert.equal((await call(president,'POST',`/group-applications/${id}/decision`,{note:'Cannot reverse',decision:'REJECTED'})).status,409);
  // A second application exercises persistent rejection and UNKNOWN mail retry refusal.

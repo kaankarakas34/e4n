@@ -303,6 +303,11 @@ async function main() {
   const fresh=await create();await settleMembership(fresh);
   const freshState=(await pool.query('SELECT subscription_end_date,account_status FROM users WHERE id=$1',[ids[0]])).rows[0];
   assert.ok(freshState.subscription_end_date>new Date());assert.equal(freshState.account_status,'ACTIVE');
+  // D07: RESTRICTED account can initiate payment and is reactivated to ACTIVE upon settlement.
+  await pool.query("UPDATE users SET account_status='RESTRICTED' WHERE id=$1",[ids[0]]);
+  const restrictedPayment=await create();
+  await settleMembership(restrictedPayment);
+  assert.equal((await pool.query('SELECT account_status FROM users WHERE id=$1',[ids[0]])).rows[0].account_status,'ACTIVE');
   if(process.argv[2])await (await import('./payment-browser.mjs')).verifyPaymentBrowser({cli:process.argv[2],pool,userId:ids[0],apiBase:base.replace(/\/api$/,'')});
   console.log('Local gateway + Express + PostgreSQL: ownership, receipt boundary, provider proof/hash/amount/preauth, callback race/repeat/late-fail, rollback/retry, membership/event/guest effects passed. No real provider, payment or email.');
 }

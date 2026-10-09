@@ -1907,7 +1907,7 @@ app.post('/api/payment/pay', async (req, res) => {
       let account;
       try { account = (await pool.query('SELECT account_status FROM users WHERE id=$1',[req.user.id])).rows[0]; }
       catch { return res.status(503).json({error:'Ödeme hesabı doğrulanamadı.'}); }
-      if (!account || !['ACTIVE','UNSUBSCRIBED','PENDING'].includes(account.account_status)) return res.status(403).json({error:'Kısıtlı hesap için ödeme başlatılamaz.'});
+      if (!account || !['ACTIVE','UNSUBSCRIBED','PENDING','RESTRICTED'].includes(account.account_status)) return res.status(403).json({error:'Kısıtlı hesap için ödeme başlatılamaz.'});
     }
   } else if (typeof action.data.email !== 'string' || !action.data.email.trim() || typeof action.data.name !== 'string' || !action.data.name.trim()) {
     return res.status(400).json({error:'Ziyaretçi bilgileri eksik.'});

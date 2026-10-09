@@ -34,8 +34,9 @@ async function main(){
   assert.equal(mailCalls.length,4);
   const stored=(await pool.query('SELECT user_id,trigger_days,delivery_state,notification_id IS NOT NULL AS has_notification FROM subscription_reminder_deliveries ORDER BY trigger_days DESC')).rows;
   assert.equal(stored.length,5);assert.ok(stored.every(row=>row.has_notification));assert.deepEqual(stored.map(row=>row.trigger_days),[3,1,-1,-3,-5]);assert.deepEqual(stored.map(row=>row.delivery_state).sort(),['NO_EMAIL','SENT','SENT','SENT','UNKNOWN']);
-  assert.equal((await pool.query('SELECT count(*)::int AS count FROM notifications')).rows[0].count,5);
   assert.deepEqual((await pool.query('SELECT last_reminder_trigger FROM users WHERE id=ANY($1::uuid[]) ORDER BY last_reminder_trigger DESC',[ids])).rows.map(row=>row.last_reminder_trigger),[3,1,-1,-3,-5]);
+  assert.equal((await pool.query('SELECT account_status FROM users WHERE id=$1',[ids[4]])).rows[0].account_status,'RESTRICTED');
+  assert.equal((await pool.query('SELECT account_status FROM users WHERE id=$1',[ids[0]])).rows[0].account_status,'ACTIVE');
   const replay=await runSubscriptionReminders(pool,{now:reference,sendMail});assert.equal(replay.claimed,0);assert.equal(mailCalls.length,4);assert.equal((await pool.query('SELECT count(*)::int AS count FROM notifications')).rows[0].count,5);
 
   const lock=await pool.connect();await lock.query('BEGIN');await lock.query('SELECT pg_advisory_xact_lock($1,$2)',subscriptionReminderLock);

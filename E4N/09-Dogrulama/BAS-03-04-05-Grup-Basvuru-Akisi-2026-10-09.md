@@ -29,3 +29,13 @@
 - Canlı migration28 uygulandı; checksum `e97cc7cc9beef54093bb4601e381ccf120ffe9595d55d133da22c1c098db97f5`. Version27/checksum ve yeni tablo yokluğu guardı + DDL/ledger aynı transaction. Son kontrol: 28 şema/28 kullanıcı/0 aktif grup/0 başvuru/0 outbox/0 notification. Önceki kullanıcı sayısı korundu; gerçek kayıt/mail/ödeme testi yapılmadı.
 - Yeni iki tabloda RLS true ve anon/authenticated SELECT false. Önceki tam PG17 yedeği `output/production-backup-2026-10-09/pre-release-full.dump` yerelde; kişisel yedek Git/Obsidian'a kopyalanmadı. Yeni28 synthetic full restore ve legacy pending upgrade PASS.
 - Vercel production dpl_DmdeFzUGdSoFxZfoaLRT6Lf4imyS READY; main SHA0004f8d. www.event4network.com/event4network.com/e4n.vercel.app alias doğrulandı. Canlı login200/index-BLTBQFuQ.js200 ve yeni üç workflow ekran metni assette mevcut. Anon discovery/tasks/mine401. Kanıt output/application-live-check.json. Canlı oturumlu başvuru/mail testi yapılmadı; izole browser kabulü ayrı.
+
+## E-Posta Outbox Retry, SLA ve Eşzamanlı Başvuru Kısıtı Teslimi (E4N-165)
+
+- **Zenginleştirilmiş HTML E-posta:** Başvuran üyenin adı, telefonu, şirketi, mesleği ve başkanın yönetim paneline doğrudan bağlantısını içeren şablon `group-applications.js` içine eklendi.
+- **Outbox Batch Retry Worker:** `deliverPendingApplicationMails(pool)` fonksiyonu dışa aktarıldı. `QUEUED` ve `FAILED` durumundaki bekleyen mailleri güvenli tarayıp en fazla 3 denemeye kadar SMTP üzerinden yeniden gönderen worker tamamlandı.
+- **Eşzamanlı Başvuru Engeli:** `POST /api/groups/:id/join` rotasında kullanıcının başka bir gruba açık başvurusu (`AWAITING_CALL` veya `INTERVIEWED`) varsa işlem `409 CONCURRENT_APPLICATION_DENIED` ile engellendi.
+- **Başkan SLA & Bekleme Süresi:** `GET /api/group-applications/mine`, `GET /api/group-applications/tasks` ve `GET /api/groups/:id/applications` uç noktalarına 7 günlük `sla_breached: boolean` ve `days_waiting: number` alanları eklendi.
+- **İzole Doğrulama:**
+  - `server/test/group-application-workflow-contract.mjs`: Eşzamanlı 409 engeli, SLA aşım alanları, başkan retry-mail endpoint'i, UNKNOWN tekrar reddi ve `deliverPendingApplicationMails` batch retry mekanizması tam olarak doğrulandı; **PASS**.
+

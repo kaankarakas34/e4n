@@ -12,18 +12,26 @@ export async function deliverApplicationMail(pool,id){
  if(!claimed)return;
  let state='UNKNOWN';
  try{
-  const row=(await pool.query(`SELECT p.email,g.name,a.group_id FROM group_applications a JOIN users p ON p.id=a.president_id JOIN groups g ON g.id=a.group_id WHERE a.id=$1`,[id])).rows[0];
+  const row=(await pool.query(`SELECT p.email,g.name,a.group_id,u.name applicant_name,u.phone applicant_phone,u.company applicant_company,u.profession applicant_profession FROM group_applications a JOIN users p ON p.id=a.president_id JOIN groups g ON g.id=a.group_id JOIN users u ON u.id=a.user_id WHERE a.id=$1`,[id])).rows[0];
   if(!row?.email){state='FAILED';return;}
   const cfg=(await pool.query('SELECT smtp_host,smtp_port,smtp_user,smtp_pass,sender_email FROM email_configurations WHERE is_active=true LIMIT 1')).rows[0];
   const host=cfg?.smtp_host??process.env.SMTP_HOST,user=cfg?.smtp_user??process.env.SMTP_USER,pass=cfg?.smtp_pass??process.env.SMTP_PASS;
   if(!host||!user||!pass){state='FAILED';return;}
   const port=Number(cfg?.smtp_port??process.env.SMTP_PORT??587);
   const transport=nodemailer.createTransport({host,port,secure:port===465,auth:{user,pass},connectionTimeout:5000,greetingTimeout:5000,socketTimeout:10000});
-  const html=`<p>Grubunuza yeni bir başvuru geldi. Başvuran kişiyi arayıp görüşme sonucunu kaydedin.</p><p><a href="https://www.event4network.com${link(row.group_id)}">Gelen grup başvurularını aç</a></p>`;
+  const html=`<p><strong>${row.name}</strong> grubunuza yeni bir başvuru geldi.</p><p><strong>Başvuran:</strong> ${row.applicant_name}<br/><strong>Telefon:</strong> ${row.applicant_phone||'-'}<br/><strong>Şirket:</strong> ${row.applicant_company||'-'}<br/><strong>Meslek:</strong> ${row.applicant_profession||'-'}</p><p>Başvuran kişiyi arayıp görüşme sonucunu kaydedin.</p><p><a href="https://www.event4network.com${link(row.group_id)}">Gelen grup başvurularını aç</a></p>`;
   const result=await transport.sendMail({from:cfg?.sender_email??user,to:row.email,subject:'Yeni grup başvurusu — görüşme görevi',html,messageId:`<group-application-${id}@event4network.com>`});
   state=result.accepted?.length?'SENT':'FAILED';
- }catch(e){state=['EAUTH','ECONNECTION','EDNS'].includes(e.code)?'FAILED':'UNKNOWN';}
+ }catch(e){state=['EAUTH','ECONNECTION','EDNS','ENOTFOUND','ECONNREFUSED','ETIMEDOUT'].includes(e.code)?'FAILED':'UNKNOWN';}
  finally{await pool.query('UPDATE group_application_mail SET state=$2,updated_at=now() WHERE application_id=$1 AND state=\'SENDING\'',[id,state]);}
+}
+export async function deliverPendingApplicationMails(pool,{limit=20}={}){
+ const pending=(await pool.query("SELECT application_id FROM group_application_mail WHERE state IN ('QUEUED','FAILED') AND attempts < 3 ORDER BY updated_at LIMIT $1",[limit])).rows;
+ let processed=0;
+ for(const item of pending){
+  try{await deliverApplicationMail(pool,item.application_id);processed++;}catch{}
+ }
+ return {processed,total:pending.length};
 }
 export function installGroupApplications(app,{pool,authenticateToken}){
  const route=(fn,mutation=false)=>async(req,res)=>{res.set('Cache-Control','private, no-store');let c;try{
@@ -52,6 +60,8 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   if(!(await c.query("SELECT id FROM groups WHERE id=$1 AND status='ACTIVE' FOR UPDATE",[req.params.id])).rowCount)throw groupError('GROUP_NOT_FOUND','Aktif grup bulunamadı.',404);
   const existing=(await c.query('SELECT id,state FROM group_applications WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
   if(existing)return {ownerId:req.user.id,application:existing};
+  const otherPending=(await c.query("SELECT a.id,g.name group_name FROM group_applications a JOIN groups g ON g.id=a.group_id WHERE a.user_id=$1 AND a.group_id<>$2 AND a.state IN ('AWAITING_CALL','INTERVIEWED') LIMIT 1",[req.user.id,req.params.id])).rows[0];
+  if(otherPending)throw groupError('CONCURRENT_APPLICATION_DENIED',`'${otherPending.group_name}' grubuna bekleyen bir başvurunuz bulunmaktadır. Aynı anda birden fazla gruba başvurulamaz.`,409);
   const membership=(await c.query('SELECT status FROM group_members WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
   if(membership?.status==='ACTIVE')return {ownerId:req.user.id,alreadyMember:true};
   if(membership&&!['REQUESTED','PENDING'].includes(membership.status))throw groupError('REAPPLICATION_POLICY','Eski başvurunun yeniden açılması için destekle iletişime geçin.');
@@ -62,14 +72,14 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   await c.query("INSERT INTO notifications(user_id,title,message,type,action_url) VALUES($1,'Yeni grup başvurusu','Yeni başvuran kişiyi arayın ve görüşme sonucunu kaydedin.','SYSTEM',$2)",[p.id,link(req.params.id)]);
   await c.query('INSERT INTO group_application_mail(application_id) VALUES($1)',[a.id]);return {ownerId:req.user.id,application:a,mailId:a.id};
  },true));
- app.get('/api/group-applications/mine',authenticateToken,route(async(c,req)=>({ownerId:req.user.id,applications:(await c.query("SELECT a.id,a.group_id,COALESCE(g.name,'Silinmiş grup') group_name,a.state,a.created_at,a.interview_at,a.decided_at,a.decision_note FROM group_applications a LEFT JOIN groups g ON g.id=a.group_id WHERE a.user_id=$1 ORDER BY a.created_at DESC LIMIT 200",[req.user.id])).rows})));
- app.get('/api/group-applications/tasks',authenticateToken,route(async(c,req)=>({ownerId:req.user.id,tasks:(await c.query(`SELECT a.id,a.group_id,g.name group_name,u.name applicant_name,a.state FROM group_applications a JOIN groups g ON g.id=a.group_id JOIN users u ON u.id=a.user_id
+ app.get('/api/group-applications/mine',authenticateToken,route(async(c,req)=>({ownerId:req.user.id,applications:(await c.query("SELECT a.id,a.group_id,COALESCE(g.name,'Silinmiş grup') group_name,a.state,a.created_at,a.interview_at,a.decided_at,a.decision_note,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a LEFT JOIN groups g ON g.id=a.group_id WHERE a.user_id=$1 ORDER BY a.created_at DESC LIMIT 200",[req.user.id])).rows})));
+ app.get('/api/group-applications/tasks',authenticateToken,route(async(c,req)=>({ownerId:req.user.id,tasks:(await c.query(`SELECT a.id,a.group_id,g.name group_name,u.name applicant_name,a.state,a.created_at,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a JOIN groups g ON g.id=a.group_id JOIN users u ON u.id=a.user_id
   WHERE a.state IN ('AWAITING_CALL','INTERVIEWED') AND EXISTS(SELECT 1 FROM group_members pm JOIN users p ON p.id=pm.user_id WHERE pm.group_id=a.group_id AND pm.user_id=$1 AND pm.status='ACTIVE' AND (pm.role='PRESIDENT' OR p.role='PRESIDENT' OR to_jsonb(p)->>'group_title'='PRESIDENT'))
   AND (SELECT count(*) FROM group_members pm JOIN users p ON p.id=pm.user_id WHERE pm.group_id=a.group_id AND pm.status='ACTIVE' AND (pm.role='PRESIDENT' OR p.role='PRESIDENT' OR to_jsonb(p)->>'group_title'='PRESIDENT'))=1
   ORDER BY a.created_at,a.id LIMIT 200`,[req.user.id])).rows})));
  app.get('/api/groups/:id/applications',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id))throw groupError('INVALID_REQUEST','Geçersiz grup.',400);await currentPresident(c,req.user.id,req.params.id);
-  return {ownerId:req.user.id,groupId:req.params.id,applications:(await c.query(`SELECT a.id,a.user_id,u.name,u.phone,u.company,u.profession,a.state,a.created_at,a.interview_at,a.interview_note,a.decision_note,COALESCE(CASE WHEN m.state='SENDING' AND m.updated_at<now()-interval '2 minutes' THEN 'UNKNOWN' ELSE m.state END,'QUEUED') mail_state FROM group_applications a JOIN users u ON u.id=a.user_id LEFT JOIN group_application_mail m ON m.application_id=a.id WHERE a.group_id=$1 ORDER BY a.created_at DESC LIMIT 200`,[req.params.id])).rows};
+  return {ownerId:req.user.id,groupId:req.params.id,applications:(await c.query(`SELECT a.id,a.user_id,u.name,u.phone,u.company,u.profession,a.state,a.created_at,a.interview_at,a.interview_note,a.decision_note,COALESCE(CASE WHEN m.state='SENDING' AND m.updated_at<now()-interval '2 minutes' THEN 'UNKNOWN' ELSE m.state END,'QUEUED') mail_state,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a JOIN users u ON u.id=a.user_id LEFT JOIN group_application_mail m ON m.application_id=a.id WHERE a.group_id=$1 ORDER BY a.created_at DESC LIMIT 200`,[req.params.id])).rows};
  }));
  app.post('/api/group-applications/:id/:action',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id)||!['interview','decision','retry-mail'].includes(req.params.action))throw groupError('INVALID_REQUEST','Geçersiz başvuru işlemi.',400);

@@ -778,7 +778,11 @@ export function GroupDetail() {
                                                                         if (!company?.trim()) return;
                                                                         const tax = prompt('VKN (10 hane) veya şahıs işletmesi TCKN (11 hane):');
                                                                         if (!tax) return;
-                                                                        try { await api.convertVisitorToMember(visitor.id, company.trim(), tax); } catch (error: any) {
+                                                                        const taxOffice = prompt('Vergi dairesi (zorunlu):');
+                                                                        if (!taxOffice?.trim()) return;
+                                                                        const billingAddress = prompt('Şirket/fatura adresi (zorunlu):');
+                                                                        if (!billingAddress?.trim()) return;
+                                                                        try { await api.convertVisitorToMember(visitor.id, company.trim(), tax, taxOffice.trim(), billingAddress.trim()); } catch (error: any) {
                                                                             let message = 'Üye oluşturulamadı.';
                                                                             try { message = JSON.parse(error.responseBody).error || message; } catch {}
                                                                             alert(message); return;

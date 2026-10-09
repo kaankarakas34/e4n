@@ -38,7 +38,7 @@ try{
   let sqlReady=false;
   for(let attempt=0;attempt<30;attempt++){try{await pool.query('SELECT 1');sqlReady=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,500));}}
   if(!sqlReady)throw Error('Disposable fixture did not accept a SQL connection');
-  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==26)throw Error('Unexpected schema version count');
+  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==27)throw Error('Unexpected schema version count');
   const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice','pastEvent','paidEvent','rosterGuild'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);

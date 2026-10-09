@@ -600,8 +600,8 @@ export const api = {
   async createMember(payload: any) {
     return await request('/admin/members', { method: 'POST', body: JSON.stringify(payload) });
   },
-  async convertVisitorToMember(visitorId: string, company: string, tax_number: string) {
-    return await request(`/visitors/${visitorId}/convert`, { method: 'POST', body: JSON.stringify({company,tax_number}) });
+  async convertVisitorToMember(visitorId: string, company: string, tax_number: string, tax_office: string, billing_address: string) {
+    return await request(`/visitors/${visitorId}/convert`, { method: 'POST', body: JSON.stringify({company,tax_number,tax_office,billing_address}) });
   },
   async getPowerTeamSynergy(teamId: string) {
     return await request(`/power-teams/${teamId}/synergy`);

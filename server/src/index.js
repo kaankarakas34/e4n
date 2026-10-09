@@ -893,13 +893,13 @@ app.get('/api/visitors', authenticateToken, async (req, res) => {
 app.post('/api/visitors/:id/convert',authenticateToken,async(req,res)=>{
  res.set('Cache-Control','private, no-store');let client;
  try{
-  if(!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).some(k=>!['company','tax_number'].includes(k)))throw groupError('INVALID_INPUT','Geçersiz şirket bilgileri.',400);
+  if(!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).some(k=>!['company','tax_number','tax_office','billing_address'].includes(k)))throw groupError('INVALID_INPUT','Geçersiz şirket bilgileri.',400);
   client=await pool.connect();await beginGroupMutation(client);await requireCurrentAdmin(client,req.user.id);
   const v=(await client.query('SELECT * FROM visitors WHERE id=$1 FOR UPDATE',[req.params.id])).rows[0];if(!v)throw groupError('NOT_FOUND','Ziyaretçi bulunamadı.',404);
-  const identity=companyIdentity(req.body.company??v.company,req.body.tax_number);
+  const identity=companyIdentity(req.body.company??v.company,req.body.tax_number,req.body.tax_office,req.body.billing_address);
   const existing=(await client.query('SELECT id,tax_number FROM users WHERE lower(email)=lower($1) FOR UPDATE',[v.email])).rows[0];
   if(existing){if(existing.tax_number!==identity.tax_number)throw groupError('IDENTITY_CONFLICT','Kayıtlı hesabın şirket bilgileriyle eşleşmiyor.',409);}
-  else await client.query("INSERT INTO users(name,email,phone,company,profession,tax_number,account_status,role,company_registration,password_hash) VALUES($1,lower($2),$3,$4,$5,$6,'UNSUBSCRIBED','MEMBER',true,NULL)",[v.name,v.email,v.phone,identity.company,v.profession??'',identity.tax_number]);
+  else await client.query("INSERT INTO users(name,email,phone,company,profession,tax_number,tax_office,billing_address,account_status,role,company_registration,password_hash) VALUES($1,lower($2),$3,$4,$5,$6,$7,$8,'UNSUBSCRIBED','MEMBER',true,NULL)",[v.name,v.email,v.phone,identity.company,v.profession??'',identity.tax_number,identity.tax_office,identity.billing_address]);
   await client.query("UPDATE visitors SET status='JOINED' WHERE id=$1",[req.params.id]);await client.query('COMMIT');res.json({success:true});
  }catch(e){if(client)await client.query('ROLLBACK').catch(()=>{});const mapped=companyWriteError(e);if(mapped)res.status(mapped.status).json(mapped);else sendGroupMutationError(res,e);}finally{client?.release();}
 });

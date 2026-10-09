@@ -2,7 +2,7 @@
 
 ## Kesin kullanıcı kararı
 
-Topluluk üyeliği/COMMUNITY_MEMBER kalkar, normal üyelik açılır. Üye ol herkese açıktır; davetiye veya admin üyelik onayı gerekmez. Şirket ve tekil vergi numarası istenir; vergi levhası dosyası gerekmez. Bir numara en fazla bir kişiye aittir. Kimin kimin üyelik referansı olduğu korunur. Kayıt olmak abonelik değildir: gruba istek göndermek için aktif abonelik zorunludur. Başkan telefon görüşmesini kaydettikten sonra kabul/ret verir; başvuru başkana görev+uygulama bildirimi+e-posta olarak düşer.
+Topluluk üyeliği/COMMUNITY_MEMBER kalkar, normal üyelik açılır. Üye ol herkese açıktır; davetiye veya admin üyelik onayı gerekmez. Şirket adı, tekil VKN/TCKN, vergi dairesi ve şirket/fatura adresinin dördü zorunludur; vergi levhası dosyası gerekmez. Bir numara en fazla bir kişiye aittir. Kimin kimin üyelik referansı olduğu korunur. Kayıt olmak abonelik değildir: gruba istek göndermek için aktif abonelik zorunludur. Başkan telefon görüşmesini kaydettikten sonra kabul/ret verir; başvuru başkana görev+uygulama bildirimi+e-posta olarak düşer.
 
 ## Yeni Linear görevleri
 
@@ -22,7 +22,7 @@ Eski84/85/105/90/102/103/92 açıklamaları yeni görev bağlantılarıyla günc
 
 ## Paket kabul sınırları
 
-- 161: açık web kayıt + zorunlu şirket/vergi doğrulama + DB UNIQUE/normalize + tüm kayıt/profil/admin/visitor-conversion writerları + eski hesap/rol/link geçişi. Eşzamanlı aynı numara tek sahip; eski duplicate için kişi seçilmez. API/veri/web/test/build/commit birlikte.
+- 161: açık web kayıt + zorunlu şirket/VKN-TCKN/vergi dairesi/adres doğrulama + DB UNIQUE/normalize + tüm kayıt/profil/admin/visitor-conversion writerları + eski hesap/rol/link geçişi. Eşzamanlı aynı numara tek sahip; eski duplicate için kişi seçilmez. API/veri/web/test/build/commit birlikte.
 - 162: üyelik referansı ekonomik iş yönlendirmesinden ayrı ilişki; kayıt/referans kaynağı/admin görünümü/değişiklik geçmişi. Kendi kendine/geçersiz referans/silinme/tekrar sınırları. Eski belirsiz referansı tahmin etme; davetiyeyi gizli kayıt kapısı yapma.
 - 163: aktif abonelik sunucuda doğrulanmış kalıcı kaynaktan; account_status ACTIVE tek başına ödeme kanıtı değil. Abonesiz join403 ve yeni başvuru/görev yok; doğrulanmış aktif abonelikte başvuru. Mevcut callback/owner/idempotency korunur; fake ödeme ile UI/API/DB kabulü.
 - 164: keşfe özel minimal API, aktif üyeler/meslek dağılımı ve başkan hariç35 doluluk; kişisel telefon/email/vergi/referral detayları ifşa edilmez. Grup liste/detail, doğru sayım, hata/boş/loading/stale-owner, durum ve Katıl hakkı.

@@ -38,3 +38,17 @@ Tekrar komutu: `node server/test/normal-registration-contract.mjs <kurulu-playwr
 İlk temiz tekrarların yerel HTTP keepalive/kullanılmayan race yanıtları ve soğuk Vite/browser hazır olma süreleriyle ilgili başarısız sonuçları korunur. Kabul sürücüsü tüm race yanıtlarını tüketir, owned API denemelerinde bağlantıyı kapatır, ekrandaki öğelerin hazır olmasını bekler; ürün hatasını retry ile gizlemez. Son tekrar başarılıdır. Migration/advisors ve altı ilgili contract kanıtı aynı ürün içeriğini kapsar.
 
 E4N-161 ürün teslimi tamamlandı; parent160 başlangıç akışının tamamı değildir. Sıradaki162 referans ilişkisidir; yöntem sorusu kullanıcıya gönderildi.163 aktif ödeme kanıtını legacy ACTIVE alanından ayıracak;164 keşif/analiz;165 başkan görev/mail/karar paketi. Mobil/LMS ertelenmiştir. Canlı veritabanı adoption, gerçek sağlayıcılar ve nihai sürüm kabulü yapılmış sayılmaz.
+
+
+## 9 Ekim düzeltmesi — mevcut şirket formunun dört zorunlu alanı
+
+Kullanıcının netleştirdiği kayıt koşulu: şirket adı, VKN/TCKN, vergi dairesi ve şirket/fatura adresi birlikte zorunlu. Vergi dairesi/adresin önceki isteğe bağlı davranışı kaldırıldı. Yeni küçük görev açılmadı; E4N-161 kabulü bu koşulla yeniden doğrulandı.
+
+- Web formunda required ve uzunluk sınırları; API'de eksik/boş/yalnız boşluk/null/sayı/uzunluk ve çelişen snake-camel alanların reddi. Kaydedilen değerler trim edilir.
+- Ziyaretçiden üye oluşturma ekranı/API'si de dört bilgiyi ister ve saklar. Profil/admin güncellemesi kayıtlı zorunlu bilgileri boşaltamaz; DB constraint hatası anlaşılır 400 yanıtına çevrilir.
+- CLI ile üretilen yeni migration `20261009115143_required_company_billing.sql`, sürüm27. Önceki26 migration/checksum değiştirilmedi. `users_company_billing_check` NOT VALID: yeni kayıt/güncellemelerde uygulanır; mevcut eksik hesapları silmez veya bilgilerini uydurmaz. Önceki26 sırasında eksik açılmış company_registration=true hesabın sonraki güncellemesi eksik alanlarını da tamamlamalıdır. Eski false kayıtlarının uyumluluğu korunur. Eksik eski kayıtlar tamamlanmadan constraint VALIDATE edilmez; UUID-only preflight v2 vergi dairesi/adres eksiklerini de raporlar.
+- İzole PostgreSQL17/27schema gerçek API + tarayıcı3/3 + son DB kontrolü PASS. Dört alanın saklanması, eksik alanlarla kayıt reddi, profil/admin/directSQL boşaltma reddi, ziyaretçi dönüşümü, 8-way vergi tekilliği, silinen hesaptan kalan rezervasyon, legacy migration/replay ve yeni DB constraint doğrulandı.
+- Self-profile contract PASS: fresh27/repeat0/22upgrade (23–27) ve legacy bilgiler korunuyor. Supabase error-level security advisors yalnız owned loopback veritabanında exit0/No issues found. Bu sonuç kapsamlı Sprint6 güvenlik kabulü değildir.
+- Üretimde migration, dağıtım, gerçek mail veya ödeme yapılmadı. Önceki geniş kabul kanıtları tarihsel; burada bütün39API/102browser testlerinin yeniden çalıştığı iddia edilmiyor.
+
+- Düzeltmenin production build'i PASS. İlgili React form erişilebilirliği/required alanları tarayıcıda doğrulandı; ziyaretçi dönüşümünde boş/cancel işlem oluşturmaz. Test harness'lerinin fresh/upgrade/repeat beklentileri sürüm27'ye taşındı.

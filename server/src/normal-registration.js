@@ -15,14 +15,13 @@ export function installNormalRegistration(app,{pool}){
    if(b.confirmPassword!==undefined&&b.confirmPassword!==password)throw fail('Şifreler eşleşmiyor.');
    if(b.kvkkConsent!==true||b.explicitConsent!==true||b.marketingConsent!==undefined&&typeof b.marketingConsent!=='boolean')throw fail('Kayıt metinlerini onaylayın.');
    const alias=(snake,camel)=>{if(b[snake]!==undefined&&b[camel]!==undefined&&b[snake]!==b[camel])throw fail('Şirket alanları çelişiyor.');return b[snake]??b[camel];};
-   const identity=companyIdentity(b.company,alias('tax_number','taxNumber'));
-   const tax_office=text({tax_office:alias('tax_office','taxOffice')},'tax_office',100,false),billing_address=text({billing_address:alias('billing_address','billingAddress')},'billing_address',5000,false);
+   const identity=companyIdentity(b.company,alias('tax_number','taxNumber'),alias('tax_office','taxOffice'),alias('billing_address','billingAddress'));
    const hash=await bcrypt.hash(password,10);
    client=await pool.connect();await client.query('BEGIN');await client.query("SET LOCAL lock_timeout='5s';SET LOCAL statement_timeout='30s'");
    // Database uniqueness, including deleted accounts, is the final race barrier.
    const {rows}=await client.query(`INSERT INTO users(name,email,password_hash,phone,city,profession,company,tax_number,tax_office,billing_address,role,account_status,kvkk_consent,explicit_consent,marketing_consent,consent_date,company_registration)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'MEMBER','UNSUBSCRIBED',true,true,$11,now(),true)
-    RETURNING id,email,name,role,account_status`,[name,email,hash,phone,city,profession,identity.company,identity.tax_number,tax_office||null,billing_address||null,b.marketingConsent??false]);
+    RETURNING id,email,name,role,account_status`,[name,email,hash,phone,city,profession,identity.company,identity.tax_number,identity.tax_office,identity.billing_address,b.marketingConsent??false]);
    await client.query('COMMIT');res.status(201).json(rows[0]);
   }catch(e){if(client)await client.query('ROLLBACK').catch(()=>{});const mapped=companyWriteError(e);res.status(mapped?.status??e.status??500).json(mapped??{error:e.status?e.message:'Kayıt oluşturulamadı. Tekrar deneyin.'});}finally{client?.release();}
  });

@@ -199,8 +199,8 @@ export function Register() {
 
                     <Input required data-name="taxNumber" aria-label="VKN veya TCKN" placeholder="VKN (10 hane) / TCKN (11 hane)" inputMode="numeric" pattern="([0-9]{10}|[1-9][0-9]{10})" maxLength={11} value={formData.taxNumber} onChange={handleChange} />
                     <p className="text-xs text-gray-500">Şahıs işletmelerinde TCKN kabul edilir. Her numara yalnızca bir hesaba bağlanır; hesap silinse de kayıtlı kalır.</p>
-                    <Input data-name="taxOffice" aria-label="Vergi Dairesi" placeholder="Vergi Dairesi (isteğe bağlı)" value={formData.taxOffice} onChange={handleChange} />
-                    <Input data-name="billingAddress" aria-label="Fatura Adresi" placeholder="Fatura Adresi (isteğe bağlı)" value={formData.billingAddress} onChange={handleChange} />
+                    <Input data-name="taxOffice" aria-label="Vergi Dairesi" placeholder="Vergi Dairesi" required maxLength={100} value={formData.taxOffice} onChange={handleChange} />
+                    <Input data-name="billingAddress" aria-label="Fatura Adresi" placeholder="Fatura Adresi" required maxLength={5000} value={formData.billingAddress} onChange={handleChange} />
                   </div>
                 </div>
               </div>

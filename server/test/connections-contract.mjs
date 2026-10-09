@@ -93,7 +93,7 @@ async function main() {
 
 
   const [alice,bob,third,admin,deleted]=Array.from({length:5},()=>randomUUID());
-  for(const [i,id] of [alice,bob,third,admin].entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,phone,tax_number) VALUES($1,$2,$3,$3,'secret',$4,'private-phone','private-tax')",[id,`connections-${i}@example.invalid`,`Fixture ${i}`,id===admin?'ADMIN':'MEMBER']);
+  for(const [i,id] of [alice,bob,third,admin].entries())await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,phone,tax_number) VALUES($1,$2,$3,$3,'secret',$4,'private-phone',$5)",[id,`connections-${i}@example.invalid`,`Fixture ${i}`,id===admin?'ADMIN':'MEMBER',String(i+1).padStart(10,'0')]);
   const group=randomUUID(),secret=randomUUID(),inactive=randomUUID();
   for(const [id,name] of [[group,'Common'],[secret,'Private'],[inactive,'Inactive']])await pool.query("INSERT INTO groups(id,name,status) VALUES($1,$2,'ACTIVE')",[id,name]);
   await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$3,'ACTIVE'),($2,$3,'ACTIVE'),($2,$4,'ACTIVE'),($1,$5,'REQUESTED'),($2,$5,'ACTIVE')",[alice,bob,group,secret,inactive]);

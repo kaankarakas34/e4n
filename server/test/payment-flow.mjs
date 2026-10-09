@@ -259,7 +259,7 @@ async function main() {
   await pool.query("DROP TABLE user_score_history; DELETE FROM schema_migrations WHERE version='0010_score_history'");
   await pool.query("DROP TABLE support_mutations; DELETE FROM schema_migrations WHERE version='0009_support_mutations'");
   await pool.query("ALTER TABLE payment_transactions DROP CONSTRAINT payment_request_key_unique, DROP CONSTRAINT payment_initiation_metadata_check, DROP COLUMN request_key, DROP COLUMN request_fingerprint, DROP COLUMN initiation_state; DELETE FROM schema_migrations WHERE version='0008_payment_initiation'");
-  assert.equal((await applyVersionedSchema()).applied.length,17);assert.equal((await applyVersionedSchema()).applied.length,0);
+  assert.equal((await applyVersionedSchema()).applied.length,20);assert.equal((await applyVersionedSchema()).applied.length,0);
   const oldAfter=(await pool.query('SELECT merchant_oid,user_id,amount,status,action_data,request_key,request_fingerprint,initiation_state FROM payment_transactions WHERE merchant_oid=$1',[orphan])).rows[0];
   const {request_key,request_fingerprint,initiation_state,...preserved}=oldAfter;
   assert.deepEqual(preserved,oldBefore);assert.deepEqual([request_key,request_fingerprint,initiation_state],[null,null,null]);

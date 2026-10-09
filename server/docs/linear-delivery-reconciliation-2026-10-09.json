@@ -1,0 +1,275 @@
+{
+  "date": "2026-10-09",
+  "before": {
+    "Done": 39,
+    "In Progress": 23,
+    "Backlog": 31,
+    "total": 93
+  },
+  "after": {
+    "Done": 45,
+    "In Progress": 23,
+    "Backlog": 31,
+    "total": 99
+  },
+  "deliveries": [
+    {
+      "parent": "E4N-98",
+      "title": "P26 teslim | Mevcut etkinlik kaydı, yönetici düzeltmesi ve toplu toplantı yoklaması",
+      "related": [
+        "E4N-103",
+        "E4N-111",
+        "E4N-109"
+      ],
+      "scope": "Mevcut kayıt/gerçek yoklama ayrımı, katılımcı sayacı, açıklamalı ADMIN düzeltmesi/geri alma ve immutable geçmiş; grup yöneticisinin tam ACTIVE roster için açık katılım seçimleriyle atomik toplantı/yoklama kaydı; UUID replay/retired intent, kayıp ACK, reload ve tek işlem kurtarma. API/veri/web birlikte teslim edildi. WEB-07 mevcut Done kaydı yeniden sayılmaz; bu kayıt sonradan eklenen yoklama/düzeltme ve birleşik kabul teslimidir.",
+      "commits": [
+        "b77e42d",
+        "bad0645",
+        "5c9ede3",
+        "386bff2"
+      ],
+      "evidence": "server/docs/group-meeting-attendance-acceptance-2026-10-08.json; E4N/09-Dogrulama/P26-P31-Toplu-Toplanti-Yoklama-Web-2026-10-08.md",
+      "remaining": "Hedef indirimli/çoklu bilet hakları, fiyat/sağlayıcı sandbox, eski katılım yorumu/backfill ve diğer legacy etkinlik yazımları ana P26/P25/P14'te açık.",
+      "id": "E4N-150",
+      "uuid": "3aeb8ed3-5ac0-4cb5-9270-5a70d1fb1dbe",
+      "url": "https://linear.app/e4n/issue/E4N-150/p26-teslim-mevcut-etkinlik-kaydi-yonetici-duzeltmesi-ve-toplu-toplanti",
+      "status": "Done"
+    },
+    {
+      "parent": "E4N-101",
+      "title": "P29 teslim | Atomik shuffle, korunmuş atama geçmişi ve web işlem kurtarma",
+      "related": [
+        "E4N-100",
+        "E4N-103",
+        "E4N-111",
+        "E4N-109"
+      ],
+      "scope": "Mevcut dağıtımın transaction/kilit/35 kapasite koruması, arşiv ve role reset, immutable önceki/sonraki snapshot, admin geçmiş ekranı; owner/UUID/full-command fingerprint, 8 concurrent aynı intent/tek execution, GET-only receipt, reload ve açık identical retry. API/veri/web teslimi ve tek execution/no duplicate membership history kabulü tamamlandı.",
+      "commits": [
+        "4e1d115",
+        "7962f7e"
+      ],
+      "evidence": "server/docs/shuffle-submission-acceptance-2026-10-08.json; server/docs/shuffle-submission.md; E4N/09-Dogrulama/P29-Shuffle-Kayit-Kurtarma-Web-2026-10-08.md",
+      "remaining": "Canonical dört aylık dönem, ödeme kesimi/grace/uygunluk, hizmet ve başkan politikası, güvenilir bildirim ve retention ana P27/P28/P29'da açık. Legacy keyless çağrılar idempotent sayılmaz.",
+      "id": "E4N-151",
+      "uuid": "dd6223ea-c4ff-44e2-8c4e-719b62d40a97",
+      "url": "https://linear.app/e4n/issue/E4N-151/p29-teslim-atomik-shuffle-korunmus-atama-gecmisi-ve-web-islem-kurtarma",
+      "status": "Done"
+    },
+    {
+      "parent": "E4N-111",
+      "title": "P39 teslim | Profil/fatura, bildirim/oturum, bağlantı alıcısı ve lonca ayarları",
+      "related": [
+        "E4N-102",
+        "E4N-103",
+        "E4N-109"
+      ],
+      "scope": "8 Ekimde teslim edilen bağlantılı bütün web düzeltmeleri tek kabul paketi: owned profil/site/bio ve billing persist/clear/revision/ACK; gerçek notification count/list/read/recovery ve auth refresh isolation; kabul edilmiş friend_requests alıcı kaynağı ve bağlantılar/yönlendirme ekranları; ADMIN lonca oluşturma/settings catalog/canonical save/retry. API/veri/ekran/test/commit birlikte. Önceden Done WEB01–15 işleri yeni iş olarak tekrar sayılmaz; yalnız 8 Ekim ek teslim kapsamı.",
+      "commits": [
+        "35bb24a",
+        "a35d868",
+        "7c26bfb",
+        "a930c3c"
+      ],
+      "evidence": "server/docs/self-profile-web-acceptance-2026-10-08.json; server/docs/notifications-web-acceptance-2026-10-08.json; E4N/09-Dogrulama/P39-Lonca-Olusturma-ve-Ayarlar-Veri-API-Web-2026-10-08.md; E4N/09-Dogrulama/P39-Baglantilar-Yonlendirme-Kaynak-Veri-API-Web-2026-10-08.md",
+      "remaining": "Yeni üyelik/grup/puan hakları, şirket kanıtı/kilidi, kalan legacy writer/rol yolları, onaylı site anlatımı ve demo kararları ana P39/P30/P31/P08/P33/P41'de açık.",
+      "id": "E4N-152",
+      "uuid": "0cf2963d-3517-46f9-8875-d2f42d23245e",
+      "url": "https://linear.app/e4n/issue/E4N-152/p39-teslim-profilfatura-bildirimoturum-baglanti-alicisi-ve-lonca",
+      "status": "Done"
+    },
+    {
+      "parent": "E4N-91",
+      "title": "P19 teslim | Kalıcı üyelik bağlantı geçmişi ve üye/admin web ekranları",
+      "related": [
+        "E4N-103",
+        "E4N-102",
+        "E4N-109"
+      ],
+      "scope": "Migration0020 mevcut gözlenen baseline ve subsequent INSERT/meaningful UPDATE/DELETE önceki/sonraki snapshotı aynı transactionda tutar. History outage rollback, no-op duplicate engeli, cascade/rename koruması, identity owner separation, immutability/private ACL/RLS; own/currentDBADMIN paginated API, üye/admin older-page/refresh/empty/error/isolation ekranları ve gerçek shuffle history birleşik kabulü teslim.",
+      "commits": [
+        "4bc6370"
+      ],
+      "evidence": "E4N/09-Dogrulama/P19-Grup-Uyelik-Gecmisi-Veri-API-Web-2026-10-07.md; server/test/membership-history-contract.mjs",
+      "remaining": "İşlemi yapan aktör/neden, canonical dönem, çıkarılma/puan/ban ilişkisi ve retention; eski silinmiş kayıtlar/backfill politikası ana P19/P20/P23/P24'te açık.",
+      "id": "E4N-153",
+      "uuid": "1b7cf535-9a2f-4df4-a390-f24133133351",
+      "url": "https://linear.app/e4n/issue/E4N-153/p19-teslim-kalici-uyelik-baglanti-gecmisi-ve-uyeadmin-web-ekranlari",
+      "status": "Done"
+    },
+    {
+      "parent": "E4N-106",
+      "title": "P34 teslim | Tekrar güvenli mevcut işler, kalıcı çalışma geçmişi ve web operasyonu",
+      "related": [
+        "E4N-109",
+        "E4N-110"
+      ],
+      "scope": "Mevcut event-completion/champion/subscription-reminder runner transaction/replay/concurrency ve reminder delivery ledger; kalıcı web_job_runs, aynı runner için yetkili dış çağrı ve ADMIN manual endpoint, tek sahipli çalışma/SKIPPED/UNKNOWN/redacted result, web operations read/run/history/refresh ve rol sınırları teslim. Gerçek PG17/API/veri ve web işlemi kabulü tamamlandı; üretim scheduler aktivasyonu değildir.",
+      "commits": [
+        "b942636"
+      ],
+      "evidence": "E4N/09-Dogrulama/P34-Web-Islemleri-Kalici-Gecmis-ve-Dis-Cagri-2026-10-07.md; server/docs/web-job-operations.md; server/test/web-job-operations-contract.mjs",
+      "remaining": "Gerçek dış scheduler kurulum/gözlem/alarm, üretim connection/pooling/UTC kabulü, hedef champion dönem/backfill ve karara bağlı gecikme/kısıtlama/çıkarma job kuralları ana P34'te açık.",
+      "id": "E4N-154",
+      "uuid": "0373808d-47af-47cb-ac49-c3389ca225e0",
+      "url": "https://linear.app/e4n/issue/E4N-154/p34-teslim-tekrar-guvenli-mevcut-isler-kalici-calisma-gecmisi-ve-web",
+      "status": "Done"
+    },
+    {
+      "parent": "E4N-109",
+      "title": "P37 teslim | Mevcut eğitim dışı webin 39 API ve 87 tarayıcı/veri teknik kabulü",
+      "related": [
+        "E4N-110",
+        "E4N-111",
+        "E4N-98",
+        "E4N-101"
+      ],
+      "scope": "8 Ekim güncel delivered web source için tek sahipli kabul runner, 39/39 API/veri, production build ve taze gerçek App/Vite→Express/JWT→disposable PG17 87/87 browser/final DB doğrulaması; kaynak equality ve fixture cleanup. Teknik kabul mevcut teslimlere aittir; gelecekteki hedefler ve üretim sürüm onayı değildir. Her sonraki test turu için yeni Done issue açılmayacak; bu kabul kaydı güncellenecek.",
+      "commits": [
+        "03db90f",
+        "7962f7e"
+      ],
+      "evidence": "server/docs/shuffle-submission-acceptance-2026-10-08.json; output/web-rehearsal/2026-10-08T20-02-25-609Z/report.json; output/web-browser/2026-10-08T20-08-26-507Z/browser-report.json",
+      "remaining": "Tüm hedef ürün paketleri, gerçek veri/adoption/provider ve SEC58/59/120/P38 kapıları sonrasında nihai web sürüm kabulü ana P37'de açık. İlk root kontrol/state timeout FAIL korunur; 39 API/build ve taze87 browser aynı313source hash ile doğrulanmış ayrı provenance; tek rootPASS değil.",
+      "id": "E4N-155",
+      "uuid": "e991df88-4343-455e-887b-fd6413af0767",
+      "url": "https://linear.app/e4n/issue/E4N-155/p37-teslim-mevcut-egitim-disi-webin-39-api-ve-87-tarayiciveri-teknik",
+      "status": "Done"
+    }
+  ],
+  "verification": [
+    {
+      "id": "E4N-150",
+      "title": "P26 teslim | Mevcut etkinlik kaydı, yönetici düzeltmesi ve toplu toplantı yoklaması",
+      "status": "Done",
+      "parentId": "E4N-98",
+      "milestone": {
+        "id": "8351fe69-49ca-4000-a6c0-937352cde9df",
+        "name": "Sprint 2 — Veri ve üyelik temeli"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\nMevcut kayıt/gerçek yoklama ayrımı, katılımcı sayacı, açıklamalı ADMIN düzeltmesi/geri alma ve immutable geçmiş; grup yöneticisinin tam ACTIVE roster için açık katılım seçimleriyle atomik toplantı/yoklama kaydı; UUID replay/retired intent, kayıp ACK, reload ve tek işlem kurtarma. API/veri/web birlikte teslim edildi. WEB-07 mevcut Done kaydı yeniden sayılmaz; bu kayıt sonradan eklenen yoklama/düzeltme ve birleşik kabul teslimidir.\n\n## Git ve kabul kanıtı\n\n* [b77e42d](<https://github.com/kaankarakas34/e4n/commit/b77e42d>)\n* [bad0645](<htt"
+    },
+    {
+      "id": "E4N-151",
+      "title": "P29 teslim | Atomik shuffle, korunmuş atama geçmişi ve web işlem kurtarma",
+      "status": "Done",
+      "parentId": "E4N-101",
+      "milestone": {
+        "id": "c565c1a6-b2a3-4120-95cb-e7f3d9d8aa5f",
+        "name": "Sprint 5 — Shuffle ve arayüz"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\nMevcut dağıtımın transaction/kilit/35 kapasite koruması, arşiv ve role reset, immutable önceki/sonraki snapshot, admin geçmiş ekranı; owner/UUID/full-command fingerprint, 8 concurrent aynı intent/tek execution, GET-only receipt, reload ve açık identical retry. API/veri/web teslimi ve tek execution/no duplicate membership history kabulü tamamlandı.\n\n## Git ve kabul kanıtı\n\n* [4e1d115](<https://github.com/kaankarakas34/e4n/commit/4e1d115>)\n* [7962f7e](<https://github.com/kaankarakas34/e4n/commit/7962f7e>)\n\nKanıt dosyaları: server/docs/shu"
+    },
+    {
+      "id": "E4N-152",
+      "title": "P39 teslim | Profil/fatura, bildirim/oturum, bağlantı alıcısı ve lonca ayarları",
+      "status": "Done",
+      "parentId": "E4N-111",
+      "milestone": {
+        "id": "c565c1a6-b2a3-4120-95cb-e7f3d9d8aa5f",
+        "name": "Sprint 5 — Shuffle ve arayüz"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\n8 Ekimde teslim edilen bağlantılı bütün web düzeltmeleri tek kabul paketi: owned profil/site/bio ve billing persist/clear/revision/ACK; gerçek notification count/list/read/recovery ve auth refresh isolation; kabul edilmiş friend_requests alıcı kaynağı ve bağlantılar/yönlendirme ekranları; ADMIN lonca oluşturma/settings catalog/canonical save/retry. API/veri/ekran/test/commit birlikte. Önceden Done WEB01–15 işleri yeni iş olarak tekrar sayılmaz; yalnız 8 Ekim ek teslim kapsamı.\n\n## Git ve kabul kanıtı\n\n* [35bb24a](<https://github.com/kaa"
+    },
+    {
+      "id": "E4N-153",
+      "title": "P19 teslim | Kalıcı üyelik bağlantı geçmişi ve üye/admin web ekranları",
+      "status": "Done",
+      "parentId": "E4N-91",
+      "milestone": {
+        "id": "23c55743-bcbe-49b2-b667-56b6d4312618",
+        "name": "Sprint 3 — Lonca ve kapalı grup"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\nMigration0020 mevcut gözlenen baseline ve subsequent INSERT/meaningful UPDATE/DELETE önceki/sonraki snapshotı aynı transactionda tutar. History outage rollback, no-op duplicate engeli, cascade/rename koruması, identity owner separation, immutability/private ACL/RLS; own/currentDBADMIN paginated API, üye/admin older-page/refresh/empty/error/isolation ekranları ve gerçek shuffle history birleşik kabulü teslim.\n\n## Git ve kabul kanıtı\n\n* [4bc6370](<https://github.com/kaankarakas34/e4n/commit/4bc6370>)\n\nKanıt dosyaları: E4N/09-Dogrulama/P19"
+    },
+    {
+      "id": "E4N-154",
+      "title": "P34 teslim | Tekrar güvenli mevcut işler, kalıcı çalışma geçmişi ve web operasyonu",
+      "status": "Done",
+      "parentId": "E4N-106",
+      "milestone": {
+        "id": "594d6c02-2a66-432a-9d31-2cc6b8fc6400",
+        "name": "Sprint 6 — Operasyon ve sürüm"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\nMevcut event-completion/champion/subscription-reminder runner transaction/replay/concurrency ve reminder delivery ledger; kalıcı web_job_runs, aynı runner için yetkili dış çağrı ve ADMIN manual endpoint, tek sahipli çalışma/SKIPPED/UNKNOWN/redacted result, web operations read/run/history/refresh ve rol sınırları teslim. Gerçek PG17/API/veri ve web işlemi kabulü tamamlandı; üretim scheduler aktivasyonu değildir.\n\n## Git ve kabul kanıtı\n\n* [b942636](<https://github.com/kaankarakas34/e4n/commit/b942636>)\n\nKanıt dosyaları: E4N/09-Dogrulama/"
+    },
+    {
+      "id": "E4N-155",
+      "title": "P37 teslim | Mevcut eğitim dışı webin 39 API ve 87 tarayıcı/veri teknik kabulü",
+      "status": "Done",
+      "parentId": "E4N-109",
+      "milestone": {
+        "id": "594d6c02-2a66-432a-9d31-2cc6b8fc6400",
+        "name": "Sprint 6 — Operasyon ve sürüm"
+      },
+      "top": "## 9 Ekim — teslim/durum eşleştirmesi\n\nBu paket daha önce kodlandı, test edildi ve Git'e gönderildi; Linear'da yalnız ana görevin açıklamasında/yorumunda kaldığı için tamamlanmış teslim görünmüyordu. Bu kayıt geçmiş kanıtlarla **Done** olarak eşleştirilmiştir; bugün yeni kodlama veya yeni test koşusu yapılmış iddiası değildir.\n\n## Tamamlanan bütün kapsam\n\n8 Ekim güncel delivered web source için tek sahipli kabul runner, 39/39 API/veri, production build ve taze gerçek App/Vite→Express/JWT→disposable PG17 87/87 browser/final DB doğrulaması; kaynak equality ve fixture cleanup. Teknik kabul mevcut teslimlere aittir; gelecekteki hedefler ve üretim sürüm onayı değildir. Her sonraki test turu için yeni Done issue açılmayacak; bu kabul kaydı güncellenecek.\n\n## Git ve kabul kanıtı\n\n* [03db90f](<https://github.com/kaankarakas34/e4n/commit/03db90f>)\n* [7962f7e](<https://github.com/kaankarakas34/e4n"
+    },
+    {
+      "id": "E4N-98",
+      "title": "P26 | Kalan: bilet hakları, ödeme kabulü ve eski etkinlik yazımları",
+      "status": "In Progress",
+      "parentId": "E4N-67",
+      "milestone": {
+        "id": "8351fe69-49ca-4000-a6c0-937352cde9df",
+        "name": "Sprint 2 — Veri ve üyelik temeli"
+      },
+      "top": "## 9 Ekim — tamamlanan teslim artık Done olarak görünür\n\n**Tamamlanan kapsam:** [E4N-150 — P26 teslim | Mevcut etkinlik kaydı, yönetici düzeltmesi ve toplu toplantı yoklaması](<https://linear.app/e4n/issue/E4N-150/p26-teslim-mevcut-etkinlik-kaydi-yonetici-duzeltmesi-ve-toplu-toplanti>) **Done**. Bu paketin veri/API/web/test/commit teslimi yeniden yapılmayacak. Ayrıntılı geçmiş kanıtlar aşağıda korunur.\n\n**Bu ana kayıtta kalan kapsam:** Hedef indirimli/çoklu bilet hakları, fiyat/sağlayıcı sandbox, eski katılım yorumu/backfill ve diğer legacy etkinlik yazımları ana P26/P25/P14'te açık.\n\nBu kaydın In Progress durumu kalan ana hedefi gösterir; alt teslimin bitmediği anlamına gelmez. Üretim sürüm hazır değil. Done alt kayıt bir endpoint/düğme/test turu değil, bağlı bütün teslimdir; önceki WEB01–15/PAR Done kayıtları tekrar sayılmaz. Kapanış kabulünde yalnız kalan kapsam incelenir.\n\n## 8 Ekim "
+    },
+    {
+      "id": "E4N-101",
+      "title": "P29 | Kalan: hedef dönem/uygunluk entegrasyonu ve shuffle bildirimleri",
+      "status": "In Progress",
+      "parentId": "E4N-70",
+      "milestone": {
+        "id": "c565c1a6-b2a3-4120-95cb-e7f3d9d8aa5f",
+        "name": "Sprint 5 — Shuffle ve arayüz"
+      },
+      "top": "## 9 Ekim — tamamlanan teslim artık Done olarak görünür\n\n**Tamamlanan kapsam:** [E4N-151 — P29 teslim | Atomik shuffle, korunmuş atama geçmişi ve web işlem kurtarma](<https://linear.app/e4n/issue/E4N-151/p29-teslim-atomik-shuffle-korunmus-atama-gecmisi-ve-web-islem-kurtarma>) **Done**. Bu paketin veri/API/web/test/commit teslimi yeniden yapılmayacak. Ayrıntılı geçmiş kanıtlar aşağıda korunur.\n\n**Bu ana kayıtta kalan kapsam:** Canonical dört aylık dönem, ödeme kesimi/grace/uygunluk, hizmet ve başkan politikası, güvenilir bildirim ve retention ana P27/P28/P29'da açık. Legacy keyless çağrılar idempotent sayılmaz.\n\nBu kaydın In Progress durumu kalan ana hedefi gösterir; alt teslimin bitmediği anlamına gelmez. Üretim sürüm hazır değil. Done alt kayıt bir endpoint/düğme/test turu değil, bağlı bütün teslimdir; önceki WEB01–15/PAR Done kayıtları tekrar sayılmaz. Kapanış kabulünde yalnız kalan ka"
+    },
+    {
+      "id": "E4N-111",
+      "title": "P39 | Kalan ürün/API uyumu ve eski yazım yolları",
+      "status": "In Progress",
+      "parentId": "E4N-71",
+      "milestone": {
+        "id": "c565c1a6-b2a3-4120-95cb-e7f3d9d8aa5f",
+        "name": "Sprint 5 — Shuffle ve arayüz"
+      },
+      "top": "## 9 Ekim — Done teslim / kalan kapsam\n\n[E4N-152 — P39 teslim | Profil/fatura, bildirim/oturum, bağlantı alıcısı ve lonca ayarları](<https://linear.app/e4n/issue/E4N-152/p39-teslim-profilfatura-bildirimoturum-baglanti-alicisi-ve-lonca>) **Done**; veri/API/web/test/commit teslimi yeniden yapılmayacak. Bu ana kayıtta kalan: Yeni üyelik/grup/puan hakları, şirket kanıtı/kilidi, kalan legacy writer/rol yolları, onaylı site anlatımı ve demo kararları ana P39/P30/P31/P08/P33/P41'de açık. In Progress kalan hedefi gösterir; üretim sürüm hazır değildir. Geçmiş kanıtlar korunur.\n\n## 9 Ekim — tamamlanan teslim artık Done olarak görünür\n\n**Tamamlanan kapsam:** [E4N-152 — P39 teslim | Profil/fatura, bildirim/oturum, bağlantı alıcısı ve lonca ayarları](<https://linear.app/e4n/issue/E4N-152/p39-teslim-profilfatura-bildirimoturum-baglanti-alicisi-ve-lonca>) **Done**. Bu paketin veri/API/web/test/commit t"
+    },
+    {
+      "id": "E4N-91",
+      "title": "P19 | Kalan geçmiş aktörü, neden, dönem ve çıkarılma bağları",
+      "status": "In Progress",
+      "parentId": "E4N-68",
+      "milestone": {
+        "id": "23c55743-bcbe-49b2-b667-56b6d4312618",
+        "name": "Sprint 3 — Lonca ve kapalı grup"
+      },
+      "top": "## 9 Ekim — Done teslim / kalan kapsam\n\n[E4N-153 — P19 teslim | Kalıcı üyelik bağlantı geçmişi ve üye/admin web ekranları](<https://linear.app/e4n/issue/E4N-153/p19-teslim-kalici-uyelik-baglanti-gecmisi-ve-uyeadmin-web-ekranlari>) **Done**; veri/API/web/test/commit teslimi yeniden yapılmayacak. Bu ana kayıtta kalan: İşlemi yapan aktör/neden, canonical dönem, çıkarılma/puan/ban ilişkisi ve retention; eski silinmiş kayıtlar/backfill politikası ana P19/P20/P23/P24'te açık. In Progress kalan hedefi gösterir; üretim sürüm hazır değildir. Geçmiş kanıtlar korunur.\n\n## 8 Ekim — Ortak paket ve uygulama sırası\n\n**02 — Grup başvuru, görüşme, kabul ve transfer** / <issue id=\"5e450a98-701e-4e0f-a419-04c107cf1fa8\" href=\"https://linear.app/e4n/issue/E4N-68/epic-e4-lonca-ve-kapali-grup\">E4N-68</issue>; paket içi adım 5/7.\n\nSıra: <issue id=\"63fa7579-c51b-41ad-8e01-77c44c95825d\" href=\"https://linear.app/e"
+    },
+    {
+      "id": "E4N-106",
+      "title": "P34 | Kalan: üretim planlayıcısı, gözlem ve hedef iş kuralları",
+      "status": "In Progress",
+      "parentId": "E4N-72",
+      "milestone": {
+        "id": "594d6c02-2a66-432a-9d31-2cc6b8fc6400",
+        "name": "Sprint 6 — Operasyon ve sürüm"
+      },
+      "top": "## 9 Ekim — tamamlanan teslim artık Done olarak görünür\n\n**Tamamlanan kapsam:** [E4N-154 — P34 teslim | Tekrar güvenli mevcut işler, kalıcı çalışma geçmişi ve web operasyonu](<https://linear.app/e4n/issue/E4N-154/p34-teslim-tekrar-guvenli-mevcut-isler-kalici-calisma-gecmisi-ve-web>) **Done**. Bu paketin veri/API/web/test/commit teslimi yeniden yapılmayacak. Ayrıntılı geçmiş kanıtlar aşağıda korunur.\n\n**Bu ana kayıtta kalan kapsam:** Gerçek dış scheduler kurulum/gözlem/alarm, üretim connection/pooling/UTC kabulü, hedef champion dönem/backfill ve karara bağlı gecikme/kısıtlama/çıkarma job kuralları ana P34'te açık.\n\nBu kaydın In Progress durumu kalan ana hedefi gösterir; alt teslimin bitmediği anlamına gelmez. Üretim sürüm hazır değil. Done alt kayıt bir endpoint/düğme/test turu değil, bağlı bütün teslimdir; önceki WEB01–15/PAR Done kayıtları tekrar sayılmaz. Kapanış kabulünde yalnız kalan"
+    },
+    {
+      "id": "E4N-109",
+      "title": "P37 | Kalan hedef ürün ve nihai web sürüm kabulü",
+      "status": "In Progress",
+      "parentId": "E4N-72",
+      "milestone": {
+        "id": "594d6c02-2a66-432a-9d31-2cc6b8fc6400",
+        "name": "Sprint 6 — Operasyon ve sürüm"
+      },
+      "top": "## 9 Ekim — Done teslim / kalan kapsam\n\n[E4N-155 — P37 teslim | Mevcut eğitim dışı webin 39 API ve 87 tarayıcı/veri teknik kabulü](<https://linear.app/e4n/issue/E4N-155/p37-teslim-mevcut-egitim-disi-webin-39-api-ve-87-tarayiciveri-teknik>) **Done**; veri/API/web/test/commit teslimi yeniden yapılmayacak. Bu ana kayıtta kalan: Tüm hedef ürün paketleri, gerçek veri/adoption/provider ve SEC58/59/120/P38 kapıları sonrasında nihai web sürüm kabulü ana P37'de açık. İlk root kontrol/state timeout FAIL korunur; 39 API/build ve taze87 browser aynı313source hash ile doğrulanmış ayrı provenance; tek rootPASS değil. In Progress kalan hedefi gösterir; üretim sürüm hazır değildir. Geçmiş kanıtlar korunur.\n\n## 8 Ekim — Güncel bütün web aynı kaynakta kabul\n\nKanıt commit/push [c9b7a51](<https://github.com/kaankarakas34/e4n/commit/c9b7a51>). npm --prefix server run test:web-rehearsal tek sahipli turu:\n\n**3"
+    }
+  ],
+  "note": "Six previously shipped whole packages registered as Done children. Remaining parents remain In Progress with remaining-only titles. No new implementation, test run or product completion percentage claim."
+}

@@ -1,5 +1,17 @@
 # E4N devam durumu — 10 Ekim 2026
 
+## Güncel teslim — BAŞ-02 / E4N-162 tamamlandı
+
+- **E4N-162 (BAŞ-02) Done:** Davetiye zorunluluğu kalkarken üyelik referans ilişkisi, kalıcı takip ve web görünümü kuruldu.
+  - Referanssız normal kayıt özgürlüğü korundu; davetiye kapısı kaldırıldı, referans alanı tamamen opsiyoneldir.
+  - Referanslı kayıtta URL parametresi (`?ref=...`), davet linki (`token` içindeki `inviter_id`) veya girilen kod kalıcı olarak çözümlenir (`resolveReferrer`) ve transaction içinde `system_settings` (`membership_referral:${userId}`) üzerinde atomik kaydedilir (`recordMembershipReferral`).
+  - Public doğrulama API'si: `GET /api/auth/referral-preview` ile kayıt öncesinde sponsorun ad ve şirket bilgisi teyit edilir.
+  - Güvenlik sınırları: Kendi kendine referans (self-referral) ve geçersiz/sahte UUID'ler 400 ile engellendi. Referrer veya sıradan üyeler başkasının referansını izinsiz değiştiremez (403). Üyelik referansına ücret, ödül veya puan mekanizması eklenmedi.
+  - Yetkili admin görünümü: `GET /api/admin/members` listesinde `referred_by` ve `referrals_count` eklendi; `GET /api/admin/members/:id/referrals` ve `POST /api/admin/members/:id/set-referrer` ile gerekçeli sponsor düzeltmesi ve snapshot audit geçmişi (`history`) kuruldu.
+  - Doğrulanabilir legacy ilişki: `visitors` tablosunda `status = 'JOINED'` olan eski kayıtlar otomatik olarak `source: 'VISITOR_CONVERSION'` olarak haritalandı. Bilinmeyen referanslar tahmin edilmez.
+  - Web ekranları: `Register.tsx` (canlı sponsor kartı ve opsiyonel referans alanı) ve `AdminMembers.tsx` (üyelik referans sütunu ve yönetim/düzeltme modalı) entegre edildi.
+  - Testler: `server/test/membership-referral-contract.mjs` (11/11 senaryo), `server/test/route-ownership-contract.mjs` (199 rota, 31 sağlayıcı), `server/test/second-removal-ban-contract.mjs`, `server/test/low-score-removal-contract.mjs`, `server/test/monthly-score-finalization-contract.mjs`, `server/test/score-ledger-contract.mjs`, `node server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu, 0 DDL), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/BAS-02-Uyelik-Referansi-ve-Web-Gorunumu-2026-10-10]].
+
 ## Güncel teslim — P24 / E4N-96 tamamlandı
 
 - **E4N-96 (P24) Done:** İkinci kez gruptan çıkarılan üyeler için 8 aylık (2 dönem / 240 gün) kapalı grup başvuru yasağı (`403 REMOVAL_BAN_ACTIVE` - R11, D03, D04) kuruldu.

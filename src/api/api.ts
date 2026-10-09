@@ -171,6 +171,29 @@ export const api = {
     return await request('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
   },
 
+  async getReferralPreview(params: { ref?: string; token?: string; referralCode?: string }) {
+    const q = new URLSearchParams();
+    if (params.ref) q.set('ref', params.ref);
+    if (params.token) q.set('token', params.token);
+    if (params.referralCode) q.set('referralCode', params.referralCode);
+    return await request(`/auth/referral-preview?${q.toString()}`);
+  },
+
+  async getMyMembershipReferral() {
+    return await request('/user/membership-referral');
+  },
+
+  async getAdminMemberReferrals(userId: string) {
+    return await request(`/admin/members/${userId}/referrals`);
+  },
+
+  async setAdminMemberReferrer(userId: string, referrerId: string | null, reason: string) {
+    return await request(`/admin/members/${userId}/set-referrer`, {
+      method: 'POST',
+      body: JSON.stringify({ referrerId, reason })
+    });
+  },
+
   async getMe(token?: string) {
     const headers: any = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;

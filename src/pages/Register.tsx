@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Input } from '../shared/Input';
@@ -16,6 +16,35 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [modalType, setModalType] = useState<'membership' | 'clarification' | 'explicit' | null>(null);
+  const refParam = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('sponsor');
+  const [referralInput, setReferralInput] = useState(refParam || '');
+  const [referrerPreview, setReferrerPreview] = useState<{ name: string; company?: string | null } | null>(null);
+  const [referralChecking, setReferralChecking] = useState(false);
+
+  useEffect(() => {
+    const code = referralInput || token;
+    if (!code) {
+      setReferrerPreview(null);
+      return;
+    }
+    let active = true;
+    setReferralChecking(true);
+    api.getReferralPreview({ ref: referralInput, token: token || undefined })
+      .then((res: any) => {
+        if (active && res && res.valid && res.referrer) {
+          setReferrerPreview(res.referrer);
+        } else if (active) {
+          setReferrerPreview(null);
+        }
+      })
+      .catch(() => {
+        if (active) setReferrerPreview(null);
+      })
+      .finally(() => {
+        if (active) setReferralChecking(false);
+      });
+    return () => { active = false; };
+  }, [referralInput, token]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,7 +83,7 @@ export function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.requestRegistration({ ...formData, token });
+      await api.requestRegistration({ ...formData, token, ref: referralInput.trim() || undefined });
       setSubmitted(true);
     } catch (error: any) {
       console.error('Registration error:', error);

@@ -18,7 +18,6 @@ router.use((req, res, next) => {
 });
 
 // Member Management
-// Member Management
 router.get('/members', async (req, res) => {
     try {
         const { rows } = await pool.query(`
@@ -43,7 +42,52 @@ router.get('/members', async (req, res) => {
             LEFT JOIN groups g ON gm.group_id = g.id
             ORDER BY u.created_at DESC
         `);
-        res.json(rows.map(r => ({ ...r, full_name: r.name })));
+
+        const settings = (await pool.query("SELECT key, value FROM system_settings WHERE key LIKE 'membership_referral:%'")).rows;
+        const refMap = new Map();
+        const counts = new Map();
+
+        for (const s of settings) {
+            try {
+                const data = JSON.parse(s.value);
+                if (data && data.userId && data.referrerId) {
+                    refMap.set(data.userId, {
+                        id: data.referrerId,
+                        name: data.referrerName || null,
+                        email: data.referrerEmail || null,
+                        source: data.source || 'REGISTRATION'
+                    });
+                    counts.set(data.referrerId, (counts.get(data.referrerId) || 0) + 1);
+                }
+            } catch {}
+        }
+
+        const legacy = (await pool.query(`
+            SELECT target.id AS user_id, v.inviter_id, u.name AS inviter_name, u.email AS inviter_email
+            FROM visitors v
+            JOIN users u ON u.id = v.inviter_id
+            JOIN users target ON lower(target.email) = lower(v.email)
+            WHERE v.status = 'JOINED'
+        `)).rows;
+
+        for (const leg of legacy) {
+            if (!refMap.has(leg.user_id)) {
+                refMap.set(leg.user_id, {
+                    id: leg.inviter_id,
+                    name: leg.inviter_name,
+                    email: leg.inviter_email,
+                    source: 'VISITOR_CONVERSION'
+                });
+                counts.set(leg.inviter_id, (counts.get(leg.inviter_id) || 0) + 1);
+            }
+        }
+
+        res.json(rows.map(r => ({
+            ...r,
+            full_name: r.name,
+            referred_by: refMap.get(r.id) || null,
+            referrals_count: counts.get(r.id) || 0
+        })));
     } catch (e) {
         console.error('Admin Members Error:', e);
         res.status(500).json({ error: e.message });

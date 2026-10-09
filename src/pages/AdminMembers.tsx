@@ -43,6 +43,8 @@ interface Member {
   linkedin_profile?: string;
   position?: string;
   marketing_consent?: boolean;
+  referred_by?: { id: string; name: string; email?: string; source?: string } | null;
+  referrals_count?: number;
 }
 
 interface Group {
@@ -62,6 +64,58 @@ export function AdminMembers() {
   const [filterRole, setFilterRole] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
+
+  // Referral Modal State
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralDetails, setReferralDetails] = useState<any>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [newReferrerId, setNewReferrerId] = useState('');
+  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [adjustmentSaving, setAdjustmentSaving] = useState(false);
+  const [referralModalError, setReferralModalError] = useState('');
+
+  const openReferralModal = async (member: Member) => {
+    setSelectedMember(member);
+    setShowReferralModal(true);
+    setReferralLoading(true);
+    setReferralModalError('');
+    setAdjustmentReason('');
+    setNewReferrerId(member.referred_by?.id || '');
+    try {
+      const data = await api.getAdminMemberReferrals(member.id);
+      setReferralDetails(data);
+    } catch (e: any) {
+      setReferralModalError(e?.message || 'Referans bilgileri alınamadı.');
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  const handleSaveReferralAdjustment = async () => {
+    if (!selectedMember) return;
+    if (!adjustmentReason.trim() || adjustmentReason.trim().length < 3) {
+      setReferralModalError('Düzeltme gerekçesi en az 3 karakter olmalıdır.');
+      return;
+    }
+    setAdjustmentSaving(true);
+    setReferralModalError('');
+    try {
+      await api.setAdminMemberReferrer(
+        selectedMember.id,
+        newReferrerId.trim() || null,
+        adjustmentReason.trim()
+      );
+      // Refresh
+      const updated = await api.getAdminMemberReferrals(selectedMember.id);
+      setReferralDetails(updated);
+      setAdjustmentReason('');
+      await fetchData();
+    } catch (e: any) {
+      setReferralModalError(e?.message || 'Referans güncellenemedi.');
+    } finally {
+      setAdjustmentSaving(false);
+    }
+  };
 
   // Move Modal State
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -338,6 +392,7 @@ export function AdminMembers() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol & Statü</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İletişim</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grup</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Üyelik Referansı</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
                     </tr>
                   </thead>
@@ -435,6 +490,156 @@ export function AdminMembers() {
             )}
           </CardContent>
         </Card>
+
+        {/* Membership Referral Detail & Adjustment Modal */}
+        {showReferralModal && selectedMember && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Üyelik Referans Yönetimi: {selectedMember.full_name}
+                </h3>
+                <button
+                  onClick={() => setShowReferralModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {referralLoading ? (
+                <div className="py-8 text-center text-gray-500">Yükleniyor...</div>
+              ) : (
+                <div className="space-y-6">
+                  {referralModalError && (
+                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+                      {referralModalError}
+                    </div>
+                  )}
+
+                  {/* 1. Mevcut Referans Veren */}
+                  <div className="bg-gray-50 p-4 rounded-lg border">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Mevcut Referans Veren (Sponsor)
+                    </h4>
+                    {referralDetails?.referredBy ? (
+                      <div className="text-sm">
+                        <p className="font-semibold text-gray-900">{referralDetails.referredBy.referrerName}</p>
+                        <p className="text-gray-500 text-xs">{referralDetails.referredBy.referrerEmail}</p>
+                        <p className="text-gray-400 text-xs mt-1">
+                          Kaynak: {referralDetails.referredBy.source} • Kayıt: {new Date(referralDetails.referredBy.createdAt).toLocaleDateString('tr-TR')}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">Bu üye sisteme referans olmadan kaydolmuştur.</p>
+                    )}
+                  </div>
+
+                  {/* 2. Referans Olduğu Üyeler */}
+                  <div className="bg-gray-50 p-4 rounded-lg border">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Bu Üyenin Getirdiği Üyeler ({referralDetails?.referredMembers?.length || 0})
+                    </h4>
+                    {referralDetails?.referredMembers && referralDetails.referredMembers.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto divide-y divide-gray-200">
+                        {referralDetails.referredMembers.map((m: any) => (
+                          <div key={m.id} className="py-2 flex justify-between items-center text-sm">
+                            <div>
+                              <span className="font-medium text-gray-900">{m.name}</span>
+                              <span className="text-gray-500 text-xs ml-2">({m.email})</span>
+                            </div>
+                            <span className="text-xs text-gray-400">
+                              {new Date(m.referred_at || m.created_at).toLocaleDateString('tr-TR')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">Henüz referans olduğu başka üye bulunmuyor.</p>
+                    )}
+                  </div>
+
+                  {/* 3. Düzeltme Geçmişi (Audit Snapshot) */}
+                  {referralDetails?.history && referralDetails.history.length > 0 && (
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                      <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wider mb-2">
+                        Geçmiş Referans Düzeltmeleri ({referralDetails.history.length})
+                      </h4>
+                      <div className="space-y-2 text-xs text-amber-900">
+                        {referralDetails.history.map((h: any, idx: number) => (
+                          <div key={idx} className="p-2 bg-white rounded border border-amber-200">
+                            <p className="font-medium">
+                              Eski: {h.oldReferrerName || 'Yok'} → Yeni: {h.newReferrerName || 'Yok'}
+                            </p>
+                            <p className="text-gray-500 mt-0.5">Gerekçe: {h.reason}</p>
+                            <p className="text-gray-400 text-[10px] mt-0.5">{new Date(h.changedAt).toLocaleString('tr-TR')}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Admin Düzeltme Formu */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">
+                      Referans Vereni Değiştir / Düzelt (Yalnızca Admin)
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Yeni Referans Veren Üye:
+                        </label>
+                        <select
+                          value={newReferrerId}
+                          onChange={(e) => setNewReferrerId(e.target.value)}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2"
+                        >
+                          <option value="">-- Referans Yok (Kaldır) --</option>
+                          {members
+                            .filter(m => m.id !== selectedMember.id)
+                            .map(m => (
+                              <option key={m.id} value={m.id}>
+                                {m.full_name} ({m.email})
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Düzeltme Gerekçesi (Zorunlu):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Örn: Üyenin kayıt sırasındaki bildirimi doğrultusunda düzeltildi"
+                          value={adjustmentReason}
+                          onChange={(e) => setAdjustmentReason(e.target.value)}
+                          className="w-full text-sm border border-gray-300 rounded-lg p-2"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowReferralModal(false)}
+                        >
+                          Kapat
+                        </Button>
+                        <Button
+                          variant="primary"
+                          disabled={adjustmentSaving || !adjustmentReason.trim()}
+                          onClick={handleSaveReferralAdjustment}
+                        >
+                          {adjustmentSaving ? 'Kaydediliyor...' : 'Referansı Güncelle'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Move Member Modal */}
         {showMoveModal && selectedMember && (

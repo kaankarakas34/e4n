@@ -1,6 +1,7 @@
 import {installGroupApplications} from './group-applications.js';
 import {membershipPrices} from '../../shared/membership-pricing.js';
 import {installNormalRegistration} from './normal-registration.js';
+import {installMembershipReferrals} from './membership-referrals.js';
 import {companyIdentity,companyWriteError} from './company-registration.js';
 import {setMembershipOperationContext} from './membership-operation-context.js';
 import { installNotifications } from './notifications.js';
@@ -503,6 +504,7 @@ function authenticateToken(req, res, next) {
 /* --- AUTH ENDPOINTS --- */
 
 installNormalRegistration(app,{pool});
+installMembershipReferrals(app,{pool});
 
 /* --- PUBLIC ENDPOINTS --- */
 app.get('/api/public/members/search', async (req, res) => {

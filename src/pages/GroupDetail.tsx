@@ -39,7 +39,7 @@ export function GroupDetail() {
     const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
     const canRead = !!user;
     const readContext = `${user?.id}:${user?.role}:${token}:${isPowerTeam}:${id}`;
-    const memberActions=useGroupMemberActions({scope:readContext,groupId:isPowerTeam?undefined:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
+    const memberActions=useGroupMemberActions({scope:readContext,kind:isPowerTeam?'power-team':'group',groupId:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
     const currentContext=useRef(readContext);currentContext.current=readContext;
     useEffect(()=>{setShowEditModal(false);setIsSaving(false);saveBusy.current=false;},[readContext]);
 
@@ -557,7 +557,7 @@ export function GroupDetail() {
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto">
-                                    {!isPowerTeam&&memberActions.error&&<div role="alert" className="p-3 text-red-700">{memberActions.error} <Button disabled={memberActions.busy} onClick={memberActions.refresh}>Listeyi kontrol et</Button></div>}<table className="min-w-full divide-y divide-gray-200">
+                                    {memberActions.error&&<div role="alert" className="p-3 text-red-700">{memberActions.error} <Button disabled={memberActions.busy} onClick={memberActions.refresh}>Listeyi kontrol et</Button></div>}<table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
@@ -605,21 +605,16 @@ export function GroupDetail() {
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         {(member.status === 'PENDING' || member.status === 'REQUESTED') && (
                                                             <div className="flex justify-end space-x-2">
-                                                                <Button size="sm" disabled={!isPowerTeam&&memberActions.blocked} className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
+                                                                <Button size="sm" disabled={memberActions.blocked} className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
                                                                     if (confirm('Üyeyi onaylamak istiyor musunuz?')) {
-                                                                        if(!isPowerTeam){await memberActions.run('approve',member.id);return;}
-                                                                        if (isPowerTeam) await api.updatePowerTeamMemberStatus(id!, member.id, 'ACTIVE');
-                                                                        // Optimistic update
-                                                                        setMembers(members.map(m => m.id === member.id ? { ...m, status: 'ACTIVE' } : m));
+                                                                        await memberActions.run('approve',member.id);
                                                                     }
                                                                 }}>
                                                                     Onayla
                                                                 </Button>
-                                                                <Button size="sm" disabled={!isPowerTeam&&memberActions.blocked} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={async () => {
+                                                                <Button size="sm" disabled={memberActions.blocked} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={async () => {
                                                                     if (confirm('İsteği reddetmek istiyor musunuz?')) {
-                                                                        if(!isPowerTeam){await memberActions.run('remove',member.id);return;}
-                                                                        if (isPowerTeam) await api.deletePowerTeamMember(id!, member.id);
-                                                                        setMembers(members.filter(m => m.id !== member.id)); // Remove from list
+                                                                        await memberActions.run('remove',member.id);
                                                                     }
                                                                 }}>
                                                                     Reddet
@@ -628,15 +623,9 @@ export function GroupDetail() {
                                                         )}
                                                         {member.status === 'ACTIVE' && (user?.role === 'ADMIN' || user?.role === 'PRESIDENT') && member.id !== user?.id && (
                                                             <div className="flex justify-end">
-                                                                <Button size="sm" disabled={!isPowerTeam&&memberActions.blocked} variant="ghost" className="text-red-600 hover:bg-red-50" onClick={async () => {
+                                                                <Button size="sm" disabled={memberActions.blocked} variant="ghost" className="text-red-600 hover:bg-red-50" onClick={async () => {
                                                                     if (confirm(`${member.full_name} isimli üyeyi gruptan çıkarmak istediğinize emin misiniz?`)) {
-                                                                        if(!isPowerTeam){await memberActions.run('remove',member.id);return;}
-                                                                        try {
-                                                                            if (isPowerTeam) await api.deletePowerTeamMember(id!, member.id);
-                                                                            setMembers(members.filter(m => m.id !== member.id));
-                                                                        } catch (e) {
-                                                                            alert('Üye çıkarılırken bir hata oluştu.');
-                                                                        }
+                                                                        await memberActions.run('remove',member.id);
                                                                     }
                                                                 }}>
                                                                     Üye Çıkar

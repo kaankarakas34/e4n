@@ -113,6 +113,7 @@ export function GroupManagerDashboard() {
     const [powerTeams, setPowerTeams] = useState<any[]>([]);
     const [myPowerTeam, setMyPowerTeam] = useState<any>(null);
     const [ptMembers, setPtMembers] = useState<any[]>([]);
+    const ptActions=useGroupMemberActions({scope:readContext+':guild:'+myPowerTeam?.id,kind:'power-team',groupId:myPowerTeam?.id,onMembers:setPtMembers});
     const [ptSynergy, setPtSynergy] = useState<any[]>([]);
     const [referrals, setReferrals] = useState<any[]>([]);
     const [substitutes, setSubstitutes] = useState<any[]>([]);
@@ -197,19 +198,6 @@ export function GroupManagerDashboard() {
 
     const handleGroupRequest = (userId:string,status:'ACTIVE'|'REJECTED') => memberActions.run(status==='ACTIVE'?'approve':'remove',userId);
 
-    const handlePTRequest = async (userId: string, status: 'ACTIVE' | 'REJECTED') => {
-        if (!myPowerTeam) return;
-        try {
-            await api.updatePowerTeamMemberStatus(myPowerTeam.id, userId, status);
-            // Refresh
-            const all = await api.getPowerTeamMembers(myPowerTeam.id);
-            setPtMembers(all);
-            alert(`İstek ${status === 'ACTIVE' ? 'onaylandı' : 'reddedildi'}.`);
-        } catch (e) {
-            alert('İşlem başarısız.');
-        }
-    };
-
     if (!user) return <div>Giriş yapmalısınız.</div>;
     if (loadError) return <div className="p-8" role="alert">
         <p>{loadError}</p>
@@ -292,7 +280,7 @@ export function GroupManagerDashboard() {
                             {tab.id === 'APPLICATIONS' && (
                                 (() => {
                                     const count = (members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length) +
-                                        (myPowerTeam ? ptMembers.filter((m: any) => m.status === 'PENDING').length : 0);
+                                        (myPowerTeam ? ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length : 0);
                                     return count > 0 ? (
                                         <span className="ml-2 bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>
                                     ) : null;
@@ -773,6 +761,7 @@ export function GroupManagerDashboard() {
                         </Card>
 
                         {/* Power Team Applications */}
+                        {ptActions.error&&<div role="alert" className="p-3 text-red-700">{ptActions.error} <Button disabled={ptActions.busy} onClick={ptActions.refresh}>Listeyi kontrol et</Button></div>}
                         {myPowerTeam && (
                             <Card>
                                 <CardHeader>
@@ -782,11 +771,11 @@ export function GroupManagerDashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {ptMembers.filter((m: any) => m.status === 'PENDING').length === 0 ? (
+                                    {ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length === 0 ? (
                                         <p className="text-gray-500 text-sm">Bekleyen lonca katılım isteği yok.</p>
                                     ) : (
                                         <div className="space-y-4">
-                                            {ptMembers.filter((m: any) => m.status === 'PENDING').map((m: any) => (
+                                            {ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').map((m: any) => (
                                                 <div key={m.id} className="flex flex-col sm:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                                                     <div className="flex items-center mb-3 sm:mb-0">
                                                         <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold mr-3">
@@ -804,10 +793,10 @@ export function GroupManagerDashboard() {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handlePTRequest(m.id, 'REJECTED')} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                        <Button variant="outline" size="sm" disabled={ptActions.blocked} onClick={() => ptActions.run('remove',m.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                                             Reddet
                                                         </Button>
-                                                        <Button variant="primary" size="sm" onClick={() => handlePTRequest(m.id, 'ACTIVE')}>
+                                                        <Button variant="primary" size="sm" disabled={ptActions.blocked} onClick={() => ptActions.run('approve',m.id)}>
                                                             Onayla
                                                         </Button>
                                                     </div>
@@ -837,6 +826,7 @@ export function GroupManagerDashboard() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Takım Üyeleri</CardTitle>
+                                    {ptActions.error&&<div role="alert">{ptActions.error} <Button disabled={ptActions.busy} onClick={ptActions.refresh}>Listeyi kontrol et</Button></div>}
                                 </CardHeader>
                                 <CardContent>
                                     <ul className="divide-y divide-gray-100">
@@ -853,6 +843,7 @@ export function GroupManagerDashboard() {
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Aktif</span>
+                                                    {m.id!==user.id&&<Button size="sm" variant="outline" disabled={ptActions.blocked} onClick={()=>{if(confirm(m.full_name+' isimli üyeyi loncadan çıkarmak istiyor musunuz?'))void ptActions.run('remove',m.id);}}>Üye Çıkar</Button>}
                                                 </div>
                                             </li>
                                         ))}

@@ -508,7 +508,9 @@ export const api = {
     const headers: any = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    return await request(`/power-teams/${ptId}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ status }), headers });
+    const result=await request(`/power-teams/${ptId}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ status }), headers });
+    if(result?.power_team_id!==ptId||result?.user_id!==userId||result?.status!==status)throw new Error('Lonca üye sonucu doğrulanamadı.');
+    return result;
   },
 
   async deleteMember(id: string) {
@@ -522,7 +524,9 @@ export const api = {
   },
 
   async deletePowerTeamMember(ptId: string, userId: string) {
-    return await request(`/power-teams/${ptId}/members/${userId}`, { method: 'DELETE' });
+    const result=await request(`/power-teams/${ptId}/members/${userId}`, { method: 'DELETE' });
+    if(result?.success!==true||result?.removed!==true||result?.powerTeamId!==ptId||result?.userId!==userId)throw new Error('Lonca üye sonucu doğrulanamadı.');
+    return result;
   },
 
   async getUserGroups(userId: string) {

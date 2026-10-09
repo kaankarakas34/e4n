@@ -214,6 +214,37 @@ async function main() {
   await pool.query('DROP TRIGGER fail_roster_history ON group_membership_history; DROP FUNCTION fail_roster_history()');
   const removals=await Promise.all([remove(active),remove(active)]);assert.deepEqual(removals.map(r=>r.status).sort(),[200,404]);
   assert.equal((await pool.query("SELECT count(*)::int n FROM group_membership_history WHERE user_id=$1 AND operation='DELETE'",[active])).rows[0].n,1);
+  // Lonca join/approval/removal: existing payment gate and current DB authority.
+  const guildPresident=await user(),guildCandidate=await user();
+  await pool.query("INSERT INTO power_team_members(power_team_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT')",[pt,guildPresident]);
+  const guildCall=(id,actor=admin,status='ACTIVE')=>call('/power-teams/'+pt+'/members/'+id,{status},actor,'PUT');
+  assert.equal((await call('/power-teams/'+pt+'/join',{},guildCandidate)).status,200);
+  assert.equal((await guildCall(guildCandidate,ordinary)).status,403);
+  assert.equal((await guildCall(guildCandidate,outsider)).status,403);
+  assert.equal((await guildCall(guildCandidate,null)).status,401);
+  assert.equal((await guildCall(guildCandidate,admin,'REJECTED')).status,400);
+  assert.equal((await guildCall(randomUUID())).status,404);
+  const approved=await guildCall(guildCandidate,guildPresident);assert.equal(approved.status,200);assert.equal((await approved.json()).status,'ACTIVE');
+  const joinedAt=(await pool.query('SELECT joined_at FROM power_team_members WHERE power_team_id=$1 AND user_id=$2',[pt,guildCandidate])).rows[0].joined_at;
+  assert.equal((await call('/power-teams/'+pt+'/join',{},guildCandidate)).status,200);
+  const preserved=(await pool.query('SELECT status,joined_at FROM power_team_members WHERE power_team_id=$1 AND user_id=$2',[pt,guildCandidate])).rows[0];assert.equal(preserved.status,'ACTIVE');assert.equal(preserved.joined_at.getTime(),joinedAt.getTime());
+  await pool.query("UPDATE users SET account_status='PENDING' WHERE id=$1",[guildCandidate]);
+  assert.equal((await call('/power-teams/'+pt+'/join',{},guildCandidate)).status,403);
+  await pool.query("UPDATE users SET account_status='ACTIVE' WHERE id=$1",[guildCandidate]);
+  assert.equal((await call('/power-teams/'+randomUUID()+'/join',{},guildCandidate)).status,404);
+  assert.equal((await call('/power-teams/invalid/join',{},guildCandidate)).status,400);
+  assert.equal((await call('/power-teams/'+pt+'/join',{userId:admin},guildCandidate)).status,400);
+  const guildRemove=(actor=admin,suffix='',body={})=>call('/power-teams/'+pt+'/members/'+guildCandidate+suffix,body,actor,'DELETE');
+  assert.equal((await guildRemove(ordinary)).status,403);assert.equal((await guildRemove(null)).status,401);
+  assert.equal((await guildRemove(admin,'?override=true')).status,400);assert.equal((await guildRemove(admin,'',{extra:true})).status,400);
+  await pool.query("UPDATE power_team_members SET role='MEMBER' WHERE user_id=$1 AND power_team_id=$2",[guildPresident,pt]);assert.equal((await guildRemove(guildPresident)).status,403);
+  await pool.query("UPDATE power_team_members SET role='PRESIDENT' WHERE user_id=$1 AND power_team_id=$2",[guildPresident,pt]);
+  await pool.query(`CREATE FUNCTION fail_guild_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture only'; END $$; CREATE TRIGGER fail_guild_delete BEFORE DELETE ON power_team_members FOR EACH ROW EXECUTE FUNCTION fail_guild_delete()`);
+  const failedGuildDelete=await guildRemove();assert.equal(failedGuildDelete.status,500);assert.equal((await failedGuildDelete.json()).error,'Grup işlemi tamamlanamadı.');assert.equal((await pool.query('SELECT 1 FROM power_team_members WHERE user_id=$1 AND power_team_id=$2',[guildCandidate,pt])).rowCount,1);
+  await pool.query('DROP TRIGGER fail_guild_delete ON power_team_members; DROP FUNCTION fail_guild_delete()');
+  const guildRace=await Promise.all([guildRemove(guildPresident),guildRemove(guildPresident)]);assert.deepEqual(guildRace.map(r=>r.status).sort(),[200,404]);
+  assert.deepEqual(await guildRace.find(r=>r.status===200).json(),{success:true,removed:true,powerTeamId:pt,userId:guildCandidate});
+  console.log('Lonca contract PASS: join replay/payment, current manager, ACK/404, rollback, concurrent deletion; no 35-member cap.');
   console.log('Group capacity/roster PASS: PG17 races, capacity, transfer/shuffle rollback, current actor boundaries, removal acknowledgement/404, history rollback and one concurrent deletion. No live DB/mail/payment.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{if(appServer)await new Promise(r=>appServer.close(r));if(pool)await pool.end();if(containerStarted)docker(['stop','--time','3',container]);}process.exit(code);

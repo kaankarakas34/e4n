@@ -39,11 +39,15 @@ try{
   for(let attempt=0;attempt<30;attempt++){try{await pool.query('SELECT 1');sqlReady=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,500));}}
   if(!sqlReady)throw Error('Disposable fixture did not accept a SQL connection');
   const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');const schema=await applyVersionedSchema();if(schema.applied.length!==24)throw Error('Unexpected schema version count');
-  const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice','pastEvent','paidEvent'].map(k=>[k,randomUUID()]));
+  const ids=Object.fromEntries(['admin','member','president','applicant','group','emptyGroup','event','invoice','pastEvent','paidEvent','rosterGuild'].map(k=>[k,randomUUID()]));
   const password='Fixture-browser-123!',hash=await bcrypt.hash(password,10);
   for(const who of ['admin','member','president','applicant'])await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,$5,'ACTIVE')",[ids[who],who+'@example.invalid','Browser '+who,hash,who==='admin'?'ADMIN':who==='president'?'PRESIDENT':'MEMBER']);
   await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Browser Full Group','ACTIVE'),($2,'Browser Vacant Group','ACTIVE')",[ids.group,ids.emptyGroup]);
   await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE'),($3,$2,'ACTIVE'),($4,$2,'REQUESTED')",[ids.member,ids.group,ids.president,ids.applicant]);
+  if(process.env.E4N_GUILD_ROSTER_FIXTURE==='1'){
+    await pool.query("INSERT INTO power_teams(id,name,status) VALUES($1,'Browser Roster Guild','ACTIVE')",[ids.rosterGuild]);
+    await pool.query("INSERT INTO power_team_members(power_team_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT'),($1,$3,'ACTIVE','MEMBER'),($1,$4,'REQUESTED','MEMBER')",[ids.rosterGuild,ids.president,ids.member,ids.applicant]);
+  }
   for(let i=0;i<34;i++){const id=randomUUID();await pool.query("INSERT INTO users(id,email,name,profession,password_hash,role,account_status) VALUES($1,$2,$3,$3,$4,'MEMBER','ACTIVE')",[id,'seat-'+i+'@example.invalid','Browser seat '+i,hash]);await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')",[id,ids.group]);}
   // Exercise actual keyset pagination without changing membership status or rights.
   for(let i=0;i<52;i++)await pool.query('UPDATE group_members SET joined_at=$1 WHERE user_id=$2',[new Date(1700000000000+i),ids.member]);
@@ -91,7 +95,8 @@ const acknowledgedGuilds=(await pool.query("SELECT id FROM power_teams WHERE nam
 const notificationCounts=(await pool.query('SELECT user_id,count(*)::int AS total,count(*) FILTER(WHERE read IS DISTINCT FROM TRUE)::int AS unread FROM notifications GROUP BY user_id ORDER BY user_id')).rows;
 const profileSettings=(await pool.query('SELECT id,name,phone,city,website,bio,company,tax_number,tax_office,billing_address FROM users WHERE id=$1',[ids.member])).rows;
 const batchMeetings=(await pool.query("SELECT e.id,e.created_by,(SELECT count(*)::int FROM attendance a WHERE a.event_id=e.id) participants,(SELECT count(*)::int FROM event_attendance_verifications h WHERE h.event_id=e.id) history FROM events e WHERE title IN ('Browser batch observed meeting','Browser batch retry meeting')")).rows;
-res.end(JSON.stringify({batchMeetings,notificationCounts,profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
+const rosterGuild=(await pool.query('SELECT user_id,status,role FROM power_team_members WHERE power_team_id=$1',[ids.rosterGuild])).rows;
+res.end(JSON.stringify({rosterGuild,batchMeetings,notificationCounts,profileSettings,acknowledgedGuilds,guildSettings,externalReferrals,attendanceObservations,observedAttendance,group,attendance,documents,messages,mails,jobs,shuffleHistory,activeMemberships,membershipInvoices,membershipPayments,reminderRecords,membershipHistory,lifecycleTickets,lifecycleReferrals,lifecycleMeetings}));}catch(e){res.writeHead(500);res.end('Fixture state failed');}
   });control.listen(0,'127.0.0.1');await once(control,'listening');
   const fixture={ids,password,apiBase,webBase,controlBase:'http://127.0.0.1:'+control.address().port,secret,container,runDir,schemaVersions:schema.applied.length,productionWrites:false,realMail:false,realPayment:false};
   writeFileSync(path.join(runDir,'fixture.json'),JSON.stringify(fixture,null,2));writeFileSync(path.join(root,'output/web-browser-current.json'),JSON.stringify(fixture,null,2));console.log('WEB_BROWSER_READY '+path.relative(root,path.join(runDir,'fixture.json')));

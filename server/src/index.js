@@ -2765,28 +2765,20 @@ app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) =
   finally{client?.release();}
 });
 
-// Join Power Team Request
-app.post('/api/power-teams/:id/join', authenticateToken, async (req, res) => {
-  try {
-    // Enforce Payment Check
-    const userCheck = await pool.query('SELECT account_status FROM users WHERE id = $1', [req.user.id]);
-    const status = userCheck.rows[0]?.account_status || 'PENDING';
-
-    if (status !== 'ACTIVE') {
-      return res.status(403).json({
-        error: 'Üyelik ödemesi tamamlanmadığı için güç takımlarına katılım sağlayamazsınız. Lütfen ödeme yapınız.',
-        code: 'PAYMENT_REQUIRED'
-      });
-    }
-
-    const { rows } = await pool.query(
-      `INSERT INTO power_team_members(power_team_id, user_id, status) VALUES($1, $2, 'REQUESTED') 
-       ON CONFLICT(power_team_id, user_id) DO UPDATE SET status = 'REQUESTED'
-RETURNING * `,
-      [req.params.id, req.user.id]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+// Join Power Team Request: replay preserves an already active membership.
+app.post('/api/power-teams/:id/join', authenticateToken, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz lonca başvurusu.'});
+  let client;
+  try{
+    client=await pool.connect();await beginGroupMutation(client);
+    const actor=(await client.query('SELECT account_status FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
+    if(!actor)throw groupError('UNAUTHENTICATED','Oturum bulunamadı.',401);
+    if(actor.account_status!=='ACTIVE')throw groupError('PAYMENT_REQUIRED','Üyelik ödemesi tamamlanmadığı için loncaya katılım sağlayamazsınız.',403);
+    if(!(await client.query('SELECT id FROM power_teams WHERE id=$1 FOR UPDATE',[req.params.id])).rowCount)throw groupError('POWER_TEAM_NOT_FOUND','Lonca bulunamadı.',404);
+    const {rows}=await client.query(`INSERT INTO power_team_members(power_team_id,user_id,status) VALUES($1,$2,'REQUESTED') ON CONFLICT(power_team_id,user_id) DO UPDATE SET status=CASE WHEN power_team_members.status='ACTIVE' THEN 'ACTIVE' ELSE 'REQUESTED' END RETURNING *`,[req.params.id,req.user.id]);
+    await client.query('COMMIT');res.json(rows[0]);
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{client?.release();}
 });
 
 // Get User's Pending Power Team Requests
@@ -2801,16 +2793,16 @@ app.get('/api/user/power-team-requests', authenticateToken, async (req, res) => 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Update Power Team Member Status
-app.put('/api/power-teams/:id/members/:userId', authenticateToken, async (req, res) => {
-  const { status } = req.body;
-  try {
-    const { rows } = await pool.query(
-      `UPDATE power_team_members SET status = $1 WHERE power_team_id = $2 AND user_id = $3 RETURNING * `,
-      [status, req.params.id, req.params.userId]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+// Update Power Team Member Status using the current database authority.
+app.put('/api/power-teams/:id/members/:userId',authenticateToken,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');const {status}=req.body||{};
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)||!['ACTIVE','INACTIVE','REQUESTED'].includes(status)||Object.keys(req.query).length||Object.keys(req.body||{}).some(key=>key!=='status'))return res.status(400).json({error:'Geçersiz lonca üye işlemi.'});
+  let client;
+  try{client=await pool.connect();await beginGroupMutation(client);await requirePowerTeamManager(client,req.user.id,req.params.id);
+    const {rows}=await client.query('UPDATE power_team_members SET status=$1 WHERE power_team_id=$2 AND user_id=$3 RETURNING *',[status,req.params.id,req.params.userId]);
+    if(!rows.length)throw groupError('MEMBERSHIP_NOT_FOUND','Lonca üyelik kaydı bulunamadı.',404);
+    await client.query('COMMIT');res.json(rows[0]);
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{client?.release();}
 });
 
 // Remove Group Member (Reject/Kick)
@@ -2831,14 +2823,14 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
 });
 
 // Remove Power Team Member (Reject/Kick)
-app.delete('/api/power-teams/:id/members/:userId', authenticateToken, async (req, res) => {
-  try {
-    await pool.query(
-      `DELETE FROM power_team_members WHERE power_team_id = $1 AND user_id = $2`,
-      [req.params.id, req.params.userId]
-    );
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+app.delete('/api/power-teams/:id/members/:userId',authenticateToken,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||!isUuid(req.params.userId)||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz lonca üye işlemi.'});
+  let client;
+  try{client=await pool.connect();await beginGroupMutation(client);await requirePowerTeamManager(client,req.user.id,req.params.id);
+    if(!(await client.query('DELETE FROM power_team_members WHERE power_team_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId])).rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Lonca üyelik kaydı bulunamadı.',404);
+    await client.query('COMMIT');res.json({success:true,removed:true,powerTeamId:req.params.id,userId:req.params.userId});
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{client?.release();}
 });
 
 // --- SHUFFLE & ROLE MANAGEMENT ---

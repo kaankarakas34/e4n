@@ -1,5 +1,9 @@
 # Devam notu — 1 Ekim 2026
 
+## 9 Ekim — P26 etkinlik yaşam döngüsü web teslimi
+
+Etkinlik yönetici liste/yazma/silme güncel DB `ADMIN` rolüne bağlandı; halka açık liste ve ekranlar ayrıldı. Taslak/özel erişimi, geçmiş tamamlanmış detay, katılımcı kimliği ve toplantı bağlantısı sınırları; girdi doğrulama, 404/409 ve geçmiş kayıtlı etkinliği silmek yerine iptal etme mesajı tek veri/API/web paketinde tamamlandı. Uygulama `fa0c6bf` + `af050cb`, test aracı `9aa05fc`; 39/39 API/veri + build ve ayrı taze 89/89 browser/final DB PASS. Tek kök PASS iddiası yok: ilk API 37/39 ve soğuk fixture 5sn timeout raporları ile ilk browser 80/89 başarısızlığı korunur. Canlı yazma/deploy yok; releaseReady=false. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. P26 ana görev bilet/hak/ödeme/legacy ve canlı kabul için açık; teslim edilen alt paket Linear'da Done olarak izlenir.
+
 ## 9 Ekim — Linear tamamlanan teslim/durum düzeltmesi
 
 Kullanıcının düzeltmesi: geçmiş teslimler Linear açıklama/yorumlarında kalmış, ana görevler In Progress olduğu için yapılan iş Done ilerlemesinde görünmüyordu. Bu kayıt biçimi düzeltildi. Altı **bütün** veri/API/web/test/commit paketi, mevcut ana görev altında kanıtlarıyla Done olarak kaydedildi; küçük endpoint/düğme işleri açılmadı, önceki WEB01–15/PAR Done işler yeniden sayılmadı. Bugün yeni kod veya test koşusu yok; 7–8 Ekimde gönderilmiş teslimlerin takibi düzeltildi.

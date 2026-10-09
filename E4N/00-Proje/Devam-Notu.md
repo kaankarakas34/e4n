@@ -2,13 +2,13 @@
 
 ## Çalışma
 - Yönetilen checkout: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2
-- Dal: codex/e4n-sprint1-foundation. Son ürün: 078dc67; kayıt: ecf0561. Push tamamlandı.
+- Dal: codex/e4n-sprint1-foundation. Son ürün: 5c1badb; push tamamlandı.
 - Eğitim dışı web; bağlı işleri büyük veri/API/ekran/test paketleriyle tamamla. Mobil Sprint7, kurs/eğitim/sınav Sprint8 en son.
 - Öncelik: üyelik/ödeme/haklar → grup başvuru/kabul/transfer → puan/çıkarma/engel → shuffle hedef uygunluğu → nihai web kabulü. Karar bağımlısı engelliyse bağımsız kalan web paketine geç.
 
 ## Son teslim ve kalanlar
-- E4N-156 Done: etkinlik yaşam döngüsü, yönetici/public web, grup listesinin erişim sınırı. Tek tur: 39/39 API/veri + build + 89/89 browser/son DB PASS. releaseReady=false.
-- Kanıt: [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09]]. Diğer teslimler E4N-150–155 Done; yeniden uygulama.
+- E4N-157 Done: kapalı grup REQUESTED görünürlüğü, onay/ret/çıkarma, DB rolü/transaction/history ve üç ekranın işlem kilidi/GET uzlaştırması. PG17 grup kontratı + build + hedefli7/7browser/DB PASS; releaseReady=false. [[E4N/09-Dogrulama/P39-Kapali-Grup-Uye-Islemleri-Web-2026-10-09]].
+- E4N-150–156 Done; yeniden uygulama. Önceki etkinlik kabulü: [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09]] (39API/build/89browser).
 - Açık ana işler: E4N-98 bilet/ödeme/legacy; E4N-91 geçmiş aktör/neden/dönem; E4N-101 dönem/uygunluk/bildirim; E4N-106 üretim operasyonu; E4N-111 kalan ürün/API; E4N-109 nihai kabul. Kalan ayrıntı için yalnız seçilen Linear görevini oku.
 - Kararlar: [[E4N/01-Kararlar/Acik-Kararlar]]. Başkan hariç35; gecikmede5gün günlükmail sonra kısıtlama; shuffle öncesi1gün ödeme. Kesim saati, başlangıç, haklar ve yeniden açılmayı uydurma.
 - Canlı Supabase yazma/deploy/gerçek ödeme-mail yok. İzole doğrula. İlgili rol/veri sınırları şimdi; kapsamlı SEC58/59/120 Sprint6.

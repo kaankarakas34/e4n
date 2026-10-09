@@ -1,0 +1,70 @@
+{
+  "productCommit": "5c1badbd4670dff9211ab127b3e3d2741433bada",
+  "releaseReady": false,
+  "apiContract": "npm --prefix server run test:group-capacity: PASS",
+  "build": "npm run build: PASS",
+  "browser": {
+    "report": "output/group-roster/2026-10-09T06-38-06-074Z/report.json",
+    "passed": 7,
+    "failed": 0,
+    "cases": [
+      {
+        "name": "manager-requested-visible-capacity-error",
+        "status": "PASS"
+      },
+      {
+        "name": "manager-rejects-requested-through-delete",
+        "status": "PASS"
+      },
+      {
+        "name": "admin-invalid-removal-ack-read-reconciliation",
+        "status": "PASS"
+      },
+      {
+        "name": "group-detail-single-submit-lost-approval-ack",
+        "status": "PASS"
+      },
+      {
+        "name": "group-detail-revoked-role-denies-remove",
+        "status": "PASS"
+      },
+      {
+        "name": "group-detail-old-scope-ack-is-ignored",
+        "status": "PASS"
+      },
+      {
+        "name": "final-roster-and-immutable-history",
+        "status": "PASS"
+      }
+    ],
+    "sourceBefore": "ccd5b9186f38cbf85a3c253b488c55017cf0014d164e05d5bf4201141e13eefc",
+    "sourceAfter": "ccd5b9186f38cbf85a3c253b488c55017cf0014d164e05d5bf4201141e13eefc",
+    "dirty": false,
+    "applicantDeletions": 3,
+    "memberDeletions": 1
+  },
+  "tokenMeasurement": {
+    "currentStart": "2026-10-09T06:23:22.489Z",
+    "current": {
+      "input_tokens": 6919316,
+      "cached_input_tokens": 6850176,
+      "output_tokens": 29809,
+      "reasoning_output_tokens": 10779,
+      "uncached_input_tokens": 69140
+    },
+    "previousStart": "2026-10-09T05:03:50.486Z",
+    "previousEnd": "2026-10-09T06:08:28.868Z",
+    "previous": {
+      "input_tokens": 43193427,
+      "cached_input_tokens": 42705024,
+      "output_tokens": 51562,
+      "reasoning_output_tokens": 16275,
+      "uncached_input_tokens": 488403
+    },
+    "measuredAt": "2026-10-09T06:40:51.394Z"
+  },
+  "measurementLimit": "Snapshot after code verification and Linear completion, before final documentation push/response; different scopes/models/test sets; not a causal or monetary cost reduction. Cached input is reported separately and not assumed free.",
+  "productionWrites": false,
+  "realMail": false,
+  "realPayment": false
+}

@@ -1,3 +1,4 @@
+import {setMembershipOperationContext} from './membership-operation-context.js';
 import { installNotifications } from './notifications.js';
 import {installSelfProfile} from './self-profile.js';
 import {installPowerTeamSettings} from './power-team-settings.js';
@@ -1870,7 +1871,8 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await beginGroupMutation(client);await requireCurrentAdmin(client,req.user.id);
+    await setMembershipOperationContext(client,req.user.id,'USER_DELETION');
 
     // 1. Delete Dependencies (Most critical ones first)
     await safeDelete(client, 'group_members', 'DELETE FROM group_members WHERE user_id = $1', [id]);
@@ -1924,7 +1926,7 @@ app.delete('/api/admin/members/:id', authenticateToken, async (req, res) => {
   } catch (e) {
     await client.query('ROLLBACK');
     console.error(`[DELETE MEMBER ERROR] Failed to delete user ${id}:`, e);
-    res.status(500).json({ error: e.message });
+    sendGroupMutationError(res,e);
   } finally {
     client.release();
   }
@@ -2617,15 +2619,16 @@ app.delete('/api/admin/visitors/:id', authenticateToken, async (req, res) => {
 // --- GROUP MANAGEMENT ENDPOINTS (ADDED) ---
 
 // Delete Group
-app.delete('/api/groups/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') return res.sendStatus(403);
-  try {
-    await pool.query('DELETE FROM groups WHERE id = $1', [req.params.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+app.delete('/api/groups/:id', authenticateToken, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  if(!isUuid(req.user.id)||!isUuid(req.params.id)||Object.keys(req.query).length||Object.keys(req.body||{}).length)return res.status(400).json({error:'Geçersiz grup silme işlemi.'});
+  let client;
+  try{client=await pool.connect();await beginGroupMutation(client);await requireCurrentAdmin(client,req.user.id);
+    await setMembershipOperationContext(client,req.user.id,'GROUP_DELETION');
+    if(!(await client.query('DELETE FROM groups WHERE id=$1 RETURNING id',[req.params.id])).rowCount)throw groupError('GROUP_NOT_FOUND','Grup bulunamadı.',404);
+    await client.query('COMMIT');res.json({success:true});
+  }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{client?.release();}
 });
-
-
 
 // Group Activities (One-to-Ones for Group Manager)
 app.get('/api/groups/:id/activities', authenticateToken, async (req, res) => {
@@ -2725,6 +2728,7 @@ app.post('/api/groups/:id/join', authenticateToken, async (req, res) => {
     const actor=(await client.query('SELECT account_status FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
     if(!actor)throw groupError('UNAUTHENTICATED','Oturum bulunamadı.',401);
     if(actor.account_status!=='ACTIVE')throw groupError('PAYMENT_REQUIRED','Üyelik ödemesi tamamlanmadığı için gruplara katılım sağlayamazsınız. Lütfen ödeme yapınız.',403);
+    await setMembershipOperationContext(client,req.user.id,'APPLICATION');
     if(!(await client.query('SELECT id FROM groups WHERE id=$1',[req.params.id])).rows.length)throw groupError('GROUP_NOT_FOUND','Grup bulunamadı.',404);
     let row=(await client.query('SELECT * FROM group_members WHERE group_id=$1 AND user_id=$2',[req.params.id,req.user.id])).rows[0];
     if(row){
@@ -2757,6 +2761,7 @@ app.put('/api/groups/:id/members/:userId', authenticateToken, async (req, res) =
   try {
     client=await pool.connect();await beginGroupMutation(client);
     await requireGroupManager(client,req.user.id,req.params.id);
+    await setMembershipOperationContext(client,req.user.id,'MEMBER_STATUS');
     const {rows}=await client.query('UPDATE group_members SET status=$1 WHERE group_id=$2 AND user_id=$3 RETURNING *',[status,req.params.id,req.params.userId]);
     if(!rows.length)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
     if(status==='ACTIVE')await enforceGroupCapacity(client,[req.params.id]);
@@ -2814,6 +2819,7 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
   try {
     client=await pool.connect();await beginGroupMutation(client);
     await requireGroupManager(client,req.user.id,req.params.id);
+    await setMembershipOperationContext(client,req.user.id,'MEMBER_REMOVAL');
     const result=await client.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId]);
     if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
     await client.query('COMMIT');
@@ -2851,6 +2857,7 @@ app.post('/api/shuffle/save', authenticateToken, async (req, res) => {
         client=await pool.connect();
     await beginGroupMutation(client);
     await requireCurrentAdmin(client,req.user.id);
+    await setMembershipOperationContext(client,req.user.id,'SHUFFLE');
     if(keyed){
       const receipt=await readShuffleReceipt(client,req.body.requestId,req.user.id);
       if(receipt){
@@ -2934,6 +2941,7 @@ app.post('/api/admin/assign-role', authenticateToken, async (req, res) => {
     if(type==='POWER_TEAM'&&contextId)await requirePowerTeamManager(client,req.user.id,contextId);
     else if(type==='GROUP'&&contextId)await requireGroupManager(client,req.user.id,contextId);
     else await requireCurrentAdmin(client,req.user.id);
+    await setMembershipOperationContext(client,req.user.id,'ROLE_ASSIGNMENT');
     if (type === 'POWER_TEAM' && contextId) {
       // 1. Check if member
       const check = await client.query('SELECT * FROM power_team_members WHERE user_id = $1 AND power_team_id = $2', [userId, contextId]);

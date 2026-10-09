@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,24);
+  assert.equal((await applyVersionedSchema()).applied.length,25);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -99,7 +99,7 @@ async function main() {
   await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT'),($1,$3,'ACTIVE','MEMBER'),($4,$5,'ACTIVE','PRESIDENT')",[group,president,member,other,foreign]);
   const stable=JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows);
   await pool.query("ALTER TABLE event_attendance_verifications DROP CONSTRAINT event_attendance_verifications_after_status_check; ALTER TABLE event_attendance_verifications ADD CONSTRAINT event_attendance_verifications_after_status_check CHECK(after_status IN ('REGISTERED','PRESENT','ABSENT')); DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0024_group_meeting_attendance']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
+  assert.deepEqual((await applyVersionedSchema()).applied,['0024_group_meeting_attendance','0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(JSON.stringify((await pool.query('SELECT * FROM attendance ORDER BY id')).rows),stable);
   const {default:nodemailer}=await import('nodemailer');nodemailer.createTransport=()=>({sendMail:async()=>{throw Error('No real mail allowed');}});
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port;
   const token=id=>jwt.sign({id,role:'ADMIN'},process.env.JWT_SECRET,{expiresIn:'1h'});
@@ -133,7 +133,7 @@ async function main() {
   const source=readFileSync(path.join(root,'src/api/groupMeetingAttendance.ts'),'utf8').replace("from './api'",'from '+JSON.stringify(apiUrl));const {groupMeetingAttendanceApi}=await import('data:text/javascript;base64,'+Buffer.from(compile(source)).toString('base64'));
   assert.equal((await groupMeetingAttendanceApi.reconcile(president,c)).eventId,c.requestId);await assert.rejects(groupMeetingAttendanceApi.reconcile(president,{...c,reason:'Different input'}));assert.equal((await groupMeetingAttendanceApi.save(president,c)).replayed,true);
   await pool.query('DELETE FROM attendance WHERE event_id=$1',[c.requestId]);await pool.query('DELETE FROM events WHERE id=$1',[c.requestId]);const retired=await counts();assert.equal((await submit(c)).status,409);assert.equal(await counts(),retired);
-  console.log('Group meeting attendance PASS: fresh24/repeat0/23upgrade; current group manager and foreign/revoked denial; strict full roster and explicit statuses; concurrent8 exactly one event; immutable initial history/correction/replay; lost ACK owner/fingerprint reconciliation; atomic failure redaction; scores unchanged; actual typed transport.');
+  console.log('Group meeting attendance PASS: fresh25/repeat0/23upgrade; current group manager and foreign/revoked denial; strict full roster and explicit statuses; concurrent8 exactly one event; immutable initial history/correction/replay; lost ACK owner/fingerprint reconciliation; atomic failure redaction; scores unchanged; actual typed transport.');
 
 }
 let exitCode = 0;

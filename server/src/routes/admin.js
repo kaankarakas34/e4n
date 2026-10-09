@@ -1,3 +1,4 @@
+import {setMembershipOperationContext} from '../membership-operation-context.js';
 import {beginGroupMutation,enforceGroupCapacity,requireCurrentAdmin,isUuid,groupError,sendGroupMutationError,validShuffleAssignments} from '../group-capacity.js';
 import express from 'express';
 import pool from '../config/db.js';
@@ -78,6 +79,7 @@ router.post('/move-member', async (req, res) => {
         client=await pool.connect();
         await beginGroupMutation(client);
         await requireCurrentAdmin(client,req.user.id);
+        await setMembershipOperationContext(client,req.user.id,'MEMBER_TRANSFER');
 
         // Deactivate current active group
         await client.query(`
@@ -317,6 +319,7 @@ router.post('/shuffle/save', async (req, res) => {
         client=await pool.connect();
         await beginGroupMutation(client);
         await requireCurrentAdmin(client,req.user.id);
+        await setMembershipOperationContext(client,req.user.id,'SHUFFLE');
 
         // 1. Reset LEADERSHIP roles
         await client.query(`

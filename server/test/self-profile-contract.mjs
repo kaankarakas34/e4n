@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,24);
+  assert.equal((await applyVersionedSchema()).applied.length,25);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -134,8 +134,8 @@ async function main() {
     globalThis.fetch=async()=>new Response(JSON.stringify({...billing,...patch}),{headers:{'Content-Type':'application/json'}});await assert.rejects(()=>api.updateMe({company:'Typed company'},owner));
   }
   globalThis.fetch=originalFetch;
-  const before=(await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0];await pool.query("ALTER TABLE users DROP COLUMN website,DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'");assert.deepEqual((await applyVersionedSchema()).applied,['0023_self_profile_fields','0024_group_meeting_attendance']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0],before);
-  console.log('Self profile PASS: fresh24/repeat0/22upgrade, actual Express/PG17/TS, owner-only minimal DTO, partial save and clear, billing compatibility, URL/length/type/protected-field validation, 8-way stale CAS, safe replay, transaction rollback/redaction, private visibility and false ACK guards. No live writes/mail/payment.');
+  const before=(await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0];await pool.query("ALTER TABLE users DROP COLUMN website,DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'");assert.deepEqual((await applyVersionedSchema()).applied,['0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.deepEqual((await pool.query('SELECT name,company,password_hash FROM users WHERE id=$1',[owner])).rows[0],before);
+  console.log('Self profile PASS: fresh25/repeat0/22upgrade, actual Express/PG17/TS, owner-only minimal DTO, partial save and clear, billing compatibility, URL/length/type/protected-field validation, 8-way stale CAS, safe replay, transaction rollback/redaction, private visibility and false ACK guards. No live writes/mail/payment.');
 }
 let exitCode = 0;
 try {

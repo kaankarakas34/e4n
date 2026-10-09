@@ -63,7 +63,7 @@ async function main(){
  const {applyVersionedSchema}=await import('../src/config/versioned-schema.js');
  // Roles must pre-exist: database dumps do not contain cluster roles.
  await pool.query('CREATE ROLE anon; CREATE ROLE authenticated');
- assert.equal((await applyVersionedSchema()).applied.length,24);
+ assert.equal((await applyVersionedSchema()).applied.length,25);
  const [admin,member,other,event,invoice,document]=Array.from({length:6},()=>randomUUID());
  for(const [i,id] of [admin,member,other].entries())await pool.query("INSERT INTO users(id,email,name,profession,role) VALUES($1,$2,$3,'Fixture',$4)",[id,`restore-${i}@example.invalid`,i===1?'Üye – 😀':'Fixture',i===0?'ADMIN':'MEMBER']);
  await pool.query('UPDATE users SET bio=$1,website=$2 WHERE id=$3',['Kalıcı biyografi 😀','https://example.invalid/restored',member]);
@@ -79,7 +79,10 @@ async function main(){
  await pool.query('INSERT INTO document_files(document_id,content) VALUES($1,$2)',[document,bytes]);
  await pool.query("INSERT INTO web_job_runs(id,job,source,state,completed_at,summary) VALUES($1,'event-completion','ADMIN','SUCCESS',now(),'{\"changed\":2}')",[randomUUID()]);
  const {recordShuffleExecution}=await import('../src/shuffle-history.js');const empty={groups:[],members:[{id:admin,full_name:'Restore admin',role:'ADMIN'}],memberships:[],revision:'a'.repeat(64)};await recordShuffleExecution(pool,{actorId:admin,before:empty,after:empty});
- const historyGroup=randomUUID();await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Restore deleted group','ACTIVE')",[historyGroup]);await pool.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED')",[historyGroup,member]);await pool.query('DELETE FROM groups WHERE id=$1',[historyGroup]);assert.equal((await pool.query('SELECT count(*)::int n FROM group_membership_history')).rows[0].n,2);
+ const historyGroup=randomUUID();await pool.query("INSERT INTO groups(id,name,status) VALUES($1,'Restore deleted group','ACTIVE')",[historyGroup]);await pool.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED')",[historyGroup,member]);
+ const {setMembershipOperationContext}=await import('../src/membership-operation-context.js');const historyConnection=await pool.connect();let deletionContext;
+ try{await historyConnection.query('BEGIN');deletionContext=await setMembershipOperationContext(historyConnection,admin,'GROUP_DELETION');await historyConnection.query('DELETE FROM groups WHERE id=$1',[historyGroup]);await historyConnection.query('COMMIT');}catch(error){await historyConnection.query('ROLLBACK');throw error;}finally{historyConnection.release();}
+ assert.equal((await pool.query('SELECT count(*)::int n FROM group_membership_history')).rows[0].n,2);
  const before=await manifest(pool);assert.equal(before.tables.length,47);
  docker(['exec',container,'pg_dump','-U',dbUser,'-d',dbName,'-Fc','-f','/tmp/fixture.dump']);
  docker(['exec',container,'createdb','-U',dbUser,restoreName]);
@@ -109,13 +112,13 @@ async function main(){
  assert.equal((await download(null)).status,401);assert.equal((await download(other)).status,404);assert.equal((await download(other,'ADMIN')).status,404);assert.equal((await download(admin,'ADMIN')).status,200);
  await restored.query("UPDATE users SET role='MEMBER' WHERE id=$1",[admin]);assert.equal((await download(admin,'ADMIN')).status,404);
  await restored.query("UPDATE users SET role='ADMIN' WHERE id=$1",[admin]);assert.deepEqual(await manifest(restored),before);
- const history=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/membership-history',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(history.total,2);assert.equal(history.events[0].operation,'DELETE');assert.equal(history.events[1].after_state.group_name,'Restore deleted group');
+ const history=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/membership-history',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(history.total,2);assert.equal(history.events[0].operation,'DELETE');assert.equal(history.events[1].after_state.group_name,'Restore deleted group');assert.deepEqual(history.events[0].operation_context,deletionContext);assert.equal(history.events[1].operation_context,null);
  const profile=await fetch('http://127.0.0.1:'+appServer.address().port+'/api/user/profile-settings',{headers:{Authorization:'Bearer '+jwt.sign({id:member},process.env.JWT_SECRET)}}).then(r=>r.json());assert.equal(profile.ownerId,member);assert.equal(profile.bio,'Kalıcı biyografi 😀');assert.equal(profile.website,'https://example.invalid/restored');assert.ok(!('password_hash' in profile));assert.deepEqual(await manifest(restored),before);
  await assert.rejects(restored.query('DELETE FROM group_membership_history'),e=>e.code==='23514');assert.deepEqual(await manifest(restored),before);
  const output=path.resolve(serverDir,'../output');mkdirSync(output,{recursive:true});
- const report={syntheticOnly:true,productionBackup:false,versions:24,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
+ const report={syntheticOnly:true,productionBackup:false,versions:25,applicationTables:46,manifest:before,restoredEqual:true,repeatApplied:0,corruptionDetected:true,cleanRollbackEqual:true,downloadAndOwnerBoundaryPassed:true};
  writeFileSync(path.join(output,'backup-restore-rehearsal.json'),JSON.stringify(report,null,2));
- console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 24-version repeat0; restored invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
+ console.log('Backup/restore PASS: 47 table counts+row hashes, catalog, ACL/RLS/policy/defaults/sequences; bytea corruption detected; clean rollback exact; 25-version repeat0; restored actor operation context and unknown baseline; invoice HTTP owner/current-role boundary. Synthetic only; not live Supabase backup.');
 }
 let code=0;try{await main();}catch(e){code=1;console.error(e.stack);}finally{
  if(appServer)await new Promise(r=>appServer.close(r));if(restored)await restored.end();if(pool)await pool.end();

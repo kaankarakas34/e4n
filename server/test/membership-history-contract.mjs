@@ -87,7 +87,7 @@ async function main() {
   }
   if (!databaseReady) throw new Error('Isolated PostgreSQL did not accept a SQL connection');
   const { applyVersionedSchema } = await import('../src/config/versioned-schema.js');
-  assert.equal((await applyVersionedSchema()).applied.length,24);
+  assert.equal((await applyVersionedSchema()).applied.length,25);
   assert.equal((await applyVersionedSchema()).applied.length,0);
 
 
@@ -123,8 +123,8 @@ async function main() {
   assert.equal((await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid='group_membership_history'::regclass")).rows[0].relrowsecurity,true);
   for(const role of ['anon','authenticated']){await pool.query('CREATE ROLE '+role);assert.equal((await pool.query("SELECT has_table_privilege($1,'group_membership_history','SELECT') ok",[role])).rows[0].ok,false);}
   // Actual 19-version upgrade seeds one observation, never invents old joins/removals.
-  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'");
-  assert.deepEqual((await applyVersionedSchema()).applied,['0020_group_membership_history','0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(await count(),1);for(const role of ['anon','authenticated'])assert.equal((await pool.query("SELECT has_function_privilege($1,'e4n_capture_membership_history()','EXECUTE') ok",[role])).rows[0].ok,false);assert.equal((await pool.query('SELECT operation FROM group_membership_history')).rows[0].operation,'BASELINE');
+  await pool.query("ALTER TABLE users DROP COLUMN website, DROP COLUMN bio; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'; DELETE FROM schema_migrations WHERE version='0024_group_meeting_attendance'; DELETE FROM schema_migrations WHERE version='0023_self_profile_fields'; DROP TABLE event_attendance_verifications; DROP FUNCTION e4n_preserve_attendance_verifications(); DELETE FROM schema_migrations WHERE version='0022_event_attendance_verification'; DELETE FROM schema_migrations WHERE version='0021_event_registration_status'; DROP TRIGGER group_members_capture_history ON group_members; DROP TRIGGER group_members_preserve_truncate ON group_members; DROP TABLE group_membership_history; DROP FUNCTION e4n_capture_membership_history(); DROP FUNCTION e4n_preserve_membership_history(); DROP FUNCTION e4n_membership_state(group_members); DELETE FROM schema_migrations WHERE version='0020_group_membership_history'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0020_group_membership_history','0021_event_registration_status','0022_event_attendance_verification','0023_self_profile_fields','0024_group_meeting_attendance','0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);assert.equal(await count(),1);for(const role of ['anon','authenticated'])assert.equal((await pool.query("SELECT has_function_privilege($1,'e4n_capture_membership_history()','EXECUTE') ok",[role])).rows[0].ok,false);assert.equal((await pool.query('SELECT operation FROM group_membership_history')).rows[0].operation,'BASELINE');
   for(let i=0;i<105;i++)await pool.query('UPDATE group_members SET joined_at=$1 WHERE user_id=$2',[new Date(1700000000000+i),member]);
   const {default:app}=await import('../src/index.js');appServer=app.listen(0,'127.0.0.1');await once(appServer,'listening');const base='http://127.0.0.1:'+appServer.address().port;
   const call=(url,id=member)=>fetch(base+'/api'+url,{headers:id?{Authorization:'Bearer '+jwt.sign({id,role:'ADMIN'},process.env.JWT_SECRET)}:{}});
@@ -142,7 +142,72 @@ async function main() {
   pool.connect=async()=>{const c=await original(),q=c.query.bind(c),release=c.release.bind(c);c.query=async(sql,args)=>{if(typeof sql==='string'&&sql.includes('FROM group_membership_history'))throw Error('secret never_expose');return q(sql,args);};c.release=()=>{c.query=q;c.release=release;release();};return c;};const fail=await call('/membership-history');assert.equal(fail.status,500);assert.ok(!JSON.stringify(await fail.json()).includes('never_expose'));pool.connect=original;assert.equal((await call('/membership-history')).status,200);
   await pool.query('DELETE FROM groups WHERE id=$1',[g2]);assert.equal((await pool.query('SELECT count(*)::int n FROM group_members WHERE group_id=$1',[g2])).rows[0].n,0);assert.equal(await count(),108);assert.equal((await call('/membership-history').then(r=>r.json())).events[0].operation,'DELETE');
   await pool.query('DELETE FROM users WHERE id=$1',[member]);assert.equal((await call('/membership-history')).status,401);assert.equal((await call('/admin/membership-history/'+member,admin).then(r=>r.json())).total,108);
-  console.log('Membership history PASS: fresh24/repeat0/19upgrade, truthful baseline, atomic insert/update/delete+rollback+outage, no-op replay, rename and cascading delete survival, identity reassignment owner separation, immutable/ACL/RLS/truncate, real JWT/admin/current-role/owner, 106 rows microsecond keyset paging, DTO/error recovery, no live writes/providers.');
+
+  // Upgrade an existing24 ledger without attributing any earlier change.
+  const priorLedger=JSON.stringify((await pool.query('SELECT id,user_id,operation,recorded_at,before_state,after_state FROM group_membership_history ORDER BY id')).rows);
+  await pool.query("ALTER TABLE group_membership_history DROP COLUMN operation_context; DELETE FROM schema_migrations WHERE version='0025_membership_operation_context'");
+  assert.deepEqual((await applyVersionedSchema()).applied,['0025_membership_operation_context']);assert.equal((await applyVersionedSchema()).applied.length,0);
+  assert.equal(JSON.stringify((await pool.query('SELECT id,user_id,operation,recorded_at,before_state,after_state FROM group_membership_history ORDER BY id')).rows),priorLedger);
+  assert.equal((await pool.query('SELECT count(*)::int n FROM group_membership_history WHERE operation_context IS NOT NULL')).rows[0].n,0);
+  const triggerConfig=(await pool.query("SELECT prosecdef,proconfig FROM pg_proc WHERE oid='e4n_capture_membership_history()'::regprocedure")).rows[0];assert.equal(triggerConfig.prosecdef,false);assert.ok(triggerConfig.proconfig.some(x=>x.includes('search_path=pg_catalog, public')));
+  for(const role of ['anon','authenticated'])assert.equal((await pool.query("SELECT has_function_privilege($1,'e4n_capture_membership_history()','EXECUTE') ok",[role])).rows[0].ok,false);
+
+  // Technical provenance on every mounted membership writer, using real JWT/API/PG.
+  const traceMember=randomUUID(),tracePresident=randomUUID(),traceVictim=randomUUID();
+  for(const [id,name,role] of [[traceMember,'Trace Member','MEMBER'],[tracePresident,'Trace President','PRESIDENT'],[traceVictim,'Trace Victim','MEMBER']])await pool.query("INSERT INTO users(id,name,email,profession,role,account_status) VALUES($1::uuid,$2,$3,$1::text,$4,'ACTIVE')",[id,name,id+'@example.invalid',role]);
+  const traceGroups=Array.from({length:6},()=>randomUUID());for(const id of traceGroups)await pool.query("INSERT INTO groups(id,name,status) VALUES($1::uuid,$1::text,'ACTIVE')",[id]);
+  const [traceGroup,transferGroup,roleGroup,shuffleGroup,deleteGroup,unknownGroup]=traceGroups;
+  const write=(url,actor,body={},method='POST')=>fetch(base+'/api'+url,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt.sign({id:actor,role:'ADMIN'},process.env.JWT_SECRET)},body:JSON.stringify(body)});
+  const history=async id=>(await pool.query('SELECT * FROM group_membership_history WHERE user_id=$1 ORDER BY recorded_at,id',[id])).rows;
+  const last=async id=>(await history(id)).at(-1);
+  const mutation=(actorId,action,row)=>{assert.equal(row.operation_context.actorId,actorId);assert.equal(row.operation_context.action,action);assert.match(row.operation_context.operationId,/^[0-9a-f-]{36}$/);return row.operation_context;};
+  assert.equal((await write('/groups/'+traceGroup+'/join',traceMember)).status,200);mutation(traceMember,'APPLICATION',await last(traceMember));
+  assert.equal((await write('/groups/'+traceGroup+'/join',traceMember,{actorId:admin})).status,400);
+  const countBeforeReplay=(await history(traceMember)).length;assert.equal((await write('/groups/'+traceGroup+'/join',traceMember)).status,200);assert.equal((await history(traceMember)).length,countBeforeReplay);
+  await pool.query("INSERT INTO group_members(group_id,user_id,status,role) VALUES($1,$2,'ACTIVE','PRESIDENT')",[traceGroup,tracePresident]);assert.equal((await last(tracePresident)).operation_context,null);
+  const memberUrl='/groups/'+traceGroup+'/members/'+traceMember;
+  assert.equal((await write(memberUrl,traceVictim,{status:'ACTIVE'},'PUT')).status,403);
+  assert.equal((await write(memberUrl,tracePresident,{status:'ACTIVE',actorId:admin},'PUT')).status,400);
+  assert.equal((await write(memberUrl,tracePresident,{status:'ACTIVE'},'PUT')).status,200);mutation(tracePresident,'MEMBER_STATUS',await last(traceMember));
+  assert.equal((await write(memberUrl,tracePresident,{},'DELETE')).status,200);const removed=mutation(tracePresident,'MEMBER_REMOVAL',await last(traceMember));assert.equal(removed.actorName,'Trace President');
+  await pool.query("UPDATE users SET name='Renamed Trace President' WHERE id=$1",[tracePresident]);assert.equal((await last(traceMember)).operation_context.actorName,'Trace President');
+  assert.equal((await write(memberUrl,tracePresident,{},'DELETE')).status,404);
+  assert.equal((await write('/groups/'+traceGroup+'/join',traceMember)).status,200);
+  assert.equal((await write(memberUrl,admin,{status:'ACTIVE'},'PUT')).status,200);
+  assert.equal((await write('/admin/move-member',admin,{userId:traceMember,groupId:transferGroup})).status,200);
+  const transfer=(await history(traceMember)).filter(row=>row.operation_context?.action==='MEMBER_TRANSFER');assert.equal(transfer.length,2);assert.equal(transfer[0].operation_context.operationId,transfer[1].operation_context.operationId);for(const row of transfer)mutation(admin,'MEMBER_TRANSFER',row);
+  assert.equal((await write('/admin/assign-role',admin,{userId:traceMember,role:'MEMBER',type:'GROUP',contextId:roleGroup})).status,200);mutation(admin,'ROLE_ASSIGNMENT',await last(traceMember));
+  for(const url of ['/shuffle/save','/admin/shuffle/save']){assert.equal((await write(url,admin,{assignments:{[shuffleGroup]:[traceMember]}})).status,200);mutation(admin,'SHUFFLE',await last(traceMember));}
+  await pool.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED')",[deleteGroup,traceVictim]);
+  assert.equal((await write('/groups/'+deleteGroup,traceMember,{},'DELETE')).status,403);
+  assert.equal((await write('/groups/'+deleteGroup,admin,{},'DELETE')).status,200);mutation(admin,'GROUP_DELETION',await last(traceVictim));
+  assert.equal((await write('/groups/'+deleteGroup,admin,{},'DELETE')).status,404);
+  const beforeDeniedDelete=(await history(traceMember)).length;await pool.query("UPDATE users SET role='MEMBER' WHERE id=$1",[admin]);
+  assert.equal((await write('/admin/members/'+traceMember,admin,{},'DELETE')).status,403);assert.equal((await history(traceMember)).length,beforeDeniedDelete);assert.equal((await pool.query('SELECT id FROM users WHERE id=$1',[traceMember])).rowCount,1);await pool.query("UPDATE users SET role='ADMIN' WHERE id=$1",[admin]);
+  assert.equal((await write('/admin/members/'+traceMember,admin,{},'DELETE')).status,200);mutation(admin,'USER_DELETION',await last(traceMember));
+  await pool.query("INSERT INTO group_members(group_id,user_id,status) VALUES($1,$2,'REQUESTED')",[unknownGroup,traceVictim]);
+  assert.equal((await write('/users/'+traceVictim,admin,{},'DELETE')).status,404); // Unmounted legacy users router.
+  assert.equal((await last(traceVictim)).operation_context,null);
+  assert.equal((await write('/admin/members/'+traceVictim,admin,{},'DELETE')).status,200);mutation(admin,'USER_DELETION',await last(traceVictim));
+  const retained=await call('/admin/membership-history/'+traceMember,admin).then(r=>r.json());assert.ok(retained.events.some(row=>row.operation_context?.action==='USER_DELETION'));assert.ok(validHistory(retained,admin,traceMember));
+  const ownerTrace=await call('/membership-history',tracePresident).then(r=>r.json());assert.ok(validHistory(ownerTrace,tracePresident,tracePresident));assert.ok(ownerTrace.events.every(row=>row.user_id===tracePresident));
+  assert.equal(validHistory({...retained,events:[{...retained.events[0],operation_context:{actorId:'bad',actorName:'fake',action:'SHUFFLE',operationId:randomUUID()}}]},admin,traceMember),false);
+  // A single reused pool connection must lose provenance at both commit and rollback.
+  const {setMembershipOperationContext}=await import('../src/membership-operation-context.js');const traceConnection=await pool.connect();
+  try{
+    await traceConnection.query('BEGIN');await setMembershipOperationContext(traceConnection,admin,'MEMBER_STATUS');await traceConnection.query("UPDATE group_members SET joined_at=now() WHERE user_id=$1",[tracePresident]);await traceConnection.query('COMMIT');
+    assert.equal((await traceConnection.query("SELECT NULLIF(current_setting('e4n.membership_context',true),'') value")).rows[0].value,null);
+    await traceConnection.query("UPDATE group_members SET joined_at=now() WHERE user_id=$1",[tracePresident]);assert.equal((await last(tracePresident)).operation_context,null);
+    const beforeFailure=(await history(tracePresident)).length;await traceConnection.query('BEGIN');
+    await traceConnection.query("SELECT set_config('e4n.membership_context',$1,true)",[JSON.stringify({actorId:'invalid',actorName:'fake',action:'MEMBER_STATUS',operationId:randomUUID()})]);
+    await assert.rejects(traceConnection.query("UPDATE group_members SET joined_at=now() WHERE user_id=$1",[tracePresident]),e=>e.code==='23514');await traceConnection.query('ROLLBACK');assert.equal((await history(tracePresident)).length,beforeFailure);
+    assert.equal((await traceConnection.query("SELECT NULLIF(current_setting('e4n.membership_context',true),'') value")).rows[0].value,null);
+    await traceConnection.query('BEGIN');await setMembershipOperationContext(traceConnection,admin,'MEMBER_STATUS');await traceConnection.query("UPDATE group_members SET joined_at=now() WHERE user_id=$1",[tracePresident]);await traceConnection.query('ROLLBACK');assert.equal((await history(tracePresident)).length,beforeFailure);
+    await assert.rejects(setMembershipOperationContext(traceConnection,randomUUID(),'MEMBER_STATUS'),e=>e.status===401);
+  }finally{await traceConnection.query('ROLLBACK').catch(()=>{});traceConnection.release();}
+  console.log('Membership operation context PASS: all mounted application/status/removal/transfer/role/shuffle/group+user deletion writers; snapshot preservation, owner/admin DTO, no-op, forged-body/current-role denial, same-operation transfer, local commit/rollback isolation and malformed context atomic rollback.');
+
+  console.log('Membership history PASS: fresh25/repeat0/19upgrade, truthful baseline, atomic insert/update/delete+rollback+outage, no-op replay, rename and cascading delete survival, identity reassignment owner separation, immutable/ACL/RLS/truncate, real JWT/admin/current-role/owner, 106 rows microsecond keyset paging, DTO/error recovery, no live writes/providers.');
 }
 
 let exitCode=0;

@@ -80,15 +80,15 @@ try{
   report.browser={report:browser.path,passed:browser.data.passed,failed:browser.data.failed};
   // Recent roster flows own fresh fixtures; each is part of this same source gate.
   report.roster=[];
-  for(const name of ['group','guild']){
-    const child=outputReport((await step(name+'-roster-browser',[path.join(root,'server/test/run-'+name+'-roster-browser.mjs'),cli])).stdout);
+  for(const [name,script] of [['group','run-group-roster-browser.mjs'],['guild','run-guild-roster-browser.mjs'],['history-context','run-history-context-browser.mjs']]){
+    const child=outputReport((await step(name+'-browser',[path.join(root,'server/test',script),cli])).stdout);
     if(child.data.failed!==0||child.data.cases.length!==child.data.passed||child.data.commit!==report.sourceBefore.commit
         ||child.data.sourceBefore!==child.data.sourceAfter||child.data.cleanup?.status!=='PASS'
         ||child.data.productionWrites!==false||child.data.realMail!==false||child.data.realPayment!==false)throw Error(name+' roster evidence is incomplete or belongs to another source');
     report.roster.push({scope:name,report:child.path,passed:child.data.passed,failed:child.data.failed,cleanup:child.data.cleanup});save();
   }
   report.browserTotal=report.browser.passed+report.roster.reduce((sum,row)=>sum+row.passed,0);
-  report.gates=report.gates.map(g=>g.id==='BROWSER'?{...g,status:'PASS',scope:'Fresh owned web, group and guild fixtures; actual web/API/database and final state reconciliation'}:g);
+  report.gates=report.gates.map(g=>g.id==='BROWSER'?{...g,status:'PASS',scope:'Fresh owned web, group, guild and membership actor fixtures; actual web/API/database and final state reconciliation'}:g);
   report.sourceAfter=source();
   if(report.sourceAfter.sha256!==report.sourceBefore.sha256||report.sourceAfter.commit!==report.sourceBefore.commit)throw Error('Source changed during rehearsal; results cannot be combined');
   report.gates.push({id:'SOURCE',status:'PASS',scope:'Same commit and source/dependency/test/config digest before and after'});

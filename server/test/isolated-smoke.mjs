@@ -497,7 +497,7 @@ async function main() {
     visitorConvertAsMember: convertAsMember.status, visitorConvertAsAdmin: convertedVisitor.status,
     visitorStatusAfterConvert: conversionStatusAfter, conversionUsersAdded: conversionUserCount };
   if (statusHttpBaseline.groupReject !== 400 || statusHttpBaseline.groupStatusAfterReject !== 'ACTIVE'
-      || statusHttpBaseline.powerTeamReject !== 500 || statusHttpBaseline.powerTeamStatusAfterReject !== 'REQUESTED'
+      || statusHttpBaseline.powerTeamReject !== 400 || statusHttpBaseline.powerTeamStatusAfterReject !== 'REQUESTED'
       || statusHttpBaseline.moveMember !== 200 || statusHttpBaseline.sourceStatusAfterMove !== 'INACTIVE'
       || statusHttpBaseline.targetRowsAfterMove !== 1 || statusHttpBaseline.visitorConvertAsMember !== 403
       || statusHttpBaseline.visitorConvertAsAdmin !== 500 || statusHttpBaseline.visitorStatusAfterConvert !== 'ATTENDED'

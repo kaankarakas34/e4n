@@ -34,6 +34,7 @@ try{
   report.cases.push({name:'final-guild-roster',status:valid?'PASS':'FAIL'});report.passed=report.cases.filter(c=>c.status==='PASS').length;report.failed=report.cases.length-report.passed;report.finalState={rosterGuild:state.rosterGuild};
   report.commit=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).stdout.trim();report.sourceBefore=sourceBefore;report.sourceAfter=source();report.dirty=!!spawnSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8',windowsHide:true}).stdout.trim();
   if(report.sourceAfter!==sourceBefore){report.cases.push({name:'unchanged-package-source',status:'FAIL'});report.failed++;}
+  Object.assign(report,{productionWrites:fixture.productionWrites,realMail:fixture.realMail,realPayment:fixture.realPayment});
   reportPath=path.join(runDir,'report.json');process.exitCode=report.failed?1:0;
 }finally{
   call(['close']);if(fixture)await fetch(fixture.controlBase+'/stop',{method:'POST',headers:{'x-fixture-key':fixture.secret},signal:AbortSignal.timeout(5000)}).catch(()=>{});else child.kill();
@@ -43,5 +44,5 @@ try{
     if(closed!==0){report.cases.push({name:'owned-fixture-cleanup',status:'FAIL'});report.failed++;process.exitCode=1;}
     fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(JSON.stringify({report:path.relative(root,reportPath),passed:report.passed,failed:report.failed,cleanup:report.cleanup.status,releaseReady:false}));
   }
- 
+
 }

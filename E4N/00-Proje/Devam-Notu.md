@@ -1,5 +1,12 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## En son — canlı yayın tamamlandı
+- Kullanıcı tüm yapılanları canlıya alma yetkisi ve DB parolasını sağladı. main/foundation ürün SHA2fefd8a push; production dpl_7NZF4USEqSCdsToRdfeYPQQdFSfN READY/custom domains www.event4network.com ve event4network.com doğrulandı. Normal üyelik formu ve API canlı; eski source-only/not-live satırları aşağıda tarihseldir.
+- Tam PG17 yedeği + gerçek public restore34tablo/581satır; 27 gerçek geçiş/repeat0, drift rollback ve veri koruma PASS. Canlı28kullanıcı,11normalrolgeçişi,3kalıcıvergi rezervasyonu. RLS/client revoke47tablo, anonymous47/47denial ve ownerAPI PASS. Blog2tablo/4functionwarn, parola rotasyonu ve kapsamlıSEC açık; secrets Git'e eklenmedi, eski gömülü helper/config kaldırıldı.
+- 40API/veri PASS7bc1ff2; fixture/katalogallowlist düzeltmesi sonrası 03a99de build+108browser/finalDB/cleanup PASS; yalnız2fefd8a izinSQL/manifest farkı gerçekrestore/API/anon gate ile ayrıca doğrulandı. Aynı committe40+108 iddiası yok. Gerçek hesap/ödeme/mail üretim testi yapılmadı. YeniJWT nedeniyle eskioturum tekrar giriş gerektirir.
+- P09/E4N-81 Done; P37/E4N-109 InProgress/releaseReady=false. E4N-161 canlı kabul eklendi,162–165 hâlâ kalanbaşlangıçakışı. Mobil/LMS ertelenmiş. Sonraki bağımsız web işi ilgili Linear karar/kabulüne göre seçilir; bu geçişi tekrar yapma. Üretim dağıtımı tamamlandı; sonraki kod işleri için normal izole doğrulama sınırı devam eder.
+- Ayrıntı/rollback/kanıt: [[E4N/09-Dogrulama/Canli-Yayin-Gecisi-2026-10-09]]. Yerel gerçek yedek/kişisel satırları Obsidian/Linear/Git'e kopyalama.
+
 ## Çalışma
 - Checkout: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2; dal codex/e4n-sprint1-foundation. Son ürün491ec05, kabul5c9deaa; kod/kanıt push sonucunu git ile kontrol et.
 - Eğitim dışı web; bağlı veri/API/ekran/test işleri bütün paket. MobilSprint7, kurs/eğitim/sınavSprint8 en son.

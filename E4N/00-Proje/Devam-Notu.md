@@ -1,5 +1,12 @@
 # E4N devam durumu — 9 Ekim 2026
 
+## En son — BAŞ-03/04/05 bütün grup başvuru paketi
+- Ürün 0004f8d main/foundation origin'e push. Canlı migration28: 28 kullanıcı korunuyor, 0 aktif grup/başvuru/outbox; RLS/client deny doğrulandı. Production dpl_DmdeFzUGdSoFxZfoaLRT6Lf4imyS READY; canlı www/event4network/e4n alias ve yeni asset+anon401 doğrulandı. E4N-164 Done;163/165 kalan kararlar için In Progress,162 Backlog.
+- Abonelik başvuru kapısı, gerçek grup/meslek/35 kapasite keşfi, başkan dashboard görüşme görevi + deep link + bildirim/outbox, görüşme ön şartı, atomik kabul/kalıcı ret tamamlandı. Başkan görev linkli browser3/3/finalDB ACCEPTED/ACTIVE ve build PASS. Geniş41API:40PASS/1timeout; workflow bağımsız iki tekrar PASS, ilk rapor korunur. Bütün web/SEC releaseReady değil.
+- Tek kanıt: [[E4N/09-Dogrulama/BAS-03-04-05-Grup-Basvuru-Akisi-2026-10-09]]. Hesap silme FK hatası düzeltildi; ilgili geçmiş/kapasite/ödeme/restore PASS.
+- 162 referans yöntemi,163 ücret/grace/shuffle ayrıntıları,165 başkan/çoklu başvuru/ret tekrar istisnaları açık. İlk grup adı ve başkanı kullanıcıdan bekleniyor; uydurma veri veya gerçek mail/ödeme testi yok. Eski90/102/103/92 aynı teslim kanıtını kullanır, daha geniş kalanlarını kapatma. Mobil/LMS ertelenmiş.
+- Güncel kullanıcı yetkisi bu paket için canlı geçiş/deploy içerir; aşağıdaki eski “canlı yazma/deploy yok” kayıtları tarihseldir. Yeni bağımsız canlı veri/gerçek mail-ödeme testlerini yetkisiz yapma.
+
 ## En son — zorunlu standart il kaydı
 - Kayıtta 81 il seçimi + API geçerli il kontrolü/standart `users.city` kaydı. İstanbul/Ankara/İzmir grup ayrımı henüz kapalı; her ilde en az70 kişi ön koşulu. Otomatik etkinleştirme/sayım durumları uydurulmadı; E4N-164 açık. [[E4N/01-Kararlar/Il-Bilgisi-ve-Grup-Ayrimi-2026-10-09]]. Normal registration PG17/API/veri sözleşmesi +3/3 kayıt browser PASS; build PASS. Kanıt output/normal-registration-browser-1791552929583/report.json ve output/province-registration.log. Main/foundation push ile yayınlanır; üretimde gerçek kayıt açılmaz.
 

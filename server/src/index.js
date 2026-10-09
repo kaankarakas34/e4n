@@ -1587,15 +1587,23 @@ app.get('/api/groups/:id/referrals', authenticateToken, async (req, res) => {
 
 app.get('/api/groups/:id/events', authenticateToken, async (req, res) => {
   try {
+    const actor = eventReadUser(req);
+    if (!actor) return res.sendStatus(403);
+    const permission = await pool.query(`SELECT u.role,
+      EXISTS(SELECT 1 FROM group_members gm WHERE gm.user_id=u.id AND gm.group_id=$2 AND gm.status='ACTIVE') AS active_member
+      FROM users u WHERE u.id=$1`, [actor.id, req.params.id]);
+    if (!permission.rowCount) return res.sendStatus(403);
+    const privileged = permission.rows[0].role === 'ADMIN' || permission.rows[0].active_member;
+    res.set('Cache-Control', 'private, no-store');
     const { rows } = await pool.query(`
         SELECT e.*,
       (SELECT count(*)::int FROM attendance a WHERE a.event_id = e.id AND a.status = 'PRESENT') as attendees_count,
   (SELECT count(*)::int FROM group_members gm WHERE gm.group_id = e.group_id AND gm.status = 'ACTIVE') as total_members
         FROM events e 
-        WHERE e.group_id = $1 
+        WHERE e.group_id = $1 AND ($2::boolean OR (e.is_public = TRUE AND e.status IN ('PUBLISHED','COMPLETED','CANCELLED')))
         ORDER BY e.start_at DESC
-    `, [req.params.id]);
-    res.json(rows);
+    `, [req.params.id, privileged]);
+    res.json(privileged ? rows : rows.map(({ online_link, ...event }) => event));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

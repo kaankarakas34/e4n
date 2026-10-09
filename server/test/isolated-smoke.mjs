@@ -1420,6 +1420,26 @@ async function main() {
   await pool.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'REGISTERED')", [privateEvent.id,userId]);
   const privateOwner = await eventCommand('GET', `/${privateEvent.id}`, authHeaders);
   if (privateGuest.status !== 404 || privateStranger.status !== 404 || privateOwner.status !== 200) throw new Error('Private event participant boundary failed');
+  const privateGroupId = randomUUID();
+  await pool.query("INSERT INTO groups(id,name) VALUES($1,'Private event boundary group')", [privateGroupId]);
+  const groupPrivateResponse = await eventCommand('POST', '', jsonAdminHeaders, { ...eventFixture, title: 'Group private fixture', group_id: privateGroupId, is_public: false });
+  const groupPrivate = await groupPrivateResponse.json();
+  const groupPublicResponse = await eventCommand('POST', '', jsonAdminHeaders, { ...eventFixture, title: 'Group public fixture', group_id: privateGroupId });
+  const groupPublic = await groupPublicResponse.json();
+  if (groupPrivateResponse.status !== 201 || groupPublicResponse.status !== 201) throw new Error('Group event fixtures failed');
+  const groupEventList = async headers => {
+    const response = await fetch(`${base}/api/groups/${privateGroupId}/events`, { headers, signal: AbortSignal.timeout(10_000) });
+    return { status: response.status, rows: await response.json() };
+  };
+  const outsiderGroupEvents = await groupEventList(authHeaders);
+  const forgedGroupEvents = await groupEventList(forgedAdminHeaders);
+  const adminGroupEvents = await groupEventList(adminHeaders);
+  if (outsiderGroupEvents.status !== 200 || outsiderGroupEvents.rows.length !== 1 || outsiderGroupEvents.rows[0].id !== groupPublic.id
+      || Object.hasOwn(outsiderGroupEvents.rows[0], 'online_link') || forgedGroupEvents.rows.length !== 1
+      || adminGroupEvents.rows.length !== 2 || !adminGroupEvents.rows.some(row => row.id === groupPrivate.id)) throw new Error('Group event list exposed private/draft or online link');
+  await pool.query("INSERT INTO group_members(user_id,group_id,status) VALUES($1,$2,'ACTIVE')", [userId, privateGroupId]);
+  const memberGroupEvents = await groupEventList(authHeaders);
+  if (memberGroupEvents.rows.length !== 2 || !memberGroupEvents.rows.some(row => row.id === groupPrivate.id)) throw new Error('Active group member could not read private group event');
   console.log('Event lifecycle PASS: admin-only list/mutations, public detail redaction, validation, draft isolation, linked-record protection and precise acknowledgements.');
   console.log(JSON.stringify({
     isolated: true,

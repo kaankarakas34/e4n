@@ -1,8 +1,12 @@
 # Devam notu — 1 Ekim 2026
 
+## 9 Ekim — P26 grup etkinliği veri sınırı ve birleşik kabul
+
+Önceki etkinlik tesliminden sonra `/api/groups/:id/events` yolunun özel grup etkinliğini herhangi bir oturumlu kullanıcıya verdiği görüldü. `078dc67` ile güncel DB rolü ve aktif grup üyeliği kontrolü eklendi; dışarıya yalnız açık/yayımlanmış geçmiş ve güncel kayıtlar toplantı bağlantısı olmadan döner. Sahte JWT yönetici rolü, dış kullanıcı ve aktif üye senaryoları izole PostgreSQL üzerinde test edildi. **Tek birleşik kök** `output/web-rehearsal/2026-10-09T05-51-47-941Z/report.json`: 39/39 API/veri, production build, 89/89 browser/son DB PASS; `technicalPass=true`, `releaseReady=false`. E4N-156 Done tesliminin kanıtı güncellenecek; P26 ana işi açık kalır. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. Canlı yazma/deploy yok.
+
 ## 9 Ekim — P26 etkinlik yaşam döngüsü web teslimi
 
-Etkinlik yönetici liste/yazma/silme güncel DB `ADMIN` rolüne bağlandı; halka açık liste ve ekranlar ayrıldı. Taslak/özel erişimi, geçmiş tamamlanmış detay, katılımcı kimliği ve toplantı bağlantısı sınırları; girdi doğrulama, 404/409 ve geçmiş kayıtlı etkinliği silmek yerine iptal etme mesajı tek veri/API/web paketinde tamamlandı. Uygulama `fa0c6bf` + `af050cb`, test aracı `9aa05fc`; 39/39 API/veri + build ve ayrı taze 89/89 browser/final DB PASS. Tek kök PASS iddiası yok: ilk API 37/39 ve soğuk fixture 5sn timeout raporları ile ilk browser 80/89 başarısızlığı korunur. Canlı yazma/deploy yok; releaseReady=false. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. P26 ana görev bilet/hak/ödeme/legacy ve canlı kabul için açık; teslim edilen alt paket Linear'da Done olarak izlenir.
+Etkinlik yönetici liste/yazma/silme güncel DB `ADMIN` rolüne bağlandı; halka açık liste ve ekranlar ayrıldı. Taslak/özel erişimi, geçmiş tamamlanmış detay, katılımcı kimliği ve toplantı bağlantısı sınırları; girdi doğrulama, 404/409 ve geçmiş kayıtlı etkinliği silmek yerine iptal etme mesajı tek veri/API/web paketinde tamamlandı. Uygulama `fa0c6bf` + `af050cb`, test aracı `9aa05fc`; ilk turlarda 39/39 API/veri + build ve ayrı taze 89/89 browser/final DB PASS görüldü. İlk API 37/39, soğuk fixture 5sn timeout ve ilk browser 80/89 başarısızlığı raporları korunur; son birleşik PASS üst bölümde kayıtlıdır. Canlı yazma/deploy yok; releaseReady=false. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. P26 ana görev bilet/hak/ödeme/legacy ve canlı kabul için açık; teslim edilen alt paket Linear'da Done olarak izlenir.
 
 ## 9 Ekim — Linear tamamlanan teslim/durum düzeltmesi
 

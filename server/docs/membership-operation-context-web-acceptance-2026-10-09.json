@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-09",
+  "issue": "E4N-159",
+  "parent": "E4N-91",
+  "scope": "Closed-group membership actor provenance: data/API/owner-admin web/isolated tests",
+  "commit": "fc42c49d5afecef8fe30bfef0f52209db5169bdd",
+  "branch": "codex/e4n-sprint1-foundation",
+  "schema": 25,
+  "migration": "20261009073843_membership_operation_context.sql",
+  "productionWrites": false,
+  "realPayment": false,
+  "realMail": false,
+  "releaseReady": false,
+  "tests": [
+    {
+      "log": "output/history-context-contract.log",
+      "sha256": "b28633f53924f5a69a95bd6ba24e602881da93150c19466ceed1d05dfc755ab8",
+      "status": "PASS"
+    },
+    {
+      "log": "output/history-context-group.log",
+      "sha256": "52ac53e1b883bb0fbb9f01f7a42bf3a5da63f1d6b3bcc682f75a7a1e32f55955",
+      "status": "PASS"
+    },
+    {
+      "log": "output/history-context-shuffle.log",
+      "sha256": "a982039b54d303c53482906b1482e168d4b0cd78a4b79cefb5619ee6e8c70104",
+      "status": "PASS"
+    },
+    {
+      "log": "output/history-context-jobs.log",
+      "sha256": "34fb4258d50f5a2b145e811cc13004235e0efeeda71f22fbc5ef7ba0251edc0e",
+      "status": "PASS"
+    },
+    {
+      "log": "output/history-context-restore.log",
+      "sha256": "eed8234f47d05f6f2c08ebc6ab1653c04b51ce43b1e36d06fa0961c118a4e253",
+      "status": "PASS"
+    },
+    {
+      "log": "output/history-context-build-final.log",
+      "sha256": "1154f69689dda19dd451f38b291f0d40daccbe8ec19e1ac3819af78db2acf9c5",
+      "status": "PASS"
+    }
+  ],
+  "browser": {
+    "report": "output/history-context/2026-10-09T08-00-35-212Z/report.json",
+    "commit": "fc42c49d5afecef8fe30bfef0f52209db5169bdd",
+    "dirty": false,
+    "sourceBefore": "786636273e4a9bde15c2e56808831d9fda70d5e557ff311f4bcdb179ef2b5a8c",
+    "sourceAfter": "786636273e4a9bde15c2e56808831d9fda70d5e557ff311f4bcdb179ef2b5a8c",
+    "passed": 6,
+    "failed": 0,
+    "cleanup": {
+      "status": "PASS",
+      "fixtureExitCode": 0
+    },
+    "cases": [
+      {
+        "name": "president-removal-owner-history-and-unknown-baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "application-and-admin-transfer-provenance",
+        "status": "PASS"
+      },
+      {
+        "name": "invalid-provenance-is-not-rendered",
+        "status": "PASS"
+      },
+      {
+        "name": "deleted-subject-history-preserves-actor",
+        "status": "PASS"
+      },
+      {
+        "name": "ordinary-user-cannot-read-admin-history",
+        "status": "PASS"
+      },
+      {
+        "name": "final-preserved-subject-and-actor-ledger",
+        "status": "PASS"
+      }
+    ]
+  },
+  "advisors": {
+    "cliVersion": "2.119.0",
+    "target": "owned disposable PG17 loopback fixture",
+    "type": "security",
+    "level": "error",
+    "exitCode": 0,
+    "message": "No issues found",
+    "jsonOutput": false,
+    "productionAudit": false
+  },
+  "remaining": [
+    "policy removal cause",
+    "canonical period",
+    "score/removal/ban linkage",
+    "retention/backfill policy",
+    "live migration adoption",
+    "whole release acceptance on schema25"
+  ],
+  "previousWholeAcceptance": {
+    "commit": "d3c6e96a313349ae195895eccdc5782183e14126",
+    "schema": 24,
+    "apiSuites": 39,
+    "browserCases": 102,
+    "renewedForThisPackage": false
+  }
+}

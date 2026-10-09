@@ -2,7 +2,7 @@
 
 ## 9 Ekim — P26 grup etkinliği veri sınırı ve birleşik kabul
 
-Önceki etkinlik tesliminden sonra `/api/groups/:id/events` yolunun özel grup etkinliğini herhangi bir oturumlu kullanıcıya verdiği görüldü. `078dc67` ile güncel DB rolü ve aktif grup üyeliği kontrolü eklendi; dışarıya yalnız açık/yayımlanmış geçmiş ve güncel kayıtlar toplantı bağlantısı olmadan döner. Sahte JWT yönetici rolü, dış kullanıcı ve aktif üye senaryoları izole PostgreSQL üzerinde test edildi. **Tek birleşik kök** `output/web-rehearsal/2026-10-09T05-51-47-941Z/report.json`: 39/39 API/veri, production build, 89/89 browser/son DB PASS; `technicalPass=true`, `releaseReady=false`. E4N-156 Done tesliminin kanıtı güncellenecek; P26 ana işi açık kalır. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. Canlı yazma/deploy yok.
+Önceki etkinlik tesliminden sonra `/api/groups/:id/events` yolunun özel grup etkinliğini herhangi bir oturumlu kullanıcıya verdiği görüldü. `078dc67` ile güncel DB rolü ve aktif grup üyeliği kontrolü eklendi; dışarıya yalnız açık/yayımlanmış geçmiş ve güncel kayıtlar toplantı bağlantısı olmadan döner. Sahte JWT yönetici rolü, dış kullanıcı ve aktif üye senaryoları izole PostgreSQL üzerinde test edildi. **Tek birleşik kök** `output/web-rehearsal/2026-10-09T05-51-47-941Z/report.json`: 39/39 API/veri, production build, 89/89 browser/son DB PASS; `technicalPass=true`, `releaseReady=false`. E4N-156 Done, E4N-98 ve E4N-109 kalan ana kapsamları Linear'da güncellendi; P26 ana işi açık kalır. [[E4N/09-Dogrulama/P26-Etkinlik-Yasam-Dongusu-Web-2026-10-09|ayrıntı]]. Canlı yazma/deploy yok.
 
 ## 9 Ekim — P26 etkinlik yaşam döngüsü web teslimi
 

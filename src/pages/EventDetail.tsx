@@ -31,6 +31,11 @@ export function EventDetail() {
     const latestContext = useRef(pageContext);
     latestContext.current = pageContext;
     const price = readEventPrice(event?.price);
+    const memberPrice = event?.has_member_ticket_privilege && event?.member_price != null ? readEventPrice(event?.member_price) : null;
+    const effectivePrice = event?.has_member_ticket_privilege && event?.effective_price != null ? readEventPrice(event?.effective_price) : price;
+    const payableAmount = effectivePrice !== null ? effectivePrice : price;
+    const isMemberFree = Boolean(event?.has_member_ticket_privilege && (event?.is_free_for_member === true || effectivePrice === 0));
+    const hasMemberDiscount = Boolean(event?.has_member_ticket_privilege && memberPrice !== null && price !== null && memberPrice < price);
     const currency = readEventCurrency(event?.currency);
     const paymentAvailable = price !== null && (price === 0 || currency === 'TRY');
     const capacity = Number.isSafeInteger(event?.max_attendees) && event.max_attendees > 0 ? event.max_attendees : null;
@@ -108,7 +113,7 @@ export function EventDetail() {
         }
 
         if (!paymentAvailable) return;
-        if (price! > 0) {
+        if (payableAmount! > 0) {
             setIsPaymentModalOpen(true);
             return;
         }
@@ -338,8 +343,31 @@ export function EventDetail() {
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-500">Ücret</span>
-                                    <span className="font-bold text-gray-900">{formatEventPrice(price, currency)}</span>
+                                    <div className="text-right">
+                                        {hasMemberDiscount ? (
+                                            <div>
+                                                <span className="line-through text-gray-400 text-xs mr-2">{formatEventPrice(price, currency)}</span>
+                                                <span className="font-bold text-green-600">{formatEventPrice(payableAmount, currency)}</span>
+                                                <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Üye İndirimi</span>
+                                            </div>
+                                        ) : isMemberFree && price! > 0 ? (
+                                            <div>
+                                                <span className="line-through text-gray-400 text-xs mr-2">{formatEventPrice(price, currency)}</span>
+                                                <span className="font-bold text-green-600">Ücretsiz</span>
+                                                <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Üyeye Özel</span>
+                                            </div>
+                                        ) : (
+                                            <span className="font-bold text-gray-900">{formatEventPrice(price, currency)}</span>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {event.has_member_ticket_privilege && (
+                                    <div className="p-2.5 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                        <span>Aktif E4N üyeliğiniz ile bilet avantajından yararlanıyorsunuz.</span>
+                                    </div>
+                                )}
 
                                 {!paymentAvailable && <div role="alert"><p>{price === null || !currency ? 'Ücret bilgisi doğrulanamadı.' : 'Bu etkinlik için ödeme şu anda başlatılamıyor.'}</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>}
 
@@ -351,7 +379,7 @@ export function EventDetail() {
                                         <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
                                             <CheckCircle className="h-4 w-4 mr-2" /> Kayıtlısınız
                                         </Button>
-                                        {event.ticket_payment_status === 'PENDING' && paymentAvailable && price! > 0 && (
+                                        {event.ticket_payment_status === 'PENDING' && paymentAvailable && payableAmount! > 0 && (
                                             <Button className="w-full mt-3" onClick={() => setIsPaymentModalOpen(true)} disabled={registering || registrationUncertain}>
                                                 Ödemeyi tamamla
                                             </Button>
@@ -390,7 +418,7 @@ export function EventDetail() {
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 planTitle={event?.title || ''}
-                amount={price!}
+                amount={payableAmount!}
                 onSuccess={handlePaymentSuccess}
                 action={{
                     type: 'event_registration',

@@ -12,6 +12,7 @@ import {installEventAttendance} from './event-attendance.js';
 import {installMembershipHistory} from './membership-history.js';
 import {installMembershipRecords} from './membership-records.js';
 import {recordShuffleExecution,installShuffleHistory,readShuffleHistorySnapshot,readShuffleReceipt,validShuffleSubmission,shuffleFingerprint} from './shuffle-history.js';
+import { evaluateEventTicketEntitlement, isUserActiveMember } from './event-pricing.js';
 // CRITICAL DEBUGGING: Catch process crashes
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL PROCESS CRASH:', err);
@@ -1109,7 +1110,7 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      const account = (await client.query('SELECT id FROM users WHERE id=$1 FOR SHARE', [req.user.id])).rows[0];
+      const account = (await client.query('SELECT id, role, account_status, profession FROM users WHERE id=$1 FOR SHARE', [req.user.id])).rows[0];
       if (!account) { await client.query('ROLLBACK'); return res.sendStatus(401); }
       // Serializes same-owner registration and existing FE checks with verified payment action.
       // 1. Get Event Details
@@ -1122,10 +1123,37 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
       if (event.price == null || !Number.isFinite(Number(event.price)) || Number(event.price) < 0) {
         await client.query('ROLLBACK'); return res.status(409).json({ error: 'Event price unavailable' });
       }
+
+      // Check group membership for closed group access control (R02 / R12)
+      let groupMembership = null;
+      if (event.group_id) {
+        const gmRes = await client.query('SELECT status, role FROM group_members WHERE group_id=$1 AND user_id=$2', [event.group_id, req.user.id]);
+        groupMembership = gmRes.rows[0] || null;
+      }
+
+      // Evaluate ticket entitlement and member pricing
+      const entitlement = evaluateEventTicketEntitlement({ user: account, event, groupMembership });
+      if (!entitlement.canAccess) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: entitlement.accessError, code: entitlement.accessCode });
+      }
+
       const savedRegistration = async replayed => {
         const ticketRows = (await client.query('SELECT payment_status FROM event_tickets WHERE event_id=$1 AND user_id=$2', [eventId,req.user.id])).rows;
-        return {version:1,success:true,eventId,ownerId:req.user.id,replayed,ticket_needed:event.generate_tickets === true,price:event.price,
-          ticket_payment_status:ticketRows.length===1 ? ticketRows[0].payment_status : null};
+        return {
+          version: 1,
+          success: true,
+          eventId,
+          ownerId: req.user.id,
+          replayed,
+          ticket_needed: event.generate_tickets === true,
+          price: event.price,
+          effective_price: entitlement.effectivePrice,
+          member_price: entitlement.memberPrice,
+          discount_applied: entitlement.discountAmount > 0,
+          has_member_privilege: entitlement.hasMemberPrivilege,
+          ticket_payment_status: ticketRows.length === 1 ? ticketRows[0].payment_status : null
+        };
       };
 
       // 2. Check if already registered
@@ -1170,18 +1198,14 @@ app.post('/api/events/:id/register', authenticateToken, async (req, res) => {
       // 5. Generate Ticket if enabled
       if (event.generate_tickets) {
         const ticketNumber = `E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
-        
-        let paymentStatus = 'FREE';
-        if (event.price > 0) {
-            paymentStatus = 'PENDING';
-        }
+        const paymentStatus = entitlement.ticketPaymentStatus;
 
         await client.query(`
             INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status)
             VALUES($1, $2, $3, $4)
         `, [eventId, req.user.id, ticketNumber, paymentStatus]);
 
-        console.log(`🎫 Ticket Generated: ${ticketNumber} for User ${req.user.id} - Event ${eventId}`);
+        console.log(`🎫 Ticket Generated: ${ticketNumber} for User ${req.user.id} - Event ${eventId} (Status: ${paymentStatus}, EffectivePrice: ${entitlement.effectivePrice})`);
       }
 
       const saved = await savedRegistration(false);
@@ -1646,11 +1670,29 @@ app.get('/api/events', async (req, res) => {
 
     const { rows } = await pool.query(query, params);
     
-    // Auth check for online_link visibility
+    // Auth check for online_link visibility and member entitlement enrichment
+    let userRecord = null;
+    if (reqUser) {
+      const userRes = await pool.query('SELECT id, role, account_status FROM users WHERE id=$1', [reqUser.id]);
+      userRecord = userRes.rows[0] || null;
+    }
+
     const sanitizedRows = rows.map(r => {
       const copy = { ...r };
       if (!isAdmin) {
         delete copy.online_link;
+      }
+      if (userRecord) {
+        const entitlement = evaluateEventTicketEntitlement({ user: userRecord, event: copy });
+        copy.has_member_ticket_privilege = entitlement.hasMemberPrivilege;
+        copy.member_price = entitlement.memberPrice;
+        copy.effective_price = entitlement.effectivePrice;
+        copy.is_free_for_member = entitlement.isFreeForMember;
+      } else {
+        copy.has_member_ticket_privilege = false;
+        copy.member_price = null;
+        copy.effective_price = Number(copy.price) || 0;
+        copy.is_free_for_member = Number(copy.price) === 0;
       }
       return copy;
     });
@@ -1703,6 +1745,33 @@ app.get('/api/events/:id', async (req, res) => {
 
     if (!isAdmin) {
       delete event.online_link;
+    }
+
+    // Attach entitlement and member pricing if authenticated (R02 / R12)
+    if (reqUser) {
+      const userRes = await pool.query('SELECT id, role, account_status FROM users WHERE id=$1', [reqUser.id]);
+      const user = userRes.rows[0];
+      if (user) {
+        let groupMembership = null;
+        if (event.group_id) {
+          const gmRes = await pool.query('SELECT status, role FROM group_members WHERE group_id=$1 AND user_id=$2', [event.group_id, reqUser.id]);
+          groupMembership = gmRes.rows[0] || null;
+        }
+        const entitlement = evaluateEventTicketEntitlement({ user, event, groupMembership });
+        event.has_member_ticket_privilege = entitlement.hasMemberPrivilege;
+        event.member_price = entitlement.memberPrice;
+        event.effective_price = entitlement.effectivePrice;
+        event.is_free_for_member = entitlement.isFreeForMember;
+        event.entitlement_reason = entitlement.entitlementReason;
+        event.discount_amount = entitlement.discountAmount;
+      }
+    } else {
+      event.has_member_ticket_privilege = false;
+      event.member_price = null;
+      event.effective_price = Number(event.price) || 0;
+      event.is_free_for_member = Number(event.price) === 0;
+      event.entitlement_reason = 'ANONYMOUS';
+      event.discount_amount = 0;
     }
 
     // Participants list

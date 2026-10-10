@@ -23,6 +23,7 @@
     "test:score-removal": "node test/low-score-removal-contract.mjs",
     "test:removal-ban": "node test/second-removal-ban-contract.mjs",
     "test:membership-referral": "node test/membership-referral-contract.mjs",
+    "test:ticket-entitlement": "node test/event-ticket-entitlement-contract.mjs",
     "events:completion:inspect": "node src/cron/run-event-completion.js",
     "routes:inspect": "node tools/route-ownership.mjs",
     "test:routes": "node test/route-ownership-static.mjs && node test/route-ownership-contract.mjs",

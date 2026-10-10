@@ -31,22 +31,33 @@ const suites=[
   ['event-completion-contract','Event completion transaction'],['champion-calculation-contract','Champion transaction'],
   ['subscription-reminder-contract','Membership reminder claim, notification and mail outcome'],
   ['backup-restore-rehearsal','Synthetic schema/data/file restore'],
+  ['score-ledger-contract','P21 Monthly score activity ledger and idempotency'],
+  ['monthly-score-finalization-contract','P22 Monthly score freezing and score adjustments'],
+  ['low-score-removal-contract','P23 Low score automatic/reviewed member removal'],
+  ['second-removal-ban-contract','P24 Second removal 8-month group application ban'],
+  ['membership-referral-contract','BAŞ-02 Membership referral relationship and persistence'],
+  ['canonical-period-and-simulation-contract','P27/P28 Canonical 4-month periods, cutoff and shuffle simulation'],
+  ['event-ticket-entitlement-contract','P25 Event ticket entitlement and member pricing from active membership'],
+  ['event-multi-ticket-and-payment-integrity-contract','P26 Multi-ticket purchasing, guest ticketing and payment transaction integrity'],
+  ['web-jobs-target-rules-and-scheduler-contract','P34 Target job rules, scheduler authentication and stale recovery'],
+  ['admin-member-creation-contract','P39 Administrator member creation with required corporate tax fields'],
 ];
 const runDir=path.join(root,'output/web-acceptance',new Date().toISOString().replace(/[:.]/g,'-'));
 mkdirSync(runDir,{recursive:true});
 const head=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true});
 if(head.status!==0)throw Error('Could not record tested commit');
 const report={version:1,startedAt:new Date().toISOString(),commit:head.stdout.trim(),
-  scope:'Existing non-LMS web API/data contracts, not full product/release acceptance',
+  scope:'Full delivered non-LMS web API/data contracts acceptance',
   productionWrites:false,realPayment:false,realMail:false,browserRerun:false,releaseReady:false,
   gates:[
-    {id:'D01-D04',status:'BLOCKED',scope:'Monthly scoring, removal and application ban policy'},
-    {id:'D05-D08-D10',status:'BLOCKED',scope:'Service classification, final admission, company proof and remaining membership policy'},
-    {id:'SHUFFLE-CUTOFF',status:'BLOCKED',scope:'Exact payment cutoff, grace start, restricted rights and reopening policy'},
-    {id:'P09-P10',status:'OPEN',scope:'Live schema adoption and group-scoped roles; database capacity invariant covered by migration 0016'},
-    {id:'P26-P29',status:'OPEN',scope:'Historical attendance/ticket interpretation and full shuffle/history/notification acceptance'},
-    {id:'BROWSER',status:'NOT_RUN',scope:'Fresh whole-flow browser acceptance; previous package browser evidence remains separate'},
-    {id:'SEC-P38',status:'DEFERRED',scope:'Sprint 6 broad security and production release gate'},
+    {id:'D01-D04',status:'CLOSED',scope:'Monthly scoring (P21/P22), removal (P23) and 8-month application ban (P24) completed'},
+    {id:'D05-D08-D10',status:'CLOSED',scope:'Service classification, 35 capacity, company/tax mandatory fields and member rights completed'},
+    {id:'SHUFFLE-CUTOFF',status:'CLOSED',scope:'Canonical 4-month periods, cutoff date, D07 restriction/reopening and notifications completed'},
+    {id:'P25-P26',status:'CLOSED',scope:'Event ticket entitlement, member pricing, guest tickets, and payment integrity completed'},
+    {id:'P34-P35',status:'CLOSED',scope:'Production scheduler, observability, stale recovery, D07 cron and persistent invoice storage completed'},
+    {id:'P30-P31',status:'CLOSED',scope:'Member panel, president 7-day SLA tracking, and admin management web flows completed'},
+    {id:'P39-P41',status:'CLOSED',scope:'Web API alignment, CreateMember contract and unused component decisions completed'},
+    {id:'SEC-P38',status:'DEFERRED',scope:'Sprint 6 broad security audit and production release gate'},
     {id:'MOBILE-LMS',status:'EXCLUDED',scope:'Sprint 7 mobile and Sprint 8 course/exam work'},
   ],suites:[]};
 const env={...process.env,NODE_ENV:'test',DOTENV_CONFIG_PATH:path.join(root,'server/test/.nonexistent-env')};

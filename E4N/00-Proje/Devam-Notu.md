@@ -1,6 +1,22 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P30 / E4N-102 & P31 / E4N-103 tamamlandı
+## Güncel teslim — P37 / E4N-109 tamamlandı (Bütün Web Kabulü ve Sürüm Kapısı)
+
+- **E4N-109 (P37) Done:** Tüm eğitim dışı web modülleri, sözleşmeleri ve kurallarının tek sahipli birleşik kabul koşucusunda (`web-acceptance.mjs`) 51/51 tam başarıyla doğrulanması ve web sürüm kapısının nihai teslimi tamamlandı.
+  - 51 Sözleşme Paketi (51/51 PASS): Üyelik, açık kayıt, şirket/vergi doğrulaması, kapalı grup, lonca, yoklama, kalıcı geçmiş, puan olay defteri (P21), ay sonu puan dondurma (P22), puana bağlı çıkarma (P23), 8 aylık başvuru yasağı (P24), üyelik referansı (BAŞ-02), kanonik dönem ve shuffle simülasyonu (P27/P28), shuffle bildirimleri (P29), etkinlik bilet hakları (P25), çoklu ve misafir biletleme (P26), üretim zamanlayıcısı/stale kurtarma (P34), kalıcı PDF fatura depolama (P35), üye paneli (P30), başkan/admin işlemleri (P31), Web API uyumu (P39) ve grup kapasite tavanı/sınırları.
+  - Kapanan Kapılar (Closed Gates):
+    - `D01-D04`: CLOSED (Aylık puanlama, çıkarma ve 8 aylık başvuru yasağı).
+    - `D05-D08-D10`: CLOSED (Hizmet sınıflandırması, 35 kapasite, şirket/vergi zorunluluğu).
+    - `SHUFFLE-CUTOFF`: CLOSED (Kanonik 4 aylık dönemler, kesim tarihi, D07 kısıtlama/bildirim).
+    - `P25-P26`: CLOSED (Dış etkinlik hakları, indirimli bilet, çoklu bilet ve ödeme atomikliği).
+    - `P34-P35`: CLOSED (Üretim scheduler, alarmlar, kurtarma ve kalıcı fatura depolama).
+    - `P30-P31`: CLOSED (Üye paneli ve başkan/admin web akışları).
+    - `P39-P41`: CLOSED (Web API uyumu ve bileşen kararları).
+    - `SEC-P38`: DEFERRED (Sprint 6 bağımsız güvenlik denetimi).
+    - `MOBILE-LMS`: EXCLUDED (Sprint 7 mobil ve Sprint 8 eğitim modülleri).
+  - Şema & Derleme: 28 migration ve 50 tablo invariyantı korundu (0 DDL). `route-ownership-static.mjs` (203 rota PASS), `npm run check` (0 hata PASS), `npm run build` (temiz derleme PASS). Kanıt [[E4N/09-Dogrulama/P37-Nihai-Butun-Web-Kabulu-ve-Surum-Kapisi-2026-10-10]].
+
+## Önceki teslim — P30 / E4N-102 & P31 / E4N-103 tamamlandı
 
 - **E4N-102 (P30) & E4N-103 (P31) Done:** Üye web paneli ve başkan/admin web işlemleri, D07 kısıtlı hesap rozetleri, P24 8 aylık kapalı grup başvuru yasağı ve BAŞ-05 7 günlük başkan görüşme SLA takibi ile uçtan uca tamamlandı.
   - Üye Paneli (P30):

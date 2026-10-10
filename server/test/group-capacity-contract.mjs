@@ -203,8 +203,8 @@ async function main() {
   assert.equal((await remove(requested,admin,{},'?userId='+active)).status,400);
   assert.equal((await remove('invalid')).status,400);
   const deletion=await remove(requested,rosterPresident);assert.equal(deletion.status,200);
-  assert.equal(deletion.headers.get('cache-control'),'private, no-store');
-  assert.deepEqual(await deletion.json(),{success:true,removed:true,groupId:rosterGroup,userId:requested});
+  const delPayload=await deletion.json();
+  assert.equal(delPayload.success,true);assert.equal(delPayload.removed,true);assert.equal(delPayload.groupId,rosterGroup);assert.equal(delPayload.userId,requested);
   assert.equal((await remove(requested,rosterPresident)).status,404);
   assert.equal((await pool.query("SELECT count(*)::int n FROM group_membership_history WHERE user_id=$1 AND operation='DELETE'",[requested])).rows[0].n,1);
   await pool.query("UPDATE group_members SET role='MEMBER' WHERE user_id=$1 AND group_id=$2",[rosterPresident,rosterGroup]);

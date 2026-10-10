@@ -91,6 +91,45 @@ export function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* D07 Restricted Account Notice */}
+        {user.account_status === 'RESTRICTED' && (
+          <div role="alert" className="mb-6 p-4 rounded-xl border border-red-300 bg-red-50 text-red-900 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Hesabınız Kısıtlandı (Ödeme Gecikmesi)</h3>
+                <p className="text-sm text-red-700 mt-0.5">
+                  Üyelik aidatınızın 5 günlük ödeme süresi aşıldığı için kapalı grup faaliyetleriniz ve indirim haklarınız geçici olarak durdurulmuştur. Borcunuzu ödediğinizde hesabınız otomatik olarak aktifleşecektir.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate('/membership')}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm whitespace-nowrap shadow-sm border-none flex items-center"
+            >
+              Borcu Öde / Yenile
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+          </div>
+        )}
+
+        {/* Suspended Account Notice */}
+        {user.account_status === 'SUSPENDED' && (
+          <div role="alert" className="mb-6 p-4 rounded-xl border border-red-300 bg-red-50 text-red-900 flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-red-100">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base">Hesabınız Askıya Alındı</h3>
+              <p className="text-sm text-red-700 mt-0.5">
+                Hesabınız idari nedenlerle askıya alınmıştır. Lütfen platform yönetimi ile iletişime geçiniz.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Subscription Days Left Indicator */}
         {user.subscription_end_date && (() => {
           const endDate = new Date(user.subscription_end_date);

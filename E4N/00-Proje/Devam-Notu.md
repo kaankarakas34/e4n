@@ -1,6 +1,19 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P39 / E4N-111 & P41 / E4N-113 tamamlandı
+## Güncel teslim — P30 / E4N-102 & P31 / E4N-103 tamamlandı
+
+- **E4N-102 (P30) & E4N-103 (P31) Done:** Üye web paneli ve başkan/admin web işlemleri, D07 kısıtlı hesap rozetleri, P24 8 aylık kapalı grup başvuru yasağı ve BAŞ-05 7 günlük başkan görüşme SLA takibi ile uçtan uca tamamlandı.
+  - Üye Paneli (P30):
+    - D07 Kısıtlı Hesap (`Dashboard.tsx` & `Membership.tsx`): 5 günlük aidat gecikmesi sonu kısıtlanan hesaplar (`account_status = 'RESTRICTED'`) için açıklayıcı bilgilendirme ve ödeme yönlendirme banner'ı eklendi. Askıya alınan hesaplar (`SUSPENDED`) için yönetimle irtibat uyarısı verildi ve ödeme butonu kilitlendi.
+    - P24 8 Aylık Kapalı Grup Başvuru Yasağı (`GroupDiscovery.tsx` & `groupApplications.ts`): 2. kez gruptan çıkarılan üyeler için kalan gün sayısı ve bitiş tarihiyle uyarı panosu render edildi; kapalı grupların "Katıl" butonu kilitlendi ve "Başvuru Yasağı Aktif" rozeti eklendi. Dış etkinlikler ve lonca katılımı haklarının korunduğu vurgulandı.
+    - Üye karnesi (`ScoreCard`), fatura geçmişi ve doğrudan indirme (`MembershipRecords.tsx`), dış etkinlik bilet hakları ve çoklu bilet seçimi (`EventDetail.tsx`) tam entegre edildi.
+  - Başkan ve Admin İşlemleri (P31):
+    - 7 Günlük Görüşme SLA Takibi (`GroupApplicationQueue.tsx` & `GroupApplicationTasks.tsx`): 7 günü aşan bekleyen başvurular için `sla_breached: true` ve `days_waiting` metrikleriyle "⚠️ 7 Günlük Görüşme SLA Süresi Aşıldı" rozeti eklendi.
+    - Görüşme ön koşulu ve karar gerekçesi korundu; başvuranın önceki çıkarılma geçmişi (`removal_history`) gösterildi.
+    - Admin yeni üye oluşturma ve CRM lead dönüştürme (`CreateMember.tsx`), 35 kişi grup tavanı (`AdminGroups.tsx`), 4 aylık kanonik dönem rotasyon simülasyonu (`AdminShuffle.tsx`) doğrulandı.
+  - Testler: `server/test/membership-records-contract.mjs` (İzole PG17 Docker PASS), `server/test/group-application-workflow-contract.mjs` (İzole PG17 Docker PASS), `server/test/route-ownership-static.mjs` (203 rota, 31 sağlayıcı PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P30-P31-Uye-Baskan-Admin-Web-Panelleri-2026-10-10]].
+
+## Önceki teslim — P39 / E4N-111 & P41 / E4N-113 tamamlandı
 
 - **E4N-111 (P39) & E4N-113 (P41) Done:** Web API sözleşmesindeki aktif yol/yöntem farkları kapatıldı, istemci-sunucu rota tutarlılığı ve demo/kullanılmayan bileşenlerin değerlendirilmesi tamamlandı.
   - İstemci AST Taraması (`server/test/scan-client-endpoints.mjs`): 165 istemci API çağrı noktası analiz edildi; tüm uçlar 203 Express rotası ile uzlaştırıldı.

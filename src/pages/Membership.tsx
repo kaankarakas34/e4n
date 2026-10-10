@@ -131,6 +131,34 @@ export function MembershipPage() {
                             <Button onClick={() => setRetry(value => value + 1)}>Tekrar dene</Button>
                         </div>
                     ) : ownRecord && (
+                    <>
+                    {ownRecord.account_status === 'RESTRICTED' && (
+                        <div role="alert" className="mb-6 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 max-w-3xl mx-auto flex items-start gap-3">
+                            <div className="p-1.5 rounded-lg bg-amber-100 mt-0.5">
+                                <Shield className="h-5 w-5 text-amber-700" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-sm">Hesabınız Kısıtlı Durumda (Aidat Gecikmesi)</p>
+                                <p className="text-xs text-amber-800 mt-0.5">
+                                    Aidat ödemeniz 5 günlük gecikme süresini aştığı için kapalı grup faaliyetleriniz ve indirim haklarınız geçici olarak durdurulmuştur.
+                                    Aşağıdaki paketlerden birini seçip ödemenizi tamamladığınızda hesabınız ve tüm haklarınız anında otomatik olarak yeniden açılacaktır.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                    {ownRecord.account_status === 'SUSPENDED' && (
+                        <div role="alert" className="mb-6 p-4 rounded-xl border border-red-300 bg-red-50 text-red-900 max-w-3xl mx-auto flex items-start gap-3">
+                            <div className="p-1.5 rounded-lg bg-red-100 mt-0.5">
+                                <Shield className="h-5 w-5 text-red-700" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-sm">Hesabınız Askıya Alındı</p>
+                                <p className="text-xs text-red-800 mt-0.5">
+                                    Hesabınız idari nedenlerle askıya alınmıştır. Askıya alınan hesaplar üzerinden ödeme yapılamaz. Lütfen platform yönetimi ile iletişime geçiniz.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <div className="mb-12 bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-3xl mx-auto">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                             <Shield className="h-5 w-5 mr-2 text-indigo-600" />
@@ -160,6 +188,7 @@ export function MembershipPage() {
                             </div>
                         */}
                     </div>
+                    </>
                 )}
                 </div>
 
@@ -199,9 +228,9 @@ export function MembershipPage() {
                             <Button
                                 className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-xl text-center font-semibold text-base transition-colors ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
                                 onClick={() => handleSelectPlan(plan)}
-                                disabled={isPaymentModalOpen}
+                                disabled={isPaymentModalOpen || ownRecord?.account_status === 'SUSPENDED'}
                             >
-                                Seç ve Öde
+                                {ownRecord?.account_status === 'SUSPENDED' ? 'Hesap Askıda' : 'Seç ve Öde'}
                             </Button>
                         </div>
                     ))}

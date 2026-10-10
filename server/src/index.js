@@ -1718,9 +1718,17 @@ app.get('/api/events/:id', async (req, res) => {
           THEN EXISTS (SELECT 1 FROM attendance own WHERE own.event_id = e.id AND own.user_id = $2::uuid)
           ELSE NULL END AS is_registered,
         CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id=$2::uuid)
-          THEN (SELECT CASE WHEN count(*)=1 THEN min(t.payment_status) ELSE NULL END
+          THEN (SELECT CASE
+            WHEN count(*)=0 THEN NULL
+            WHEN bool_or(t.payment_status='PENDING') THEN 'PENDING'
+            WHEN bool_and(t.payment_status='PAID') THEN 'PAID'
+            WHEN bool_and(t.payment_status='FREE') THEN 'FREE'
+            ELSE min(t.payment_status) END
             FROM event_tickets t WHERE t.event_id=e.id AND t.user_id=$2::uuid)
-          ELSE NULL END AS ticket_payment_status
+          ELSE NULL END AS ticket_payment_status,
+        CASE WHEN EXISTS (SELECT 1 FROM users owner WHERE owner.id=$2::uuid)
+          THEN (SELECT count(*)::int FROM event_tickets t WHERE t.event_id=e.id AND t.user_id=$2::uuid)
+          ELSE 0 END AS my_tickets_count
       FROM events e 
       LEFT JOIN groups g ON e.group_id = g.id 
       WHERE e.id = $1
@@ -1772,6 +1780,17 @@ app.get('/api/events/:id', async (req, res) => {
       event.is_free_for_member = Number(event.price) === 0;
       event.entitlement_reason = 'ANONYMOUS';
       event.discount_amount = 0;
+    }
+
+    // User's tickets list if authenticated
+    if (reqUser) {
+      const ticketsRes = await pool.query(
+        'SELECT id, ticket_number, payment_status, created_at FROM event_tickets WHERE event_id=$1 AND user_id=$2 ORDER BY created_at ASC',
+        [id, reqUser.id]
+      );
+      event.my_tickets = ticketsRes.rows;
+    } else {
+      event.my_tickets = [];
     }
 
     // Participants list
@@ -2020,8 +2039,22 @@ app.post('/api/payment/pay', async (req, res) => {
     if (action.data.user_id && action.data.user_id !== req.user.id) return res.sendStatus(403);
     try {
       if (!(await pool.query('SELECT id FROM users WHERE id=$1',[req.user.id])).rowCount) return res.sendStatus(403);
-      if (action.type === 'event_registration' && (!meetingUuid(action.data.event_id)
-        || !(await pool.query('SELECT id FROM events WHERE id=$1',[action.data.event_id])).rowCount)) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+      if (action.type === 'event_registration') {
+        if (!meetingUuid(action.data.event_id)) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+        const eventRes = await pool.query('SELECT * FROM events WHERE id=$1',[action.data.event_id]);
+        if (!eventRes.rowCount) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+        const event = eventRes.rows[0];
+        const quantity = Math.max(1, Math.min(20, Number(action.data.quantity) || 1));
+        action.data.quantity = quantity;
+
+        // Kontenjan kontrolü
+        if (event.max_attendees) {
+          const currentCount = (await pool.query('SELECT count(*)::int AS count FROM attendance WHERE event_id=$1',[event.id])).rows[0]?.count || 0;
+          if (currentCount + quantity > event.max_attendees) {
+            return res.status(409).json({ error: 'Etkinlik kontenjanı dolu.', code: 'CAPACITY_EXCEEDED' });
+          }
+        }
+      }
     } catch { return res.status(500).json({error:'Ödeme hesabı doğrulanamadı.'}); }
     action.data = {...action.data,user_id:req.user.id,amount};
     if (action.type === 'membership') {
@@ -2032,8 +2065,28 @@ app.post('/api/payment/pay', async (req, res) => {
       catch { return res.status(503).json({error:'Ödeme hesabı doğrulanamadı.'}); }
       if (!account || !['ACTIVE','UNSUBSCRIBED','PENDING','RESTRICTED'].includes(account.account_status)) return res.status(403).json({error:'Kısıtlı hesap için ödeme başlatılamaz.'});
     }
-  } else if (typeof action.data.email !== 'string' || !action.data.email.trim() || typeof action.data.name !== 'string' || !action.data.name.trim()) {
-    return res.status(400).json({error:'Ziyaretçi bilgileri eksik.'});
+  } else {
+    if (typeof action.data.email !== 'string' || !action.data.email.trim() || typeof action.data.name !== 'string' || !action.data.name.trim()) {
+      return res.status(400).json({error:'Ziyaretçi bilgileri eksik.'});
+    }
+    if (action.data.event_id) {
+      if (!meetingUuid(action.data.event_id)) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+      const eventRes = await pool.query('SELECT * FROM events WHERE id=$1',[action.data.event_id]);
+      if (!eventRes.rowCount) return res.status(404).json({error:'Etkinlik bulunamadı.'});
+      const event = eventRes.rows[0];
+      if (event.is_public !== true && event.group_id) {
+        return res.status(403).json({error:'Bu etkinlik harici misafir katılımına kapalıdır.', code:'CLOSED_GROUP_EVENT'});
+      }
+      const quantity = Math.max(1, Math.min(20, Number(action.data.quantity) || 1));
+      action.data.quantity = quantity;
+
+      if (event.max_attendees) {
+        const currentCount = (await pool.query('SELECT count(*)::int AS count FROM attendance WHERE event_id=$1',[event.id])).rows[0]?.count || 0;
+        if (currentCount + quantity > event.max_attendees) {
+          return res.status(409).json({ error: 'Etkinlik kontenjanı dolu.', code: 'CAPACITY_EXCEEDED' });
+        }
+      }
+    }
   }
   if (!process.env.SIPAY_API_URL || !process.env.SIPAY_APP_ID || !process.env.SIPAY_APP_SECRET || !process.env.SIPAY_MERCHANT_KEY) {
     return res.status(503).json({error:'Ödeme yapılandırması eksik.'});

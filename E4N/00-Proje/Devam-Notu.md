@@ -1,6 +1,29 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P29 / E4N-101 tamamlandı (Epic E6: Dört Aylık Shuffle Tamamlandı)
+## Güncel teslim — P26 / E4N-98 tamamlandı
+
+- **E4N-98 (P26) Done:** Etkinlik katılım, çoklu bilet alımı, harici (misafir) katılımcı biletleme ve ödeme transaction bütünlüğü tamamlandı.
+  - Çoklu bilet alımı (`quantity: 1..20`): Üyeler kendileri ve misafirleri için çoklu bilet satın alabilir. Mevcut `PENDING` bilet ödemeyle `PAID` yapılır ve talep edilen bilet adedi kadar her biri tekil `E4N-...` numaralı `PAID` bilet satırı `event_tickets`'a atomik olarak yazılır.
+  - Harici misafir biletlemesi (`visitor_registration`): Giriş yapmamış misafirler isim, e-posta ve telefon bilgileriyle halka açık etkinlikler için bilet satın alabilir. Biletler `user_id = NULL` olarak `event_tickets`'a `PAID` statüsünde ve `E4N-GUEST-...` tekil bilet numarasıyla işlenir; `public_visitors.form_data` alanına `ticket_numbers` dizisi bağlanır.
+  - Kontenjan koruması: Çoklu bilet adedi toplam kontenjanı (`max_attendees`) aşıyorsa `409 CAPACITY_EXCEEDED` ile işlem başlatılamaz.
+  - Kapalı grup koruması: Kapalı grup etkinliklerine harici misafir kaydı `403 CLOSED_GROUP_EVENT` ile engellenir.
+  - Transaction atomikliği ve rollback: Bilet üretimi veya eylem yürütme sırasında oluşabilecek DB hatalarında tüm ödeme işlemi atomik geri alınır (`ROLLBACK`), yetim bilet oluşmaz; işlem `PENDING` kalarak güvenle yeniden denenebilir (`retry`).
+  - Web: `EventDetail.tsx` ekranında bilet adedi seçici (+/- butonları, 1-10 adet), toplam tutar gösterimi, misafir kayıt formu, kullanıcının biletlerini listeleyen "Biletleriniz" kartı ve `PaymentModal` tam entegrasyonu sağlandı.
+  - Testler: `server/test/event-multi-ticket-and-payment-integrity-contract.mjs` (7/7 PASS - üye çoklu bilet, pending bilet promosyonu, harici misafir biletleme, kontenjan aşımı engeli, kapalı grup engeli, transaction rollback atomikliği, idempotent replay), `server/test/payment-flow.mjs` (PASS), `server/test/event-ticket-entitlement-contract.mjs` (PASS), `server/test/event-registration-contract.mjs` (PASS), `server/test/route-ownership-static.mjs` (200 rota, 31 sağlayıcı PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P26-Coklu-Bilet-ve-Odeme-Butunlugu-2026-10-10]].
+
+## Önceki teslim — P25 / E4N-97 tamamlandı
+
+- **E4N-97 (P25) Done:** Dış etkinlik ve indirimli bilet hakkının üyelikten hesaplanması motoru (`server/src/event-pricing.js`) kuruldu.
+  - R02 & R12 kuralı: Üye kapalı gruptan çıkarılmış (`group_members.status = 'INACTIVE'`) veya henüz hiçbir gruba atanmamış olsa dahi, genel E4N hesabı `account_status = 'ACTIVE'` olduğu sürece dış etkinliklere (`is_public = true` veya `group_id IS NULL`) serbestçe katılabilir ve indirimli/ücretsiz bilet hakkından tam yararlanır.
+  - Kapalı grup koruması: Kapalı grup etkinliğine (`is_public = false`, `group_id IS NOT NULL`) yalnızca grubun aktif üyeleri erişebilir/kaydolabilir (`403 CLOSED_GROUP_RESTRICTED`).
+  - Sunucu taraflı bilet hak motoru:
+    - Ağ toplantıları ve ziyaretçi etkinlikleri (`type IN ('meeting', 'visitor')`): Aktif üyelere ücretsizdir (`effective_price: 0`, `ticket_payment_status: 'FREE'`).
+    - Eğitim ve sosyal etkinlikler: Aktif üyelere %50 indirimli bilet (`effective_price = price * 0.5`, `ticket_payment_status: 'PENDING'`).
+    - Kısıtlı hesaplar (`account_status = 'RESTRICTED'` veya `'SUSPENDED'` - D07): İndirim hakkı verilmez, standart fiyat uygulanır.
+  - Web entegrasyonu: `EventDetail.tsx` ekranında üye indirimi/ücretsiz bilet rozeti, indirimli fiyat karşılaştırması ve `PaymentModal` entegrasyonu tamamlandı.
+  - Testler: `server/test/event-ticket-entitlement-contract.mjs` (6/6 PASS - gruptan çıkarılan aktif üye, atanmamış üye, ücretsiz toplantı bileti, %50 indirim, kısıtlı hesap, kapalı grup bariyeri, replay), `server/test/event-registration-contract.mjs` (PASS), `server/test/payment-flow.mjs` (PASS), `server/test/route-ownership-static.mjs` (200 rota, 31 sağlayıcı PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P25-Uyelikten-Etkinlik-Bilet-Hakki-2026-10-10]].
+
+## Önceki teslim — P29 / E4N-101 tamamlandı (Epic E6: Dört Aylık Shuffle Tamamlandı)
 
 - **E4N-101 (P29) Done:** Dağıtım yürütüldüğünde (`POST /api/shuffle/save` / `recordShuffleExecution`), atanan tüm üyelere atomik sistem içi bildirim (`notifications` tablosuna `SHUFFLE_COMPLETED` başlığı, kanonik dönem adı, yeni grup adı ve `/groups/:id` aksiyon linki) eklendi.
 - Önceki aktif üyelikten yerleşemeyen adaylara gerekçeli bilgilendirme bildirimi (`Dönem Rotasyonu Bilgilendirmesi`) eklendi.

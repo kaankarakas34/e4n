@@ -4,7 +4,8 @@ import { SEO } from '../components/SEO';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
-import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video } from 'lucide-react';
+import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video, Ticket } from 'lucide-react';
+import { Input } from '../shared/Input';
 import { PaymentModal } from '../components/PaymentModal';
 import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
 
@@ -17,6 +18,12 @@ export function EventDetail() {
     const [registering, setRegistering] = useState(false);
     const [registered, setRegistered] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [ticketQuantity, setTicketQuantity] = useState(1);
+    const [guestName, setGuestName] = useState('');
+    const [guestEmail, setGuestEmail] = useState('');
+    const [guestPhone, setGuestPhone] = useState('');
+    const [showGuestForm, setShowGuestForm] = useState(false);
+    const [guestError, setGuestError] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const loadSequence = useRef(0);
     const registrationPending = useRef(false);
@@ -39,6 +46,27 @@ export function EventDetail() {
     const currency = readEventCurrency(event?.currency);
     const paymentAvailable = price !== null && (price === 0 || currency === 'TRY');
     const capacity = Number.isSafeInteger(event?.max_attendees) && event.max_attendees > 0 ? event.max_attendees : null;
+    const totalPayable = user
+        ? (ticketQuantity === 1 ? (payableAmount ?? 0) : ((payableAmount ?? 0) + (ticketQuantity - 1) * (price ?? 0)))
+        : ((price ?? 0) * ticketQuantity);
+    const paymentAction = user ? {
+        type: 'event_registration' as const,
+        data: {
+            event_id: id,
+            user_id: user?.id,
+            quantity: ticketQuantity
+        }
+    } : {
+        type: 'visitor_registration' as const,
+        data: {
+            event_id: id,
+            name: guestName.trim(),
+            email: guestEmail.trim(),
+            phone: guestPhone.trim(),
+            quantity: ticketQuantity,
+            source: 'event_guest_ticket'
+        }
+    };
 
     useEffect(() => {
         pageActive.current = true;
@@ -91,7 +119,7 @@ export function EventDetail() {
     };
 
     const handlePaymentSuccess = async () => {
-        if (!id || !user || !pageActive.current || latestContext.current !== pageContext) return;
+        if (!id || !pageActive.current || latestContext.current !== pageContext) return;
         setIsPaymentModalOpen(false);
         setRegistering(true);
         alert('Ödeme bildirimi alındı. Güncel etkinlik kaydınızı kontrol edin.');
@@ -113,7 +141,7 @@ export function EventDetail() {
         }
 
         if (!paymentAvailable) return;
-        if (payableAmount! > 0) {
+        if (payableAmount! > 0 || ticketQuantity > 1) {
             setIsPaymentModalOpen(true);
             return;
         }
@@ -142,6 +170,23 @@ export function EventDetail() {
             registrationPending.current = false;
             if (pageActive.current && latestContext.current === pageContext) setRegistering(false);
         }
+    };
+
+    const handleGuestCheckout = () => {
+        setGuestError(null);
+        if (!guestName.trim()) {
+            setGuestError('Lütfen ad ve soyadınızı girin.');
+            return;
+        }
+        if (!guestEmail.trim() || !guestEmail.includes('@')) {
+            setGuestError('Lütfen geçerli bir e-posta adresi girin.');
+            return;
+        }
+        if (!guestPhone.trim()) {
+            setGuestError('Lütfen telefon numaranızı girin.');
+            return;
+        }
+        setIsPaymentModalOpen(true);
     };
 
     if (id && (loading || loadedContext !== pageContext)) {
@@ -369,6 +414,38 @@ export function EventDetail() {
                                     </div>
                                 )}
 
+                                {paymentAvailable && (
+                                    <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                                        <span className="text-gray-500">Bilet Adedi</span>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                                onClick={() => setTicketQuantity(q => Math.max(1, q - 1))}
+                                                disabled={ticketQuantity <= 1 || registering}
+                                            >
+                                                -
+                                            </button>
+                                            <span className="font-semibold text-gray-900 w-6 text-center">{ticketQuantity}</span>
+                                            <button
+                                                type="button"
+                                                className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                                onClick={() => setTicketQuantity(q => Math.min(10, q + 1))}
+                                                disabled={ticketQuantity >= 10 || registering}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {paymentAvailable && ticketQuantity > 1 && (
+                                    <div className="flex justify-between items-center text-sm pt-1">
+                                        <span className="text-gray-500 font-medium">Toplam Tutar</span>
+                                        <span className="font-bold text-gray-900 text-base">{formatEventPrice(totalPayable, currency)}</span>
+                                    </div>
+                                )}
+
                                 {!paymentAvailable && <div role="alert"><p>{price === null || !currency ? 'Ücret bilgisi doğrulanamadı.' : 'Bu etkinlik için ödeme şu anda başlatılamıyor.'}</p><Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button></div>}
 
                                 {user && typeof event.is_registered !== 'boolean' && !registered && (
@@ -384,6 +461,11 @@ export function EventDetail() {
                                                 Ödemeyi tamamla
                                             </Button>
                                         )}
+                                        {paymentAvailable && (
+                                            <Button variant="outline" className="w-full mt-2" onClick={() => setIsPaymentModalOpen(true)} disabled={registering || registrationUncertain}>
+                                                Ek Bilet Satın Al ({ticketQuantity} Adet)
+                                            </Button>
+                                        )}
                                     </>
                                 ) : (
                                     <Button
@@ -392,8 +474,92 @@ export function EventDetail() {
                                         onClick={handleRegister}
                                         disabled={registering || registrationUncertain || (!!user && (typeof event.is_registered !== 'boolean' || !paymentAvailable))}
                                     >
-                                        {registering ? 'İşleniyor...' : (user ? 'Hemen Kayıt Ol' : 'Giriş Yap ve Kayıt Ol')}
+                                        {registering ? 'İşleniyor...' : (user ? (totalPayable > 0 ? `${formatEventPrice(totalPayable, currency)} ile Kayıt Ol` : 'Hemen Kayıt Ol') : 'Giriş Yap ve Kayıt Ol')}
                                     </Button>
+                                )}
+
+                                {!user && event.is_public && paymentAvailable && (
+                                    <div className="mt-3 space-y-3">
+                                        <div className="text-center">
+                                            <span className="text-xs text-gray-400">veya</span>
+                                        </div>
+                                        {!showGuestForm ? (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full text-xs"
+                                                onClick={() => setShowGuestForm(true)}
+                                            >
+                                                Misafir Olarak Bilet Al
+                                            </Button>
+                                        ) : (
+                                            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2 text-left">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <h5 className="text-xs font-bold text-gray-800">Misafir Katılımcı Bilgileri</h5>
+                                                    <button
+                                                        type="button"
+                                                        className="text-xs text-gray-400 hover:text-gray-600"
+                                                        onClick={() => setShowGuestForm(false)}
+                                                    >
+                                                        Kapat
+                                                    </button>
+                                                </div>
+                                                <Input
+                                                    label="Ad Soyad"
+                                                    placeholder="Adınız ve Soyadınız"
+                                                    value={guestName}
+                                                    onChange={(e: any) => setGuestName(e.target.value)}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="E-posta"
+                                                    type="email"
+                                                    placeholder="ornek@sirket.com"
+                                                    value={guestEmail}
+                                                    onChange={(e: any) => setGuestEmail(e.target.value)}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Telefon"
+                                                    type="tel"
+                                                    placeholder="05xxxxxxxxx"
+                                                    value={guestPhone}
+                                                    onChange={(e: any) => setGuestPhone(e.target.value)}
+                                                    required
+                                                />
+                                                {guestError && <p className="text-xs text-red-600">{guestError}</p>}
+                                                <Button
+                                                    variant="primary"
+                                                    className="w-full text-xs mt-2"
+                                                    onClick={handleGuestCheckout}
+                                                >
+                                                    {totalPayable > 0 ? `${formatEventPrice(totalPayable, currency)} ile Misafir Bileti Al` : 'Misafir Kaydı Oluştur'}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {event.my_tickets && event.my_tickets.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                        <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Biletleriniz ({event.my_tickets.length})</h4>
+                                        <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                            {event.my_tickets.map((t: any) => (
+                                                <div key={t.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200 text-xs">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Ticket className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                                                        <span className="font-mono font-medium text-gray-800">{t.ticket_number}</span>
+                                                    </div>
+                                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                                        t.payment_status === 'PAID' ? 'bg-green-100 text-green-700' :
+                                                        t.payment_status === 'FREE' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                        {t.payment_status === 'PAID' ? 'ÖDENDİ' : t.payment_status === 'FREE' ? 'ÜCRETSİZ' : 'BEKLİYOR'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
 
                                 <p className="text-xs text-center text-gray-400 mt-4">
@@ -417,16 +583,19 @@ export function EventDetail() {
             {paymentAvailable && <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
-                planTitle={event?.title || ''}
-                amount={payableAmount!}
+                planTitle={`${event?.title || ''} (${ticketQuantity} Bilet)`}
+                amount={totalPayable}
                 onSuccess={handlePaymentSuccess}
-                action={{
-                    type: 'event_registration',
-                    data: {
-                        event_id: id,
-                        user_id: user?.id
-                    }
+                initialBillingData={user ? {
+                    company: user.company || user.name || '',
+                    email: user.email || '',
+                    phone: user.phone || ''
+                } : {
+                    company: guestName.trim(),
+                    email: guestEmail.trim(),
+                    phone: guestPhone.trim()
                 }}
+                action={paymentAction}
             />}
         </div>
     );

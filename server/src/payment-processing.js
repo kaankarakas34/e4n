@@ -64,15 +64,26 @@ async function applyAction(client, tx) {
     if (!event) throw fail('Etkinlik bulunamadı.');
     await client.query("INSERT INTO attendance(event_id,user_id,status) VALUES($1,$2,'PRESENT') ON CONFLICT(event_id,user_id) DO NOTHING",[data.event_id,tx.user_id]);
     if (event.generate_tickets) {
+      const quantity = Math.max(1, Math.min(20, Number(data.quantity) || 1));
       const tickets = (await client.query('SELECT id,payment_status FROM event_tickets WHERE event_id=$1 AND user_id=$2 FOR UPDATE',[data.event_id,tx.user_id])).rows;
-      if (!tickets.length) {
-        await client.query("INSERT INTO event_tickets(event_id,user_id,ticket_number,payment_status) VALUES($1,$2,$3,'PAID')",
-          [data.event_id,tx.user_id,`E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`]);
-      } else if (tickets.length === 1 && tickets[0].payment_status === 'PENDING') {
-        // Only a verified settled payment promotes the single existing pending ticket.
-        await client.query("UPDATE event_tickets SET payment_status='PAID' WHERE id=$1 AND payment_status='PENDING'",[tickets[0].id]);
+      
+      let settledCount = 0;
+      // 1. Settle existing PENDING ticket(s) up to requested quantity
+      for (const t of tickets) {
+        if (t.payment_status === 'PENDING' && settledCount < quantity) {
+          await client.query("UPDATE event_tickets SET payment_status='PAID' WHERE id=$1 AND payment_status='PENDING'",[t.id]);
+          settledCount++;
+        }
       }
-      // Ambiguous legacy multiple-ticket history is not reinterpreted as one purchase.
+
+      // 2. If no tickets existed or additional tickets were purchased (quantity > settledCount), create remaining PAID tickets
+      const neededNew = !tickets.length ? quantity : (quantity - settledCount);
+      if (neededNew > 0) {
+        for (let i = 0; i < neededNew; i++) {
+          await client.query("INSERT INTO event_tickets(event_id,user_id,ticket_number,payment_status) VALUES($1,$2,$3,'PAID')",
+            [data.event_id,tx.user_id,`E4N-${crypto.randomBytes(8).toString('hex').toUpperCase()}`]);
+        }
+      }
     }
   } else if (tx.action_type === 'visitor_registration') {
     const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
@@ -80,6 +91,25 @@ async function applyAction(client, tx) {
     // Serialize the existing email/event duplicate rule, including registrations without an event.
     await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[JSON.stringify([email,data.event_id || null])]);
     const exists = await client.query('SELECT 1 FROM public_visitors WHERE LOWER(email)=$1 AND event_id IS NOT DISTINCT FROM $2::uuid',[email,data.event_id || null]);
+    
+    const guestQuantity = Math.max(1, Math.min(20, Number(data.quantity) || 1));
+    const guestTicketNumbers = [];
+
+    // If visitor registration is for a specific event with tickets enabled, issue guest tickets
+    if (data.event_id) {
+      const event = (await client.query('SELECT * FROM events WHERE id=$1 FOR UPDATE', [data.event_id])).rows[0];
+      if (event && event.generate_tickets) {
+        for (let i = 0; i < guestQuantity; i++) {
+          const tNum = `E4N-GUEST-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+          guestTicketNumbers.push(tNum);
+          await client.query(
+            "INSERT INTO event_tickets(event_id, user_id, ticket_number, payment_status) VALUES($1, NULL, $2, 'PAID')",
+            [data.event_id, tNum]
+          );
+        }
+      }
+    }
+
     if (!exists.rowCount) {
       await client.query(`INSERT INTO public_visitors(name,email,phone,company,profession,source,kvkk_accepted,inviter_id,title,web_linkedin,
         activity_area,duration,target_customer,why_join,value_add,previous_groups,form_data,event_id)
@@ -87,7 +117,7 @@ async function applyAction(client, tx) {
       [data.name,email,data.phone,data.company,data.profession || 'Ziyaretçi',data.source || 'visitor_payment',data.kvkk_accepted || false,
         data.inviter_id || null,data.title || null,data.web_linkedin || null,data.activity_area || null,data.duration || null,
         data.target_customer || null,data.why_join || null,data.value_add || null,data.previous_groups || null,
-        {...(data.form_data || {}),payment_status:'PAID',payment_amount:tx.amount,payment_date:new Date().toISOString()},data.event_id || null]);
+        {...(data.form_data || {}),payment_status:'PAID',payment_amount:tx.amount,payment_date:new Date().toISOString(),ticket_numbers:guestTicketNumbers,quantity:guestQuantity},data.event_id || null]);
     }
   } else throw fail('Ödeme işlem türü doğrulanamadı.');
 }

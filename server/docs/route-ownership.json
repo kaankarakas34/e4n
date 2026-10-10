@@ -1068,25 +1068,31 @@
       "method": "GET",
       "path": "/api/admin/shuffle-workspace",
       "provider": "src/shuffle-workspace.js",
-      "line": 12
+      "line": 96
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/shuffle-preview",
+      "provider": "src/shuffle-workspace.js",
+      "line": 119
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-submissions/:id",
       "provider": "src/shuffle-history.js",
-      "line": 25
+      "line": 27
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-history",
       "provider": "src/shuffle-history.js",
-      "line": 49
+      "line": 51
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-history/:id",
       "provider": "src/shuffle-history.js",
-      "line": 50
+      "line": 52
     },
     {
       "method": "GET",

@@ -19,3 +19,5 @@ Mevcut isolated-smoke PASS fresh/upgrade/adoption/HTTP regresyonu; eski kusurlar
 Yeni migration veya Ã¼retim davranÄ±ÅŸ deÄŸiÅŸikliÄŸi yok. CanlÄ± Supabase yazma/deploy/mail/Ã¶deme yok; mobil/LMS geliÅŸtirilmedi. Check/build/diff/syntax sonuÃ§larÄ± teslim notunda kayÄ±tlÄ±dÄ±r.
 
 8 Ekim shuffle kurtarma: GET /api/admin/shuffle-submissions/:id mevcut shuffle-history provider içinde eklendi; güncel JSON182route/28provider/17legacy. Rol/owner ve immutable işlem receipt doğrulaması shuffle-workspace kontratında; sayımlar tümrouteE2E/SECkabulü değildir.
+
+10 Ekim P27/P28 shuffle simülasyonu ve dönemi: POST /api/admin/shuffle-preview mevcut src/shuffle-workspace.js provider içinde eklendi; güncel JSON 200 route / 31 provider / 17 legacy. D09 35 kapasite, meslek çakışması sert koşulları ve 4 aylık dönem doğrulaması canonical-period-and-simulation-contract ve shuffle-workspace kontratında PASS.

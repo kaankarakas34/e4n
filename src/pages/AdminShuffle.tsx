@@ -3,10 +3,10 @@ import {useNavigate} from 'react-router-dom';
 import {shuffleSubmissionApi,validShuffleCommand,type ShuffleCommand} from '../api/shuffleSubmission';
 import {currentDistribution,shuffleWorkspaceApi,type ShuffleWorkspace} from '../api/shuffleWorkspace';
 import {useAuthStore} from '../stores/authStore';
-import {distributeMembers} from '../utils/shuffleAlgorithm';
+import {distributeMembersWithReport,type UnassignedReportItem} from '../utils/shuffleAlgorithm';
 import {Card,CardContent,CardHeader,CardTitle} from '../shared/Card';
 import {Button} from '../shared/Button';
-import {ArrowLeft,Lock,Unlock,RefreshCw,Shuffle,Save} from 'lucide-react';
+import {ArrowLeft,Lock,Unlock,RefreshCw,Shuffle,Save,Calendar,AlertTriangle,CheckCircle,Clock,ShieldAlert} from 'lucide-react';
 
 export function AdminShuffle(){
   const navigate=useNavigate();
@@ -21,6 +21,7 @@ export function AdminShuffle(){
   const storageKey=actor?'e4n-shuffle-submission:'+actor.id:null;
   const [state,setState]=useState<{identity:string;data:ShuffleWorkspace}|null>(null);
   const [items,setItems]=useState<Record<string,string[]>>({});
+  const [unassignedDetails,setUnassignedDetails]=useState<UnassignedReportItem[]>([]);
   const [locks,setLocks]=useState<string[]>([]);
   const [loading,setLoading]=useState(false),[saving,setSaving]=useState(false);
   const [draft,setDraft]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
@@ -32,7 +33,7 @@ export function AdminShuffle(){
   };
   const load=async()=>{
     const request=++generation.current;
-    setState(null);setItems({});setLocks([]);setDraft(false);setError('');setLoading(true);
+    setState(null);setItems({});setUnassignedDetails([]);setLocks([]);setDraft(false);setError('');setLoading(true);
     if(!actor||actor.role!=='ADMIN'){setLoading(false);return;}
     try{
       const next=await shuffleWorkspaceApi.read(actor.id);
@@ -51,11 +52,30 @@ export function AdminShuffle(){
   const overflow=Object.entries(items).some(([id,list])=>id!=='unassigned'&&list.length>35);
   const missingProfession=members.some(m=>!m.profession?.trim());
   const previewBlocked=loading||saving||!!pendingCommand||corruptPending||!data||!members.length||!data.groups.length||!!current?.ambiguous||missingProfession;
+
   const preview=()=>{
     if(previewBlocked||!data)return;
-    const result=distributeMembers(members.map(m=>({...m,name:m.full_name,profession:m.profession!})),data.groups,items,locks,{respectLocks:true,minimizeOverlap:false,maxAttempts:1});
-    setItems(result);setDraft(true);setMessage('Taslak hazırlandı. Veritabanındaki dağılım henüz değişmedi.');setError('');
+    // Map candidates to simulation format preserving real previous_group_id
+    const candidates=members.map(m=>({
+      id:m.id,
+      name:m.full_name,
+      full_name:m.full_name,
+      profession:m.profession!,
+      previous_group_id:m.previous_group_id||null,
+    }));
+    const result=distributeMembersWithReport(candidates,data.groups,items,locks,{
+      respectLocks:true,
+      minimizeOverlap:true,
+      maxAttempts:1,
+      maxCapacity:35,
+    });
+    setItems(result.distribution);
+    setUnassignedDetails(result.unassignedReport);
+    setDraft(true);
+    setMessage('4 Aylık dönem bazlı dağıtım taslağı hazırlandı (35 kapasite ve meslek çakışması sert kuralları uygulandı). Veritabanı henüz değişmedi.');
+    setError('');
   };
+
   const submit=async(command:ShuffleCommand,readOnly=false)=>{
     if(busy.current||!actor||actor.role!=='ADMIN'||!sameActor())return;
     busy.current=true;
@@ -75,7 +95,6 @@ export function AdminShuffle(){
       await accepted();
     }catch(e){
       if(!currentSave())return;
-      // A lost acknowledgement never triggers another write. Read immutable receipt first.
       try{await shuffleSubmissionApi.reconcile(actor.id,command);await accepted();}
       catch(readError){
         if(!currentSave())return;
@@ -87,6 +106,7 @@ export function AdminShuffle(){
       }
     }finally{busy.current=false;if(sameActor()&&[saveGeneration,saveGeneration+1].includes(generation.current))setSaving(false);}
   };
+
   const save=async()=>{
     if(busy.current||!data||previewBlocked||!draft||unassigned.length||overflow||!sameActor())return;
     if(!window.confirm('Bu dağıtım mevcut aktif grup üyeliklerini değiştirecek ve liderlik rollerini sıfırlayacak. Kaydetmek istiyor musunuz?'))return;
@@ -94,10 +114,11 @@ export function AdminShuffle(){
     try{sessionStorage.setItem(storageKey!,JSON.stringify(command));}catch{setError('Bekleyen işlem bu sekmeye kaydedilemedi. Dağıtım gönderilmedi.');return;}
     setPending({owner:actor!.id,command});await submit(command);
   };
+
   if(actor?.role!=='ADMIN')return <p className="p-8">Bu ekran için yönetici yetkisi gerekir.</p>;
   return <div className="min-h-screen bg-gray-50 p-8"><div className="max-w-7xl mx-auto space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-3"><Button variant="ghost" onClick={()=>navigate('/admin/groups')}><ArrowLeft className="h-4 w-4 mr-2"/>Gruplara Dön</Button><h1 className="text-2xl font-bold">Grup Shuffle Yönetimi</h1></div>
+      <div className="flex items-center gap-3"><Button variant="ghost" onClick={()=>navigate('/admin/groups')}><ArrowLeft className="h-4 w-4 mr-2"/>Gruplara Dön</Button><h1 className="text-2xl font-bold">Grup Shuffle Yönetimi (4 Aylık Dönem)</h1></div>
       <div className="flex gap-2"><Button onClick={()=>navigate('/admin/shuffle-history')}>Kayıt Geçmişi</Button><Button variant="outline" disabled={loading||saving||!!pendingCommand} onClick={()=>{setMessage('');void load();}}><RefreshCw className="h-4 w-4 mr-2"/>Güncel Dağılımı Yükle</Button><Button disabled={previewBlocked||!draft||!!unassigned.length||overflow} onClick={()=>void save()}><Save className="h-4 w-4 mr-2"/>{saving?'Kaydediliyor…':'Dağıtımı Kaydet'}</Button></div>
     </div>
     {loading&&<p role="status">Mevcut dağılım yükleniyor…</p>}
@@ -105,22 +126,46 @@ export function AdminShuffle(){
     {message&&<p role="status" className="p-4 bg-blue-50 text-blue-800 rounded">{message}</p>}
     {corruptPending&&<p role="alert" className="p-4 bg-red-50 text-red-800 rounded">Bekleyen dağıtım kaydı okunamadı. Yeni dağıtım gönderilmedi; devam etmeden önce kayıt geçmişini kontrol edin.</p>}
     {pendingCommand&&<Card><CardHeader><CardTitle>Bekleyen dağıtım işlemi</CardTitle></CardHeader><CardContent className="space-y-3"><p>Bu sekmede gönderilmiş bir dağıtım var. Yeni taslak hazırlamadan önce kaydedilip kaydedilmediğini kontrol edin. Tekrar gönderme aynı işlem kimliğini ve aynı dağıtımı kullanır.</p><p className="text-xs break-all">İşlem: {pendingCommand.requestId}</p><div className="flex flex-wrap gap-2"><Button disabled={saving||loading} onClick={()=>void submit(pendingCommand,true)}>Dağıtım Sonucunu Kontrol Et</Button><Button variant="outline" disabled={saving||loading} onClick={()=>{if(window.confirm('Bekleyen aynı dağıtım işlemini tekrar göndermek istiyor musunuz?'))void submit(pendingCommand);}}>Aynı Dağıtımı Tekrar Gönder</Button></div></CardContent></Card>}
+
     {data&&<>
-      <Card><CardHeader><CardTitle>{draft?'Dağıtım Taslağı':'Mevcut Aktif Grup Üyelikleri'}</CardTitle></CardHeader><CardContent className="space-y-3">
-        <p className="text-sm text-gray-600">Veri zamanı: {new Date(data.asOf).toLocaleString('tr-TR')}. Önceki dönem atama geçmişi mevcut değil; eski grup arkadaşlığı hesaplanmıyor.</p>
-        <p className="text-sm">Önizleme mevcut hesap filtresini kullanır: ACTIVE hesaplar, ADMIN hariç. Hariç kalan hesap: {current?.excluded}. Ödeme kesim tarihi ve hedef shuffle uygunluğu henüz uygulanmıyor.</p>
+      {data.period&&<Card className="bg-indigo-50/50 border-indigo-200"><CardHeader className="pb-2"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-indigo-600"/><CardTitle className="text-indigo-900 text-lg">Dönem: {data.period.label} ({data.period.periodKey})</CardTitle></div><span className={`text-xs px-2.5 py-1 rounded-full font-medium ${data.period.isCutoffPassed?'bg-amber-100 text-amber-800':'bg-emerald-100 text-emerald-800'}`}>{data.period.isCutoffPassed?'Ödeme Kesimi Geçti':'Kesim Tarihi Aktif'}</span></div></CardHeader><CardContent className="text-xs text-indigo-950/80 space-y-1"><p><strong>Başlangıç / Bitiş:</strong> {new Date(data.period.startDate).toLocaleDateString('tr-TR')} – {new Date(data.period.endDate).toLocaleDateString('tr-TR')}</p><p><strong>Ödeme Kesim Tarihi (D06):</strong> {new Date(data.period.cutoffDate).toLocaleString('tr-TR')} (Shuffle'dan 1 gün önce ödemesi tamamlanmış olmalıdır)</p></CardContent></Card>}
+
+      <Card><CardHeader><CardTitle>{draft?'Dağıtım Taslağı (Simülasyon)':'Mevcut Aktif Grup Üyelikleri'}</CardTitle></CardHeader><CardContent className="space-y-3">
+        <p className="text-sm text-gray-600">Veri zamanı: {new Date(data.asOf).toLocaleString('tr-TR')}. Gerçek üyelik geçmişi (`previous_group_id`) kullanılarak eski grup arkadaşları örtüşmesi en aza indirilir.</p>
+        <div className="flex flex-wrap gap-3 text-xs">
+          <span className="bg-gray-100 px-3 py-1.5 rounded font-medium">Toplam Üye: {data.members.length}</span>
+          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded font-medium flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5"/>Uygun Aday: {members.length}</span>
+          <span className="bg-gray-100 px-3 py-1.5 rounded text-gray-600">Hariç Yönetici: {current?.excluded}</span>
+          {!!current?.eligibilityStats?.removalBanned&&<span className="bg-red-50 text-red-800 border border-red-200 px-3 py-1.5 rounded font-medium flex items-center gap-1"><ShieldAlert className="h-3.5 w-3.5"/>8 Ay Yasaklı: {current.eligibilityStats.removalBanned}</span>}
+          {!!current?.eligibilityStats?.restricted&&<span className="bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded font-medium flex items-center gap-1"><Clock className="h-3.5 w-3.5"/>Gecikmeli/Kısıtlı: {current.eligibilityStats.restricted}</span>}
+        </div>
         {!!current?.ambiguous&&<p role="alert" className="text-red-700">{current.ambiguous} hesabın birden fazla aktif grubu var. Tek bir grup varsayılmadı; dağıtım hazırlamak için bu kayıtlar netleştirilmeli.</p>}
         {missingProfession&&<p role="alert" className="text-red-700">Meslek bilgisi eksik hesaplar var. Dağıtım için kayıtları kontrol edin.</p>}
-        {draft&&overflow&&<p role="alert" className="text-red-700">Taslakta 35 kişiyi aşan grup var. Mevcut kaydetme işlemi liderlik rollerini sıfırladığı için taslaktaki herkes üye koltuğu kullanır.</p>}
-        <Button disabled={previewBlocked} onClick={preview}><Shuffle className="h-4 w-4 mr-2"/>Dağıtım Taslağı Hazırla</Button>
-        <p className="text-xs text-gray-500">Taslak meslek metinlerini eşleştirir ve kilitli üyeleri yerinde tutar. Dönem takvimi, hizmet sınıflandırması ve ödeme uygunluğu onayı değildir.</p>
+        {draft&&overflow&&<p role="alert" className="text-red-700">Taslakta 35 kişiyi aşan grup var. Liderlik rolleri sıfırlandığı için taslaktaki herkes üye koltuğu kullanır.</p>}
+        <Button disabled={previewBlocked} onClick={preview}><Shuffle className="h-4 w-4 mr-2"/>Dağıtım Taslağı Hazırla (4 Aylık Shuffle)</Button>
+        <p className="text-xs text-gray-500">Taslak D09 gereği her grupta en fazla 35 koltuk sınırını korur, aynı grupta aynı meslek çakışmasını engeller ve kilitli üyeleri yerinde tutar.</p>
       </CardContent></Card>
-      {unassigned.length>0&&<Card><CardHeader><CardTitle>{draft?'Taslakta Atanamayan':'Aktif Grubu Olmayan'} Üyeler ({unassigned.length})</CardTitle></CardHeader><CardContent><p className="text-sm mb-3">{draft?'Kapasite veya meslek eşleşmesi nedeniyle yerleşemeyen üyeler var. Taslak kaydedilemez.':'Bu üyeler veritabanında hiçbir aktif gruba bağlı değil.'}</p><div className="grid grid-cols-1 md:grid-cols-3 gap-2">{unassigned.map(id=><p className="border p-3 rounded" key={id}>{members.find(m=>m.id===id)?.full_name}</p>)}</div></CardContent></Card>}
+
+      {unassigned.length>0&&<Card className="border-amber-300"><CardHeader className="bg-amber-50/50"><CardTitle className="text-amber-900">{draft?'Taslakta Yerleşemeyen':'Aktif Grubu Olmayan'} Üyeler ({unassigned.length})</CardTitle></CardHeader><CardContent className="pt-4"><p className="text-sm mb-3 text-amber-950">{draft?'Kapasite (35) veya meslek çakışması sert koşulları nedeniyle yerleşemeyen üyeler var. Tüm üyeler yerleşmeden dağıtım kaydedilemez.':'Bu üyeler veritabanında hiçbir aktif gruba bağlı değil.'}</p><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{unassigned.map(id=>{
+        const m=members.find(x=>x.id===id);
+        const report=unassignedDetails.find(r=>r.id===id);
+        return <div className="border border-amber-200 bg-white p-3 rounded space-y-1" key={id}>
+          <p className="font-medium text-sm">{m?.full_name||id}</p>
+          <p className="text-xs text-gray-600">{m?.profession||'Meslek belirtilmemiş'}</p>
+          {report&&<p className="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded font-mono inline-block">{report.reason}</p>}
+          {report?.details&&<p className="text-xs text-amber-900/80">{report.details}</p>}
+        </div>;
+      })}</div></CardContent></Card>}
+
       {!data.groups.length&&<p>Henüz grup kaydı yok.</p>}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.groups.map(group=><Card key={group.id}><CardHeader><CardTitle>{group.name}</CardTitle><p className="text-xs text-gray-500">Grup durumu: {group.status||'Bilinmiyor'} · {(items[group.id]||[]).length} Üye</p></CardHeader><CardContent className="space-y-2">{(items[group.id]||[]).map(id=>{
-        const m=members.find(m=>m.id===id);if(!m)return null;const locked=locks.includes(id);
-        return <div key={id} className="flex items-center justify-between border p-3 rounded"><div><p className="font-medium">{m.full_name}</p><p className="text-xs text-gray-500">{m.profession||'Meslek belirtilmemiş'}</p></div><Button variant="ghost" size="icon" disabled={previewBlocked} aria-label={(locked?'Kilidi aç: ':'Yerinde kilitle: ')+m.full_name} onClick={()=>setLocks(list=>list.includes(id)?list.filter(x=>x!==id):[...list,id])}>{locked?<Lock className="h-4 w-4"/>:<Unlock className="h-4 w-4"/>}</Button></div>;
-      })}{!(items[group.id]||[]).length&&<p className="text-sm text-gray-500">Üye yok</p>}</CardContent></Card>)}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.groups.map(group=>{
+        const groupMembers=items[group.id]||[];
+        const isFull=groupMembers.length>=35;
+        return <Card key={group.id} className={isFull?'border-indigo-300':''}><CardHeader><div className="flex items-center justify-between"><CardTitle>{group.name}</CardTitle><span className={`text-xs px-2 py-0.5 rounded font-medium ${isFull?'bg-indigo-100 text-indigo-800 font-bold':'bg-gray-100 text-gray-700'}`}>{groupMembers.length} / 35</span></div><p className="text-xs text-gray-500">Grup durumu: {group.status||'Bilinmiyor'}</p></CardHeader><CardContent className="space-y-2">{groupMembers.map(id=>{
+          const m=members.find(x=>x.id===id);if(!m)return null;const locked=locks.includes(id);
+          return <div key={id} className="flex items-center justify-between border p-3 rounded"><div><p className="font-medium text-sm">{m.full_name}</p><p className="text-xs text-gray-500">{m.profession||'Meslek belirtilmemiş'}</p>{m.previous_group_id&&<p className="text-[10px] text-gray-400">Eski Grup: {data.groups.find(g=>g.id===m.previous_group_id)?.name||'Mevcut'}</p>}</div><Button variant="ghost" size="icon" disabled={previewBlocked} aria-label={(locked?'Kilidi aç: ':'Yerinde kilitle: ')+m.full_name} onClick={()=>setLocks(list=>list.includes(id)?list.filter(x=>x!==id):[...list,id])}>{locked?<Lock className="h-4 w-4 text-amber-600"/>:<Unlock className="h-4 w-4 text-gray-400"/>}</Button></div>;
+        })}{!groupMembers.length&&<p className="text-sm text-gray-500">Üye yok</p>}</CardContent></Card>;
+      })}</div>
     </>}
   </div></div>;
 }

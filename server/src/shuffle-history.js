@@ -1,4 +1,5 @@
 import {randomUUID,createHash} from 'node:crypto';
+import {getCanonicalPeriod} from './canonical-period.js';
 import {beginGroupMutation,requireCurrentAdmin,groupError,sendGroupMutationError,validShuffleAssignments} from './group-capacity.js';
 const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 const snapshot=w=>({groups:w.groups,members:w.members.map(({id,full_name,role})=>({id,full_name,role})),memberships:w.memberships});
@@ -17,6 +18,7 @@ export async function readShuffleReceipt(client,id,owner){
 export async function recordShuffleExecution(client,{actorId,expectedRevision,before,after,submission}){
  const id=submission?.requestId??randomUUID(),actor=before.members.find(m=>m.id===actorId);
  const afterSnapshot=snapshot(after);
+ afterSnapshot.period=getCanonicalPeriod();
  if(submission)afterSnapshot.submission={version:1,fingerprint:shuffleFingerprint(submission)};
  await client.query('INSERT INTO shuffle_execution_history(id,actor_id,actor_name,expected_revision,before_revision,after_revision,before_snapshot,after_snapshot,member_count,group_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[id,actorId,actor?.full_name||'Bilinmiyor',expectedRevision??null,before.revision,after.revision,JSON.stringify(snapshot(before)),JSON.stringify(afterSnapshot),after.memberships.filter(m=>m.status==='ACTIVE').length,new Set(after.memberships.filter(m=>m.status==='ACTIVE').map(m=>m.group_id)).size]);
  return id;

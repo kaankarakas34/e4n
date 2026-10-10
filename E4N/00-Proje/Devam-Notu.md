@@ -1,5 +1,13 @@
 # E4N devam durumu — 10 Ekim 2026
 
+## Güncel teslim — P27 & P28 / E4N-99 & E4N-100 tamamlandı
+
+- **E4N-99 (P27) Done:** 4 aylık kanonik dönem motoru (T1: Ocak-Nisan, T2: Mayıs-Ağustos, T3: Eylül-Aralık) ve D06 1 gün önceki ödeme kesim tarihi (`cutoffDate`), aday uygunluk motoru (`evaluateShuffleEligibility`: ADMIN hariç, ACTIVE hesap şartı, D07 kısıtlı hesap ve borç gecikmesi engeli, P24 8 aylık çıkarma yasağı engeli, meslek eksikliği kontrolü) ve `group_membership_history` gerçek geçmişi bağlandı.
+- **E4N-100 (P28) Done:** Shuffle simülasyon ve dağıtım motoru kuruldu. D09 35 kişi kapasite tavanı, katı meslek tekilliği (aynı grupta aynı meslekten 2 kişi olamaz), kilit tutarlılığı, unassigned gerekçe raporu (`unassignedReport`), rotasyon teşviki ve örtüşme cezası uygulandı.
+- API'ler: `GET /api/admin/shuffle-workspace` (zenginleştirilmiş dönem ve uygunluk alanları) ve `POST /api/admin/shuffle-preview` (yönetici simülasyonu, 409 stale kontrolü, istatistik ve gerekçeli rapor).
+- Web: `AdminShuffle.tsx` (dönem başlığı, kesim durumu, uygunluk metrikleri, 35 kapasite rozetleri ve unassigned gerekçeleri) ve `shuffleAlgorithm.ts` güncellendi.
+- Testler: `server/test/canonical-period-and-simulation-contract.mjs` (10/10 PASS), `server/test/shuffle-workspace-contract.mjs` PASS, `server/test/route-ownership-contract.mjs` (200 rota, 31 sağlayıcı) PASS, `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu, 0 DDL) PASS, `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P27-P28-Dort-Aylik-Donem-ve-Shuffle-Simulasyonu-2026-10-10]].
+
 ## Güncel — Canlı Yayın Başarıyla Tamamlandı (10 Ekim 2026)
 
 - Kullanıcının doğrudan talimatı üzerine (`codex/e4n-sprint1-foundation` dalındaki tüm commitler: P21, P22, P23, P24 ve BAŞ-02 / `1558969`) `main` dalına fast-forward merge edilerek pushlandı (`origin/main`).

@@ -1,6 +1,16 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P27 & P28 / E4N-99 & E4N-100 tamamlandı
+## Güncel teslim — P29 / E4N-101 tamamlandı (Epic E6: Dört Aylık Shuffle Tamamlandı)
+
+- **E4N-101 (P29) Done:** Dağıtım yürütüldüğünde (`POST /api/shuffle/save` / `recordShuffleExecution`), atanan tüm üyelere atomik sistem içi bildirim (`notifications` tablosuna `SHUFFLE_COMPLETED` başlığı, kanonik dönem adı, yeni grup adı ve `/groups/:id` aksiyon linki) eklendi.
+- Önceki aktif üyelikten yerleşemeyen adaylara gerekçeli bilgilendirme bildirimi (`Dönem Rotasyonu Bilgilendirmesi`) eklendi.
+- İletilen bildirim sayısı `after_snapshot.notificationsDelivered` olarak saklandı ve makbuzda (`receipt.notificationsDelivered`) döndürüldü.
+- Tekrar güvenliği (Idempotency): Aynı `requestId` ile replay çağrılarında sıfır mükerrer bildirim yazımı (`replayed: true`) sağlandı.
+- Web: `AdminShuffle.tsx` ekranında kaydedilen bildirim sayısı ve durumu gösterildi; `AdminShuffleHistory.tsx` ekranında dönem ve bildirim sayı rozetleri eklendi; `NotificationList.tsx` ekranında grup linki entegre edildi.
+- Testler: `server/test/canonical-period-and-simulation-contract.mjs` PASS, `server/test/shuffle-workspace-contract.mjs` PASS, `server/test/route-ownership-contract.mjs` (200 rota, 31 sağlayıcı) PASS, `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm korundu, 0 DDL) PASS, `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P29-Shuffle-Bildirim-ve-Kapanis-2026-10-10]].
+- **Epic E6 (Dört Aylık Shuffle) Sonucu:** E4N-99 (P27) + E4N-100 (P28) + E4N-101 (P29) ile epik bütünüyle tamamlandı.
+
+## Önceki teslim — P27 & P28 / E4N-99 & E4N-100 tamamlandı
 
 - **E4N-99 (P27) Done:** 4 aylık kanonik dönem motoru (T1: Ocak-Nisan, T2: Mayıs-Ağustos, T3: Eylül-Aralık) ve D06 1 gün önceki ödeme kesim tarihi (`cutoffDate`), aday uygunluk motoru (`evaluateShuffleEligibility`: ADMIN hariç, ACTIVE hesap şartı, D07 kısıtlı hesap ve borç gecikmesi engeli, P24 8 aylık çıkarma yasağı engeli, meslek eksikliği kontrolü) ve `group_membership_history` gerçek geçmişi bağlandı.
 - **E4N-100 (P28) Done:** Shuffle simülasyon ve dağıtım motoru kuruldu. D09 35 kişi kapasite tavanı, katı meslek tekilliği (aynı grupta aynı meslekten 2 kişi olamaz), kilit tutarlılığı, unassigned gerekçe raporu (`unassignedReport`), rotasyon teşviki ve örtüşme cezası uygulandı.

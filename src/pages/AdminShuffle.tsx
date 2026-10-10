@@ -82,20 +82,30 @@ export function AdminShuffle(){
     const saveGeneration=++generation.current;
     const currentSave=()=>sameActor()&&generation.current===saveGeneration;
     setSaving(true);setError('');setMessage('');
-    const accepted=async()=>{
+    const accepted=async(res?:any)=>{
       if(!currentSave())return;
       if(storageKey)sessionStorage.removeItem(storageKey);
       setPending(null);
       await load();
-      if(sameActor()&&generation.current===saveGeneration+1)setMessage('Dağıtım kaydedildi. Bu işlem e-posta veya bildirim göndermedi.');
+      if(sameActor()&&generation.current===saveGeneration+1){
+        const count=res?.notificationsDelivered;
+        if(res?.replayed){
+          setMessage('Dağıtım kaydedildi. Bu işlem daha önce kaydedilmişti (tekrar bildirim gönderilmedi).');
+        }else if(typeof count==='number'&&count>0){
+          setMessage(`Dağıtım kaydedildi. ${count} üyeye yeni grup bildirimi iletildi.`);
+        }else{
+          setMessage('Dağıtım kaydedildi. Üyelere grup bildirimleri iletildi.');
+        }
+      }
     };
     try{
-      if(readOnly)await shuffleSubmissionApi.reconcile(actor.id,command);
-      else await shuffleSubmissionApi.save(actor.id,command);
-      await accepted();
+      let res;
+      if(readOnly)res=await shuffleSubmissionApi.reconcile(actor.id,command);
+      else res=await shuffleSubmissionApi.save(actor.id,command);
+      await accepted(res);
     }catch(e){
       if(!currentSave())return;
-      try{await shuffleSubmissionApi.reconcile(actor.id,command);await accepted();}
+      try{const rec=await shuffleSubmissionApi.reconcile(actor.id,command);await accepted(rec);}
       catch(readError){
         if(!currentSave())return;
         const status=(e as {status?:number}).status;

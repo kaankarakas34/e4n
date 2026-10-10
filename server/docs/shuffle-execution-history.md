@@ -19,3 +19,12 @@ A real full-group browser run found the previous reset-roles-before-archive orde
 ## 8 October — keyed web submissions
 
 The current web uses mandatory request IDs and source revisions with full-command fingerprints, owned immutable receipts, tab persistence and explicit identical retries. Keyed replay returns the original receipt without another role/archive/placement/history mutation, even after later source changes. Existing keyless callers keep stale-revision/legacy semantics. See [shuffle-submission.md](shuffle-submission.md) for the contract, verification and remaining policy/release limitations.
+
+## 10 October — P29 atomic notification delivery and canonical period closing
+
+In E4N-101 (P29), each successful shuffle execution transaction atomically issues member notifications:
+- Every active assigned member receives a `SHUFFLE_COMPLETED` notification detailing their new group assignment and canonical period (e.g. T1, T2, T3) with `action_url: /groups/:groupId`.
+- Any previously active member who could not be placed into a group receives an unassigned notification (`action_url: /chapter-management`).
+- The execution count of delivered notifications is recorded in `after_snapshot.notificationsDelivered` and returned in keyed receipts (`notificationsDelivered: number`).
+- Idempotent replay with an existing `requestId` returns the original receipt with `replayed: true` and skips duplicate notification insertion.
+

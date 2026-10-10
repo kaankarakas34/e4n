@@ -333,13 +333,70 @@ async function runIntegrationTests() {
   const staleErr = await staleRes.json();
   assert.equal(staleErr.code, 'SHUFFLE_STALE');
 
+  console.log('Testing atomic shuffle save and notification delivery (E4N-101 / P29)...');
+  const requestId = randomUUID();
+  const saveRes = await fetch(`${base}/api/shuffle/save`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requestId,
+      expectedRevision: ws.revision,
+      assignments: prevData.assignments,
+    }),
+  });
+  assert.equal(saveRes.status, 200);
+  const saveAck = await saveRes.json();
+  assert.equal(saveAck.version, 1);
+  assert.equal(saveAck.success, true);
+  assert.equal(saveAck.executionId, requestId);
+  assert.equal(saveAck.replayed, false);
+  assert.ok(typeof saveAck.notificationsDelivered === 'number' && saveAck.notificationsDelivered > 0);
+
+  // Check notifications table
+  const notifs = (await pool.query("SELECT * FROM notifications WHERE type = 'SHUFFLE_COMPLETED' ORDER BY created_at")).rows;
+  assert.equal(notifs.length, saveAck.notificationsDelivered);
+  for (const n of notifs) {
+    assert.equal(n.type, 'SHUFFLE_COMPLETED');
+    assert.ok(n.title.includes('Dönem') || n.title.includes('Grup'));
+    assert.ok(n.message.includes('rotasyonu'));
+    assert.equal(n.read, false);
+  }
+
+  // Check idempotent replay
+  const replayRes = await fetch(`${base}/api/shuffle/save`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requestId,
+      expectedRevision: ws.revision,
+      assignments: prevData.assignments,
+    }),
+  });
+  assert.equal(replayRes.status, 200);
+  const replayAck = await replayRes.json();
+  assert.equal(replayAck.replayed, true);
+  assert.equal(replayAck.executionId, requestId);
+
+  // Verify no duplicate notifications inserted
+  const notifsAfterReplay = (await pool.query("SELECT count(*)::int AS count FROM notifications WHERE type = 'SHUFFLE_COMPLETED'")).rows[0].count;
+  assert.equal(notifsAfterReplay, notifs.length);
+
+  // Check history detail
+  const historyDetailRes = await fetch(`${base}/api/admin/shuffle-history/${requestId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(historyDetailRes.status, 200);
+  const historyDetail = (await historyDetailRes.json()).execution;
+  assert.equal(historyDetail.after_snapshot.notificationsDelivered, saveAck.notificationsDelivered);
+  assert.ok(historyDetail.after_snapshot.period);
+
   console.log('Integration checks PASS.');
 }
 
 async function main() {
   await runUnitTests();
   await runIntegrationTests();
-  console.log('ALL CANONICAL PERIOD & SHUFFLE SIMULATION CONTRACT CHECKS PASSED (E4N-99 / E4N-100).');
+  console.log('ALL CANONICAL PERIOD, SHUFFLE SIMULATION & NOTIFICATION CONTRACT CHECKS PASSED (E4N-99, E4N-100, E4N-101).');
 }
 
 let exitCode = 0;

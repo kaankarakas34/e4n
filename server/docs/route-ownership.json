@@ -1080,19 +1080,19 @@
       "method": "GET",
       "path": "/api/admin/shuffle-submissions/:id",
       "provider": "src/shuffle-history.js",
-      "line": 27
+      "line": 67
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-history",
       "provider": "src/shuffle-history.js",
-      "line": 51
+      "line": 91
     },
     {
       "method": "GET",
       "path": "/api/admin/shuffle-history/:id",
       "provider": "src/shuffle-history.js",
-      "line": 52
+      "line": 92
     },
     {
       "method": "GET",

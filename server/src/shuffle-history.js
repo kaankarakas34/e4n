@@ -13,12 +13,52 @@ export function validShuffleSubmission(b){return b&&Object.keys(b).sort().join('
 export async function readShuffleReceipt(client,id,owner){
  const r=(await client.query('SELECT id,actor_id,expected_revision,after_revision,after_snapshot FROM shuffle_execution_history WHERE id=$1',[id])).rows[0];
  if(!r||r.actor_id!==owner||r.after_snapshot.submission?.version!==1)return null;
- return {version:1,success:true,ownerId:owner,requestId:r.id,executionId:r.id,expectedRevision:r.expected_revision,afterRevision:r.after_revision,fingerprint:r.after_snapshot.submission.fingerprint};
+ return {version:1,success:true,ownerId:owner,requestId:r.id,executionId:r.id,expectedRevision:r.expected_revision,afterRevision:r.after_revision,fingerprint:r.after_snapshot.submission.fingerprint,notificationsDelivered:r.after_snapshot.notificationsDelivered??0};
 }
 export async function recordShuffleExecution(client,{actorId,expectedRevision,before,after,submission}){
  const id=submission?.requestId??randomUUID(),actor=before.members.find(m=>m.id===actorId);
  const afterSnapshot=snapshot(after);
  afterSnapshot.period=getCanonicalPeriod();
+ const period=afterSnapshot.period;
+ const groupMap=new Map((after.groups||[]).map(g=>[g.id,g.name]));
+
+ const afterActive=(after.memberships||[]).filter(m=>m.status==='ACTIVE');
+ const beforeActiveIds=new Set((before.memberships||[]).filter(m=>m.status==='ACTIVE').map(m=>m.user_id));
+ const afterActiveIds=new Set(afterActive.map(m=>m.user_id));
+
+ let hasActionUrl=false;
+ try {
+  const col=(await client.query("SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='notifications' AND column_name='action_url'"));
+  hasActionUrl=col.rowCount>0;
+ } catch {}
+
+ let notificationCount=0;
+ for(const m of afterActive){
+  const groupName=groupMap.get(m.group_id)||'Grup';
+  const title='Yeni Dönem Grup Atamanız Yapıldı';
+  const message=`${period.title} rotasyonu tamamlandı. Yeni grubunuz: ${groupName}.`;
+  if(hasActionUrl){
+   await client.query("INSERT INTO notifications(user_id,type,title,message,action_url,read,created_at) VALUES($1,'SHUFFLE_COMPLETED',$2,$3,$4,false,NOW())",[m.user_id,title,message,`/groups/${m.group_id}`]);
+  } else {
+   await client.query("INSERT INTO notifications(user_id,type,title,message,read,created_at) VALUES($1,'SHUFFLE_COMPLETED',$2,$3,false,NOW())",[m.user_id,title,message]);
+  }
+  notificationCount++;
+ }
+
+ for(const userId of beforeActiveIds){
+  if(!afterActiveIds.has(userId)){
+   const title='Dönem Rotasyonu Bilgilendirmesi';
+   const message=`${period.title} dönem rotasyonunda bir gruba yerleştirilemediniz. Detaylar için yönetimle iletişime geçebilirsiniz.`;
+   if(hasActionUrl){
+    await client.query("INSERT INTO notifications(user_id,type,title,message,action_url,read,created_at) VALUES($1,'SHUFFLE_COMPLETED',$2,$3,$4,false,NOW())",[userId,title,message,'/dashboard']);
+   } else {
+    await client.query("INSERT INTO notifications(user_id,type,title,message,read,created_at) VALUES($1,'SHUFFLE_COMPLETED',$2,$3,false,NOW())",[userId,title,message]);
+   }
+   notificationCount++;
+  }
+ }
+
+ afterSnapshot.notificationsDelivered=notificationCount;
  if(submission)afterSnapshot.submission={version:1,fingerprint:shuffleFingerprint(submission)};
  await client.query('INSERT INTO shuffle_execution_history(id,actor_id,actor_name,expected_revision,before_revision,after_revision,before_snapshot,after_snapshot,member_count,group_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[id,actorId,actor?.full_name||'Bilinmiyor',expectedRevision??null,before.revision,after.revision,JSON.stringify(snapshot(before)),JSON.stringify(afterSnapshot),after.memberships.filter(m=>m.status==='ACTIVE').length,new Set(after.memberships.filter(m=>m.status==='ACTIVE').map(m=>m.group_id)).size]);
  return id;

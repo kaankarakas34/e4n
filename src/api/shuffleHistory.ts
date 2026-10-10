@@ -1,5 +1,5 @@
 import {referralTransport} from './api';
-export interface HistorySnapshot {groups:{id:string;name:string;status:string|null}[];members:{id:string;full_name:string;role:string|null}[];memberships:{group_id:string;user_id:string;role:string|null;status:string|null;joined_at:string|null}[]}
+export interface HistorySnapshot {groups:{id:string;name:string;status:string|null}[];members:{id:string;full_name:string;role:string|null}[];memberships:{group_id:string;user_id:string;role:string|null;status:string|null;joined_at:string|null}[];period?:{key:string;title:string;startDate:string;endDate:string;cutoffDate:string};notificationsDelivered?:number}
 export interface Execution {id:string;actor_id:string;actor_name:string;applied_at:string;expected_revision:string|null;before_revision:string;after_revision:string;member_count:number;group_count:number;before_snapshot?:HistorySnapshot;after_snapshot?:HistorySnapshot}
 export interface ShuffleHistory {version:1;ownerId:string;asOf:string;executions:Execution[]}
 const uuid=(v:any)=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);

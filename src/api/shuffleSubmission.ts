@@ -1,6 +1,6 @@
 import {referralTransport} from './api';
 export interface ShuffleCommand {requestId:string;expectedRevision:string;assignments:Record<string,string[]>}
-export interface ShuffleReceipt {version:1;success:true;ownerId:string;requestId:string;executionId:string;expectedRevision:string;afterRevision:string;fingerprint:string;replayed:boolean}
+export interface ShuffleReceipt {version:1;success:true;ownerId:string;requestId:string;executionId:string;expectedRevision:string;afterRevision:string;fingerprint:string;replayed:boolean;notificationsDelivered?:number}
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
 const hash=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
 export function validShuffleCommand(b:any):b is ShuffleCommand{

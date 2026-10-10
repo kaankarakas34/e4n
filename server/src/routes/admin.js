@@ -6,6 +6,9 @@ import authenticateToken from '../middleware/auth.js';
 import { sendEmail } from '../utils/email.js';
 import { calculateChampions } from '../utils/scoring.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import {canonicalProvince} from '../turkey-provinces.js';
+import {companyIdentity,companyWriteError} from '../company-registration.js';
 
 const router = express.Router();
 
@@ -91,6 +94,71 @@ router.get('/members', async (req, res) => {
     } catch (e) {
         console.error('Admin Members Error:', e);
         res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/members', async (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
+    let client;
+    try {
+        const b = req.body;
+        if (!b || typeof b !== 'object' || Array.isArray(b)) {
+            return res.status(400).json({ error: 'Geçersiz üye oluşturma isteği.' });
+        }
+        const name = (b.name ?? b.full_name ?? '').trim();
+        if (!name || name.length > 100 || name.includes('\0')) {
+            return res.status(400).json({ error: 'Ad Soyad zorunludur ve en fazla 100 karakter olabilir.' });
+        }
+        const email = (b.email ?? '').trim().toLowerCase();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+        }
+        const phone = (b.phone ?? '').trim();
+        if (!phone || phone.length > 20 || phone.includes('\0')) {
+            return res.status(400).json({ error: 'Telefon numarası zorunludur.' });
+        }
+        const rawCity = (b.city ?? 'İstanbul').trim();
+        const city = canonicalProvince(rawCity) || 'İstanbul';
+        const profession = (b.profession ?? '').trim();
+        if (!profession || profession.length > 100 || profession.includes('\0')) {
+            return res.status(400).json({ error: 'Meslek kolu zorunludur.' });
+        }
+        const password = typeof b.password === 'string' && b.password.length >= 8 ? b.password : 'ChangeMe123!';
+        if (Buffer.byteLength(password, 'utf8') > 72) {
+            return res.status(400).json({ error: 'Şifre en fazla 72 bayt olabilir.' });
+        }
+        const identity = companyIdentity(
+            b.company,
+            b.tax_number ?? b.taxNumber,
+            b.tax_office ?? b.taxOffice,
+            b.billing_address ?? b.billingAddress
+        );
+        const hash = await bcrypt.hash(password, 10);
+        client = await pool.connect();
+        await client.query('BEGIN');
+        await client.query("SET LOCAL lock_timeout='5s';SET LOCAL statement_timeout='30s'");
+
+        const { rows } = await client.query(`
+            INSERT INTO users(
+                name, email, password_hash, phone, city, profession, company,
+                tax_number, tax_office, billing_address, role, account_status,
+                kvkk_consent, explicit_consent, consent_date, company_registration
+            )
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'MEMBER', 'ACTIVE', true, true, now(), true)
+            RETURNING id, name, email, phone, city, profession, company, tax_number, tax_office, billing_address, role, account_status, created_at
+        `, [name, email, hash, phone, city, profession, identity.company, identity.tax_number, identity.tax_office, identity.billing_address]);
+
+        await client.query('COMMIT');
+        res.status(201).json({ success: true, member: rows[0], id: rows[0].id });
+    } catch (e) {
+        if (client) await client.query('ROLLBACK').catch(() => {});
+        const mapped = companyWriteError(e);
+        if (mapped) {
+            return res.status(mapped.status).json(mapped);
+        }
+        res.status(e.status ?? 500).json({ error: e.message || 'Üye oluşturulamadı.' });
+    } finally {
+        client?.release();
     }
 });
 

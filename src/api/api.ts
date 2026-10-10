@@ -142,6 +142,9 @@ export const api = {
     return await request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
   },
 
+  /**
+   * @deprecated P41/E4N-113: Eski mock token fonksiyonu. Aktif ödeme sözleşmesi payWithSipay, resumePayment ve getPaymentStatus ile yönetilir.
+   */
   async getPaymentToken(payload: any) {
     return await request('/payment/get-token', { method: 'POST', body: JSON.stringify(payload) });
   },
@@ -276,6 +279,9 @@ export const api = {
     return await request('/groups');
   },
 
+  /**
+   * @deprecated P41/E4N-113: Eski mock bilet istatistikleri fonksiyonu. Aktif bilet sayıları GET /api/events ve GET /api/events/:id (attendee_count, user_tickets) ile sunulur.
+   */
   async getTicketStats() {
     return await request('/tickets/stats');
   },
@@ -577,6 +583,9 @@ export const api = {
   async getPowerTeamReferrals(teamId: string) {
     return await request(`/power-teams/${teamId}/referrals`);
   },
+  /**
+   * @deprecated P41/E4N-113: Eski mock lonca etkinlik fonksiyonu. Aktif lonca etkinlikleri GET /api/events üzerinden power_team_id filtresi ile listelenir.
+   */
   async getPowerTeamEvents(teamId: string) {
     return await request(`/power-teams/${teamId}/events`);
   },
@@ -689,6 +698,9 @@ export const api = {
     return await request(`/power-teams/${id}`, { method: 'DELETE' });
   },
 
+  /**
+   * @deprecated P41/E4N-113: Eski mock toplantı raporu fonksiyonu. Grup toplantı yoklaması ve katılımı GET/POST /api/group-meetings/:id/attendance ile yönetilir.
+   */
   async submitMeetingReport(payload: any) {
     return await request('/events/report', { method: 'POST', body: JSON.stringify(payload) });
   },
@@ -836,8 +848,10 @@ export const api = {
   async getAttendanceSubstitutes(groupId: string) {
     return await request(`/groups/${groupId}/substitutes`);
   },
+  /**
+   * @deprecated P41/E4N-113: Eski ayrı shuffle bildirimi fonksiyonu. Bildirimler E4N-101 (P29) gereği POST /api/shuffle/save yürütüldüğünde atomik olarak iletilir.
+   */
   async notifyMembersOfShuffle(items: Record<string, string[]>) {
-    // TODO: Move logic to backend
     return await request('/shuffle/notify', { method: 'POST', body: JSON.stringify({ items }) });
   },
   async requestMeeting(payload: any) {

@@ -624,97 +624,103 @@
       "method": "GET",
       "path": "/api/admin/members",
       "provider": "src/routes/admin.js",
-      "line": 21
+      "line": 24
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/members",
+      "provider": "src/routes/admin.js",
+      "line": 100
     },
     {
       "method": "POST",
       "path": "/api/admin/invite",
       "provider": "src/routes/admin.js",
-      "line": 97
+      "line": 165
     },
     {
       "method": "POST",
       "path": "/api/admin/move-member",
       "provider": "src/routes/admin.js",
-      "line": 117
+      "line": 185
     },
     {
       "method": "GET",
       "path": "/api/admin/email-config",
       "provider": "src/routes/admin.js",
-      "line": 159
+      "line": 227
     },
     {
       "method": "POST",
       "path": "/api/admin/email-config",
       "provider": "src/routes/admin.js",
-      "line": 166
+      "line": 234
     },
     {
       "method": "POST",
       "path": "/api/admin/email-config/test",
       "provider": "src/routes/admin.js",
-      "line": 191
+      "line": 259
     },
     {
       "method": "PUT",
       "path": "/api/admin/email-config/:id/activate",
       "provider": "src/routes/admin.js",
-      "line": 202
+      "line": 270
     },
     {
       "method": "DELETE",
       "path": "/api/admin/email-config/:id",
       "provider": "src/routes/admin.js",
-      "line": 218
+      "line": 286
     },
     {
       "method": "GET",
       "path": "/api/admin/stats/dashboard",
       "provider": "src/routes/admin.js",
-      "line": 226
+      "line": 294
     },
     {
       "method": "GET",
       "path": "/api/admin/stats/charts",
       "provider": "src/routes/admin.js",
-      "line": 265
+      "line": 333
     },
     {
       "method": "GET",
       "path": "/api/admin/stats/groups",
       "provider": "src/routes/admin.js",
-      "line": 299
+      "line": 367
     },
     {
       "method": "GET",
       "path": "/api/admin/stats/geo",
       "provider": "src/routes/admin.js",
-      "line": 323
+      "line": 391
     },
     {
       "method": "DELETE",
       "path": "/api/admin/public-visitors/:id",
       "provider": "src/routes/admin.js",
-      "line": 341
+      "line": 409
     },
     {
       "method": "POST",
       "path": "/api/admin/trigger-champions",
       "provider": "src/routes/admin.js",
-      "line": 349
+      "line": 417
     },
     {
       "method": "POST",
       "path": "/api/admin/shuffle/save",
       "provider": "src/routes/admin.js",
-      "line": 357
+      "line": 425
     },
     {
       "method": "POST",
       "path": "/api/admin/memberships/extend",
       "provider": "src/routes/admin.js",
-      "line": 408
+      "line": 476
     },
     {
       "method": "GET",
@@ -1152,31 +1158,31 @@
       "method": "GET",
       "path": "/api/admin/web-jobs",
       "provider": "src/web-job-operations.js",
-      "line": 160
+      "line": 110
     },
     {
       "method": "GET",
       "path": "/api/admin/web-jobs/health",
       "provider": "src/web-job-operations.js",
-      "line": 170
+      "line": 120
     },
     {
       "method": "POST",
       "path": "/api/admin/web-jobs/stale-runs/recover",
       "provider": "src/web-job-operations.js",
-      "line": 179
+      "line": 129
     },
     {
       "method": "POST",
       "path": "/api/admin/web-jobs/:job/run",
       "provider": "src/web-job-operations.js",
-      "line": 190
+      "line": 140
     },
     {
       "method": "GET",
       "path": "/api/cron/web-jobs/:job",
       "provider": "src/web-job-operations.js",
-      "line": 200
+      "line": 150
     },
     {
       "method": "GET",

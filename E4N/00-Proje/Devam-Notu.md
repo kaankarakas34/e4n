@@ -1,6 +1,19 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P34 / E4N-106 tamamlandı
+## Güncel teslim — P39 / E4N-111 & P41 / E4N-113 tamamlandı
+
+- **E4N-111 (P39) & E4N-113 (P41) Done:** Web API sözleşmesindeki aktif yol/yöntem farkları kapatıldı, istemci-sunucu rota tutarlılığı ve demo/kullanılmayan bileşenlerin değerlendirilmesi tamamlandı.
+  - İstemci AST Taraması (`server/test/scan-client-endpoints.mjs`): 165 istemci API çağrı noktası analiz edildi; tüm uçlar 203 Express rotası ile uzlaştırıldı.
+  - `POST /api/admin/members` Entegrasyonu: `CreateMember.tsx` ve `AdminCRM.tsx` lead dönüştürme akışlarında eksik olan üye oluşturma işleyicisi `server/src/routes/admin.js` içine eklendi. Yalnızca aktif veritabanı `ADMIN` rolüne açık, BAŞ-01 (E4N-161) zorunlu şirket/VKN/TCKN, vergi dairesi, fatura adresi doğrulaması (`companyIdentity`), il kontrolü (`canonicalProvince`), `bcrypt` şifre hashleme, atomik transaction ve `companyWriteError` (409 mükerrer e-posta ve VKN/TCKN engeli) sağlandı.
+  - Web Ekranı İyileştirmesi (`CreateMember.tsx`): Form Zod şeması zorunlu kurumsal alanlar ve il bilgisiyle güncellendi; CRM'den gelen aday verileri (`location.state.lead`) ön-doldurma desteği ve inline hata bildirim kartı eklendi.
+  - P41 Bileşen ve Modül Kararları:
+    - KORUNAN (RETAIN): `ComingSoon.tsx` (Sprint 8 LMS-SON için placeholder), `CourseForm.tsx`, `LessonManager.tsx`, `StudentDashboard.tsx` (LMS bileşenleri), `Empty.tsx` ve `useTheme.ts` (yeniden kullanılabilir yardımcılar).
+    - ARINDIRILACAK: `Home.tsx` (boş div; ana rota `LandingPage.tsx`), `taskStore.ts` (yerini `TasksCard` ve `referralStore` aldı), `TrafficLightCard.tsx` ve `trafficLightStore.ts` (yerini `ScoreCard` ve `performanceStore` aldı), `AdminRoles.tsx` (mock sayfa).
+    - İstemci E-posta Servisi: `emailService.ts` içindeki `http://localhost:3001/send-email` unmounted çağrısı kaldırılarak yerel mock loglama dispatch'ine dönüştürüldü; gerçek postaların sunucuda `nodemailer` ile gönderildiği korundu.
+    - 5 Eski Mock API Sarmalayıcısı: `getPaymentToken`, `getTicketStats`, `getPowerTeamEvents`, `submitMeetingReport`, `notifyMembersOfShuffle` JSDoc `@deprecated` olarak etiketlendi ve modern alternatifleri belgelendi.
+  - Testler: `server/test/admin-member-creation-contract.mjs` (İzole PG17 Docker, 6/6 PASS: 401 anon, 403 member, 400 eksik/geçersiz alan, 201 kayıt ve bcrypt doğrulaması, 409 duplicate email, 409 duplicate tax_number, admin list readback), `server/test/route-ownership-contract.mjs` (İzole PG17 Docker, 203 exact static/Express method-path matches, 0 shadow, 17 legacy preserved PASS), `server/test/route-ownership-static.mjs` (203 rota, 31 sağlayıcı, 17 legacy PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P39-P41-Web-API-Uyum-ve-Bilesen-Kararlari-2026-10-10]].
+
+## Önceki teslim — P34 / E4N-106 tamamlandı
 
 - **E4N-106 (P34) Done:** Üretim planlayıcısı, gözlem/alarm altyapısı ve hedef iş kuralları tamamlandı.
   - Vercel Cron Sözleşmesi (`vercel.json`): `event-completion` (her 10 dk) ve `subscription-reminders` (günlük 06:00 UTC / 09:00 TSI) harici scheduler tanımlandı. `GET /api/cron/web-jobs/:job` Bearer `CRON_SECRET` (min 32 char, timingSafeEqual, metod/sorgu denetimi) ile korundu.

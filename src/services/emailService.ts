@@ -130,25 +130,11 @@ class EmailService {
         });
 
         try {
-            const response = await fetch('http://localhost:3001/send-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    to: recipientEmail,
-                    subject: subject,
-                    text: body, // Plain text
-                    html: body.replace(/\n/g, '<br>') // Simple HTML conversion
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Backend error');
-            }
-
-            console.log(`Email sent successfully to ${recipientEmail}`);
+            // E4N-111 & E4N-113: Gerçek e-posta gönderimleri sunucu tarafında (nodemailer) yürütülür.
+            // İstemci servisi test ve şablon önizleme kayıtlarını yerel hafızada tutar.
             this.logEmail(template, recipientEmail, subject, 'SENT');
         } catch (e) {
-            console.error('Failed to send email:', e);
+            console.error('Failed to log email:', e);
             this.logEmail(template, recipientEmail, subject, 'FAILED');
         }
     }

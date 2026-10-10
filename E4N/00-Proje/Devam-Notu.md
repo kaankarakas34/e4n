@@ -1,6 +1,15 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P35 / E4N-107 tamamlandı
+## Güncel teslim — P34 / E4N-106 tamamlandı
+
+- **E4N-106 (P34) Done:** Üretim planlayıcısı, gözlem/alarm altyapısı ve hedef iş kuralları tamamlandı.
+  - Vercel Cron Sözleşmesi (`vercel.json`): `event-completion` (her 10 dk) ve `subscription-reminders` (günlük 06:00 UTC / 09:00 TSI) harici scheduler tanımlandı. `GET /api/cron/web-jobs/:job` Bearer `CRON_SECRET` (min 32 char, timingSafeEqual, metod/sorgu denetimi) ile korundu.
+  - Gözlem, Alarm ve Kurtarma: 15 dakikadan eski takılı kalan RUNNING işler otomatik tespit edilerek `CRITICAL` seviye `STALE_RUNNING_JOB` alarmı üretildi. `GET /api/admin/web-jobs/health` sağlık durumu izleme ve `POST /api/admin/web-jobs/stale-runs/recover` ile takılı işleri atomik `UNKNOWN` / `STALE_TIMEOUT` yaparak sistemi `HEALTHY` duruma döndüren kurtarma uç noktası kuruldu.
+  - Hedef Kurallar & UTC Zaman Uyumu: `subscription-reminders` (D07 5 günlük gecikme hatırlatmaları, 5. gün sonu `RESTRICTED` kısıtlaması, gecikmiş hesap taraması), `champion-calculation` (varsayılan pencere hesabı ve idempotent replay), `event-completion` (geçmiş etkinliklerin COMPLETED yapılması) ve session advisory lock ile sıfır eşzamanlı çakışma.
+  - Web: `AdminWebJobs.tsx` (anlık sistem sağlık rozeti, alarm panosu, tek tıkla takılı iş kurtarma ve onay diyalogları) ve `webJobs.ts` entegre edildi.
+  - Testler: `server/test/web-jobs-target-rules-and-scheduler-contract.mjs` (İzole PG17 Docker, 8/8 PASS), `server/test/web-job-operations-contract.mjs` (PASS), `server/test/route-ownership-static.mjs` (202 rota, 31 sağlayıcı PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P34-Uretim-Scheduler-Gozlem-ve-Hedef-Kurallar-2026-10-10]].
+
+## Önceki teslim — P35 / E4N-107 tamamlandı
 
 - **E4N-107 (P35) Done:** Fatura dosyası kalıcı depolama entegrasyonu, yetkili yükleme ve indirme erişimi tamamlandı.
   - Kalıcı depolama (`invoice_files` - Migration 0013): Fatura dosyaları PostgreSQL `bytea` formatında kalıcı depolamaya alındı; Vercel geçici diskinden ve harici public bucket yetim bağımlılıklarından arındırıldı. En fazla 3 MB PDF kısıtı, SHA-256 fingerprint ve Satır Düzeyi Güvenlik (RLS) kuralı uygulandı.

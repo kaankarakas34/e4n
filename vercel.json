@@ -1,4 +1,14 @@
 {
+    "crons": [
+        {
+            "path": "/api/cron/web-jobs/event-completion",
+            "schedule": "*/10 * * * *"
+        },
+        {
+            "path": "/api/cron/web-jobs/subscription-reminders",
+            "schedule": "0 6 * * *"
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",

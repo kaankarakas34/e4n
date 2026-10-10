@@ -150,6 +150,15 @@ export function MembershipPage() {
                                 <span className="font-semibold text-gray-900">{endDate && !Number.isNaN(endDate.getTime()) ? endDate.toLocaleDateString('tr-TR') : 'Veri yok'}</span>
                             </div>
                         </div>
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap justify-between items-center gap-3">
+                            <span className="text-xs text-gray-500">Ödeme geçmişi ve onaylı fatura dosyalarınızı inceleyin</span>
+                            <Button variant="outline" size="sm" onClick={() => navigate('/membership-records')}>
+                                Fatura ve Ödeme Kayıtlarım
+                            </Button>
+                        </div>
+                        {/*
+                            </div>
+                        */}
                     </div>
                 )}
                 </div>

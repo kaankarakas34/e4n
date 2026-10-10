@@ -207,7 +207,10 @@ export function AdminSubscriptions() {
           </Button>
         </div>
 
-        <Button onClick={()=>navigate('/admin/membership-records')}>Üyelik ve Ödeme Kayıtlarını İncele</Button>
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={()=>navigate('/admin/membership-records')}>Üyelik ve Ödeme Kayıtlarını İncele</Button>
+          <Button variant="outline" onClick={()=>navigate('/admin/accounting')}>Muhasebe ve Fatura Yönetimi</Button>
+        </div>
         {/* Premium KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="bg-white border-l-4 border-l-blue-500 shadow-sm">

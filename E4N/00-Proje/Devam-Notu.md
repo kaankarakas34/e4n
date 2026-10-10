@@ -1,6 +1,15 @@
 # E4N devam durumu — 10 Ekim 2026
 
-## Güncel teslim — P26 / E4N-98 tamamlandı
+## Güncel teslim — P35 / E4N-107 tamamlandı
+
+- **E4N-107 (P35) Done:** Fatura dosyası kalıcı depolama entegrasyonu, yetkili yükleme ve indirme erişimi tamamlandı.
+  - Kalıcı depolama (`invoice_files` - Migration 0013): Fatura dosyaları PostgreSQL `bytea` formatında kalıcı depolamaya alındı; Vercel geçici diskinden ve harici public bucket yetim bağımlılıklarından arındırıldı. En fazla 3 MB PDF kısıtı, SHA-256 fingerprint ve Satır Düzeyi Güvenlik (RLS) kuralı uygulandı.
+  - Yetkili yükleme (`POST /api/admin/accounting/:type/:id/upload-invoice`): Yalnızca veritabanı aktif `ADMIN` rolüne açık, `request_key` ile tekilleştirilmiş (idempotent), mükerrer çağrıda sıfır mükerrer dosya/mail (`replay: true`), atomik hedef URL güncellemesi ve SMTP başarısızlığında bozulmayan güvenli iş akışı.
+  - Yetkili indirme (`GET /api/invoices/:id`): Public dosya URL'leri kaldırıldı; oturum doğrulamalı endpoint üzerinden yöneticiler tüm faturaları, üyeler yalnızca kendi faturalarını indirebilir; yetkisiz ve yabancı erişimler (401/404) engellendi.
+  - Web: `AdminAccounting.tsx` (fatura yükleme ve blob indirme), `MembershipRecords.tsx` (üye ve admin fatura geçmişi ve doğrudan indirme), `Membership.tsx` ("Fatura ve Ödeme Kayıtlarım" erişim bağlantısı) ve `AdminSubscriptions.tsx` ("Muhasebe ve Fatura Yönetimi" butonu) entegre edildi.
+  - Testler: `server/test/invoices-contract.mjs` (İzole PG17 Docker, 8 eşzamanlı yükleme yarışı, yetkisiz indirme engeli, RLS, rollback, replay PASS), `server/test/membership-records-contract.mjs` (PASS), `server/test/route-ownership-static.mjs` (200 rota, 31 sağlayıcı PASS), `server/test/isolated-smoke.mjs` (50 tablo, 28 sürüm, 0 DDL PASS), `npm run check` ve `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/P35-Fatura-Dosyasi-Kalici-Depolama-2026-10-10]].
+
+## Önceki teslim — P26 / E4N-98 tamamlandı
 
 - **E4N-98 (P26) Done:** Etkinlik katılım, çoklu bilet alımı, harici (misafir) katılımcı biletleme ve ödeme transaction bütünlüğü tamamlandı.
   - Çoklu bilet alımı (`quantity: 1..20`): Üyeler kendileri ve misafirleri için çoklu bilet satın alabilir. Mevcut `PENDING` bilet ödemeyle `PAID` yapılır ve talep edilen bilet adedi kadar her biri tekil `E4N-...` numaralı `PAID` bilet satırı `event_tickets`'a atomik olarak yazılır.

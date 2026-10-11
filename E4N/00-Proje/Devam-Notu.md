@@ -30,6 +30,7 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
     - `POST /api/legal/acceptances`: Zaman damgalı onay/okuma günlüğü kaydeder.
     - `GET /api/users/me`: Sözleşme kolonları (`explicit_consent`, `kvkk_consent`, `marketing_consent`, `consent_date`) profil sorgusuna eklendi.
   - **Test ve Kanıt:** `node server/test/membership-activation-contract.mjs` PASS (7/7 test), `node server/test/route-ownership-static.mjs` PASS (227 rota, 31 sağlayıcı, 0 gölge/hata), `npx tsc --noEmit` PASS (0 hata), `npm run build` PASS (Vite temiz üretim paketi derlendi).
+  - **Canlı Dağıtım & Sunucu Doğrulaması:** `server/src/index.js` içindeki artık blok giderildi (`node --check` PASS), Vercel serverless çalışma ortamı güvenceye alındı; `codex/e4n-sprint1-foundation` ve `main` dalları senkronize canlıya alındı.
 
 ## Önceki — Abone Olmayan Üyeler için Dashboard Kurallar Alanı ve 9 Sekmeli Kapsamlı Çalışma Rehberi Tamamlandı
 

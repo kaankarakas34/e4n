@@ -1635,13 +1635,6 @@ app.get('/api/groups/:id/stats', authenticateToken, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-  } catch (e) {
-    await client.query('ROLLBACK').catch(() => {});
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
 
 app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {

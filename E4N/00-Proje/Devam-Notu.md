@@ -1,6 +1,19 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — P38 / E4N-110 tamamlandı (Sprint 6 Kapanışı: Sürüm Kararı, Dokümantasyon ve İzlenebilirlik)
+## Güncel teslim — MOB-01 / E4N-134 tamamlandı (Kişisel Rapor Mobil Ekran ve API Sözleşmesi Eşitlemesi)
+
+- **E4N-134 (MOB-01) Done:** Mobil uygulamadaki `ReportsScreen` (`mobile/app/features/reports.tsx`) ekranı, web platformunda doğrulanmış olan `GET /api/reports/me` (`PersonalReport` sözleşmesi) ile uçtan uca eşitlendi.
+  - **Düzeltilen Kusurlar ve Yapılan Geliştirmeler:**
+    - Sunucuda var olmayan sahte `/users/me/stats` çağrısı kaldırıldı; `mobile/constants/api.ts` içine `ENDPOINTS.REPORTS.ME` eklendi.
+    - Web sözleşmesinde izin verilen 4 dönem aralığı (`7d`, `30d`, `90d`, `1y`) için mobil segmented tab butonları oluşturuldu ("7 Gün", "30 Gün", "90 Gün", "365 Gün").
+    - Hata durumunda sessizce 0 yutulması engellendi; açıklayıcı hata kartı ve "Tekrar Dene" (retry) butonu eklendi.
+    - Güncel hesap trafik ışığı ve puanı (`performance.score/100`, `performance.color`) dinamik rozetle renklendirildi (Yeşil, Sarı, Kırmızı, Gri).
+    - Verilen ve alınan referanslar (toplam, başarılı kohort adetleri ve ₺`knownVolume` yaratılan iş hacmi) gösterildi; eksik tutarlı kayıtlar için uyarı eklendi.
+    - Tamamlanan birebir görüşmeler (`meetingsCompleted`), katılan davetli ziyaretçiler (`visitorsHosted`), kayıtlı eğitim saatleri (`educationHours`) kartları ve yasal dipnotlar bağlandı.
+  - **Test ve Kanıt:** `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `server/test/mobile-personal-reports-contract.mjs` (İzole PG17 Docker ve Express ile 4 dönem, 30d kohort hesaplaması, anonim 401, geçersiz 400 PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Kanıt [[E4N/09-Dogrulama/MOB-01-Kisisel-Rapor-Mobil-Ekran-Sozlesmesi-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-115 / PAR-01]: Web ve mobil yetenek, navigasyon ve rol matrisi denetimi.
+
+## Önceki teslim — P38 / E4N-110 tamamlandı (Sprint 6 Kapanışı: Sürüm Kararı, Dokümantasyon ve İzlenebilirlik)
 
 - **E4N-110 (P38) Done & Sprint 6 Closed:** Sprint 6 ("Operasyon ve sürüm") ve E4N Web Foundation platformunun kapanış kapısı başarıyla tamamlandı. Sistem resmi olarak **CANLI YAYINA HAZIR (RELEASE READY - GO)** statüsüne ulaştı.
   - **Sürüm Kararı (GO):** D01-D04 (Puanlama & 8 ay çıkarma yasağı), D05-D08-D10 (Kurumsal vergi, 35 kapasite, meslek tekilliği), SHUFFLE-CUTOFF (Kanonik dönemler & kesim), P25-P26 (Dış etkinlik hakları & çoklu bilet), P34-P35 (Scheduler, stale alarm & bytea fatura), P30-P31 (Üye/başkan/admin akışları), P39-P41 (Web API uyumu), P37 (51/51 kabul), SEC-01 (50 RLS / 48 anon engel), SEC-02 (Fail-fast & rotasyon), SEC-03 (7 güvenlik kapısı), P36 (Rehearsal, manifest hash & rollback runbook) kapılarının tamamı kapatıldı.

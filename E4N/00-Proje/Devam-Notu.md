@@ -1,6 +1,28 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — PAR-04 / E4N-118 tamamlandı (Başkan ve Admin İşlevlerini Web ve Mobilde Eşitleme)
+## Güncel teslim — PAR-05 / E4N-119 tamamlandı (Web ve Mobil Özellik Eşitliğini Uçtan Uca Doğrulama)
+
+- **E4N-119 (PAR-05) Done:** Web ve mobil istemcilerinin 20 fonksiyonel yetenek alanındaki eşitliği, PAR-11 grup ve lonca kataloğu keşfi ve 8 birleşik uçtan uca kullanıcı senaryosu (User Journeys) izole ortamda doğrulanarak tamamlandı.
+  - **Grup & Lonca Keşfi Ekranı (`mobile/app/features/groups.tsx`):**
+    - PAR-11 farkı kapatıldı; `GET /api/groups` ve `GET /api/power-teams` API sözleşmeleri bağlandı.
+    - 35 kişilik grup kapasitesi tavanı (`${g.member_count || 0}/35 Üye`), toplantı günü/saati ve grup detay modali (`GET /api/groups/:id/members`) entegre edildi.
+    - Menü'de (`mobile/app/(tabs)/menu.tsx`) "Gruplar ve Loncalar" kartı eklendi.
+  - **20 Yetenek Alanının Kapanışı:**
+    - 18 Yetenek alanı tam eşitlendi (**PARITY_FULL**).
+    - 2 Masaüstü yönetim/DevOps alanı (4 Aylık Shuffle Simülasyonu ve Vercel Cron Takip Konsolu) bilinçli olarak web'de tutuldu (**WEB_ONLY_INTENTIONAL**).
+  - **8 Birleşik Uçtan Uca Kullanıcı Yolculuğu (E2E Journeys):**
+    - Journey 1: Kurumsal Kayıt ve Profil Güncelleme (`POST /api/auth/register`, `PUT /api/users/me`) PASS.
+    - Journey 2: Kişisel Performans ve 4 Rapor Dönemi (`GET /api/reports/me` - 7d, 30d, 90d, 1y) PASS.
+    - Journey 3: Bağlantılı Üyeler Arasında Doğrudan Mesajlaşma (`POST /api/messages/:id`, `GET /api/messages/conversations`) PASS.
+    - Journey 4: Etkinlik Bilet Hakları ve Kayıt (`POST /api/events/:id/register`, `attendance` tablosu `REGISTERED`, `FREE` bilet) PASS.
+    - Journey 5: Kapalı Grup ve Lonca Kataloğu Keşfi (`GET /api/groups`, `GET /api/power-teams`) PASS.
+    - Journey 6: Başkan 7 Gün SLA Aşımı Kuyruğu ve Karar Yaşam Döngüsü (`POST /api/groups/:id/join`, `tasks` SLA aşımı alarmı, `interview` ve `decision` onay) PASS.
+    - Journey 7: Haftalık Toplantı Yoklaması ve Idempotent Replay (`POST /api/events/attendance`, 4 durum, `replayed: true`) PASS.
+    - Journey 8: Sistem Yöneticisi Yönetişim ve RBAC Eşitliği (`/admin/public-visitors`, `/payments/history` 403 vs 200) PASS.
+  - **Test ve Kanıt:** `node server/test/par-05-e2e-parity-acceptance-contract.mjs` (İzole PG17 Docker + Express ile 8/8 Journeys + Static Checks PASS), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS). Doküman `server/docs/par-05-e2e-feature-parity-acceptance-report.md` ve Kanıt [[E4N/09-Dogrulama/PAR-05-Uctan-Uca-Ozellik-Esitligi-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-104 / P32]: Mobil API ve ekran sözleşmesini mevcut hedefe eşitle (Sprint 7 Kapanışı).
+
+## Önceki teslim — PAR-04 / E4N-118 tamamlandı (Başkan ve Admin İşlevlerini Web ve Mobilde Eşitleme)
 
 - **E4N-118 (PAR-04) Done:** Web ve mobil platformları arasındaki başkanlık rolü navigasyonu, 7 gün SLA aşımı başvuru inceleme kuyruğu, görüşme ve karar akışları ile haftalık toplantı yoklaması formu eşitlendi ve izole ortamda doğrulandı.
   - **API Sözleşmesi ve Sabitleri (`mobile/constants/api.ts`):** `USER.GROUPS`, `GROUPS` (`LIST`, `DETAIL`, `MEMBERS`, `APPLICATIONS`), `GROUP_APPLICATIONS` (`TASKS`, `MINE`, `INTERVIEW`, `DECISION`), `ATTENDANCE` (`SUBMIT`, `STATUS`) rotaları tanımlandı.

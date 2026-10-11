@@ -1,6 +1,17 @@
-# E4N devam durumu — 10 Ekim 2026
+# E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — P37 / E4N-109 tamamlandı (Bütün Web Kabulü ve Sürüm Kapısı)
+## Güncel teslim — SEC-01 / E4N-58 tamamlandı (Supabase RLS ve Erişim Güvenlik Planı)
+
+- **E4N-58 (SEC-01) Done:** PostgreSQL / Supabase `public` şemasındaki 50 tablonun tamamı için Satır Düzeyi Güvenlik (RLS) ve doğrudan PostgREST erişim bariyerleri denetlendi, hassasiyet kategorizasyonu ve erişim matrisi çıkarıldı, linter bulguları çözümlendi ve izole sözleşme testiyle tam başarı kanıtlandı.
+  - **API-Owner Mimarisi:** Express API bağlantı havuzunun (DB owner / süper kullanıcı) 50 tablonun tamamında yetkili operasyonel bütünlüğü korunurken, tarayıcı/istemci doğrudan PostgREST erişimi 48 hassas tabloda (`users`, `payment_transactions`, `invoice_files`, `group_applications`, `email_configurations`, `system_settings` vb.) `REVOKE ALL` ile tamamen kilitlendi.
+  - **Linter ve CMS İyileştirmesi (`0013_rls_disabled_in_public` & `0011_function_search_path_mutable`):**
+    - `blogs` ve `blog_categories` tablolarında RLS etkinleştirilerek PostgREST üzerinden `anon` ve `authenticated` rollerine yalnızca `status = 'published'` olan içeriklerin okunmasına izin veren politikalar (`CREATE POLICY`) tanımlandı; tüm mutasyonlar (`INSERT`, `UPDATE`, `DELETE`) engellendi (`42501`).
+    - Güvenlik ve tetikleyici fonksiyonlarında mutable search_path riski `SET search_path = public, pg_temp;` direktifi ile kapatıldı.
+  - **Üretim SQL Planı:** `server/supabase_security_plan.sql` deklaratif güvenlik scripti oluşturuldu.
+  - **Sözleşme Testi & Kanıt:** `server/test/sec-rls-access-contract.mjs` (İzole PG17 Docker, 50/50 tablo RLS aktifliği, 48 tablo anon/auth red bariyeri, 2 CMS tablosu yayınlanmış-içerik politikası ve DB owner operasyonel testi PASS). `server/docs/sec-01-rls-access-report.json`, `server/docs/sec-rls-access-matrix.md` ve `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` PASS. Kanıt [[E4N/09-Dogrulama/SEC-01-RLS-ve-Erisim-Guvenligi-2026-10-11]].
+  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde [E4N-59 / SEC-02]: Depodaki veritabanı bağlantısı ve JWT varsayılanını güvenli hale getir.
+
+## Önceki teslim — P37 / E4N-109 tamamlandı (Bütün Web Kabulü ve Sürüm Kapısı)
 
 - **E4N-109 (P37) Done:** Tüm eğitim dışı web modülleri, sözleşmeleri ve kurallarının tek sahipli birleşik kabul koşucusunda (`web-acceptance.mjs`) 51/51 tam başarıyla doğrulanması ve web sürüm kapısının nihai teslimi tamamlandı.
   - 51 Sözleşme Paketi (51/51 PASS): Üyelik, açık kayıt, şirket/vergi doğrulaması, kapalı grup, lonca, yoklama, kalıcı geçmiş, puan olay defteri (P21), ay sonu puan dondurma (P22), puana bağlı çıkarma (P23), 8 aylık başvuru yasağı (P24), üyelik referansı (BAŞ-02), kanonik dönem ve shuffle simülasyonu (P27/P28), shuffle bildirimleri (P29), etkinlik bilet hakları (P25), çoklu ve misafir biletleme (P26), üretim zamanlayıcısı/stale kurtarma (P34), kalıcı PDF fatura depolama (P35), üye paneli (P30), başkan/admin işlemleri (P31), Web API uyumu (P39) ve grup kapasite tavanı/sınırları.

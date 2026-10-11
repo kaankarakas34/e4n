@@ -1,0 +1,837 @@
+{
+  "timestamp": "2026-10-11T07:41:44.933Z",
+  "totalTables": 50,
+  "rlsStatus": {
+    "totalEnabled": 50,
+    "baselineSecuredTables": 48,
+    "cmsEnhancedTables": 2
+  },
+  "tables": [
+    {
+      "tableName": "achievements",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "attendance",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "blog_categories",
+      "rlsEnabled": true,
+      "isBlog": true,
+      "privileges": {
+        "anon_select": true,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": true,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "PUBLIC_CMS_CONTENT"
+    },
+    {
+      "tableName": "blogs",
+      "rlsEnabled": true,
+      "isBlog": true,
+      "privileges": {
+        "anon_select": true,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": true,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "PUBLIC_CMS_CONTENT"
+    },
+    {
+      "tableName": "champions",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "company_tax_registry",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CRITICAL_CREDENTIALS_AND_PII"
+    },
+    {
+      "tableName": "courses",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "direct_messages",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "document_files",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "document_library",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "education",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "email_configurations",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CRITICAL_CREDENTIALS_AND_PII"
+    },
+    {
+      "tableName": "enrollments",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "event_attendance_verifications",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "event_reminders_sent",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "event_tickets",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "events",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "exam_attempts",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "exams",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "friend_requests",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "group_application_mail",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "group_applications",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "group_members",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "group_membership_history",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "groups",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "invoice_files",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "FINANCIAL_AND_TRANSACTIONAL"
+    },
+    {
+      "tableName": "lessons",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "materials",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "normal_membership_role_transition",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CRITICAL_CREDENTIALS_AND_PII"
+    },
+    {
+      "tableName": "notifications",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "one_to_one_requests",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "one_to_ones",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "payment_transactions",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "FINANCIAL_AND_TRANSACTIONAL"
+    },
+    {
+      "tableName": "power_team_members",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "power_teams",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "professions",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "public_visitors",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "questions",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "referrals",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "shuffle_execution_history",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "subscription_reminder_deliveries",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "support_mutations",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "system_settings",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "ticket_messages",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "tickets",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "user_achievements",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "LMS_MODULE_POSTPONED"
+    },
+    {
+      "tableName": "user_score_history",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    },
+    {
+      "tableName": "users",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CRITICAL_CREDENTIALS_AND_PII"
+    },
+    {
+      "tableName": "visitors",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "CORE_OPERATIONAL_RELATIONS"
+    },
+    {
+      "tableName": "web_job_runs",
+      "rlsEnabled": true,
+      "isBlog": false,
+      "privileges": {
+        "anon_select": false,
+        "anon_insert": false,
+        "anon_update": false,
+        "anon_delete": false,
+        "auth_select": false,
+        "auth_insert": false,
+        "auth_update": false,
+        "auth_delete": false
+      },
+      "category": "SENSITIVE_WORKFLOW_AND_AUDIT"
+    }
+  ],
+  "functionsAudited": 26,
+  "functionsWithMutableSearchPath": [
+    "armor",
+    "armor",
+    "crypt",
+    "dearmor",
+    "decrypt",
+    "decrypt_iv",
+    "digest",
+    "digest",
+    "encrypt",
+    "encrypt_iv",
+    "gen_random_bytes",
+    "gen_random_uuid",
+    "gen_salt",
+    "gen_salt",
+    "hmac",
+    "hmac"
+  ],
+  "architecture": {
+    "type": "API-Owner (Express / Node.js) with Complete PostgREST Denial",
+    "dbOwnerBypass": true,
+    "anonDirectAccess": "DENIED_ON_ALL_APPLICATION_TABLES",
+    "authenticatedDirectAccess": "DENIED_ON_ALL_APPLICATION_TABLES",
+    "cmsPolicy": "SELECT_ONLY_FOR_PUBLISHED_CONTENT"
+  }
+}

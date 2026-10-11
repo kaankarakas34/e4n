@@ -6,7 +6,17 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
 
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel — Canlı Yayın Başarıyla Tamamlandı (11 Ekim 2026)
+## Güncel — Üyelik Fiyatları, %20 KDV, Kazanç Rozetleri ve Sipay Sözleşmesi Tamamlandı (`27d83f7`)
+
+- Kullanıcının doğrudan talimatıyla üyelik paketleri güncellendi:
+  - 1 Aylık: 4.000 TL + %20 KDV = 4.800 TL KDV Dahil (Aylık baz paket).
+  - 6 Aylık: 18.000 TL + %20 KDV = 21.600 TL KDV Dahil (Aylık ort. 3.600 TL KDV Dahil / 3.000 TL + KDV; %25 indirim; 7.200 TL kazanç).
+  - 12 Aylık: 32.400 TL + %20 KDV = 38.880 TL KDV Dahil (Aylık ort. 3.240 TL KDV Dahil / 2.700 TL + KDV; %32.5 indirim; 18.720 TL kazanç).
+- `shared/membership-pricing.js`, `server/src/routes/memberships.js`, `src/pages/Membership.tsx`, `src/components/PaymentModal.tsx` ve `src/pages/AdminSubscriptions.tsx` senkronize edildi.
+- Sipay checkout ve sunucu hash/tutar doğrulaması (`server/src/index.js` ve `PaymentModal.tsx`) yeni tutarlarla uyumlu çalışacak şekilde doğrulandı.
+- `payment-flow.mjs` (Gateway + PG17 PASS), `admin-subscriptions.mjs` (PASS), `tsc --noEmit` (0 hata PASS), `npm run build` (PASS) tamamlandı ve `origin/main`'e (`27d83f7`) pushlandı.
+
+## Önceki — Canlı Yayın Başarıyla Tamamlandı (11 Ekim 2026)
 
 - Kullanıcının doğrudan talimatı üzerine (`codex/e4n-sprint1-foundation` dalındaki tüm commitler: Sprint 6, Sprint 7 ve Sprint 8 / `4d59990`) `main` dalına fast-forward olarak pushlandı (`origin/main`).
 - Vercel üretim ortamına canlı yayın tetiklendi ve canlı uç noktalar doğrulandı:

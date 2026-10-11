@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-F7E2G1MSXK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-F7E2G1MSXK');
+  </script>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="facebook-domain-verification" content="lr4ao7hxtdeqrpbm56lzons5g800yn" />
+
+  <title>Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking</title>
+  <meta name="description" content="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir." />
+  <link rel="canonical" href="https://www.event4network.com/" />
+
+  <!-- Open Graph Metadata -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta property="og:site_name" content="Event4Network" />
+  <meta property="og:title" content="Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking" />
+  <meta property="og:description" content="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir." />
+  <meta property="og:url" content="https://www.event4network.com/" />
+  <meta property="og:image" content="https://www.event4network.com/biz_kimiz_network.png" />
+
+  <!-- Twitter / X Card Metadata -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking" />
+  <meta name="twitter:description" content="Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir." />
+  <meta name="twitter:image" content="https://www.event4network.com/biz_kimiz_network.png" />
+
+  <!-- Structured Data JSON-LD (Organization + WebSite) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.event4network.com/#organization",
+        "name": "Event4Network",
+        "alternateName": "E4N",
+        "url": "https://www.event4network.com/",
+        "logo": "https://www.event4network.com/e4n-logo.png",
+        "description": "Nitelikli iş insanlarını değerlendirme süreciyle bir araya getiren, güvene dayalı iş ilişkileri ve nitelikli referanslar oluşturan seçici bir networking ekosistemidir.",
+        "sameAs": [
+          "https://www.linkedin.com/company/event4network/",
+          "https://www.instagram.com/event4network/"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.event4network.com/#website",
+        "url": "https://www.event4network.com/",
+        "name": "Event4Network",
+        "publisher": {
+          "@id": "https://www.event4network.com/#organization"
+        },
+        "inLanguage": "tr-TR"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-C8a1LFyM.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-C--S_krb.css">
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>

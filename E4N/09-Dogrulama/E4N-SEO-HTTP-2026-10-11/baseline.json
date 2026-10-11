@@ -1,0 +1,705 @@
+{
+  "scope": "Raw HTTP only; no rendered DOM, GSC, CrUX or authenticated data",
+  "sitemapUrlCount": 19,
+  "results": [
+    {
+      "url": "https://www.event4network.com/sitemap.xml",
+      "checkedAt": "2026-10-11T17:18:28.693481+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/sitemap.xml",
+      "contentType": "application/xml",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 2776,
+      "sha256": "83883232fe228ea46526a1a0b96d190ef0967831455c6168f58ca77847742644",
+      "rawFile": "www_event4network_com_sitemap_xml.txt"
+    },
+    {
+      "url": "https://www.event4network.com/",
+      "checkedAt": "2026-10-11T17:18:29.027190+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/e4n-nedir",
+      "checkedAt": "2026-10-11T17:18:29.057455+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/e4n-nedir",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_e4n_nedir.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/nasil-calisir",
+      "checkedAt": "2026-10-11T17:18:29.057976+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/nasil-calisir",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_nasil_calisir.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/uyelik",
+      "checkedAt": "2026-10-11T17:18:29.053038+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/uyelik",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_uyelik.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/degerlendirme-basvurusu",
+      "checkedAt": "2026-10-11T17:18:29.312650+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/degerlendirme-basvurusu",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_degerlendirme_basvurusu.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/etkinlikler",
+      "checkedAt": "2026-10-11T17:18:29.313316+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/etkinlikler",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_etkinlikler.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/egitim",
+      "checkedAt": "2026-10-11T17:18:29.380746+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/egitim",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_egitim.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/blog",
+      "checkedAt": "2026-10-11T17:18:29.401147+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/blog",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_blog.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/topluluklarimiz",
+      "checkedAt": "2026-10-11T17:18:29.549560+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/topluluklarimiz",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_topluluklarimiz.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/hakkimizda",
+      "checkedAt": "2026-10-11T17:18:29.587589+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/hakkimizda",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_hakkimizda.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/sikca-sorulan-sorular",
+      "checkedAt": "2026-10-11T17:18:29.627203+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/sikca-sorulan-sorular",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_sikca_sorulan_sorular.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/iletisim",
+      "checkedAt": "2026-10-11T17:18:29.664128+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/iletisim",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_iletisim.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/kvkk",
+      "checkedAt": "2026-10-11T17:18:29.766629+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/kvkk",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_kvkk.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/on-bilgilendirme-formu",
+      "checkedAt": "2026-10-11T17:18:29.806360+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/on-bilgilendirme-formu",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_on_bilgilendirme_formu.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/kullanim-kosullari",
+      "checkedAt": "2026-10-11T17:18:29.862785+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/kullanim-kosullari",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_kullanim_kosullari.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/gizlilik-politikasi",
+      "checkedAt": "2026-10-11T17:18:29.904376+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/gizlilik-politikasi",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_gizlilik_politikasi.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/cerez-politikasi",
+      "checkedAt": "2026-10-11T17:18:30.004340+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/cerez-politikasi",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_cerez_politikasi.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/mesafeli-satis-sozlesmesi",
+      "checkedAt": "2026-10-11T17:18:30.047888+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/mesafeli-satis-sozlesmesi",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_mesafeli_satis_sozlesmesi.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/iptal-ve-iade-kosullari",
+      "checkedAt": "2026-10-11T17:18:30.099293+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/iptal-ve-iade-kosullari",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_iptal_ve_iade_kosullari.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/robots.txt",
+      "checkedAt": "2026-10-11T17:18:30.147602+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/robots.txt",
+      "contentType": "text/plain; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 362,
+      "sha256": "cd1cc974622fb9cc85779a27219ed6a4d63fcb6bc97ab1c570f7893a3b68a725",
+      "rawFile": "www_event4network_com_robots_txt.txt"
+    },
+    {
+      "url": "https://www.event4network.com/llms.txt",
+      "checkedAt": "2026-10-11T17:18:30.210267+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/llms.txt",
+      "contentType": "text/plain; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 1616,
+      "sha256": "605b8a50f5200a74f2429c565a81a47a1ccd75b06e5735a81d5ebc36252f2109",
+      "rawFile": "www_event4network_com_llms_txt.txt"
+    },
+    {
+      "url": "https://www.event4network.com/ziyaretci-basvurusu",
+      "checkedAt": "2026-10-11T17:18:30.322592+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/ziyaretci-basvurusu",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_ziyaretci_basvurusu.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/public-events",
+      "checkedAt": "2026-10-11T17:18:30.454171+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/public-events",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_public_events.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/auth/login",
+      "checkedAt": "2026-10-11T17:18:30.456755+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/auth/login",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_auth_login.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/auth/register",
+      "checkedAt": "2026-10-11T17:18:30.530138+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/auth/register",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_auth_register.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/dashboard",
+      "checkedAt": "2026-10-11T17:18:30.615675+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/dashboard",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_dashboard.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://www.event4network.com/seo-audit-missing-20261011",
+      "checkedAt": "2026-10-11T17:18:30.710289+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/seo-audit-missing-20261011",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "www_event4network_com_seo_audit_missing_20261011.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "https://event4network.com/",
+      "checkedAt": "2026-10-11T17:18:30.771911+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [
+        {
+          "status": 307,
+          "from": "https://event4network.com/",
+          "to": "https://www.event4network.com/"
+        }
+      ],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "event4network_com.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    },
+    {
+      "url": "http://www.event4network.com/",
+      "checkedAt": "2026-10-11T17:18:30.833831+00:00",
+      "validUtf8": true,
+      "status": 200,
+      "finalUrl": "https://www.event4network.com/",
+      "contentType": "text/html; charset=utf-8",
+      "xRobotsTag": "",
+      "redirects": [
+        {
+          "status": 308,
+          "from": "http://www.event4network.com/",
+          "to": "https://www.event4network.com/"
+        }
+      ],
+      "bytes": 3685,
+      "sha256": "bbf7bcb60d63e42a7a32d0fd3dfa24244630935a94b0adb5a6878030a32e3de8",
+      "rawFile": "http_www_event4network_com.txt",
+      "title": "Event4Network | Kalıcı İş İlişkileri İçin Seçici Networking",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "robots": [],
+      "description": [
+        "Event4Network, şirket sahipleri, kurucu ortaklar ve üst düzey yöneticileri güvene dayalı, seçici bir networking ağı içinde bir araya getirir."
+      ],
+      "h1Count": 0,
+      "anchorCount": 0,
+      "jsonLdCount": 1
+    }
+  ]
+}

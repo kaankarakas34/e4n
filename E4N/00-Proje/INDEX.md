@@ -18,5 +18,7 @@
 | Web kabulü/operasyon | `server/docs/web-release-rehearsal.md`, `server/docs/web-job-operations.md` |
 | Diğer teknik notlar | `rg --files server/docs` ile konu adını bul; bütün dosyaları okuma |
 | Tarihsel tam belge kataloğu | [[E4N/00-Proje/Belge-Katalogu]]; yalnız bu harita yetmezse |
+| SEO & GEO Master Planı | [[E4N/00-Proje/E4N-SEO-Master-Plan-Kaynak-2026-10-11]], [[E4N/07-Sprintler/E4N-SEO-Sprint-ve-Gorev-Plani-2026-10-11]] |
+| Yeni Web Sitesi Metin & Mimari | [[E4N/00-Proje/E4N-Yeni-Web-Sitesi-Sayfa-Metinleri-ve-Yapi-2026-10-11]] |
 
 Görev durumu ve kabul kriterleri Linear'dan alınır. Paket kanıtının tamamı Linear'a veya bu indekse kopyalanmaz. Devam notu en fazla 3.000 karakter hedefler; geçmiş [[E4N/99-Arsiv/Devam-Notu-2026-10-09]] içindedir.

@@ -82,6 +82,11 @@ import { DegerlendirmeBasvurusu } from './pages/DegerlendirmeBasvurusu';
 import { Topluluklarimiz } from './pages/Topluluklarimiz';
 import { ContactPage } from './pages/ContactPage';
 import { KVKK } from './pages/KVKK';
+import { KapaliGruplar } from './pages/KapaliGruplar';
+import { ShufflePage } from './pages/ShufflePage';
+import { KatilimIlkeleri } from './pages/KatilimIlkeleri';
+import { BirebirNetworking } from './pages/BirebirNetworking';
+import { CityNetworkingPage } from './pages/CityNetworkingPage';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 
@@ -157,11 +162,48 @@ function App() {
               <Route path="/create-password" element={<CreatePassword />} />
               <Route path="/auth/pending" element={<PendingApproval />} />
 
-              {/* Legacy Redirects for SEO & backward compatibility */}
+              {/* Legacy & Alias Redirects for SEO & backward compatibility - 404 koruması */}
+              <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+              <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+              <Route path="/signin" element={<Navigate to="/auth/login" replace />} />
+              <Route path="/signup" element={<Navigate to="/auth/register" replace />} />
+              <Route path="/auth/sign-in" element={<Navigate to="/auth/login" replace />} />
+              <Route path="/auth/sign-up" element={<Navigate to="/auth/register" replace />} />
+
               <Route path="/ziyaretci-ol" element={<Navigate to="/ziyaretci-basvurusu" replace />} />
+              <Route path="/basvuru" element={<Navigate to="/ziyaretci-basvurusu" replace />} />
+              <Route path="/degerlendirme" element={<Navigate to="/ziyaretci-basvurusu" replace />} />
+
               <Route path="/public-events" element={<Navigate to="/etkinlikler" replace />} />
+              <Route path="/etkinlik" element={<Navigate to="/etkinlikler" replace />} />
+              <Route path="/networking-etkinlikleri" element={<Navigate to="/etkinlikler" replace />} />
+              <Route path="/networking-etkinlikleri/istanbul" element={<Navigate to="/networking/istanbul" replace />} />
+              <Route path="/networking-etkinlikleri/ankara" element={<Navigate to="/networking/ankara" replace />} />
+              <Route path="/networking-etkinlikleri/izmir" element={<Navigate to="/networking/izmir" replace />} />
+
+              <Route path="/networking" element={<Navigate to="/topluluklarimiz" replace />} />
+              <Route path="/topluluklar" element={<Navigate to="/topluluklarimiz" replace />} />
+              <Route path="/loncalar" element={<Navigate to="/topluluklarimiz" replace />} />
+              <Route path="/loncalar/girisimcilik" element={<Navigate to="/topluluklarimiz" replace />} />
+              <Route path="/gruplar" element={<Navigate to="/kapali-gruplar" replace />} />
+
+              <Route path="/business-networking" element={<Navigate to="/e4n-nedir" replace />} />
+              <Route path="/is-insanlari-kulubu" element={<Navigate to="/e4n-nedir" replace />} />
+              <Route path="/b2b-is-gelistirme" element={<Navigate to="/kapali-gruplar" replace />} />
+              <Route path="/nitelikli-is-yonlendirmesi" element={<Navigate to="/birebir-networking" replace />} />
+              <Route path="/e4n-nasil-calisir" element={<Navigate to="/nasil-calisir" replace />} />
+
               <Route path="/is-agi-rehberi" element={<Navigate to="/blog" replace />} />
               <Route path="/is-agi-rehberi/:slug" element={<Navigate to="/blog/:slug" replace />} />
+
+              <Route path="/sss" element={<Navigate to="/sikca-sorulan-sorular" replace />} />
+              <Route path="/faq" element={<Navigate to="/sikca-sorulan-sorular" replace />} />
+              <Route path="/biz-kimiz" element={<Navigate to="/hakkimizda" replace />} />
+              <Route path="/about" element={<Navigate to="/hakkimizda" replace />} />
+              <Route path="/contact" element={<Navigate to="/iletisim" replace />} />
+              <Route path="/kurallar" element={<Navigate to="/katilim-ilkeleri" replace />} />
+              <Route path="/katilim" element={<Navigate to="/katilim-ilkeleri" replace />} />
+              <Route path="/payment" element={<Navigate to="/ziyaretci" replace />} />
 
               {/* Main Public Pages wrapped with Shared Header & Footer */}
               <Route element={<MainPublicLayout />}>
@@ -170,8 +212,13 @@ function App() {
                 <Route path="/egitim" element={<Navigate to="/uyelik" replace />} />
                 <Route path="/egitim-basvuru" element={<Navigate to="/uyelik" replace />} />
                 <Route path="/nasil-calisir" element={<NasilCalisir />} />
+                <Route path="/kapali-gruplar" element={<KapaliGruplar />} />
+                <Route path="/shuffle" element={<ShufflePage />} />
+                <Route path="/katilim-ilkeleri" element={<KatilimIlkeleri />} />
+                <Route path="/birebir-networking" element={<BirebirNetworking />} />
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />
+                <Route path="/networking/:city" element={<CityNetworkingPage />} />
                 <Route path="/event/:id" element={<EventDetail />} />
                 <Route path="/blog" element={<BlogListPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />

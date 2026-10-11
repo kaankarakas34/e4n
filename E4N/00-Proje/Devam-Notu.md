@@ -1,14 +1,38 @@
-## Son teslim — E4N-288 / Açık WhatsApp loncaları (2026-10-11)
+## Yeni proje — E4N SEO (11 Ekim 2026)
 
-- Kullanıcının yeni talimatı: iç lonca üyeliği/yönetimi kaldırıldı; WhatsApp toplulukları herkese açık.
-- `/topluluklarimiz` giriş gerektirmez; 10 davet bağlantısı doğrudan görünür. Eski lonca adresleri buraya yönlendirilir. Eski lonca API’leri ve rol atamaları 410 ile kapalıdır.
-- Normal kapalı iş grupları ve yönetimleri korunur. Tarihsel lonca kayıtları silinmedi.
-- Web/mobil kaynaklar yönetilen foundation checkout’unda güncellendi; canlı dağıtım yapılmadı. Mobil alt depodaki önceki değişiklikler korunuyor.
-- Kanıt: [[E4N/09-Dogrulama/E4N-288-Acik-WhatsApp-Loncalari-2026-10-11]]. Bu talimat Overseas SEO / S11 kapsamından ayrıdır.
+Linear: https://linear.app/e4n/project/e4n-seo-c47b071086ca . 6 sprint milestone, 16 epic (E4N-289..304) oluşturuldu; toplam 24 epic ve 32 alt görev planlandı. Linear ücretsiz issue kotası kalan 8 epic ve alt görevlerin ayrı issue aktarımını engelledi; tam backlog proje belgesinde.
+E4N-289 In Progress; 30 canlı HTTP yanıtıyla ilk envanter üretildi. Render/GSC/schema/CrUX denetimi kaldı; S1 kapanmadı. Canlı değişiklik yok. Güncel açık WhatsApp loncaları kararı korunur.
+Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2 . Plan: E4N/07-Sprintler/E4N-SEO-Sprint-ve-Gorev-Plani-2026-10-11.md; metin ve mimari: E4N/00-Proje/E4N-Yeni-Web-Sitesi-Sayfa-Metinleri-ve-Yapi-2026-10-11.md. Paket A, Paket B, Paket C ve Paket D tamamlandı (Topluluklarimiz, PublicEventsPage güncellendi; BirebirNetworking yeni sayfası oluşturuldu ve /birebir-networking rotası bağlandı; npx tsc ve npm run build PASS). Sıradaki: Paket E (Hakkimizda, SSS, Iletisim); mevcut aktif işleri kesme.
 
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — P32 / E4N-104 tamamlandı & Sprint 7 Kapandı (Mobil API ve Ekran Sözleşmesi Uzlaştırması)
+## Güncel — Canlı Yayın Başarıyla Tamamlandı (11 Ekim 2026)
+
+- Kullanıcının doğrudan talimatı üzerine (`codex/e4n-sprint1-foundation` dalındaki tüm commitler: Sprint 6, Sprint 7 ve Sprint 8 / `4d59990`) `main` dalına fast-forward olarak pushlandı (`origin/main`).
+- Vercel üretim ortamına canlı yayın tetiklendi ve canlı uç noktalar doğrulandı:
+  - `https://www.event4network.com/api/health-check`: HTTP 200, DB bağlantısı aktif (`dbAttempt: "success"`).
+  - `https://www.event4network.com/api/auth/referral-preview`: HTTP 200 (kayıt öncesi sponsor önizleme API'si devrede).
+  - Güvenlik ve yetki bariyerleri: `/api/lms/courses` (401), `/api/lms/exams` (401), `/api/admin/members` (401), `/api/invoices/test` (401) yetkisiz anonim erişim bariyerleri devrede.
+  - Vercel Cron koruması: `/api/cron/web-jobs/event-completion` (503 / eksik gizli anahtar kapısı devrede).
+  - Canlı web sayfaları: Ana sayfa (200), `/lms` (200) erişilebilir.
+- Sıfır DDL kuralı korundu; 28 sürüm ve 50 tablo invariyantı canlıda sağlam.
+
+## Güncel teslim — LMS-SON / E4N-139 tamamlandı & Sprint 8 Kapandı (Kurs, Eğitim ve Sınav Modülleri)
+
+- **E4N-139 (LMS-SON) Done & Sprint 8 Closed:** E4N E-Akademi (LMS), kurslar, dersler, materyaller, sınavlar, CEU eğitim saatleri ve sunucu otoriter değerlendirme altyapısı uçtan uca devreye alındı; **Sprint 8 (Kurs, Eğitim ve Sınav Modülleri)** bütünüyle tamamlanarak kapatıldı.
+  - **Kaldırılan Placeholder ve Sahte Yapılar:**
+    - `src/App.tsx` içindeki `/lms` ve `/lms/course/:id` rotalarındaki `<ComingSoon />` kaldırıldı; gerçek `LMS` ve `CourseViewer` sayfaları bağlandı.
+    - Sınav değerlendirmesi istemci tarafından sunucuya taşındı (`ExamRunner.tsx` -> `POST /api/lms/exams/:id/attempts`). İstemciye sızan doğru cevaplar maskelendi.
+    - `AdminLMS.tsx`, `AdminExams.tsx`, `AdminCourseEditor.tsx` ve `DocumentsPage.tsx` gerçek API'ye bağlandı.
+    - `useLMSStore.ts` içindeki `deleteCourse` ve `fetchLessons` metotları Express API sözleşmesine bağlandı.
+  - **Sunucu ve Güvenlik Bütünlüğü (`server/src/index.js`):**
+    - 18 yeni LMS rotası doğrudan Express sunucusuna bağlandı (toplam 221 rota).
+    - Mükerrer CEU / puan koruması: `user_achievements` tekil anahtarı kapı olarak kullanılarak aynı sınavı tekrar çözen üyeye mükerrer CEU yazılması engellendi (`first_pass: true`).
+    - Transaction güvenliği (`BEGIN` / `COMMIT`) ile atomik sınav kaydı ve puanlama sağlandı.
+  - **Test ve Kanıt:** `node server/test/lms-course-and-exam-contract.mjs` (İzole PG17 Docker + Express ile 8/8 senaryo PASS: Kurs, ders, materyal, kayıt, sınav keşfi, başarısız deneme, başarılı deneme + CEU + rozet, admin silme ve RBAC sınırları), `node server/test/route-ownership-contract.mjs` (221 rota PASS), `npm run check` (221 rota, 0 TS hatası PASS), `npm run build` (2816 modül temiz Vite derlemesi PASS), `mobile/` dizininde `npx tsc --noEmit` (0 TS hatası PASS). Rapor `server/docs/lms-course-and-exam-lifecycle-report.md` ve Kanıt [[E4N/09-Dogrulama/LMS-SON-Kurs-Egitim-Sinav-Modulleri-2026-10-11]].
+  - **Sprint 8 Kapanış Durumu:** LMS-SON (E4N-139) tamamlandı (**100% DONE**).
+
+## Önceki teslim — P32 / E4N-104 tamamlandı & Sprint 7 Kapandı (Mobil API ve Ekran Sözleşmesi Uzlaştırması)
 
 - **E4N-104 (P32) Done & Sprint 7 Closed:** Mobil istemcinin (React Native / Expo) 39 temel ekran ve modülü, gezinme ve düzen yapısı, merkezi API sabitleri (`mobile/constants/api.ts`) ve Express API sunucusu ile uçtan uca uzlaştırıldı; **Sprint 7 (Mobil Uygulama & Özellik Eşitliği)** bütünüyle tamamlanarak kapatıldı.
   - **Gezinme Düzeni İyileştirmeleri (`mobile/app/features/_layout.tsx` & `admin/_layout.tsx`):**

@@ -23,3 +23,16 @@ Loncalar, uygulama içi üyelik ve yönetim modülü yerine herkese açık Whats
 
 ## Teslim sınırı
 Yönetilen checkout: `C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2`. Ana e4n2 ve Overseas checkout’larına dokunulmadı. Mobil alt depoda önceden mevcut çalışmalar korundu; bu pakette ilgili kaynak dosyalarına hedefli düzenleme yapıldı. Canlı dağıtım, canlı DB yazması veya mobil mağaza yayını yapılmadı.
+
+
+## 11 Ekim — GitHub push ve yayın engeli
+- Kullanıcı GitHub push üzerinden canlı yayın istedi; Antigravity değişiklikleri korunacak. Parent 4d59990 üzerine 491ff662d281ab41273da3899f8ca2fb877fd1f4 main’e fast-forward push edildi. Root kaynak temiz; mevcut dirty mobile submodule commit’e dahil değil. Build ve retirement contract PASS.
+- Vercel GitHub gitSource(main, tam SHA) production isteği 400: Hobby planı mevcut */10 * * * * event-completion cron’unu kabul etmiyor. Cron e2d8adb ile daha önce eklenmiş; kullanıcı seçimi bekleniyor: Pro ile 10 dakika korunsun veya günlük sıklık onayı. Kendiliğinden cron değişikliği yok.
+- Canlı hâlâ dpl_DkkJWrXQ7EQkmrTzGGT5WSKDKRK1 / bad2bbe; lonca kaldırma henüz canlı değil. Sonraki: kullanıcı kararı ardından GitHub kaynaklı deployment, production READY/SHA doğrulama ve output/playwright/verify-guild-live.mjs + scripts/verify-public-guilds.mjs ile anonim canlı kontrol.
+
+
+## 11 Ekim — Canlı yayın tamamlandı
+- Kullanıcı günlük event-completion sıklığını açıkça seçti ve devamı onayladı. vercel.json tek satır değişikliği 4f3d8b6a2edf05c0d3fd8ac286211f968d4130cd commit’iyle GitHub main’e fast-forward push edildi. 0 5 * * * UTC: Hobby saat esnekliğiyle Türkiye 08.00–08.59; subscription-reminders değişmedi.
+- GitHub main/tam SHA kaynağından Vercel production dpl_69iwAcC8V16oRLiYDGu7mZbBQxSs READY; www.event4network.com ve event4network.com aliasları bu yayında. Önceki main/Antigravity geçmişi korundu; force push yok. Mobil yayın kapsam dışı.
+- Canlı PASS: anonim tarayıcıda 10 doğrudan WhatsApp daveti, eski üç lonca web adresi açık topluluk sayfasına yönleniyor; 5 eski lonca API yolu + POWER_TEAM rol yazması 410; normal grup ve admin üyeler 401 ile korunuyor. Ana sayfa/login/hakkımızda 200. Canlı asset /assets/index-C8a1LFyM.js. Kanıt output/playwright/guild-live-verification.json ve public-whatsapp.png. Özel hesap işlemleri için kapsamlı regresyon veya cron’un fiilî günlük çalışması doğrulanmadı; canlı DB yazması/migration uygulanmadı.
+- E4N-288 uygulama ve web canlı yayın tamamlandı. Overseas S11 ayrı; sıradaki NAV-04 header için kullanıcı onayı şartı geçerli, yeni görev otomatik başlatılmadı.

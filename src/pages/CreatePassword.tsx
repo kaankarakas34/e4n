@@ -41,7 +41,7 @@ export function CreatePassword() {
         try {
             await api.createPassword({ token, password });
             setSuccess(true);
-            setTimeout(() => navigate('/login'), 3000);
+            setTimeout(() => navigate('/auth/login'), 3000);
         } catch (err: any) {
             setError(err.message || 'Şifre oluşturulurken bir hata oluştu.');
         } finally {
@@ -63,7 +63,7 @@ export function CreatePassword() {
                         <p className="text-gray-600 mb-6">
                             Şifreniz başarıyla oluşturuldu. Giriş sayfasına yönlendiriliyorsunuz...
                         </p>
-                        <Button onClick={() => navigate('/login')} className="w-full">
+                        <Button onClick={() => navigate('/auth/login')} className="w-full">
                             Giriş Yap
                         </Button>
                     </Card>

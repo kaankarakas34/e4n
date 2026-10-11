@@ -23,6 +23,10 @@ export interface User {
   tax_office?: string;
   billing_address?: string;
   city?: string;
+  explicit_consent?: boolean;
+  kvkk_consent?: boolean;
+  marketing_consent?: boolean;
+  consent_date?: string;
   // Performance Metrics (stats)
   metric_referrals?: number;
   metric_revenue?: number;

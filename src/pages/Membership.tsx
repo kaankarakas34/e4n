@@ -116,7 +116,7 @@ export function MembershipPage() {
         setRetry(value => value + 1);
         setSelectedPlan(null);
         setPaymentModalOpen(false);
-        alert('Ödeme bildirimi alındı. Güncel üyelik bilgilerinizi kontrol edin.');
+        navigate('/membership/activate', { state: { fromPayment: true } });
     };
 
     if (!user) return <div className="p-8 text-center text-gray-600">Lütfen giriş yapın.</div>;

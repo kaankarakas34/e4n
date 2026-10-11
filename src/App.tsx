@@ -88,6 +88,7 @@ import { KatilimIlkeleri } from './pages/KatilimIlkeleri';
 import { BirebirNetworking } from './pages/BirebirNetworking';
 import { CityNetworkingPage } from './pages/CityNetworkingPage';
 import { MemberHandbook } from './pages/MemberHandbook';
+import { MembershipActivationPage } from './pages/MembershipActivationPage';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 
@@ -205,6 +206,11 @@ function App() {
               <Route path="/kurallar" element={<Navigate to="/rehber" replace />} />
               <Route path="/katilim" element={<Navigate to="/katilim-ilkeleri" replace />} />
               <Route path="/payment" element={<Navigate to="/ziyaretci" replace />} />
+              <Route path="/membership/activate" element={<MembershipActivationPage />} />
+              <Route path="/sozlesmeler" element={<MembershipActivationPage />} />
+              <Route path="/sozlesme" element={<Navigate to="/sozlesmeler" replace />} />
+              <Route path="/aktivasyon" element={<Navigate to="/membership/activate" replace />} />
+              <Route path="/checkout/review" element={<MembershipActivationPage defaultTab="pre" />} />
 
               {/* Main Public Pages wrapped with Shared Header & Footer */}
               <Route element={<MainPublicLayout />}>

@@ -819,7 +819,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city FROM users WHERE id = $1', [req.user.id]);
+    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -4041,6 +4041,115 @@ app.post('/api/memberships/:id/remind', authenticateToken, async (req, res) => {
     
     await sendNotification(userId, title, message);
     res.json({ success: true, message: 'Hatırlatma başarıyla gönderildi.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* --- MEMBERSHIP ACTIVATION & LEGAL ONBOARDING --- */
+
+// Get current membership activation & consent status
+app.get('/api/membership/activation-status', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, role, profession, company, account_status,
+              subscription_plan, subscription_end_date,
+              explicit_consent, kvkk_consent, marketing_consent, consent_date
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    const user = rows[0];
+    const isSubscribed = Boolean(
+      user.role === 'ADMIN' ||
+      (user.subscription_plan && user.subscription_end_date && new Date(user.subscription_end_date) > new Date())
+    );
+    res.json({
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      accountStatus: user.account_status,
+      isSubscribed,
+      subscriptionPlan: user.subscription_plan,
+      subscriptionEndDate: user.subscription_end_date,
+      explicitConsent: Boolean(user.explicit_consent),
+      kvkkConsent: Boolean(user.kvkk_consent),
+      marketingConsent: Boolean(user.marketing_consent),
+      consentDate: user.consent_date,
+      isActivated: Boolean(user.explicit_consent && user.kvkk_consent)
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Submit membership activation & legal agreements acceptance
+app.post('/api/membership/activate', authenticateToken, async (req, res) => {
+  try {
+    const {
+      acceptedDocumentIds = [],
+      acknowledgedNoticeId,
+      consumerFlow = false,
+      marketingConsent = false,
+      mediaConsent = false
+    } = req.body || {};
+
+    const requiredDocs = ['01', '02', '03', '04', '06'];
+    if (consumerFlow) requiredDocs.push('07');
+
+    const missingDocs = requiredDocs.filter(id => !acceptedDocumentIds.includes(id));
+    if (missingDocs.length > 0) {
+      return res.status(400).json({
+        error: 'Zorunlu üyelik belgeleri eksiksiz onaylanmalıdır.',
+        missingDocuments: missingDocs
+      });
+    }
+
+    if (acknowledgedNoticeId !== '05' && !acceptedDocumentIds.includes('05')) {
+      return res.status(400).json({
+        error: 'KVKK Aydınlatma Metni (05) bilgilendirmesi onaylanmalıdır.'
+      });
+    }
+
+    const { rows } = await pool.query(
+      `UPDATE users
+       SET explicit_consent = true,
+           kvkk_consent = true,
+           marketing_consent = $1,
+           consent_date = NOW(),
+           account_status = CASE WHEN account_status = 'PENDING' THEN 'ACTIVE' ELSE account_status END
+       WHERE id = $2
+       RETURNING id, name, email, role, profession, company, account_status, subscription_plan, subscription_end_date, explicit_consent, kvkk_consent, marketing_consent, consent_date`,
+      [Boolean(marketingConsent), req.user.id]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+
+    res.json({
+      success: true,
+      message: 'Üyelik aktivasyonunuz ve yasal sözleşmeleriniz başarıyla kaydedildi.',
+      user: rows[0]
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Idempotent legal acceptance / read receipt event log
+app.post('/api/legal/acceptances', authenticateToken, async (req, res) => {
+  try {
+    const { documentId, version = '0.9', action = 'accept' } = req.body || {};
+    if (!documentId) return res.status(400).json({ error: 'documentId parametresi zorunludur.' });
+
+    res.json({
+      success: true,
+      documentId,
+      version,
+      action,
+      userId: req.user.id,
+      timestamp: new Date().toISOString()
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

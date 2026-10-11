@@ -920,6 +920,31 @@ export const api = {
       method: 'POST',
       body: formData
     });
+  },
+  async getMembershipActivationStatus() {
+    return await request('/membership/activation-status');
+  },
+  async activateMembership(data: {
+    acceptedDocumentIds: string[];
+    acknowledgedNoticeId?: string;
+    consumerFlow?: boolean;
+    marketingConsent?: boolean;
+    mediaConsent?: boolean;
+  }) {
+    return await request('/membership/activate', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+  async recordLegalAcceptance(data: {
+    documentId: string;
+    version?: string;
+    action?: 'read' | 'accept';
+  }) {
+    return await request('/legal/acceptances', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 };
 

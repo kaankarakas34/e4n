@@ -6,7 +6,32 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
 
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel — Abone Olmayan Üyeler için Dashboard Kurallar Alanı ve 9 Sekmeli Kapsamlı Çalışma Rehberi Tamamlandı
+## Güncel — E4N Sözleşme Kabul ve Üyelik Aktivasyonu Masası (17 Belge, Demo Birebir Arayüz ve Sunucu Doğrulaması) Tamamlandı
+
+- Kullanıcının doğrudan talimatı ("bu html gibi bişi yapmanı istiyorum abone olduktn sonra bunları kabul etmek zorunda şirket bilgileri var zaten e4n in içinde araştır bul") eksiksiz tamamlandı:
+  - **17 Hukuki Belge ve Resmi Şirket Bilgileri (`src/data/legalDocumentsData.ts`):**
+    - `c:\Users\murat\Downloads\E4N_Sozlesme_Kabul_Ekrani_Demo.html` dosyasındaki tüm 17 hukuki belge eksiksiz sisteme aktarıldı (01 Yıllık Üyelik ve Hizmet Sözleşmesi, 02 Grup Protokolü, 03 Etik Taahhütnamesi, 04 Puanlama/Disiplin, 05 KVKK Aydınlatma, 06 Kullanım Koşulları, 07 Mesafeli Ön Bilgilendirme, 08 İletişim Tercihleri, 09 Başkan Sözleşmesi, 10 Temsilcilik, 11 Sponsorluk, 12 Bilet Satış, 13 Görsel İzni, 14 DPA, 15 Yazılım/IP, 16 Tedarik, H 9-Sekmeli Üye Rehberi).
+    - Proje içindeki resmi şirket kimliği (Pardus Ticaret Haydar Karakaş, Kağıthane Vergi Dairesi, Vergi No: 5130029725, MERSİS: 0513002972500001, KEP: pardus.ticaret@hs01.kep.tr, Çeliktepe Mah. İsmet İnönü Cd. No:11 Daire: 501 Kağıthane/İstanbul, Tel: 0536 319 7697, E-posta: destek@event4network.com / info@event4network.com) dinamik olarak tüm sözleşme şablonlarına yerleştirildi.
+  - **İnteraktif Sözleşme ve Aktivasyon Sayfası (`/membership/activate`, `/sozlesmeler`, `/checkout/review`):**
+    - `src/pages/MembershipActivationPage.tsx` oluşturuldu.
+    - Demo HTML'in tüm UI/UX mimarisi birebir uygulandı:
+      - 3 Adımlı akış göstergesi ("1. Belgeleri İncele", "2. Ödemeyi Tamamla", "3. Üyeliğini Etkinleştir").
+      - İki aşamalı sekme yönetimi ("Ödeme öncesi" ve "Ödeme sonrası aktivasyon").
+      - İşlem türü seçicisi: "Ticari / mesleki üyelik (B2B)" ve "Tüketici koşullu akış (6502 Tüketici Kanunu & Ön Bilgilendirme)".
+      - **Katı Okuma Bariyeri:** Onay kutuları, ilgili belge modal açılıp okunana kadar (`openedDocs`) kilitli (`disabled`) tutulur.
+      - **Modal Belge Okuyucu:** Başlık, kategori rozeti, Markdown formatlı metin/tablolar ve "Okudum ve Anladım" butonuyla tam ekran okuma modali.
+      - **Yapışkan (Sticky) Yan Panel:** Yıllık üyelik özeti, dinamik ilerleme sayacı (örn. `0 / 6`), resmi şirket kimlik kartı ve yasal güvence bildirimleri.
+  - **Ödeme ve Dashboard Zorunlu Akış Entegrasyonu:**
+    - `Membership.tsx` / `PaymentModal.tsx` üzerinden yapılan başarılı ödemeler doğrudan `/membership/activate` rotasına (`state: { fromPayment: true }`) yönlendiriliyor.
+    - `Dashboard.tsx` üzerinde, aboneliği bulunan ancak henüz sözleşmeleri onaylamamış üyeler için en üstte dikkat çeken sarı/turuncu **"⚠️ Sözleşme Onayı & Aktivasyon Bekleniyor"** bildirim panosu gösteriliyor; üyeyi doğrudan aktivasyona sevk ediyor.
+  - **Sunucu API Sözleşmesi (`server/src/index.js`):**
+    - `GET /api/membership/activation-status`: Oturum doğrulamalı hesap, abonelik ve onay durumunu döner.
+    - `POST /api/membership/activate`: Zorunlu belgelerin ('01', '02', '03', '04', '06' + tüketici için '07') ve KVKK'nın ('05') onayını denetler, `explicit_consent = true, kvkk_consent = true, consent_date = NOW(), account_status = 'ACTIVE'` günceller.
+    - `POST /api/legal/acceptances`: Zaman damgalı onay/okuma günlüğü kaydeder.
+    - `GET /api/users/me`: Sözleşme kolonları (`explicit_consent`, `kvkk_consent`, `marketing_consent`, `consent_date`) profil sorgusuna eklendi.
+  - **Test ve Kanıt:** `node server/test/membership-activation-contract.mjs` PASS (7/7 test), `node server/test/route-ownership-static.mjs` PASS (227 rota, 31 sağlayıcı, 0 gölge/hata), `npx tsc --noEmit` PASS (0 hata), `npm run build` PASS (Vite temiz üretim paketi derlendi).
+
+## Önceki — Abone Olmayan Üyeler için Dashboard Kurallar Alanı ve 9 Sekmeli Kapsamlı Çalışma Rehberi Tamamlandı
 
 - Kullanıcının doğrudan talimatıyla dashboard ve rehber deneyimi uyarlandı:
   - **Abone Olmayan Üye Dashboard Davranışı (`Dashboard.tsx`):**

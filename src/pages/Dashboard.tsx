@@ -34,7 +34,8 @@ import {
   BookOpen,
   Shield,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  FileCheck
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -204,6 +205,34 @@ export function Dashboard() {
             <AlertTitle>Hata</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+
+        {/* Sözleşme Onayı ve Aktivasyon Bekleyen Üyeler İçin Banner */}
+        {user && !user.explicit_consent && (
+          <div className="mb-6 p-5 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-950 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-3 bg-amber-200 text-amber-900 rounded-xl flex-shrink-0">
+                <FileCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider mb-1">
+                  <span>⚠️ Sözleşme Onayı & Aktivasyon Bekleniyor</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-amber-950">
+                  Üyeliğinizi Etkinleştirmek İçin Sözleşmeleri Onaylayın
+                </h3>
+                <p className="text-xs sm:text-sm text-amber-800 mt-0.5">
+                  Satın alma işleminiz veya üyeliğiniz tamamlandıktan sonra grup protokolü ve etik kuralları içeren sözleşmeleri onaylamanız zorunludur.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/membership/activate')}
+              className="bg-[#0e1b2d] hover:bg-slate-800 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs md:text-sm whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-all self-end md:self-auto cursor-pointer"
+            >
+              Sözleşmeleri İncele & Onayla ↗
+            </button>
+          </div>
         )}
 
         {/* Ziyaretçi Olun ve Gruptaki Üyelerle Tanışın Banner'ı */}

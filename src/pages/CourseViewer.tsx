@@ -1,64 +1,95 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLMSStore } from '../stores/lmsStore';
-import { ExamRunner } from '../components/lms/ExamRunner';
+import { ExamRunner, ExamRunnerExam, ExamRunnerResult } from '../components/lms/ExamRunner';
+import { api } from '../api/api';
 import { Button } from '../shared/Button';
 import { Card, CardContent } from '../shared/Card';
-import { PlayCircle, CheckCircle, Lock, ChevronLeft, FileText } from 'lucide-react';
+import { PlayCircle, ChevronLeft, FileText, Video, Award, RefreshCw } from 'lucide-react';
+
+interface LmsMaterial { id: string; type: 'doc' | 'video'; title: string; url: string }
+interface LmsLesson { id: string; title: string; order_index: number; materials: LmsMaterial[] }
+interface LmsCourse { id: string; title: string; description?: string; is_enrolled?: number }
+interface LmsExam extends ExamRunnerExam { duration_minutes?: number }
+
+const safeUrl = (url: string) => /^https?:\/\//i.test(url) ? url : undefined;
 
 export function CourseViewer() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { courses, fetchCourses } = useLMSStore();
+    const [course, setCourse] = useState<LmsCourse | null>(null);
+    const [lessons, setLessons] = useState<LmsLesson[]>([]);
+    const [exams, setExams] = useState<LmsExam[]>([]);
+    const [enrolled, setEnrolled] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
-    const [showExam, setShowExam] = useState(false);
+    const [activeExamId, setActiveExamId] = useState<string | null>(null);
+
+    const load = useCallback(async (signal: { stale: boolean }) => {
+        if (!id) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const [detail, lessonRows, examRows, courseRows] = await Promise.all([
+                api.lmsCourseDetail(id),
+                api.lmsCourseLessons(id),
+                api.lmsCourseExams(id),
+                api.lmsCourses(),
+            ]);
+            if (signal.stale) return;
+            setCourse(detail);
+            setLessons(Array.isArray(lessonRows) ? lessonRows : []);
+            setExams(Array.isArray(examRows) ? examRows : []);
+            const listed = Array.isArray(courseRows) ? courseRows.find((c: LmsCourse) => c.id === id) : null;
+            setEnrolled(Boolean(listed?.is_enrolled));
+        } catch {
+            if (!signal.stale) setError('Eğitim yüklenemedi.');
+        } finally {
+            if (!signal.stale) setLoading(false);
+        }
+    }, [id]);
 
     useEffect(() => {
-        if (courses.length === 0) fetchCourses();
-    }, [fetchCourses, courses.length]);
+        const signal = { stale: false };
+        void load(signal);
+        return () => { signal.stale = true; };
+    }, [load]);
 
-    const course = courses.find(c => c.id === id);
+    const handleEnroll = async () => {
+        if (!id) return;
+        try {
+            await api.lmsEnrollCourse(id);
+            setEnrolled(true);
+        } catch {
+            setError('Kayıt işlemi tamamlanamadı.');
+        }
+    };
 
-    if (!course) {
-        return <div className="p-8 text-center">Eğitim bulunamadı.</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
+
+    if (error || !course) {
+        return (
+            <div className="p-8 text-center space-y-4">
+                <p className="text-gray-700">{error || 'Eğitim bulunamadı.'}</p>
+                <div className="flex justify-center gap-2">
+                    <Button variant="outline" onClick={() => navigate('/lms')}>Eğitimlere Dön</Button>
+                    <Button onClick={() => void load({ stale: false })}><RefreshCw className="h-4 w-4 mr-2" />Tekrar Dene</Button>
+                </div>
+            </div>
+        );
     }
 
-    // Mock lessons if not present
-    const lessons = course.lessons || [
-        { id: 'l1', title: 'Giriş ve Temeller', duration: 10, content_type: 'VIDEO', is_preview: true },
-        { id: 'l2', title: 'İleri Teknikler', duration: 15, content_type: 'TEXT', is_preview: false },
-        { id: 'l3', title: 'Örnek Senaryolar', duration: 20, content_type: 'VIDEO', is_preview: false },
-    ];
-
-    // Mock Quiz
-    const mockQuiz = {
-        id: 'q1',
-        lesson_id: 'final',
-        title: 'Final Sınavı',
-        passing_score: 70,
-        max_attempts: 3,
-        randomize_questions: true,
-        show_correct_answers: false,
-        created_at: '',
-        updated_at: '',
-        questions: [
-            { id: '1', quiz_id: 'q1', points: 25, question_text: 'E4N açılımı nedir?', correct_answer: 'Event 4 Network', options: ['Event 4 Network', 'Event For Network', 'Elite 4 Network'], type: 'MULTIPLE_CHOICE', order_index: 0 },
-            { id: '2', quiz_id: 'q1', points: 25, question_text: 'Toplantılar hangi gün yapılır?', correct_answer: 'Salı', options: ['Pazartesi', 'Salı', 'Cuma'], type: 'MULTIPLE_CHOICE', order_index: 1 },
-            { id: '3', quiz_id: 'q1', points: 25, question_text: 'Dayanışma Prensibi ne demektir?', correct_answer: 'Birlikte Kazanma İlkesi', options: ['Al ve Kaç', 'Birlikte Kazanma İlkesi', 'Sadece Kazan'], type: 'MULTIPLE_CHOICE', order_index: 2 },
-            { id: '4', quiz_id: 'q1', points: 25, question_text: 'Bir üye kaç toplantıya katılmazsa üyeliği tehlikeye girer?', correct_answer: '3', options: ['1', '3', '5'], type: 'MULTIPLE_CHOICE', order_index: 3 },
-        ]
-    };
-
-    const handleLessonSelect = (lessonId: string) => {
-        setActiveLessonId(lessonId);
-        setShowExam(false);
-    };
-
     const activeLesson = lessons.find(l => l.id === activeLessonId) || lessons[0];
+    const activeExam = exams.find(e => e.id === activeExamId) || null;
+
+    const submitAttempt = async (answers: Record<string, string>): Promise<ExamRunnerResult> => {
+        if (!activeExam) throw new Error('No active exam');
+        const res = await api.lmsSubmitAttempt(activeExam.id, { answers });
+        return { score: Number(res.score), passed: Boolean(res.passed), pass_score: Number(res.pass_score) };
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
             <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center">
                     <Button variant="ghost" size="sm" onClick={() => navigate('/lms')} className="mr-4">
@@ -67,85 +98,92 @@ export function CourseViewer() {
                     </Button>
                     <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
                 </div>
-                <div className="text-sm text-gray-500">
-                    %0 Tamamlandı
-                </div>
+                {enrolled
+                    ? <span className="text-sm text-green-700 bg-green-50 px-3 py-1 rounded-full">Kayıtlısınız</span>
+                    : <Button size="sm" onClick={() => void handleEnroll()}>Eğitime Kaydol</Button>}
             </div>
 
-            <div className="flex-1 flex max-w-7xl w-full mx-auto p-6 gap-6">
-                {/* Sidebar */}
-                <div className="w-80 flex-shrink-0">
+            <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-6 gap-6">
+                <div className="md:w-80 flex-shrink-0">
                     <Card>
                         <CardContent className="p-0">
                             <div className="p-4 border-b bg-gray-50">
                                 <h3 className="font-semibold text-gray-700">Ders İçeriği</h3>
                             </div>
                             <div className="divide-y">
+                                {lessons.length === 0 && <p className="p-4 text-sm text-gray-500">Henüz ders eklenmemiş.</p>}
                                 {lessons.map((lesson, idx) => (
                                     <button
                                         key={lesson.id}
-                                        onClick={() => handleLessonSelect(lesson.id)}
-                                        className={`w-full text-left p-4 hover:bg-gray-50 flex items-center gap-3 transition-colors ${activeLessonId === lesson.id && !showExam ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
-                                            }`}
+                                        onClick={() => { setActiveLessonId(lesson.id); setActiveExamId(null); }}
+                                        className={`w-full text-left p-4 hover:bg-gray-50 flex items-center gap-3 transition-colors ${!activeExam && activeLesson?.id === lesson.id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''}`}
                                     >
-                                        {idx === 0 ? <CheckCircle className="h-5 w-5 text-green-500" /> : <PlayCircle className="h-5 w-5 text-gray-400" />}
+                                        <PlayCircle className="h-5 w-5 text-gray-400" />
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-gray-900">{idx + 1}. {lesson.title}</p>
-                                            <p className="text-xs text-gray-500">{lesson.duration} dk</p>
+                                            <p className="text-xs text-gray-500">{lesson.materials?.length || 0} materyal</p>
                                         </div>
                                     </button>
                                 ))}
-                                <button
-                                    onClick={() => setShowExam(true)}
-                                    className={`w-full text-left p-4 hover:bg-gray-50 flex items-center gap-3 transition-colors ${showExam ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
-                                        }`}
-                                >
-                                    <FileText className="h-5 w-5 text-indigo-500" />
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-900">Final Sınavı</p>
-                                        <p className="text-xs text-gray-500">70 Puan Gerekli</p>
-                                    </div>
-                                    <LocksIcon />
-                                </button>
+                                {exams.map(exam => (
+                                    <button
+                                        key={exam.id}
+                                        onClick={() => setActiveExamId(exam.id)}
+                                        className={`w-full text-left p-4 hover:bg-gray-50 flex items-center gap-3 transition-colors ${activeExam?.id === exam.id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''}`}
+                                    >
+                                        <Award className="h-5 w-5 text-indigo-500" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900">{exam.title}</p>
+                                            <p className="text-xs text-gray-500">{exam.pass_score} Puan Gerekli</p>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Content Area */}
                 <div className="flex-1">
-                    {showExam ? (
-                        // @ts-ignore - Mock data types slightly off, ignoring for demo
+                    {activeExam ? (
                         <ExamRunner
-                            quiz={mockQuiz as any}
-                            onCancel={() => setShowExam(false)}
-                            onComplete={(score, passed) => {
-                                console.log('Exam completed', score, passed);
-                            }}
+                            key={activeExam.id}
+                            exam={activeExam}
+                            onSubmit={submitAttempt}
+                            onCancel={() => setActiveExamId(null)}
+                            onComplete={() => setActiveExamId(null)}
                         />
-                    ) : (
-                        <Card className="h-full min-h-[500px]">
-                            <CardContent className="p-8 h-full flex flex-col items-center justify-center text-center">
-                                <div className="bg-gray-100 p-8 rounded-full mb-6">
-                                    <PlayCircle className="h-16 w-16 text-indigo-600" />
-                                </div>
+                    ) : activeLesson ? (
+                        <Card className="min-h-[400px]">
+                            <CardContent className="p-8">
                                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{activeLesson.title}</h2>
-                                <p className="text-gray-500 max-w-md mb-8">
-                                    Bu alanda ders videosu veya metin içeriği yer alacak.
-                                    LMS tam entegrasyonu sağlandığında buraya video player gelecektir.
-                                </p>
-                                <Button onClick={() => setShowExam(true)}>
-                                    Dersi Tamamla ve İlerle
-                                </Button>
+                                {course.description && <p className="text-gray-500 mb-6">{course.description}</p>}
+                                {(activeLesson.materials || []).length === 0 ? (
+                                    <p className="text-gray-500">Bu derste henüz materyal yok.</p>
+                                ) : (
+                                    <ul className="space-y-3">
+                                        {activeLesson.materials.map(m => {
+                                            const href = safeUrl(m.url);
+                                            return (
+                                                <li key={m.id} className="flex items-center gap-3 p-4 border rounded-lg">
+                                                    {m.type === 'video' ? <Video className="h-5 w-5 text-indigo-600" /> : <FileText className="h-5 w-5 text-indigo-600" />}
+                                                    <span className="flex-1 text-gray-800">{m.title}</span>
+                                                    {href
+                                                        ? <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline">{m.type === 'video' ? 'İzle' : 'Aç'}</a>
+                                                        : <span className="text-xs text-gray-400">Geçersiz bağlantı</span>}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
                             </CardContent>
+                        </Card>
+                    ) : (
+                        <Card className="min-h-[400px]">
+                            <CardContent className="p-8 text-center text-gray-500">Bu eğitimde henüz içerik bulunmuyor.</CardContent>
                         </Card>
                     )}
                 </div>
             </div>
         </div>
     );
-}
-
-function LocksIcon() {
-    return <Lock className="h-4 w-4 text-gray-300" />;
 }

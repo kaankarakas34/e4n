@@ -24,6 +24,8 @@ const LMS: React.FC = () => {
   const [examStep, setExamStep] = useState(0); // 0: Start, 1: Questions, 2: Result
   const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
   const [examResult, setExamResult] = useState<{ score: number; passed: boolean } | null>(null);
+  const [examSubmitting, setExamSubmitting] = useState(false);
+  const [examError, setExamError] = useState<string | null>(null);
 
   const [exams, setExams] = useState<any[]>([]);
 
@@ -42,31 +44,35 @@ const LMS: React.FC = () => {
     setShowExamModal(true);
   };
 
-  const submitExam = () => {
-    if (!currentExam) return;
-    let correctCount = 0;
-    currentExam.questions.forEach((q: any) => {
-      if (examAnswers[q.id] === q.correct) correctCount++;
-    });
-    const score = (correctCount / currentExam.questions.length) * 100;
-    const passed = score >= currentExam.passingScore;
+  const submitExam = async () => {
+    if (!currentExam?.id || examSubmitting) return;
+    setExamSubmitting(true);
+    setExamError(null);
+    try {
+      const res = await api.lmsSubmitAttempt(currentExam.id, { answers: examAnswers });
+      const passed = Boolean(res.passed);
+      setExamResult({ score: Number(res.score), passed });
+      setExamStep(2);
+      api.lmsExams().then(setExams).catch(console.error);
 
-    setExamResult({ score, passed });
-    setExamStep(2);
-
-    if (passed && user) {
-      const newAchievement = {
-        id: Math.random().toString(),
-        title: `${currentExam.title} Başarısı`,
-        description: 'Sınavı başarıyla tamamladınız.',
-        icon: 'Award',
-        earned_at: new Date().toISOString(),
-        type: 'QUIZ_PASS' as const
-      };
-      const currentAchievements = user.achievements || [];
-      if (!currentAchievements.some(a => a.title === newAchievement.title)) {
-        updateUser({ achievements: [...currentAchievements, newAchievement] });
+      if (passed && user) {
+        const newAchievement = {
+          id: Math.random().toString(),
+          title: `${currentExam.title} Başarısı`,
+          description: 'Sınavı başarıyla tamamladınız.',
+          icon: 'Award',
+          earned_at: new Date().toISOString(),
+          type: 'QUIZ_PASS' as const
+        };
+        const currentAchievements = user.achievements || [];
+        if (!currentAchievements.some(a => a.title === newAchievement.title)) {
+          updateUser({ achievements: [...currentAchievements, newAchievement] });
+        }
       }
+    } catch {
+      setExamError('Sınav sonucu kaydedilemedi. Cevaplarınız korunuyor; tekrar gönderebilirsiniz.');
+    } finally {
+      setExamSubmitting(false);
     }
   };
 
@@ -471,12 +477,13 @@ const LMS: React.FC = () => {
                       )}
                     </div>
                   )}
+                  {examError && <p role="alert" className="mt-4 text-sm text-red-600">{examError}</p>}
                 </div>
 
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-3">
                   {examStep === 1 && (
-                    <Button onClick={submitExam} disabled={Object.keys(examAnswers).length !== currentExam.questions.length}>
-                      Sınavı Tamamla
+                    <Button onClick={submitExam} disabled={examSubmitting || Object.keys(examAnswers).length !== currentExam.questions.length}>
+                      {examSubmitting ? 'Gönderiliyor...' : 'Sınavı Tamamla'}
                     </Button>
                   )}
                   {examStep === 2 && (

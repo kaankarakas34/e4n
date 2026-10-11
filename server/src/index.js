@@ -2616,7 +2616,9 @@ app.put('/api/admin/public-visitors/:id/status', authenticateToken, async (req, 
 // --- NOTIFICATIONS ---
 
 
-// --- LMS (E-Akademi) ---
+// --- LMS (E-Akademi & Sınavlar) ---
+
+// Kurslar Listesi (Kullanıcı / Genel görünüm)
 app.get('/api/courses', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -2631,12 +2633,13 @@ app.get('/api/courses', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Kurs Detayı (Dersler ile birlikte)
 app.get('/api/courses/:id', authenticateToken, async (req, res) => {
   try {
     const courseRes = await pool.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
     if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
     
-    const lessonsRes = await pool.query('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC', [req.params.id]);
+    const lessonsRes = await pool.query('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC, created_at ASC', [req.params.id]);
     
     res.json({
       ...courseRes.rows[0],
@@ -2645,12 +2648,483 @@ app.get('/api/courses/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/lms/exams', authenticateToken, async (req, res) => {
+// LMS Kurs Listesi (Admin tümünü, Üye aktifleri görür)
+// Members must never receive answer keys; grading happens only in POST /api/lms/exams/:id/attempts.
+const lmsQuestionForMember = ({ correct_answers, correct, ...question }) => question;
+const lmsExamsForViewer = (rows, user) => user.role === 'ADMIN'
+  ? rows
+  : rows.map(exam => ({ ...exam, questions: (exam.questions || []).map(lmsQuestionForMember) }));
+
+app.get('/api/lms/courses', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM exams ORDER BY created_at DESC');
+    const isAdmin = req.user && req.user.role === 'ADMIN';
+    const query = isAdmin
+      ? `SELECT c.*, 
+                (SELECT count(*)::int FROM lessons l WHERE l.course_id = c.id) as lesson_count,
+                (SELECT count(*)::int FROM enrollments e WHERE e.course_id = c.id AND e.user_id = $1) as is_enrolled
+         FROM courses c
+         ORDER BY c.created_at DESC`
+      : `SELECT c.*, 
+                (SELECT count(*)::int FROM lessons l WHERE l.course_id = c.id) as lesson_count,
+                (SELECT count(*)::int FROM enrollments e WHERE e.course_id = c.id AND e.user_id = $1) as is_enrolled
+         FROM courses c
+         WHERE c.status = 'ACTIVE'
+         ORDER BY c.created_at DESC`;
+    const { rows } = await pool.query(query, [req.user.id]);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// LMS Kurs Detayı
+app.get('/api/lms/courses/:id', authenticateToken, async (req, res) => {
+  try {
+    const courseRes = await pool.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
+    if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    
+    const lessonsRes = await pool.query('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC, created_at ASC', [req.params.id]);
+    const examsRes = await pool.query('SELECT * FROM exams WHERE course_id = $1 ORDER BY created_at DESC', [req.params.id]);
+    
+    res.json({
+      ...courseRes.rows[0],
+      lessons: lessonsRes.rows,
+      exams: examsRes.rows
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Yeni Kurs Oluşturma (Admin)
+app.post('/api/lms/courses', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { title, description, status = 'ACTIVE', group_id } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Kurs başlığı zorunludur' });
+  try {
+    const validStatus = status === 'DRAFT' ? 'DRAFT' : 'ACTIVE';
+    const { rows } = await pool.query(
+      `INSERT INTO courses (title, description, status, created_by, group_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [title.trim(), description || '', validStatus, req.user.id, group_id || null]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kurs Güncelleme (Admin)
+app.put('/api/lms/courses/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { title, description, status, group_id } = req.body;
+  try {
+    const existing = await pool.query('SELECT * FROM courses WHERE id = $1', [req.params.id]);
+    if (existing.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    const current = existing.rows[0];
+    const newStatus = status ? (status === 'DRAFT' ? 'DRAFT' : 'ACTIVE') : current.status;
+    const { rows } = await pool.query(
+      `UPDATE courses
+       SET title = COALESCE($1, title),
+           description = COALESCE($2, description),
+           status = $3,
+           group_id = COALESCE($4, group_id)
+       WHERE id = $5 RETURNING *`,
+      [title ? title.trim() : null, description !== undefined ? description : null, newStatus, group_id !== undefined ? group_id : null, req.params.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kurs Silme (Admin)
+app.delete('/api/lms/courses/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await pool.query('DELETE FROM courses WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kursa Ait Dersleri Listeleme
+app.get('/api/lms/courses/:id/lessons', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT l.*,
+             COALESCE(
+               (SELECT json_agg(m ORDER BY m.created_at ASC)
+                FROM materials m WHERE m.lesson_id = l.id),
+               '[]'::json
+             ) as materials
+      FROM lessons l
+      WHERE l.course_id = $1
+      ORDER BY l.order_index ASC, l.created_at ASC
+    `, [req.params.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kursa Ders Ekleme (Admin)
+app.post('/api/lms/courses/:id/lessons', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { title, order_index = 0 } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Ders başlığı zorunludur' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO lessons (course_id, title, order_index)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [req.params.id, title.trim(), Number(order_index) || 0]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Ders Güncelleme (Admin)
+app.put('/api/lms/lessons/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { title, order_index } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE lessons
+       SET title = COALESCE($1, title),
+           order_index = COALESCE($2, order_index)
+       WHERE id = $3 RETURNING *`,
+      [title ? title.trim() : null, order_index !== undefined ? Number(order_index) : null, req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Lesson not found' });
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Ders Silme (Admin)
+app.delete('/api/lms/lessons/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await pool.query('DELETE FROM lessons WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Lesson not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Derse Ait Materyalleri Listeleme
+app.get('/api/lms/lessons/:id/materials', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM materials WHERE lesson_id = $1 ORDER BY created_at ASC', [req.params.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Derse Materyal Ekleme (Admin)
+app.post('/api/lms/lessons/:id/materials', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { type = 'doc', title, url } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Materyal başlığı zorunludur' });
+  if (!url || !url.trim()) return res.status(400).json({ error: 'Materyal URL zorunludur' });
+  const validType = type === 'video' ? 'video' : 'doc';
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO materials (lesson_id, type, title, url)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [req.params.id, validType, title.trim(), url.trim()]
+    );
+    res.status(201).json(rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Materyal Silme (Admin)
+app.delete('/api/lms/materials/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await pool.query('DELETE FROM materials WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Material not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kursa Kaydolma (Enrollment)
+app.post('/api/lms/courses/:id/enroll', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO enrollments (course_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (course_id, user_id) DO NOTHING
+       RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    res.json({
+      enrolled: true,
+      course_id: req.params.id,
+      user_id: req.user.id,
+      created: rows.length > 0
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Sınavları Listeleme
+app.get('/api/lms/exams', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT e.*,
+             COALESCE(
+               (SELECT json_agg(
+                  json_build_object(
+                    'id', q.id,
+                    'exam_id', q.exam_id,
+                    'type', q.type,
+                    'question_text', q.question_text,
+                    'text', q.question_text,
+                    'options', q.options,
+                    'correct_answers', q.correct_answers,
+                    'correct', q.correct_answers->>0,
+                    'score', q.score
+                  ) ORDER BY q.id
+                ) FROM questions q WHERE q.exam_id = e.id),
+               '[]'::json
+             ) as questions,
+             (SELECT count(*)::int FROM exam_attempts ea WHERE ea.exam_id = e.id AND ea.user_id = $1) as my_attempts,
+             (SELECT MAX(score)::int FROM exam_attempts ea WHERE ea.exam_id = e.id AND ea.user_id = $1) as my_best_score,
+             (SELECT bool_or(passed) FROM exam_attempts ea WHERE ea.exam_id = e.id AND ea.user_id = $1) as my_passed
+      FROM exams e
+      ORDER BY e.created_at DESC
+    `, [req.user.id]);
+    res.json(lmsExamsForViewer(rows, req.user));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Kursa Bağlı Sınavları Listeleme
+app.get('/api/lms/courses/:id/exams', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT e.*,
+             COALESCE(
+               (SELECT json_agg(
+                  json_build_object(
+                    'id', q.id,
+                    'exam_id', q.exam_id,
+                    'type', q.type,
+                    'question_text', q.question_text,
+                    'text', q.question_text,
+                    'options', q.options,
+                    'correct_answers', q.correct_answers,
+                    'correct', q.correct_answers->>0,
+                    'score', q.score
+                  ) ORDER BY q.id
+                ) FROM questions q WHERE q.exam_id = e.id),
+               '[]'::json
+             ) as questions
+      FROM exams e
+      WHERE e.course_id = $1
+      ORDER BY e.created_at DESC
+    `, [req.params.id]);
+    res.json(lmsExamsForViewer(rows, req.user));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Sınav Sorularını Getirme
+app.get('/api/lms/exams/:id/questions', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, exam_id, type, question_text, question_text as text,
+             options, correct_answers, correct_answers->>0 as correct, score
+      FROM questions
+      WHERE exam_id = $1
+      ORDER BY id ASC
+    `, [req.params.id]);
+    res.json(req.user.role === 'ADMIN' ? rows : rows.map(lmsQuestionForMember));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Sınav Oluşturma veya Güncelleme (Admin)
+app.post('/api/lms/exams', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  const { id, title, duration, duration_minutes, passingScore, pass_score, course_id, questions = [] } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Sınav başlığı zorunludur' });
+  const durationVal = Number(duration || duration_minutes) || 30;
+  const passScoreVal = Number(passingScore || pass_score) || 60;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    let examId = id;
+    let examRow;
+
+    if (examId) {
+      const updateRes = await client.query(
+        `UPDATE exams
+         SET title = $1, duration_minutes = $2, pass_score = $3
+         WHERE id = $4 RETURNING *`,
+        [title.trim(), durationVal, passScoreVal, examId]
+      );
+      if (updateRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Exam not found' });
+      }
+      examRow = updateRes.rows[0];
+      await client.query('DELETE FROM questions WHERE exam_id = $1', [examId]);
+    } else {
+      let targetCourseId = course_id;
+      if (!targetCourseId) {
+        const firstCourse = await client.query('SELECT id FROM courses LIMIT 1');
+        if (firstCourse.rows.length > 0) {
+          targetCourseId = firstCourse.rows[0].id;
+        } else {
+          const defaultCourse = await client.query(
+            "INSERT INTO courses (title, description, status) VALUES ('Genel Akademi Eğitimi', 'Temel Sistem Eğitimi', 'ACTIVE') RETURNING id"
+          );
+          targetCourseId = defaultCourse.rows[0].id;
+        }
+      }
+      const insertRes = await client.query(
+        `INSERT INTO exams (course_id, title, duration_minutes, pass_score)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [targetCourseId, title.trim(), durationVal, passScoreVal]
+      );
+      examRow = insertRes.rows[0];
+      examId = examRow.id;
+    }
+
+    if (Array.isArray(questions) && questions.length > 0) {
+      for (const q of questions) {
+        const qText = q.text || q.question_text || '';
+        const qOptions = Array.isArray(q.options) ? q.options : [];
+        const qCorrect = q.correct_answers ? (Array.isArray(q.correct_answers) ? q.correct_answers : [q.correct_answers]) : (q.correct ? [q.correct] : []);
+        const qScore = Number(q.score || q.points) || 10;
+        const qType = q.type === 'multi' ? 'multi' : 'single';
+
+        await client.query(
+          `INSERT INTO questions (exam_id, type, question_text, options, correct_answers, score)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [examId, qType, qText, JSON.stringify(qOptions), JSON.stringify(qCorrect), qScore]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    const questionsRes = await pool.query(
+      `SELECT id, exam_id, type, question_text, question_text as text,
+              options, correct_answers, correct_answers->>0 as correct, score
+       FROM questions WHERE exam_id = $1 ORDER BY id ASC`,
+      [examId]
+    );
+
+    res.json({
+      ...examRow,
+      questions: questionsRes.rows
+    });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// LMS Sınav Silme (Admin)
+app.delete('/api/lms/exams/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await pool.query('DELETE FROM exams WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LMS Sınav Çözümü Gönderme (Attempt Submission & Otomatik Puanlama & Başarı Ödülü)
+app.post('/api/lms/exams/:id/attempts', authenticateToken, async (req, res) => {
+  const { answers = {}, started_at } = req.body || {};
+  const examId = req.params.id;
+  const userId = req.user.id;
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+    return res.status(400).json({ error: 'answers must be an object keyed by question id' });
+  }
+
+  const client = await pool.connect();
+  let committed = false;
+  try {
+    await client.query('BEGIN');
+    const examRes = await client.query('SELECT * FROM exams WHERE id = $1', [examId]);
+    if (examRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Exam not found' });
+    }
+    const exam = examRes.rows[0];
+
+    const { rows: questions } = await client.query('SELECT * FROM questions WHERE exam_id = $1', [examId]);
+    if (questions.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Bu sınavda soru bulunmuyor' });
+    }
+
+    let earnedScore = 0;
+    let totalScore = 0;
+    for (const q of questions) {
+      const qScore = Number(q.score) || 10;
+      totalScore += qScore;
+      const userAns = answers[q.id];
+      if (userAns === undefined || userAns === null) continue;
+      const correctAnswers = Array.isArray(q.correct_answers)
+        ? q.correct_answers
+        : (typeof q.correct_answers === 'string' ? JSON.parse(q.correct_answers || '[]') : [q.correct_answers]);
+      if (correctAnswers.some(ca => String(ca).trim() === String(userAns).trim())) earnedScore += qScore;
+    }
+
+    const calculatedScore = Math.round((earnedScore / totalScore) * 100);
+    const isPassed = calculatedScore >= (Number(exam.pass_score) || 60);
+
+    const attemptRes = await client.query(
+      `INSERT INTO exam_attempts (exam_id, user_id, started_at, completed_at, score, passed, answers)
+       VALUES ($1, $2, COALESCE($3::timestamptz, NOW()), NOW(), $4, $5, $6) RETURNING *`,
+      [examId, userId, started_at || null, calculatedScore, isPassed, JSON.stringify(answers)]
+    );
+
+    let firstPass = false;
+    if (isPassed) {
+      // The unique (user_id, title) achievement is the idempotency gate: CEU hours are granted once per exam.
+      const achievement = await client.query(
+        `INSERT INTO user_achievements (user_id, title, description, icon, earned_at)
+         VALUES ($1, $2, $3, 'Award', NOW())
+         ON CONFLICT (user_id, title) DO NOTHING RETURNING id`,
+        [userId, `${exam.title} Başarısı`, 'Sınavı başarıyla tamamladınız.']
+      );
+      firstPass = achievement.rowCount === 1;
+      if (firstPass) {
+        await client.query(
+          `INSERT INTO education (user_id, title, hours, completed_date, type, notes)
+           VALUES ($1, $2, 1.0, NOW(), 'WEBINAR', $3)`,
+          [userId, `${exam.title} Sınavı Tamamlandı`, 'LMS Sınav Başarısı']
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    committed = true;
+
+    if (firstPass) {
+      try { await calculateMemberScore(userId); }
+      catch (scoringErr) { console.error('Member score recalculation error:', scoringErr); }
+    }
+
+    res.status(201).json({
+      attempt: attemptRes.rows[0],
+      score: calculatedScore,
+      passed: isPassed,
+      pass_score: exam.pass_score,
+      first_pass: firstPass
+    });
+  } catch (e) {
+    if (!committed) await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// LMS Sınav Çözüm Geçmişi
+app.get('/api/lms/exams/:id/attempts', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM exam_attempts WHERE exam_id = $1 AND user_id = $2 ORDER BY started_at DESC',
+      [req.params.id, req.user.id]
+    );
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // --- SYSTEM SETTINGS (Email Templates etc) ---
 app.get('/api/admin/system-settings', authenticateToken, async (req, res) => {
@@ -3430,10 +3904,6 @@ app.delete('/api/admin/accounting/payments/:type/:id', authenticateToken, async 
   }
 });
 
-/* --- LMS Endpoints (Keep existing logic mostly) --- */
-app.get('/api/lms/courses', authenticateToken, async (req, res) => {
-  try { const { rows } = await pool.query('SELECT * FROM courses WHERE status=$1', ['ACTIVE']); res.json(rows); } catch (e) { res.status(500).json({ error: e.message }) }
-});
 
 // Substitutes Endpoint
 app.get('/api/groups/:id/substitutes', authenticateToken, async (req, res) => {

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { ArrowLeft, Plus, Trash2, Save, GripVertical, Video, FileText, HelpCircle } from 'lucide-react';
 import { Course, Lesson } from '../types';
+import { api } from '../api/api';
 
 export function AdminCourseEditor() {
     const { id } = useParams<{ id: string }>();
@@ -49,14 +50,15 @@ export function AdminCourseEditor() {
         setIsSaving(true);
         try {
             if (isNew) {
-                // For new course, we must create it first to get an ID
-                // Then we can add lessons.
-                // This logic implies specific flow. 
-                // For simplicity: Mock success or use store
-                // Note: basic createCourse in store generates ID via mockup usually if no backend
-                alert('Yeni kurs oluşturma henüz tam entegre değil (Demo).');
+                await api.lmsCreateCourse({
+                    title: courseData.title || 'Yeni Kurs',
+                    description: courseData.description || '',
+                    status: courseData.status || 'ACTIVE'
+                });
+                alert('Kurs başarıyla oluşturuldu.');
                 navigate('/admin/lms');
             } else if (id) {
+                await api.lmsUpdateCourse(id, courseData);
                 await updateCourse(id, courseData);
                 alert('Kurs bilgileri güncellendi.');
             }

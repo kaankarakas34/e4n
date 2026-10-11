@@ -7,6 +7,7 @@ import { Modal } from '../shared/Modal';
 import { Edit, Trash2, Plus, BookOpen, Video, FileText, CheckCircle, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
+import { DocumentsPage } from './DocumentsPage';
 
 export function AdminLMS() {
     const navigate = useNavigate();
@@ -15,20 +16,12 @@ export function AdminLMS() {
 
     const [activeTab, setActiveTab] = useState<'courses' | 'documents' | 'exams'>('courses');
 
-    // Document State (Mock)
-    const [docs, setDocs] = useState<any[]>([]);
-    const [isDocModalOpen, setIsDocModalOpen] = useState(false);
-
     // Exam State
     const [exams, setExams] = useState<any[]>([]);
 
     useEffect(() => {
         fetchCourses();
         api.lmsExams().then(setExams).catch(console.error);
-        setDocs([
-            { id: '1', title: 'Liderlik El Kitabı.pdf', type: 'PDF', created_at: '2024-11-01' },
-            { id: '2', title: 'Toplantı Kuralları.docx', type: 'DOCX', created_at: '2024-11-05' }
-        ]);
     }, [fetchCourses]);
 
     if (!user || user.role !== 'ADMIN') return <div className="p-8">Erişim Kısıtlı</div>;
@@ -136,40 +129,7 @@ export function AdminLMS() {
                 )}
 
                 {activeTab === 'documents' && (
-                    <div>
-                        <div className="flex justify-end mb-4">
-                            <Button onClick={() => setIsDocModalOpen(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Döküman Yükle
-                            </Button>
-                        </div>
-                        <div className="bg-white rounded-lg shadow overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dosya Adı</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tür</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Yüklenme Tarihi</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {docs.map(doc => (
-                                        <tr key={doc.id}>
-                                            <td className="px-6 py-4 font-medium text-gray-900">{doc.title}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">{doc.type}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">{doc.created_at}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <Button size="sm" variant="ghost" onClick={() => { if (confirm('Sil?')) setDocs(docs.filter(d => d.id !== doc.id)); }}>
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DocumentsPage embedded />
                 )}
 
                 {activeTab === 'exams' && (
@@ -219,22 +179,6 @@ export function AdminLMS() {
                     </div>
                 )}
             </div>
-
-            {/* Doc Modal */}
-            <Modal open={isDocModalOpen} onClose={() => setIsDocModalOpen(false)} title="Yeni Döküman Yükle">
-                <div className="p-4 space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
-                        <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Dosyayı buraya sürükleyin veya seçin</p>
-                        <Button size="sm" variant="outline" className="mt-2">Dosya Seç</Button>
-                    </div>
-                    <input type="text" placeholder="Döküman Adı (Opsiyonel)" className="border rounded p-2 text-sm w-full" />
-                    <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="secondary" onClick={() => setIsDocModalOpen(false)}>İptal</Button>
-                        <Button onClick={() => { alert('Demo: Yüklendi'); setIsDocModalOpen(false); }}>Yükle</Button>
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 }

@@ -210,9 +210,9 @@ function App() {
               <Route path="/education" element={<Education />} />
               <Route path="/profile/:id" element={<PublicProfile />} />
 
-              {/* LMS Routes - Temporarily Disabled */}
-              <Route path="/lms" element={<ComingSoon />} />
-              <Route path="/lms/course/:id" element={<ComingSoon />} />
+              {/* LMS Routes */}
+              <Route path="/lms" element={<LMS />} />
+              <Route path="/lms/course/:id" element={<CourseViewer />} />
 
               <Route path="/profile" element={<Profile />} />
               <Route path="/membership" element={<MembershipPage />} />

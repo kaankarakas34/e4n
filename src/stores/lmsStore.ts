@@ -211,43 +211,27 @@ export const useLMSStore = create<LMSStore>()(
       error: null,
 
       // Course operations
-      fetchCourses: async (chapterId?: string) => {
+      fetchCourses: async (_chapterId?: string) => {
         set({ loading: true, error: null });
         try {
           const courses = await import('../api/api').then(m => m.api.lmsGetCourses());
-          if (courses && courses.length > 0) {
+          if (Array.isArray(courses)) {
             set({ courses, loading: false });
           } else {
-            set({ courses: mockCourses, loading: false });
+            set({ courses: [], loading: false });
           }
         } catch (error) {
           console.error('Error fetching courses:', error);
-          set({ courses: mockCourses, loading: false });
+          set({ error: 'Eğitimler yüklenemedi', loading: false });
         }
       },
 
       fetchCourse: async (id: string) => {
         set({ loading: true, error: null });
         try {
-          if (supabase) {
-            const { data, error } = await supabase
-              .from('courses')
-              .select(`
-                *,
-                instructor:users!instructor_id(*),
-                lessons(*)
-              `)
-              .eq('id', id)
-              .single();
-
-            if (error) throw error;
-            set({ loading: false });
-            return data;
-          } else {
-            const course = mockCourses.find(c => c.id === id);
-            set({ loading: false });
-            return course || null;
-          }
+          const course = await import('../api/api').then(m => m.api.lmsCourseDetail(id));
+          set({ loading: false });
+          return course || null;
         } catch (error) {
           console.error('Error fetching course:', error);
           set({ error: 'Eğitim yüklenirken hata oluştu', loading: false });
@@ -339,14 +323,8 @@ export const useLMSStore = create<LMSStore>()(
       deleteCourse: async (id: string) => {
         set({ loading: true, error: null });
         try {
-          if (supabase) {
-            const { error } = await supabase
-              .from('courses')
-              .delete()
-              .eq('id', id);
-
-            if (error) throw error;
-          }
+          const apiModule = await import('../api/api');
+          await apiModule.api.lmsDeleteCourse(id);
 
           set(state => ({
             courses: state.courses.filter(c => c.id !== id),
@@ -363,19 +341,9 @@ export const useLMSStore = create<LMSStore>()(
       fetchLessons: async (courseId: string) => {
         set({ loading: true, error: null });
         try {
-          if (supabase) {
-            const { data, error } = await supabase
-              .from('lessons')
-              .select('*')
-              .eq('course_id', courseId)
-              .order('order_index', { ascending: true });
-
-            if (error) throw error;
-            set({ lessons: data || [], loading: false });
-          } else {
-            const courseLessons = mockLessons.filter(l => l.course_id === courseId);
-            set({ lessons: courseLessons, loading: false });
-          }
+          const apiModule = await import('../api/api');
+          const lessons = await apiModule.api.lmsCourseLessons(courseId);
+          set({ lessons: Array.isArray(lessons) ? lessons : [], loading: false });
         } catch (error) {
           console.error('Error fetching lessons:', error);
           set({ error: 'Dersler yüklenirken hata oluştu', loading: false });

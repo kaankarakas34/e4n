@@ -1,96 +1,88 @@
 import { useState } from 'react';
 import { Card, CardContent } from '../../shared/Card';
 import { Button } from '../../shared/Button';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import type { Quiz } from '../../types';
+import { CheckCircle, XCircle } from 'lucide-react';
+
+export interface ExamRunnerQuestion {
+    id: string;
+    question_text: string;
+    options: string[];
+}
+
+export interface ExamRunnerExam {
+    id: string;
+    title: string;
+    pass_score: number;
+    questions: ExamRunnerQuestion[];
+}
+
+export interface ExamRunnerResult {
+    score: number;
+    passed: boolean;
+    pass_score: number;
+}
 
 interface ExamRunnerProps {
-    quiz: Quiz;
-    onComplete: (score: number, passed: boolean) => void;
+    exam: ExamRunnerExam;
+    /** Sends answers to the server; the returned result is the only score shown. */
+    onSubmit: (answers: Record<string, string>) => Promise<ExamRunnerResult>;
+    onComplete: (result: ExamRunnerResult) => void;
     onCancel: () => void;
 }
 
-export function ExamRunner({ quiz, onComplete, onCancel }: ExamRunnerProps) {
+export function ExamRunner({ exam, onSubmit, onComplete, onCancel }: ExamRunnerProps) {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string>>({});
-    const [finished, setFinished] = useState(false);
-    const [score, setScore] = useState(0);
-    const [passed, setPassed] = useState(false);
+    const [result, setResult] = useState<ExamRunnerResult | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const questions = quiz.questions || [];
+    const questions = exam.questions || [];
     const currentQuestion = questions[currentQuestionIndex];
 
     const handleOptionSelect = (option: string) => {
-        setAnswers(prev => ({
-            ...prev,
-            [currentQuestion.id]: option
-        }));
+        if (!currentQuestion || submitting) return;
+        setAnswers(prev => ({ ...prev, [currentQuestion.id]: option }));
     };
 
-    const handleNext = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        } else {
-            finishExam();
+    const finishExam = async () => {
+        if (submitting) return;
+        setSubmitting(true);
+        setError(null);
+        try {
+            setResult(await onSubmit(answers));
+        } catch {
+            setError('Sınav sonucu kaydedilemedi. Cevaplarınız korunuyor; tekrar gönderebilirsiniz.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    const finishExam = () => {
-        let correctCount = 0;
-        let totalPoints = 0;
-        let earnedPoints = 0;
-
-        questions.forEach(q => {
-            totalPoints += q.points;
-            if (answers[q.id] === q.correct_answer) {
-                correctCount++;
-                earnedPoints += q.points;
-            }
-        });
-
-        // If totalPoints is 0 (bad data), avoid NaN
-        const finalScore = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
-
-        // Explicit 70 passing score requirement
-        const isPassed = finalScore >= (quiz.passing_score || 70);
-
-        setScore(finalScore);
-        setPassed(isPassed);
-        setFinished(true);
+    const handleNext = () => {
+        if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(prev => prev + 1);
+        else void finishExam();
     };
 
-    if (finished) {
+    if (result) {
         return (
             <Card className="max-w-2xl mx-auto mt-8">
                 <CardContent className="p-8 text-center">
-                    {passed ? (
-                        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                    ) : (
-                        <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                    )}
-
+                    {result.passed
+                        ? <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                        : <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />}
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        {passed ? 'Tebrikler! Sınavı Geçtiniz.' : 'Üzgünüz, Sınavdan Kaldınız.'}
+                        {result.passed ? 'Tebrikler! Sınavı Geçtiniz.' : 'Üzgünüz, Sınavdan Kaldınız.'}
                     </h2>
-
-                    <div className="text-4xl font-bold bg-gray-100 dark:bg-gray-800 p-4 rounded-lg inline-block my-4">
-                        {score.toFixed(0)} Puan
+                    <div className="text-4xl font-bold bg-gray-100 p-4 rounded-lg inline-block my-4">
+                        {result.score} Puan
                     </div>
-
-                    <p className="text-gray-600 mb-6">
-                        Geçme Notu: {quiz.passing_score || 70}
-                    </p>
-
+                    <p className="text-gray-600 mb-6">Geçme Notu: {result.pass_score}</p>
                     <div className="flex justify-center gap-4">
-                        <Button onClick={() => onComplete(score, passed)} variant={passed ? 'default' : 'outline'}>
-                            {passed ? 'Tamamla' : 'Kapat'}
+                        <Button onClick={() => onComplete(result)} variant={result.passed ? 'default' : 'outline'}>
+                            {result.passed ? 'Tamamla' : 'Kapat'}
                         </Button>
-                        {!passed && (
-                            <Button onClick={() => {
-                                setFinished(false);
-                                setCurrentQuestionIndex(0);
-                                setAnswers({});
-                            }}>
+                        {!result.passed && (
+                            <Button onClick={() => { setResult(null); setCurrentQuestionIndex(0); setAnswers({}); }}>
                                 Tekrar Dene
                             </Button>
                         )}
@@ -101,13 +93,13 @@ export function ExamRunner({ quiz, onComplete, onCancel }: ExamRunnerProps) {
     }
 
     if (!currentQuestion) {
-        return <div>Soru bulunamadı.</div>;
+        return <div className="p-8 text-center text-gray-500">Bu sınavda henüz soru bulunmuyor.</div>;
     }
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
             <div className="mb-6 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">{quiz.title}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{exam.title}</h2>
                 <span className="text-sm font-medium bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
                     Soru {currentQuestionIndex + 1} / {questions.length}
                 </span>
@@ -115,51 +107,51 @@ export function ExamRunner({ quiz, onComplete, onCancel }: ExamRunnerProps) {
 
             <Card>
                 <CardContent className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6">
-                        {currentQuestion.question_text}
-                    </h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-6">{currentQuestion.question_text}</h3>
 
-                    <div className="space-y-3">
-                        {currentQuestion.options?.map((opt, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => handleOptionSelect(opt)}
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${answers[currentQuestion.id] === opt
-                                    ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
-                                    : 'border-gray-200 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <div className="flex items-center">
-                                    <div className={`h-4 w-4 rounded-full border flex items-center justify-center mr-3 ${answers[currentQuestion.id] === opt ? 'border-indigo-600' : 'border-gray-400'
-                                        }`}>
-                                        {answers[currentQuestion.id] === opt && (
-                                            <div className="h-2 w-2 rounded-full bg-indigo-600" />
-                                        )}
-                                    </div>
-                                    <span className="text-gray-700">{opt}</span>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="space-y-3" role="radiogroup">
+                        {currentQuestion.options?.map((opt, idx) => {
+                            const selected = answers[currentQuestion.id] === opt;
+                            return (
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={selected}
+                                    key={idx}
+                                    onClick={() => handleOptionSelect(opt)}
+                                    className={`w-full text-left p-4 border rounded-lg transition-all ${selected
+                                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
+                                        : 'border-gray-200 hover:bg-gray-50'}`}
+                                >
+                                    <span className="flex items-center">
+                                        <span className={`h-4 w-4 rounded-full border flex items-center justify-center mr-3 ${selected ? 'border-indigo-600' : 'border-gray-400'}`}>
+                                            {selected && <span className="h-2 w-2 rounded-full bg-indigo-600" />}
+                                        </span>
+                                        <span className="text-gray-700">{opt}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
+
+                    {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
 
                     <div className="mt-8 flex justify-between">
                         <Button
                             variant="ghost"
-                            onClick={() => {
-                                if (currentQuestionIndex > 0) setCurrentQuestionIndex(prev => prev - 1);
-                            }}
-                            disabled={currentQuestionIndex === 0}
+                            onClick={() => { if (currentQuestionIndex > 0) setCurrentQuestionIndex(prev => prev - 1); }}
+                            disabled={currentQuestionIndex === 0 || submitting}
                         >
                             Önceki
                         </Button>
                         <div className="flex gap-2">
-                            <Button variant="ghost" onClick={onCancel}>İptal</Button>
+                            <Button variant="ghost" onClick={onCancel} disabled={submitting}>İptal</Button>
                             <Button
                                 onClick={handleNext}
-                                disabled={!answers[currentQuestion.id]}
+                                disabled={!answers[currentQuestion.id] || submitting}
                                 className="bg-indigo-600 text-white hover:bg-indigo-700"
                             >
-                                {currentQuestionIndex === questions.length - 1 ? 'Sınavı Bitir' : 'Sonraki'}
+                                {submitting ? 'Gönderiliyor...' : currentQuestionIndex === questions.length - 1 ? 'Sınavı Bitir' : 'Sonraki'}
                             </Button>
                         </div>
                     </div>

@@ -1,18 +1,21 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — SEC-03 / E4N-120 tamamlandı (Web, Mobil API ve Supabase Güvenlik Denetimi)
+## Güncel teslim — P36 / E4N-108 tamamlandı (Veri Geçişi Provası ve Geri Dönüş Koşulları)
 
-- **E4N-120 (SEC-03) Done:** Web ve mobil istemcilerin paylaştığı tüm Express API rotaları, rol bazlı yetkilendirme (RBAC), yetki aşımı (Privilege Escalation), nesne düzeyi yetkilendirme (IDOR), SQL injection / XSS / null-byte girdi güvenliği, kimlik bilgisi hijyeni, hız sınırlama (Rate Limiting) ve Supabase PostgreSQL RLS bariyerleri uçtan uca denetlendi ve güçlendirildi.
-  - **7 Güvenlik Kapısı Tam Doğrulandı (7/7 PASS):**
-    - Gate 1: 15 korumalı rotada anonim/oturumsuz erişim HTTP 401 ile reddedildi.
-    - Gate 2: 16 idari rotada sıradan `MEMBER` rolü HTTP 403 Forbidden ile engellendi.
-    - Gate 3: Grup üyeleri, kişisel PDF faturalar (`/api/invoices/:id`), destek biletleri ve profil vergi alanlarında yatay yetki aşımı (IDOR) engellendi.
-    - Gate 4: Parametrik sorgularla SQL Injection girişimleri (`' OR 1=1 --`) nötralize edildi; geçersiz UUID ve null-byte denemeleri temiz 400/404 ile yakalandı.
-    - Gate 5: `password_hash` alanının hiçbir rotada dönmediği kanıtlandı; `GET /api/admin/email-config` içinde `smtp_pass` `'********'` olarak maskelendi; istemci formundaki (`AdminEmailSettings.tsx`) sabit parola temizlendi; OWASP güvenlik başlıkları (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 0`, `Referrer-Policy`) global olarak bağlandı.
-    - Gate 6: `/api/auth/login`, `/api/auth/register`, `/api/auth/create-password` için sıfır bağımlılıklı kayan pencere hız sınırlayıcı (`server/src/middleware/rate-limiter.js`) kuruldu; kota aşımında HTTP 429 (`RATE_LIMIT_EXCEEDED`) ve `Retry-After` doğrulandı.
-    - Gate 7: 50/50 public tabloda RLS aktifliği, 48 hassas tabloda `42501` PostgREST anon engeli ve 2 CMS tablosunda yayınlanmış-içerik politikası korundu.
-  - **Test ve Kanıt:** `server/test/sec-e2e-api-audit-contract.mjs` (7/7 Gate PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS), `sec-jwt-and-db-config-contract.mjs` (PASS), `sec-rls-access-contract.mjs` (PASS). Kanıt [[E4N/09-Dogrulama/SEC-03-API-ve-Supabase-Guvenlik-Denetimi-2026-10-11]].
-  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde [E4N-108 / P36]: Veri geçişini prova et ve geri dönüş koşullarını yaz.
+- **E4N-108 (P36) Done:** PostgreSQL 17 / Supabase mimarisinde 28 şema sürümü (`schema_migrations`), 50 uygulama tablosu (`tablename <> 'schema_migrations'`), ilişkili kısıtlar, tetikleyiciler, indeksler, RLS politikaları ve PostgreSQL `bytea` formatında saklanan kalıcı PDF fatura/belge dosyaları izole Docker PG17 ortamında uçtan uca yedekleme (`pg_dump -Fc`), geri yükleme (`pg_restore`), bozulma tespiti (corruption detection) ve atomik geri dönüş (clean rollback) provasıyla doğrulandı.
+  - **Doğrulanan Kapılar ve Kanıtlar (PASS):**
+    - 51 Tablo Satır Sayısı ve Row Manifest Eşleşmesi (`restoredEqual: true`): 51 tablonun tamamında sıralı JSONB `ORDER BY to_jsonb(t)::text COLLATE "C"` SHA-256 hash manifesti kaynakla %100 birebir eşleşti.
+    - Şema Kataloğu ve Nesne Eşitliği: Tablolar, sütunlar, veri tipleri, primary key, foreign key, check kısıtları, sequence sayaçları, effective ACL ve RLS politikaları tam doğrulandı.
+    - Sıfır Tekrar Uygulama (`repeatApplied: 0`): Geri yüklenen veritabanında sürümlü migration tekrarında 0 yeni sürüm uygulandı.
+    - Bytea Bozulma Tespiti (`corruptionDetected: true`): `invoice_files` PDF ikili içeriği yapay olarak bozulduğunda, satır sayısı aynı kalsa bile row-level SHA-256 manifestinin bunu derhal tespit ettiği kanıtlandı.
+    - Temiz ve Atomik Geri Dönüş (`cleanRollbackEqual: true`): `--clean --if-exists --exit-on-error --single-transaction` ile orijinal sağlam yedeğe hatasız geri dönüldü.
+    - İmmutable Denetim Koruması: `DELETE FROM group_membership_history` sorgusu veritabanı tetikleyicisi tarafından `23514 (check_violation)` ile engellendi.
+    - API İndirme ve Güvenlik Bariyeri (`downloadAndOwnerBoundaryPassed: true`): Geri yüklenen veritabanında `GET /api/invoices/:id` fatura sahibi üye 200, anonim 401, yabancı üye 404, sahte admin 404, güncel admin 200, rolü düşürülmüş eski admin 404; `GET /api/user/profile-settings` parola sızıntısız profil doğrulaması PASS.
+  - **Operasyonel Dokümantasyon:** 6 geri dönüş tetikleyicisi (RT-1 ... RT-6), bakım modu protokolü, snapshot prosedürü ve RTO < 15 dk / RPO = 0 hedeflerini içeren operasyon rehberi (`server/docs/p36-data-migration-and-rollback-runbook.md`) oluşturuldu.
+  - **Test ve Kanıt:** `npm --prefix server run test:restore` (PASS), `output/backup-restore-rehearsal.json`, `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Kanıt [[E4N/09-Dogrulama/P36-Veri-Gecisi-Provasi-ve-Geri-Donus-2026-10-11]].
+  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde Sprint 6'nın son görevi olan [E4N-110 / P38]: Sürüm kararı, dokümantasyon ve izlenebilirliği kapat.
+
+## Önceki teslim — SEC-03 / E4N-120 tamamlandı (Web, Mobil API ve Supabase Güvenlik Denetimi)
 
 ## Önceki teslim — SEC-02 / E4N-59 tamamlandı (Güvenli DB Bağlantısı ve JWT Yapılandırması)
 

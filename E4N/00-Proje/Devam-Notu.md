@@ -1,6 +1,17 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — PAR-02 / E4N-116 tamamlandı (Ortak API, Veri ve Rol Davranışı Denetimi ve Eşitlemesi)
+## Güncel teslim — PAR-03 / E4N-117 tamamlandı (Genel, Ziyaretçi ve Üye Akışlarını Web ve Mobilde Eşitleme)
+
+- **E4N-117 (PAR-03) Done:** Web ve mobil istemciler arasındaki açık kurumsal kayıt, detaylı profil kartı/keşfi, P25/P26 etkinlik bilet hakları & çoklu bilet seçimi, doğrudan mesajlaşma ve profil düzenleme akışları eşitlendi ve izole ortamda doğrulandı.
+  - **Açık Kurumsal Kayıt (`mobile/app/(auth)/register.tsx`):** Web `POST /api/auth/register` (BAŞ-01 / E4N-161) sözleşmesine uygun olarak zorunlu şirket unvanı (`company`), 10 haneli VKN veya 11 haneli TCKN (`taxNumber`), vergi dairesi (`taxOffice`), fatura adresi (`billingAddress`), il seçimi (`city`) ve opsiyonel sponsor referans kodu (`ref` / BAŞ-02) eklendi; istemci ve API doğrulaması sağlandı.
+  - **Üye Keşfi ve Detaylı Profil Kartı (`mobile/app/(tabs)/network.tsx`):** Üye kartlarına tıklama (`onPress`) ile detay modali entegre edildi. Üyenin puanı (`performance_score`), trafik ışığı rozeti (`performance_color`), şirket unvanı, iletişim bilgileri gösterildi; "Birebir Toplantı Talep Et", "İş Referansı Ver" ve "Mesaj Gönder" derin bağlantıları bağlandı.
+  - **Etkinlik Bilet Hakları ve Çoklu Bilet (`mobile/app/(tabs)/events.tsx`):** P25 üyelikten bilet hakları ("Üyelere Ücretsiz", "%50 Üye İndirimi") dinamik rozetleri ve P26 çoklu bilet adedi seçicisi (1-10 adet) eklendi; `POST /api/events/:id/register` bağlandı.
+  - **Gerçek Doğrudan Mesajlaşma (`mobile/app/features/messages.tsx`):** Statik mock veri kaldırıldı; `GET /api/messages/conversations`, `GET /api/messages/:id` ve `POST /api/messages/:id` gerçek veritabanı `direct_messages` sözleşmesine ve idempotent `requestKey` yapısına bağlandı.
+  - **Profil Düzenleme (`mobile/app/(tabs)/profile.tsx`):** "Profili Düzenle" modalı ve `PUT /api/users/me` çağrısı eklendi; "Yardım ve Destek" butonu `/features/support` rotasına bağlandı.
+  - **Test ve Kanıt:** `node server/test/par-03-public-visitor-member-flow-contract.mjs` (İzole PG17 Docker + Express ile 4/4 senaryo PASS: Kurumsal kayıt, profil güncelleme, etkinlik kaydı, doğrudan mesajlaşma), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS). Doküman `server/docs/par-03-public-visitor-and-member-flows.md` ve Kanıt [[E4N/09-Dogrulama/PAR-03-Genel-Ziyaretci-ve-Uye-Akislari-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-118 / PAR-04]: Başkan ve admin işlevlerini web ve mobilde eşitle (Başkan SLA başvuru kuyruğu, yoklama akışı ve admin kontrolleri).
+
+## Önceki teslim — PAR-02 / E4N-116 tamamlandı (Ortak API, Veri ve Rol Davranışı Denetimi ve Eşitlemesi)
 
 - **E4N-116 (PAR-02) Done:** Web ve Mobil platformları arasındaki API uç noktası, veri modelleri ve RBAC rol sınırları uzlaştırıldı ve izole ortamda doğrulandı.
   - **API Sözleşmesi ve Sabitleri (`mobile/constants/api.ts`):** `ONE_TO_ONES` (`LIST`, `LOG`, `REQUEST`, `STATUS`), `MEMBERSHIPS` (`PLANS`, `RECORDS`), `TICKETS` (`LIST`, `DETAIL`, `CREATE`, `MESSAGES`, `STATUS`), `ADMIN` (`PUBLIC_VISITORS`, `PUBLIC_VISITOR_STATUS`, `PAYMENTS_HISTORY`, `MEMBERSHIP_RECORDS`) tanımlandı.

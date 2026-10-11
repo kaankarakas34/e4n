@@ -1,6 +1,27 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — PAR-05 / E4N-119 tamamlandı (Web ve Mobil Özellik Eşitliğini Uçtan Uca Doğrulama)
+## Güncel teslim — P32 / E4N-104 tamamlandı & Sprint 7 Kapandı (Mobil API ve Ekran Sözleşmesi Uzlaştırması)
+
+- **E4N-104 (P32) Done & Sprint 7 Closed:** Mobil istemcinin (React Native / Expo) 39 temel ekran ve modülü, gezinme ve düzen yapısı, merkezi API sabitleri (`mobile/constants/api.ts`) ve Express API sunucusu ile uçtan uca uzlaştırıldı; **Sprint 7 (Mobil Uygulama & Özellik Eşitliği)** bütünüyle tamamlanarak kapatıldı.
+  - **Gezinme Düzeni İyileştirmeleri (`mobile/app/features/_layout.tsx` & `admin/_layout.tsx`):**
+    - `features/_layout.tsx` içinde tüm özellik ekranları (`referrals`, `lms`, `messages`, `reports`, `payment`, `support`, `meeting-requests`, `activities`, `settings`, `store`) Stack düzenine tescillendi; yerel geri dönüş navigasyonu (`headerShown: true`) güvenceye alındı. Özel başlıklı `groups` ve `president` ekranlarında `headerShown: false` korundu.
+    - `admin/_layout.tsx` Stack düzeni oluşturularak yönetim ekranlarında yerel başlıkların çiftlenmesi engellendi (`headerShown: false`).
+  - **Merkezi API Sabitleri Uyum Teyidi (`mobile/constants/api.ts`):** 13 ana modül (`AUTH`, `USERS`, `USER`, `GROUPS`, `GROUP_APPLICATIONS`, `ATTENDANCE`, `EVENTS`, `REFERRALS`, `REPORTS`, `NOTIFICATIONS`, `MESSAGES`, `ONE_TO_ONES`, `MEMBERSHIPS`, `TICKETS`, `ADMIN`) Express API sunucusu ile tam uzlaştırıldı.
+  - **9 Uçtan Uca Sözleşme Alanı:**
+    - Contract 1: Session Hydration & Profile Contract (`/users/me`) PASS.
+    - Contract 2: Home Screen Feeds (`/reports/stats` & `/notifications`) PASS.
+    - Contract 3: Network Search & Profiles (`/users`) PASS.
+    - Contract 4: Events Discovery (`/events`) PASS.
+    - Contract 5: Personal Reports Contract (`/reports/me` - 4 dönem) PASS.
+    - Contract 6: Membership Records (`/membership-records` - ödeme & fatura) PASS.
+    - Contract 7: Support Tickets Lifecycle (`/tickets` oluşturma & listeleme) PASS.
+    - Contract 8: Catalog Discovery (`/groups` & `/power-teams`) PASS.
+    - Contract 9: President & Admin RBAC Security Boundaries PASS.
+  - **Test ve Kanıt:** `node server/test/p32-mobile-api-and-screen-reconciliation-contract.mjs` (İzole PG17 Docker + Express ile 39/39 statik dosya + 9/9 HTTP sözleşmesi PASS), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Doküman `server/docs/p32-mobile-api-and-screen-reconciliation-report.md` ve Kanıt [[E4N/09-Dogrulama/P32-Mobil-API-ve-Ekran-Sozlesmesi-2026-10-11]].
+  - **Sprint 7 Kapanış Durumu:** MOB-01 (E4N-134) + PAR-01 (E4N-115) + PAR-02 (E4N-116) + PAR-03 (E4N-117) + PAR-04 (E4N-118) + PAR-05 (E4N-119) + P32 (E4N-104) tamamlandı (**100% DONE**).
+  - **Sıradaki Kapsam:** Kullanıcı talimatına göre Sprint 8 (E-Akademi, Kurs, Eğitim ve Sınav Modülleri / LMS-SON - E4N-139) başlatılacaktır.
+
+## Önceki teslim — PAR-05 / E4N-119 tamamlandı (Web ve Mobil Özellik Eşitliğini Uçtan Uca Doğrulama)
 
 - **E4N-119 (PAR-05) Done:** Web ve mobil istemcilerinin 20 fonksiyonel yetenek alanındaki eşitliği, PAR-11 grup ve lonca kataloğu keşfi ve 8 birleşik uçtan uca kullanıcı senaryosu (User Journeys) izole ortamda doğrulanarak tamamlandı.
   - **Grup & Lonca Keşfi Ekranı (`mobile/app/features/groups.tsx`):**

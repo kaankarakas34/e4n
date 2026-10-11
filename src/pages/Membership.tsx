@@ -54,50 +54,73 @@ export function MembershipPage() {
 
     const PLANS = [
         {
-            plan: '1_MONTH' as MembershipPlan,
-            title: 'Aylık Paket',
-            price: membershipPrices['1_MONTH'],
-            netPrice: '4.000 TL + KDV',
-            vatAmount: 800,
-            monthly: '4.800 TL KDV Dahil / ay (4.000 TL + KDV)',
+            plan: '4_MONTHS' as MembershipPlan,
+            title: '4 Aylık Paket',
+            subtitle: '1 Shuffle Dönemi',
+            price: membershipPrices['4_MONTHS'],
+            netPrice: '14.000 TL + KDV',
+            vatAmount: 2800,
+            monthly: 'Ort. 4.200 TL KDV Dahil / ay (3.500 TL + KDV)',
             discountBadge: null,
             savingsText: null,
-            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
+            features: [
+                '1 Tam Shuffle Dönemi katılımı',
+                'Kapalı grup ve haftalık toplantılar',
+                'Birebir (1-2-1) networking eşleşmeleri',
+                'İş yönlendirmesi ve ticari hacim takibi',
+                'E4N Akademi (LMS) ve eğitim materyalleri'
+            ],
             popular: false
         },
         {
-            plan: '6_MONTHS' as MembershipPlan,
-            title: '6 Aylık Paket',
-            price: membershipPrices['6_MONTHS'],
-            netPrice: '18.000 TL + KDV',
-            vatAmount: 3600,
-            monthly: 'Ort. 3.600 TL KDV Dahil / ay (3.000 TL + KDV)',
-            discountBadge: '%25 Kazanç',
-            savingsText: 'Aylık pakete göre 7.200 TL kazanç (%25 indirim)',
-            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
+            plan: '8_MONTHS' as MembershipPlan,
+            title: '8 Aylık Paket',
+            subtitle: '2 Shuffle Dönemi',
+            price: membershipPrices['8_MONTHS'],
+            netPrice: '23.800 TL + KDV',
+            vatAmount: 4760,
+            monthly: 'Ort. 3.570 TL KDV Dahil / ay (2.975 TL + KDV)',
+            discountBadge: '%15 Kazanç',
+            savingsText: '4 aylık baz döneme göre 5.040 TL kazanç (%15 indirim)',
+            features: [
+                '2 Tam Shuffle Dönemi katılımı',
+                'Grup rotasyonu ve yeni iş ağı fırsatı',
+                'Kapalı grup ve haftalık toplantılar',
+                'Birebir (1-2-1) networking eşleşmeleri',
+                'İş yönlendirmesi ve ticari hacim takibi',
+                'E4N Akademi (LMS) ve eğitim materyalleri'
+            ],
             popular: false
         },
         {
             plan: '12_MONTHS' as MembershipPlan,
             title: '12 Aylık Paket',
+            subtitle: 'Tam Yıl (3 Shuffle Dönemi)',
             price: membershipPrices['12_MONTHS'],
-            netPrice: '32.400 TL + KDV',
-            vatAmount: 6480,
-            monthly: 'Ort. 3.240 TL KDV Dahil / ay (2.700 TL + KDV)',
-            discountBadge: '%32.5 Kazanç',
-            savingsText: 'Aylık pakete göre 18.720 TL kazanç (%32.5 indirim)',
-            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
+            netPrice: '31.500 TL + KDV',
+            vatAmount: 6300,
+            monthly: 'Ort. 3.150 TL KDV Dahil / ay (2.625 TL + KDV)',
+            discountBadge: '%25 Kazanç',
+            savingsText: '4 aylık baz döneme göre 12.600 TL kazanç (%25 indirim)',
+            features: [
+                '3 Tam Shuffle Dönemi (Kesintisiz 1 Yıl)',
+                'Yılda 1 ay üyelik dondurma hakkı',
+                'Maksimum iş yönlendirmesi ve güven puanı',
+                'Kapalı grup ve haftalık toplantılar',
+                'Birebir (1-2-1) networking eşleşmeleri',
+                'E4N Akademi (LMS) ve tüm sertifika sınavları'
+            ],
             popular: true
         }
     ];
 
     const formatPlanName = (plan?: string) => {
         if (!plan) return 'Veri yok';
-        if (plan === '1_MONTH') return 'Aylık Paket';
-        if (plan === '6_MONTHS') return '6 Aylık Paket';
-        if (plan === '12_MONTHS') return '12 Aylık Paket';
-        if (plan === '4_MONTHS') return '4 Aylık Paket';
-        if (plan === '8_MONTHS') return '8 Aylık Paket';
+        if (plan === '4_MONTHS') return '4 Aylık Paket (1 Dönem)';
+        if (plan === '8_MONTHS') return '8 Aylık Paket (2 Dönem)';
+        if (plan === '12_MONTHS') return '12 Aylık Paket (Yıllık)';
+        if (plan === '1_MONTH') return 'Aylık Paket (Eski)';
+        if (plan === '6_MONTHS') return '6 Aylık Paket (Eski)';
         return plan.replace('_', ' ');
     };
 
@@ -220,7 +243,14 @@ export function MembershipPage() {
                                 )}
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-900">{plan.title}</h3>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xl font-bold text-gray-900">{plan.title}</h3>
+                                    {plan.subtitle && (
+                                        <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                            {plan.subtitle}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="mt-4 flex items-baseline">
                                     <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">₺{plan.price.toLocaleString('tr-TR')}</span>
                                     <span className="ml-2 text-sm font-semibold text-gray-500">KDV Dahil</span>
@@ -243,8 +273,8 @@ export function MembershipPage() {
                                         <span><strong>Kazancınız:</strong> {plan.savingsText}</span>
                                     </div>
                                 ) : (
-                                    <div className="mt-3 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-500">
-                                        Aylık baz paket (Standart periyot)
+                                    <div className="mt-3 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-600">
+                                        4 aylık baz paket (1 Shuffle dönemi)
                                     </div>
                                 )}
 

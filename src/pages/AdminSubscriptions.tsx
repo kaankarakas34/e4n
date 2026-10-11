@@ -39,7 +39,7 @@ export function AdminSubscriptions() {
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
 
   // Edit Form Fields
-  const [editPlan, setEditPlan] = useState<string>('1_MONTH');
+  const [editPlan, setEditPlan] = useState<string>('4_MONTHS');
   const [editEndDate, setEditEndDate] = useState<string>('');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'PASSIVE'>('ACTIVE');
   const [updating, setUpdating] = useState(false);
@@ -132,7 +132,7 @@ export function AdminSubscriptions() {
 
   const openEditModal = (m: any) => {
     setSelectedMember(m);
-    setEditPlan(m.plan || '1_MONTH');
+    setEditPlan(m.plan || '4_MONTHS');
     
     // Format date string to YYYY-MM-DD
     if (m.end_date) {
@@ -359,7 +359,7 @@ export function AdminSubscriptions() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
-                          {m.plan ? m.plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık Paket').replace('MANUAL', 'Özel Tanımlı') : 'Belirtilmemiş'}
+                          {m.plan ? m.plan.replace('4_MONTHS', '4 Ay (1 Dönem)').replace('8_MONTHS', '8 Ay (2 Dönem)').replace('12_MONTHS', '12 Ay (Yıllık)').replace('1_MONTH', '1 Ay (Eski)').replace('6_MONTHS', '6 Ay (Eski)').replace('MANUAL', 'Özel Tanımlı') : 'Belirtilmemiş'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -456,7 +456,7 @@ export function AdminSubscriptions() {
             <div className="flex justify-between items-center">
               <span className="font-medium">Güncel Plan</span>
               <span className="font-semibold text-slate-800">
-                {selectedMember?.plan ? selectedMember.plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık') : 'Belirtilmemiş'}
+                {selectedMember?.plan ? selectedMember.plan.replace('4_MONTHS', '4 Ay (1 Dönem)').replace('8_MONTHS', '8 Ay (2 Dönem)').replace('12_MONTHS', '12 Ay (Yıllık)').replace('1_MONTH', '1 Ay (Eski)').replace('6_MONTHS', '6 Ay (Eski)') : 'Belirtilmemiş'}
               </span>
             </div>
             <div className="flex justify-between items-center">

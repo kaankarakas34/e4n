@@ -8,9 +8,9 @@ const router = express.Router();
 // Get Memberships (Plans)
 router.get('/', authenticateToken, async (req, res) => {
     const plans = [
-        { id: '1_MONTH', name: 'Aylık Üyelik', price: membershipPrices['1_MONTH'], net_price: membershipNetPrices['1_MONTH'], duration_months: 1 },
-        { id: '6_MONTHS', name: '6 Aylık Üyelik', price: membershipPrices['6_MONTHS'], net_price: membershipNetPrices['6_MONTHS'], duration_months: 6 },
-        { id: '12_MONTHS', name: '12 Aylık Üyelik', price: membershipPrices['12_MONTHS'], net_price: membershipNetPrices['12_MONTHS'], duration_months: 12 }
+        { id: '4_MONTHS', name: '4 Aylık Üyelik (1 Shuffle Dönemi)', price: membershipPrices['4_MONTHS'], net_price: membershipNetPrices['4_MONTHS'], duration_months: 4 },
+        { id: '8_MONTHS', name: '8 Aylık Üyelik (2 Shuffle Dönemi)', price: membershipPrices['8_MONTHS'], net_price: membershipNetPrices['8_MONTHS'], duration_months: 8 },
+        { id: '12_MONTHS', name: '12 Aylık Üyelik (3 Shuffle Dönemi)', price: membershipPrices['12_MONTHS'], net_price: membershipNetPrices['12_MONTHS'], duration_months: 12 }
     ];
     res.json(plans);
 });

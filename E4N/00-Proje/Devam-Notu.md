@@ -6,6 +6,22 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
 
 # E4N devam durumu — 11 Ekim 2026
 
+## Güncel — 4, 8 ve 12 Aylık Shuffle Dönemi Üyelik Modeli ve Yeni Fiyatlandırma Tamamlandı
+
+- Kullanıcının doğrudan talimatı ("üyelikler 4 aylık 8 aylık ve 12 aylık olarak yapalım 1 aylık üyelik olmasın bizi yorar shuffle dönemlerinin agzına sıçar 14.000 tl + kdv olmalı 8 ayda %15 indirim 12 ayda %25 indirim olsun") eksiksiz uygulandı:
+  - **Shuffle Dönemi Odaklı Paket Mimarisi:**
+    - 1 aylık ve 6 aylık planlar son kullanıcı paket listelerinden kaldırıldı; üyelik süreleri 4 aylık Shuffle rotasyon dönemleriyle birebir hizalandı.
+    - **4 Aylık Paket (1 Shuffle Dönemi - Baz Paket):** 14.000 TL + %20 KDV = 16.800 TL KDV Dahil (Aylık denk: 3.500 TL + KDV = 4.200 TL KDV Dahil).
+    - **8 Aylık Paket (2 Shuffle Dönemi - %15 İndirim):** 23.800 TL + %20 KDV = 28.560 TL KDV Dahil (Aylık denk: 2.975 TL + KDV = 3.570 TL KDV Dahil; 4 aylık baz döneme göre 5.040 TL kazanç).
+    - **12 Aylık Paket (3 Shuffle Dönemi / Tam Yıl - %25 İndirim):** 31.500 TL + %20 KDV = 37.800 TL KDV Dahil (Aylık denk: 2.625 TL + KDV = 3.150 TL KDV Dahil; 4 aylık baz döneme göre 12.600 TL kazanç).
+  - **Sistemik Entegrasyon:**
+    - `shared/membership-pricing.js`: `membershipPrices` ve `membershipNetPrices` 4_MONTHS, 8_MONTHS ve 12_MONTHS ile güncellendi; geçmiş test ve kayıt güvenliği için eski anahtarlar geri uyumlulukta tutuldu.
+    - `server/src/routes/memberships.js`: API uç noktası 4, 8 ve 12 aylık planları döndürüyor.
+    - `server/src/index.js`: Admin üyelik güncelleme rotası `[1, 4, 6, 8, 12]` ay sürelerini ve plan adlarını tam destekliyor.
+    - `src/pages/Membership.tsx`: Kullanıcı ekranında 4 aylık (1 Dönem), 8 aylık (2 Dönem) ve 12 aylık (3 Dönem) kartları, kazanç rozetleri, KDV dökümleri ve Sipay entegrasyonu güncellendi.
+    - `src/pages/AdminSubscriptions.tsx`, `src/pages/AdminAccounting.tsx`, `src/pages/MemberProfile.tsx`, `src/pages/Dashboard.tsx` ve `src/pages/MembershipActivationPage.tsx` yeni periyot ve fiyatlara uyarlandı.
+  - **Test ve Kanıt:** `node server/test/payment-flow.mjs` PASS, `node server/test/membership-activation-contract.mjs` PASS, `node server/test/handbook-and-dashboard-rules-contract.mjs` PASS, `node server/test/free-member-visitor-flow-contract.mjs` PASS, `node server/test/route-ownership-static.mjs` PASS, `npx tsc --noEmit` PASS (0 hata), `npm run build` PASS (Vite temiz üretim paketi derlendi).
+
 ## Güncel — E4N Sözleşme Kabul ve Üyelik Aktivasyonu Masası (17 Belge, Demo Birebir Arayüz ve Sunucu Doğrulaması) Tamamlandı
 
 - Kullanıcının doğrudan talimatı ("bu html gibi bişi yapmanı istiyorum abone olduktn sonra bunları kabul etmek zorunda şirket bilgileri var zaten e4n in içinde araştır bul") eksiksiz tamamlandı:

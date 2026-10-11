@@ -511,7 +511,7 @@ export function AdminAccounting() {
                 {selectedRecord.type === 'MEMBER' && selectedRecord.plan && (
                   <div className="col-span-2 bg-indigo-50 p-2.5 rounded-lg border border-indigo-100 text-indigo-800">
                     <span className="font-bold block mb-0.5 text-[10px] uppercase tracking-wider">Satın Alınan Plan</span>
-                    <span className="font-semibold">{selectedRecord.plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık Paket')}</span>
+                    <span className="font-semibold">{selectedRecord.plan.replace('4_MONTHS', '4 Ay (1 Dönem)').replace('8_MONTHS', '8 Ay (2 Dönem)').replace('12_MONTHS', '12 Ay (Yıllık)').replace('1_MONTH', '1 Ay (Eski)').replace('6_MONTHS', '6 Ay (Eski)')}</span>
                   </div>
                 )}
               </div>

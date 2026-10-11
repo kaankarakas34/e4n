@@ -76,7 +76,7 @@ export function MemberProfile() {
   const membership = membershipReady && isAdmin ? items.find(m => m.user_id === id) : undefined;
 
   const ensureMembership = async (plan: string) => {
-    let validPlan: MembershipPlan = '1_MONTH';
+    let validPlan: MembershipPlan = '4_MONTHS';
     if (plan === 'YEARLY' || plan === '12_MONTHS') validPlan = '12_MONTHS';
     if (plan === '6_MONTHS') validPlan = '6_MONTHS';
     if (plan === 'QUARTERLY' || plan === '4_MONTHS') validPlan = '4_MONTHS';

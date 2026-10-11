@@ -991,7 +991,7 @@ export function MembershipActivationPage({ defaultTab }: MembershipActivationPag
                 </div>
                 <div className="py-2.5 flex justify-between gap-4">
                   <span className="text-gray-500">Fiyat</span>
-                  <b className="text-[#0e1b2d] font-black">32.400 TL + %20 KDV</b>
+                  <b className="text-[#0e1b2d] font-black">14.000 TL - 31.500 TL + %20 KDV</b>
                 </div>
               </div>
 

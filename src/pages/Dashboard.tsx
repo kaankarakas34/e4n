@@ -179,7 +179,7 @@ export function Dashboard() {
                   <p className="text-sm opacity-90 mt-0.5">
                     {isExpired 
                       ? 'Hesabınızın kısıtlanmaması için lütfen ödemenizi gerçekleştiriniz.' 
-                      : `Mevcut üyelik planınız: ${user.subscription_plan ? user.subscription_plan.replace('_MONTHS', ' Ay').replace('1_MONTH', 'Aylık') : 'Belirtilmemiş'}. Son gün: ${endDate.toLocaleDateString('tr-TR')}`}
+                      : `Mevcut üyelik planınız: ${user.subscription_plan ? user.subscription_plan.replace('4_MONTHS', '4 Ay (1 Dönem)').replace('8_MONTHS', '8 Ay (2 Dönem)').replace('12_MONTHS', '12 Ay (Yıllık)').replace('1_MONTH', '1 Ay (Eski)').replace('6_MONTHS', '6 Ay (Eski)') : 'Belirtilmemiş'}. Son gün: ${endDate.toLocaleDateString('tr-TR')}`}
                   </p>
                 </div>
               </div>

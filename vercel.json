@@ -2,7 +2,7 @@
     "crons": [
         {
             "path": "/api/cron/web-jobs/event-completion",
-            "schedule": "*/10 * * * *"
+            "schedule": "0 5 * * *"
         },
         {
             "path": "/api/cron/web-jobs/subscription-reminders",

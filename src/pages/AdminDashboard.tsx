@@ -21,7 +21,7 @@ import {
   Landmark
 } from 'lucide-react';
 
-type CounterKey = 'members' | 'groups' | 'teams';
+type CounterKey = 'members' | 'groups';
 type CounterRead = { context: string; loading: boolean; count: number | null; error: string | null };
 
 export function AdminDashboard() {
@@ -44,7 +44,6 @@ export function AdminDashboard() {
     const sources: [CounterKey, () => Promise<unknown>][] = [
       ['members', () => api.getMembers()],
       ['groups', () => api.getGroups()],
-      ['teams', () => api.getPowerTeams()],
     ];
     setCounters(Object.fromEntries(sources.map(([key]) => [key, { context, loading: true, count: null, error: null }])));
     for (const [key, read] of sources) {
@@ -133,18 +132,7 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-r from-purple-50 to-purple-100">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600">Loncalar</p>
-                  <p className="text-2xl font-bold text-purple-900">{counterValue('teams')}</p>
-                  {counterError('teams')}
-                </div>
-                <Briefcase className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+
           <Card className="bg-gradient-to-r from-green-50 to-green-100">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -176,7 +164,7 @@ export function AdminDashboard() {
               color="text-blue-600"
               bg="bg-blue-50 hover:bg-blue-100"
               onClick={() => navigate('/admin/groups')}
-              description="Grupları ve loncaları yönetin."
+              description="Kapalı iş gruplarını yönetin."
             />
             <QuickActionCard
               title="Blog Yönetimi"

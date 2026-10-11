@@ -35,11 +35,10 @@ export function GroupDetail() {
     const [loadedFor, setLoadedFor] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
 
-    const isPowerTeam = location.pathname.includes('power-teams');
-    const typeLabel = isPowerTeam ? 'Lonca' : 'Grup';
+    const typeLabel = 'Grup';
     const canRead = !!user;
-    const readContext = `${user?.id}:${user?.role}:${token}:${isPowerTeam}:${id}`;
-    const memberActions=useGroupMemberActions({scope:readContext,kind:isPowerTeam?'power-team':'group',groupId:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
+    const readContext = `${user?.id}:${user?.role}:${token}:${id}`;
+    const memberActions=useGroupMemberActions({scope:readContext,kind:'group',groupId:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
     const currentContext=useRef(readContext);currentContext.current=readContext;
     useEffect(()=>{setShowEditModal(false);setIsSaving(false);saveBusy.current=false;},[readContext]);
 
@@ -50,7 +49,7 @@ export function GroupDetail() {
         activeMembers: members.filter(m => m.status === 'ACTIVE').length,
     };
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'REFERRALS' | 'MEETINGS' | 'SYNERGY'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'REFERRALS' | 'MEETINGS'>('OVERVIEW');
 
     useEffect(() => {
         let cancelled = false;
@@ -60,20 +59,16 @@ export function GroupDetail() {
             setLoadedFor(null);
             try {
                 let foundItem;
-                if (isPowerTeam) {
-                    const teams = await api.getPowerTeams();
-                    if (!Array.isArray(teams)) throw new Error('Invalid team response');
-                    foundItem = teams.find((t: any) => t.id === id);
-                } else {
+                {
                     foundItem = await api.getGroup(id!);
                 }
                 if (!foundItem || foundItem.id !== id) throw new Error('Missing or invalid detail');
                 const [teamMembers, groupMeetings, groupVisitors, refData, synergyData] = await Promise.all([
-                    isPowerTeam ? api.getPowerTeamMembers(id!) : api.getGroupMembers(id!),
+                    api.getGroupMembers(id!),
                     api.getGroupMeetings(id!),
                     api.getGroupVisitors(id!),
-                    isPowerTeam ? api.getPowerTeamReferrals(id!) : api.getGroupReferrals(id!),
-                    isPowerTeam ? api.getPowerTeamSynergy(id!) : Promise.resolve([]),
+                    api.getGroupReferrals(id!),
+                    Promise.resolve([]),
                 ]);
                 if (![teamMembers, groupMeetings, groupVisitors, refData, synergyData].every(Array.isArray)) {
                     throw new Error('Invalid detail list response');
@@ -101,7 +96,7 @@ export function GroupDetail() {
             loadData();
         }
         return () => { cancelled = true; };
-    }, [id, isPowerTeam, user?.id, user?.role, canRead, readContext, typeLabel, retryCount]);
+    }, [id, user?.id, user?.role, canRead, readContext, typeLabel, retryCount]);
 
 
     // Note: Admin doesn't need to be in the group to see it, as long as role is ADMIN
@@ -137,7 +132,7 @@ export function GroupDetail() {
         { title: 'Eğitim Koord.', role: 'MEMBER', group_title: 'EDUCATION_COORD', icon: Users, desc: 'Eğitim takibi.', color: 'blue' },
         { title: 'Etkinlik Koordinatörü', role: 'MEMBER', group_title: 'EVENT_COORDINATOR', icon: Users, desc: 'Etkinlikleri düzenler.', color: 'blue' },
     ];
-    const displayRoles = isPowerTeam ? [allRoles[0], allRoles[5]] : allRoles;
+    const displayRoles = allRoles;
 
     // ...
 
@@ -158,7 +153,7 @@ export function GroupDetail() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                            {isPowerTeam ? <Users className="h-8 w-8 text-purple-600" /> : <Layers className="h-8 w-8 text-red-600" />}
+                            {<Layers className="h-8 w-8 text-red-600" />}
                             {data.name}
                         </h1>
                         <div className="flex items-center mt-2 space-x-3 text-sm">
@@ -167,7 +162,7 @@ export function GroupDetail() {
                             <span className={`px-2 py-0.5 rounded-full ${data.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                 {data.status || 'Aktif'}
                             </span>
-                            {!isPowerTeam && (
+                            {(
                                 <>
                                     <span className="text-gray-300">•</span>
                                     <span className={`font-medium ${(data.current_month || 1) >= 4 ? 'text-red-600' : 'text-blue-600'}`}>
@@ -189,9 +184,7 @@ export function GroupDetail() {
                                     }
                                     if (confirm(`"${data.name}" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!`)) {
                                         try {
-                                            if (isPowerTeam) {
-                                                await api.deletePowerTeam(data.id);
-                                            } else {
+                                            {
                                                 await api.deleteGroup(data.id);
                                             }
                                             alert('Grup başarıyla silindi.');
@@ -234,7 +227,7 @@ export function GroupDetail() {
                                         onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                                     />
                                 </div>
-                                {!isPowerTeam && (
+                                {(
                                     <>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Toplantı Günü</label>
@@ -321,9 +314,7 @@ export function GroupDetail() {
                                     if(saveBusy.current)return;const scope=readContext;saveBusy.current=true;setIsSaving(true);
                                     try {
                                         let saved;
-                                        if (isPowerTeam) {
-                                            saved = await api.updatePowerTeam(data.id, {name:editForm.name,description:editForm.description},user!.id);
-                                        } else {
+                                        {
                                             saved = await api.updateGroup(data.id, editForm);
                                         }
                                         // Update local data
@@ -344,7 +335,7 @@ export function GroupDetail() {
 
                 {/* Tabs */}
                 <div className="flex space-x-4 border-b border-gray-200 mb-6 overflow-x-auto">
-                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'REFERRALS', ...(isPowerTeam ? ['SYNERGY'] : [])].map((tab) => (
+                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'REFERRALS', ...([])].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -492,9 +483,7 @@ export function GroupDetail() {
                                     {displayRoles.map((roleDef, idx) => {
                                         // Find current holder
                                         const current = members.find(m => {
-                                            if (isPowerTeam) {
-                                                return m.group_title === roleDef.group_title;
-                                            }
+
                                             return roleDef.role === 'PRESIDENT' ? m.role === 'PRESIDENT' : m.group_title === roleDef.group_title;
                                         });
                                         const Icon = roleDef.icon;
@@ -552,7 +541,7 @@ export function GroupDetail() {
 
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>{isPowerTeam ? 'Lonca Üyeleri' : 'Grup Üyeleri'}</CardTitle>
+                                <CardTitle>{'Grup Üyeleri'}</CardTitle>
                                 <span className="text-sm text-gray-500">{members.length} Üye</span>
                             </CardHeader>
                             <CardContent>
@@ -828,44 +817,7 @@ export function GroupDetail() {
                 )}
 
                 {/* SYNERGY TAB */}
-                {(activeTab as any) === 'SYNERGY' && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lonca İçi İş Yönlendirme Analizi</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gönderen</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alan</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İş Sayısı</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Etki</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {synergy && synergy.map((s: any, idx: number) => (
-                                            <tr key={idx} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{s.from}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{s.to}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-500 font-bold">{s.count}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
-                                                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${Math.min(s.count * 5, 100)}%` }}></div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                {(!synergy || synergy.length === 0) && (
-                                    <div className="text-center py-6 text-gray-500">Veri bulunamadı.</div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+
 
                 {/* Placeholder for other tabs */}
                 {/* REFERRALS TAB */}
@@ -945,7 +897,7 @@ export function GroupDetail() {
                                                         'MEMBER', // Demote to plain Member
                                                         '',       // Clear group_title (empty string or null)
                                                         id,
-                                                        isPowerTeam ? 'POWER_TEAM' : 'GROUP'
+                                                        'GROUP'
                                                     );
                                                 }
 
@@ -955,14 +907,11 @@ export function GroupDetail() {
                                                     targetRoleDef.role,
                                                     targetRoleDef.group_title,
                                                     id,
-                                                    isPowerTeam ? 'POWER_TEAM' : 'GROUP'
+                                                    'GROUP'
                                                 );
 
                                                 // Refresh
-                                                if (isPowerTeam) {
-                                                    const teamMembers = (await api.getPowerTeamMembers(id!)) || [];
-                                                    setMembers(teamMembers);
-                                                } else {
+                                                {
                                                     const groupMembers = (await api.getGroupMembers(id!)) || [];
                                                     setMembers(groupMembers);
                                                 }

@@ -35,7 +35,7 @@ export function ReferralWorkspace({incomingOnly=false}:{incomingOnly?:boolean}){
     const loadScopes=async()=>{
         if(!valid())return;const seq=++scopeSeq.current;setScopeLoading(true);setScopeError(null);
         try{const rows=await referralsApi.scopes(user.id);if(valid()&&seq===scopeSeq.current){setScopes({context,rows});if(!rows.some(s=>`${s.kind}:${s.id}`===scopeKey))setScopeKey('');}}
-        catch{if(valid()&&seq===scopeSeq.current){setScopes(null);setScopeError('Grup ve loncalar yüklenemedi.');}}
+        catch{if(valid()&&seq===scopeSeq.current){setScopes(null);setScopeError('Gruplar yüklenemedi.');}}
         finally{if(valid()&&seq===scopeSeq.current)setScopeLoading(false);}
     };
     const loadPeople=async()=>{
@@ -93,11 +93,11 @@ export function ReferralWorkspace({incomingOnly=false}:{incomingOnly?:boolean}){
             <fieldset disabled={pending} className="space-y-4">
                 <label className="block">Yönlendirme türü<select aria-label="Yönlendirme türü" value={type} onChange={e=>setType(e.target.value as ReferralInput['type'])} className="ml-3 rounded border p-2"><option value="INTERNAL">Grup içi</option><option value="EXTERNAL">Grup dışı (Bağlantılar)</option></select></label>
                 {type==='INTERNAL'&&<div>
-                    {scopeLoading&&<p>Grup ve loncalar yükleniyor…</p>}
+                    {scopeLoading&&<p>Gruplar yükleniyor…</p>}
                     {scopeError&&<p role="alert">{scopeError}</p>}
-                    {button('Grup ve loncaları yenile',()=>loadScopes())}
-                    <label className="mt-3 block">Grup veya lonca<select aria-label="Grup veya lonca" value={scopeKey} onChange={e=>setScopeKey(e.target.value)} disabled={scopeLoading||!!scopeError||scopes?.context!==context} className="ml-3 rounded border p-2"><option value="">Seçiniz</option>{scopes?.context===context&&scopes.rows.map(scope=><option key={`${scope.kind}:${scope.id}`} value={`${scope.kind}:${scope.id}`}>{scope.name} ({scope.kind==='group'?'Grup':'Lonca'})</option>)}</select></label>
-                    {scopes?.context===context&&scopes.rows.length===0&&<p>Üyesi olduğunuz grup/lonca yok.</p>}
+                    {button('Grupları yenile',()=>loadScopes())}
+                    <label className="mt-3 block">Grup<select aria-label="Grup" value={scopeKey} onChange={e=>setScopeKey(e.target.value)} disabled={scopeLoading||!!scopeError||scopes?.context!==context} className="ml-3 rounded border p-2"><option value="">Seçiniz</option>{scopes?.context===context&&scopes.rows.map(scope=><option key={`${scope.kind}:${scope.id}`} value={`${scope.kind}:${scope.id}`}>{scope.name} ({'Grup'})</option>)}</select></label>
+                    {scopes?.context===context&&scopes.rows.length===0&&<p>Üyesi olduğunuz grup yok.</p>}
                 </div>}
                 {type==='EXTERNAL'&&<p className="text-sm text-gray-600">Kabul edilmiş bağlantılarınız listelenir; grup değişikliği bağlantıyı kaldırmaz.</p>}
                 {peopleLoading&&<p>Alıcılar yükleniyor…</p>}

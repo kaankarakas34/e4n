@@ -3,7 +3,7 @@ import {api} from '../api/api';
 
 type Action='approve'|'remove';
 type GroupMemberRow=Record<string,unknown>&{id:string;status:'ACTIVE'|'REQUESTED'|'INACTIVE'|'PENDING'};
-type Options={scope:string;kind?:'group'|'power-team';groupId?:string;onMembers:(members:GroupMemberRow[])=>void;onRefresh?:()=>void};
+type Options={scope:string;kind?:'group';groupId?:string;onMembers:(members:GroupMemberRow[])=>void;onRefresh?:()=>void};
 const uuid=(value:unknown)=>typeof value==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 
 // Mutation acknowledgement and canonical list read have separate outcomes.
@@ -16,8 +16,8 @@ export function useGroupMemberActions({scope,kind='group',groupId,onMembers,onRe
   useEffect(()=>{lock.current=null;review.current=false;setState({scope,busy:false,error:'',needsReview:false});},[scope]);
   const visible=state.scope===scope?state:{scope,busy:false,error:'',needsReview:false};
   async function readMembers(){
-    const rows=await (kind==='power-team'?api.getPowerTeamMembers(groupId!):api.getGroupMembers(groupId!));
-    const statuses=kind==='power-team'?['ACTIVE','REQUESTED','INACTIVE','PENDING']:['ACTIVE','REQUESTED','INACTIVE'];
+    const rows=await (api.getGroupMembers(groupId!));
+    const statuses=['ACTIVE','REQUESTED','INACTIVE'];
     if(!Array.isArray(rows)||rows.some(row=>!row||!uuid(row.id)||!statuses.includes(row.status))
         ||new Set(rows.map(row=>row.id)).size!==rows.length)throw Error('Üye listesi doğrulanamadı.');
     return rows as GroupMemberRow[];
@@ -27,8 +27,8 @@ export function useGroupMemberActions({scope,kind='group',groupId,onMembers,onRe
     const context=current.current,operation={};lock.current=operation;setState({scope,busy:true,error:'',needsReview:false});
     let acknowledged=false;
     try{
-      if(action==='approve')await (kind==='power-team'?api.updatePowerTeamMemberStatus(groupId!,userId,'ACTIVE'):api.updateGroupMemberStatus(groupId!,userId,'ACTIVE'));
-      else await (kind==='power-team'?api.deletePowerTeamMember(groupId!,userId):api.deleteGroupMember(groupId!,userId,reason));
+      if(action==='approve')await (api.updateGroupMemberStatus(groupId!,userId,'ACTIVE'));
+      else await (api.deleteGroupMember(groupId!,userId,reason));
       acknowledged=true;
       if(current.current!==context)return;
       const rows=await readMembers();if(current.current!==context)return;

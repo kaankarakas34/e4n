@@ -13,12 +13,6 @@ router.get('/friends', authenticateToken, async (req, res) => {
       JOIN group_members gm_target ON u.id = gm_target.user_id
         JOIN group_members gm_me ON gm_target.group_id = gm_me.group_id
         WHERE gm_me.user_id = $1 AND u.id != $1 AND gm_target.status = 'ACTIVE' AND gm_me.status = 'ACTIVE'
-      UNION
-        SELECT DISTINCT u.id, u.name, u.profession, u.city, u.email, u.phone, u.performance_score, u.performance_color
-        FROM users u
-        JOIN power_team_members ptm_target ON u.id = ptm_target.user_id
-        JOIN power_team_members ptm_me ON ptm_target.power_team_id = ptm_me.power_team_id
-        WHERE ptm_me.user_id = $1 AND u.id != $1 AND ptm_target.status = 'ACTIVE' AND ptm_me.status = 'ACTIVE'
       `, [req.user.id]);
 
         res.json(rows.map(r => ({ ...r, full_name: r.name })));

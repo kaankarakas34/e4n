@@ -32,7 +32,7 @@ export function GroupManagerDashboard() {
     const [myGroups, setMyGroups] = useState<any[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'POWER_TEAM' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>(searchParams.get('tab')==='applications'?'APPLICATIONS':'OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'MEMBERS' | 'ATTENDANCE' | 'RESPONSIBILITIES' | 'APPLICATIONS' | 'TAKE_ATTENDANCE'>(searchParams.get('tab')==='applications'?'APPLICATIONS':'OVERVIEW');
     const requestedGroupId=searchParams.get('group');
     useEffect(()=>{if(searchParams.get('tab')==='applications')setActiveTab('APPLICATIONS');},[searchParams]);
     const [loading, setLoading] = useState(true);
@@ -115,11 +115,7 @@ export function GroupManagerDashboard() {
 
     const [activities, setActivities] = useState<any[]>([]);
     const [visitors, setVisitors] = useState<any[]>([]);
-    const [powerTeams, setPowerTeams] = useState<any[]>([]);
-    const [myPowerTeam, setMyPowerTeam] = useState<any>(null);
-    const [ptMembers, setPtMembers] = useState<any[]>([]);
-    const ptActions=useGroupMemberActions({scope:readContext+':guild:'+myPowerTeam?.id,kind:'power-team',groupId:myPowerTeam?.id,onMembers:setPtMembers});
-    const [ptSynergy, setPtSynergy] = useState<any[]>([]);
+
     const [referrals, setReferrals] = useState<any[]>([]);
     const [substitutes, setSubstitutes] = useState<any[]>([]);
 
@@ -154,21 +150,10 @@ export function GroupManagerDashboard() {
                     ]);
                     [allMembers, groupMeetings, groupVisitors, acts, subs, refs] = values.map(list);
                 }
-                let pt = null, ptMems: any[] = [], synergy: any[] = [];
-                if (user.role === 'PRESIDENT' || user.role === 'VICE_PRESIDENT' || user.role === 'ADMIN') {
-                    const myPts = list(await api.getUserPowerTeams(user.id));
-                    if (myPts.length > 0) {
-                        pt = myPts[0];
-                        if (typeof pt.id !== 'string' || !pt.id) throw new Error('Invalid team id');
-                        const values = await Promise.all([api.getPowerTeamMembers(pt.id), api.getPowerTeamSynergy(pt.id)]);
-                        [ptMems, synergy] = values.map(list);
-                    }
-                }
                 if (cancelled) return;
                 setMyGroups(groups); setSelectedGroup(detail); setMembers(allMembers);
                 setMeetings(groupMeetings); setVisitors(groupVisitors); setActivities(acts);
-                setSubstitutes(subs); setReferrals(refs); setMyPowerTeam(pt);
-                setPtMembers(ptMems); setPtSynergy(synergy);
+                setSubstitutes(subs); setReferrals(refs);
                 setViewingMeeting(null); setMeetingAttendance([]);
                 setLoadedFor(readContext);
             } catch {
@@ -271,7 +256,7 @@ export function GroupManagerDashboard() {
                         { id: 'RESPONSIBILITIES', label: 'Sorumluluklar', icon: Briefcase },
                         { id: 'ATTENDANCE', label: 'Yoklama', icon: Calendar },
                         { id: 'APPLICATIONS', label: 'Başvurular', icon: FileCheck },
-                        ...(myPowerTeam ? [{ id: 'POWER_TEAM', label: 'Lonca Yönetimi', icon: Layers }] : [])
+
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -285,8 +270,7 @@ export function GroupManagerDashboard() {
                             {tab.label}
                             {tab.id === 'APPLICATIONS' && (
                                 (() => {
-                                    const count = (members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length) +
-                                        (myPowerTeam ? ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length : 0);
+                                    const count = (members.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length);
                                     return count > 0 ? (
                                         <span className="ml-2 bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>
                                     ) : null;
@@ -607,8 +591,6 @@ export function GroupManagerDashboard() {
                     </div>
                 )}
 
-
-
                 {/* CONTENT: TAKE ATTENDANCE */}
                 {(activeTab as any) === 'TAKE_ATTENDANCE' && (
                     <Card>
@@ -725,123 +707,11 @@ export function GroupManagerDashboard() {
                         <GroupApplicationQueue groupId={selectedGroup.id} onChanged={() => setRetryCount(n => n + 1)} />
 
                         {/* Power Team Applications */}
-                        {ptActions.error&&<div role="alert" className="p-3 text-red-700">{ptActions.error} <Button disabled={ptActions.busy} onClick={ptActions.refresh}>Listeyi kontrol et</Button></div>}
-                        {myPowerTeam && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center">
-                                        <Layers className="h-5 w-5 mr-3 text-purple-600" />
-                                        Lonca Başvuruları ({myPowerTeam.name})
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').length === 0 ? (
-                                        <p className="text-gray-500 text-sm">Bekleyen lonca katılım isteği yok.</p>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {ptMembers.filter((m: any) => m.status === 'PENDING' || m.status === 'REQUESTED').map((m: any) => (
-                                                <div key={m.id} className="flex flex-col sm:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                                                    <div className="flex items-center mb-3 sm:mb-0">
-                                                        <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold mr-3">
-                                                            {m.full_name ? m.full_name.charAt(0) : 'U'}
-                                                        </div>
-                                                        <div>
-                                                            <h4
-                                                                className="font-bold text-gray-900 cursor-pointer hover:text-indigo-600 hover:underline"
-                                                                onClick={() => navigate(`/profile/${m.id}`)}
-                                                            >
-                                                                {m.full_name || m.name}
-                                                            </h4>
-                                                            <p className="text-xs text-gray-500">{m.profession} • {m.city}</p>
-                                                            <p className="text-xs text-gray-400 mt-0.5">Başvuru: {new Date(m.created_at).toLocaleDateString()}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" disabled={ptActions.blocked} onClick={() => ptActions.run('remove',m.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                            Reddet
-                                                        </Button>
-                                                        <Button variant="primary" size="sm" disabled={ptActions.blocked} onClick={() => ptActions.run('approve',m.id)}>
-                                                            Onayla
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
+
                     </div>
                 )}
-
 
                 {/* CONTENT: POWER TEAM MANAGEMENT */}
-                {activeTab === 'POWER_TEAM' && myPowerTeam && (
-                    <div className="space-y-6">
-                        <div className="bg-purple-900 text-white p-6 rounded-lg shadow-md">
-                            <h2 className="text-2xl font-bold flex items-center">
-                                <Layers className="h-6 w-6 mr-3" />
-                                {myPowerTeam.name} - Lonca Yönetimi
-                            </h2>
-                            <p className="mt-2 text-purple-200 opacity-80">{myPowerTeam.description}</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Takım Üyeleri</CardTitle>
-                                    {ptActions.error&&<div role="alert">{ptActions.error} <Button disabled={ptActions.busy} onClick={ptActions.refresh}>Listeyi kontrol et</Button></div>}
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="divide-y divide-gray-100">
-                                        {ptMembers.filter((m: any) => m.status === 'ACTIVE').map((m: any) => (
-                                            <li key={m.id} className="py-3 flex justify-between items-center">
-                                                <div>
-                                                    <p
-                                                        className="font-medium text-gray-900 cursor-pointer hover:text-indigo-600 hover:underline"
-                                                        onClick={() => navigate(`/profile/${m.id}`)}
-                                                    >
-                                                        {m.full_name}
-                                                    </p>
-                                                    <p className="text-sm text-gray-500">{m.profession}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Aktif</span>
-                                                    {m.id!==user.id&&<Button size="sm" variant="outline" disabled={ptActions.blocked} onClick={()=>{if(confirm(m.full_name+' isimli üyeyi loncadan çıkarmak istiyor musunuz?'))void ptActions.run('remove',m.id);}}>Üye Çıkar</Button>}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Sinerji Matrisi (En İyi İşbirlikleri)</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-3">
-                                        {ptSynergy.slice(0, 5).map((s: any, idx: number) => (
-                                            <li key={idx} className="flex items-center justify-between text-sm">
-                                                <div className="flex items-center max-w-[60%] truncate">
-                                                    <span className="font-medium">{s.from}</span>
-                                                    <span className="mx-2 text-gray-400">→</span>
-                                                    <span className="font-medium">{s.to}</span>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <div className="w-16 h-2 bg-gray-100 rounded-full mr-2 overflow-hidden">
-                                                        <div className="h-full bg-green-500" style={{ width: `${Math.min(s.count * 10, 100)}%` }}></div>
-                                                    </div>
-                                                    <span className="font-bold text-gray-900">{s.count} İş</span>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                )}
 
                 {/* CONTENT: RESPONSIBILITIES */}
                 {activeTab === 'RESPONSIBILITIES' && (

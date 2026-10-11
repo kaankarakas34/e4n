@@ -34,7 +34,7 @@ export default function AdminReports(){
   if(user?.role!=='ADMIN')return <p role="alert" className="p-6">Bu rapor yalnız yöneticiye açıktır.</p>;
   const current=result?.key===key?result:null,data=current?.data;
   const cards=data?[
-    ['Kayıtlı hesap',data.stock.accounts],['Aktif grup',data.stock.active_groups],['Aktif lonca',data.stock.active_teams],
+    ['Kayıtlı hesap',data.stock.accounts],['Aktif grup',data.stock.active_groups],
     ['Dönemde yeni hesap',data.activity.new_accounts],['Dönemde etkinlik',data.activity.events],['Tamamlanan birebir',data.activity.meetings],
     ['Ziyaretçi kaydı',data.activity.visitor_records],['Katılmış ziyaretçi',data.activity.attended_visitors],['Üyeye dönüşmüş ziyaretçi kaydı',data.activity.joined_visitors],
     ['Başarılı referans iş hacmi',volume(data.volumes.total)],['İç referans iş hacmi',volume(data.volumes.internal)],['Dış referans iş hacmi',volume(data.volumes.external)]
@@ -54,7 +54,7 @@ export default function AdminReports(){
       {tab==='overview'&&<>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">{cards.map(([title,value])=><Card key={title}><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent>{value}</CardContent></Card>)}</div>
         {data.volumes.unclassified.count>0&&<p>Sınıflandırılmamış referans: {data.volumes.unclassified.count}; başarılı iş hacmi: {volume(data.volumes.unclassified)}.</p>}
-        <p className="text-sm text-gray-600">Mevcut hesap/grup/lonca sayıları seçilen dönemden bağımsızdır. İş hacmi başarılı referansların kayıtlı tutarıdır, tahsilat değildir. Ziyaretçiler kaydedilen durumlarıyla sayılır; bu kayıtlar üyelik hakkını göstermez.</p>
+        <p className="text-sm text-gray-600">Mevcut hesap/grup sayıları seçilen dönemden bağımsızdır. İş hacmi başarılı referansların kayıtlı tutarıdır, tahsilat değildir. Ziyaretçiler kaydedilen durumlarıyla sayılır; bu kayıtlar üyelik hakkını göstermez.</p>
         <Card><CardHeader><CardTitle>Aylık kayıt özeti (UTC)</CardTitle></CardHeader><CardContent>
           <DataTable headers={['Ay','Dönemde yeni hesap','Referans kaydı','Başarılı referans','Kayıtlı başarılı iş hacmi']} rows={data.monthly.map(m=>[m.month,m.newAccounts,m.referrals.count,m.referrals.successful,volume(m.referrals)])}/>
           <p className="text-sm text-gray-600 mt-3">İlk ve son ay seçilen dönemle sınırlıdır. Referans oluşturulma ayı ve güncel sonucu gösterilir; yeni hesap sayısı silinmemiş kayıtların oluşturulma tarihidir, net büyüme veya kayıp üye ölçümü değildir.</p>

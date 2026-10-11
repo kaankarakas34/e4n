@@ -7,7 +7,7 @@ export interface ReferralRow {
   giver_name?:string; receiver_name?:string;
 }
 export interface ReferralInput {receiverId:string;type:ReferralRow['type'];temperature:ReferralRow['temperature'];description:string;amount?:number|null}
-export interface ReferralScope {id:string;name:string;kind:'group'|'team'}
+export interface ReferralScope {id:string;name:string;kind:'group'}
 const text=(v:unknown)=>typeof v==='string' && !!v.trim();
 export const validReferral=(r:any):r is ReferralRow=>r && !Array.isArray(r) && ['id','giver_id','receiver_id'].every(k=>text(r[k]))
   && ['INTERNAL','EXTERNAL'].includes(r.type) && ['HOT','WARM','COLD'].includes(r.temperature)
@@ -30,17 +30,14 @@ export const referralsApi={
     return rows as ReferralRow[];
   },
   async scopes(owner:string){
-    const [groups,teams]=await Promise.all([apiClient.get<unknown>(`/user/groups?userId=${encodeURIComponent(owner)}`),apiClient.get<unknown>(`/user/power-teams?userId=${encodeURIComponent(owner)}`)]);
-    const result:ReferralScope[]=[];
-    for(const [kind,rows] of [['group',groups],['team',teams]] as const){
-      if(!Array.isArray(rows) || !rows.every(r=>r && text(r.id) && text(r.name))) throw new Error('Grup/lonca listesi doğrulanamadı.');
-      for(const row of rows)result.push({id:row.id,name:row.name,kind});
-    }
+    const groups=await apiClient.get<unknown>(`/user/groups?userId=${encodeURIComponent(owner)}`);
+    if(!Array.isArray(groups) || !groups.every(r=>r && text(r.id) && text(r.name))) throw new Error('Grup listesi doğrulanamadı.');
+    const result:ReferralScope[]=groups.map(row=>({id:row.id,name:row.name,kind:'group'}));
     return result;
   },
   async people(owner:string,scope?:ReferralScope){
     if(!scope)return (await connectionsApi.list(owner)).map(({id,name})=>({id,name}));
-    const endpoint=scope?`/${scope.kind==='group'?'groups':'power-teams'}/${encodeURIComponent(scope.id)}/members`:'/user/friends';
+    const endpoint=`/groups/${encodeURIComponent(scope.id)}/members`;
     return peopleRows(await apiClient.get<unknown>(endpoint),owner);
   },
   async create(owner:string,input:ReferralInput,requestId:string){

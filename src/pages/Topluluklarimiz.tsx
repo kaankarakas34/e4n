@@ -1,7 +1,5 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
 import { 
   Megaphone, 
   Network, 
@@ -29,8 +27,6 @@ interface CommunityItem {
 }
 
 export function Topluluklarimiz() {
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
 
   const generalCommunities: CommunityItem[] = [
     {
@@ -143,7 +139,7 @@ export function Topluluklarimiz() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none mb-6">
             E4N Topluluklarına Katılın
           </h1>
-          <p className="text-slate-300 text-sm mt-4 max-w-3xl mx-auto">Bu açık topluluk kanalları ayrı bir üyelik türü değildir. WhatsApp veya lonca kanalına katılım, E4N aboneliği ve kapalı grup kabulü sağlamaz.</p>
+          <p className="text-slate-300 text-sm mt-4 max-w-3xl mx-auto">WhatsApp loncalarımız herkese açıktır; kayıt veya giriş yapmadan katılabilirsiniz. WhatsApp veya lonca kanalına katılım, E4N aboneliği ve kapalı grup kabulü sağlamaz.</p>
           <p className="text-lg sm:text-xl text-slate-300 mb-8 leading-relaxed max-w-3xl mx-auto font-light">
             Ücretsiz topluluklarımıza katılıp etkinliklerimizden anında haberdar olun, sektörel gelişmeleri takip edin ve birçok profesyonelle tanışma şansı yakalayın.
           </p>
@@ -152,44 +148,7 @@ export function Topluluklarimiz() {
 
             {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10">
-        {!user ? (
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-xl shadow-slate-100 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl"></div>
-              
-              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8" />
-              </div>
 
-              <span className="text-xs font-mono font-bold text-red-650 uppercase tracking-widest block mb-3">
-                E4N TOPLULUK GİRİŞ KAPISI
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
-                Normal Üyelik Hesabı Oluşturun
-              </h2>
-              
-              <p className="text-slate-650 text-base leading-relaxed mb-8 max-w-xl mx-auto">
-                Şirket bilgilerinizle normal üyelik hesabınızı açabilirsiniz. Açık topluluk kanalları ve kapalı grup kabulü farklıdır; kapalı grup başvurusu için aktif abonelik gerekir.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button
-                  onClick={() => navigate('/auth/register')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl bg-red-600 hover:bg-red-550 text-white font-bold text-sm tracking-wide shadow-lg shadow-red-200 transition-all transform active:scale-95"
-                >
-                  Üye Ol
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => navigate('/auth/login')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-2xl border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm tracking-wide transition-all transform active:scale-95"
-                >
-                  Giriş Yap
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
           <>
             {/* Category 1: Genel Gruplar */}
             <div className="mb-16">
@@ -223,7 +182,7 @@ export function Topluluklarimiz() {
                         {item.description}
                       </p>
                     </div>
-                    
+
                     <a 
                       href={item.url} 
                       target="_blank" 
@@ -271,7 +230,7 @@ export function Topluluklarimiz() {
                         {item.description}
                       </p>
                     </div>
-                    
+
                     <a 
                       href={item.url} 
                       target="_blank" 
@@ -322,7 +281,7 @@ export function Topluluklarimiz() {
                           {item.description}
                         </p>
                       </div>
-                      
+
                       <a 
                         href={item.url} 
                         target="_blank" 
@@ -339,7 +298,7 @@ export function Topluluklarimiz() {
               </div>
             </div>
           </>
-        )}
+
       </div>
 </div>
   );

@@ -1,3 +1,11 @@
+## Son teslim — E4N-288 / Açık WhatsApp loncaları (2026-10-11)
+
+- Kullanıcının yeni talimatı: iç lonca üyeliği/yönetimi kaldırıldı; WhatsApp toplulukları herkese açık.
+- `/topluluklarimiz` giriş gerektirmez; 10 davet bağlantısı doğrudan görünür. Eski lonca adresleri buraya yönlendirilir. Eski lonca API’leri ve rol atamaları 410 ile kapalıdır.
+- Normal kapalı iş grupları ve yönetimleri korunur. Tarihsel lonca kayıtları silinmedi.
+- Web/mobil kaynaklar yönetilen foundation checkout’unda güncellendi; canlı dağıtım yapılmadı. Mobil alt depodaki önceki değişiklikler korunuyor.
+- Kanıt: [[E4N/09-Dogrulama/E4N-288-Acik-WhatsApp-Loncalari-2026-10-11]]. Bu talimat Overseas SEO / S11 kapsamından ayrıdır.
+
 # E4N devam durumu — 11 Ekim 2026
 
 ## Güncel teslim — P32 / E4N-104 tamamlandı & Sprint 7 Kapandı (Mobil API ve Ekran Sözleşmesi Uzlaştırması)

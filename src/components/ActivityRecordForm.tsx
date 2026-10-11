@@ -19,10 +19,10 @@ export function ActivityRecordForm({open,onClose,onSaved}:{open:boolean;onClose:
         if(!valid())return;
         const seq=++sequence.current;setLoading(true);setLoadError(null);setPartner('');
         try {
-            // Preserve the existing group's/lonca's partner scope; failed scope reads cannot silently broaden it.
-            const scopes=await Promise.all([api.getUserGroups(user.id),api.getUserPowerTeams(user.id)]);
-            if(scopes.some(rows=>!Array.isArray(rows)||rows.some((row:any)=>!row||typeof row.id!=='string'||!row.id.trim())))throw new Error('Invalid scopes');
-            const rows=await Promise.all([...scopes[0].map((g:any)=>api.getGroupMembers(g.id)),...scopes[1].map((g:any)=>api.getPowerTeamMembers(g.id))]);
+            // Closed group membership determines the partner scope; failed reads cannot broaden it.
+            const groups=await api.getUserGroups(user.id);
+            if(!Array.isArray(groups)||groups.some((row:any)=>!row||typeof row.id!=='string'||!row.id.trim()))throw new Error('Invalid scopes');
+            const rows=await Promise.all(groups.map((g:any)=>api.getGroupMembers(g.id)));
             const map=new Map<string,Partner>();
             for(const members of rows){
                 if(!Array.isArray(members))throw new Error('Invalid partners');
@@ -63,7 +63,7 @@ export function ActivityRecordForm({open,onClose,onSaved}:{open:boolean;onClose:
     return <Modal open={open&&!!user?.id} title="Tamamlanmış Birebir Görüşme" onClose={()=>{if(!lock.current)onClose();}}>
         <form onSubmit={submit} className="space-y-4">
             {error&&<p role="alert">{error}</p>}
-            {loading||loadedFor!==context?<p role="status">Katılımcılar yükleniyor...</p>:loadError?<p role="alert">{loadError}</p>:!partners.length&&<p>Grup veya loncanızda katılımcı bulunmuyor.</p>}
+            {loading||loadedFor!==context?<p role="status">Katılımcılar yükleniyor...</p>:loadError?<p role="alert">{loadError}</p>:!partners.length&&<p>Grupnızda katılımcı bulunmuyor.</p>}
             <Button type="button" onClick={load} disabled={sending||loading}>Katılımcıları tekrar yükle</Button>
             <label htmlFor="activity-partner">Katılımcı Üye</label>
             <select id="activity-partner" value={partner} onChange={e=>setPartner(e.target.value)} disabled={sending||!ready} required className="w-full border rounded p-2">

@@ -41,7 +41,6 @@ import { MembershipPage } from './pages/Membership';
 import { GroupManagerDashboard } from './pages/GroupManagerDashboard';
 import { MessagesPage } from './pages/MessagesPage';
 import { PublicProfile } from './pages/PublicProfile';
-import { PowerTeams } from './pages/PowerTeams';
 import { Navigation } from './shared/Navigation';
 import { PublicEventsPage } from './pages/PublicEventsPage';
 import AdminReports from './pages/AdminReports';
@@ -181,6 +180,9 @@ function App() {
                 <Route path="/degerlendirme-basvurusu" element={<LegacyMembershipEntry />} />
                 <Route path="/ziyaretci-basvurusu" element={<DegerlendirmeBasvurusu />} />
                 <Route path="/topluluklarimiz" element={<Topluluklarimiz />} />
+                <Route path="/power-teams" element={<Navigate to="/topluluklarimiz" replace />} />
+                <Route path="/power-teams/:id" element={<Navigate to="/topluluklarimiz" replace />} />
+                <Route path="/admin/power-teams/:id" element={<Navigate to="/topluluklarimiz" replace />} />
                 <Route path="/ziyaretci" element={<VisitorPaymentPage />} />
                 <Route path="/iletisim" element={<ContactPage />} />
                 <Route path="/kvkk" element={<KVKK />} />
@@ -237,9 +239,9 @@ function App() {
               <Route path="/admin/web-jobs" element={<AdminWebJobs />} />
               <Route path="/admin/groups" element={<AdminGroups />} />
               <Route path="/admin/groups/:id" element={<AdminGroupDetail />} />
-              <Route path="/admin/power-teams/:id" element={<AdminGroupDetail />} />
+
               <Route path="/groups/:id" element={<GroupDetail />} />
-              <Route path="/power-teams/:id" element={<GroupDetail />} />
+
               <Route path="/admin/exams" element={<AdminExams />} />
               <Route path="/admin/lms" element={<AdminLMS />} />
               <Route path="/admin/lms/course/:id" element={<AdminCourseEditor />} />

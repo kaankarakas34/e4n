@@ -87,6 +87,7 @@ import { ShufflePage } from './pages/ShufflePage';
 import { KatilimIlkeleri } from './pages/KatilimIlkeleri';
 import { BirebirNetworking } from './pages/BirebirNetworking';
 import { CityNetworkingPage } from './pages/CityNetworkingPage';
+import { MemberHandbook } from './pages/MemberHandbook';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 
@@ -201,13 +202,15 @@ function App() {
               <Route path="/biz-kimiz" element={<Navigate to="/hakkimizda" replace />} />
               <Route path="/about" element={<Navigate to="/hakkimizda" replace />} />
               <Route path="/contact" element={<Navigate to="/iletisim" replace />} />
-              <Route path="/kurallar" element={<Navigate to="/katilim-ilkeleri" replace />} />
+              <Route path="/kurallar" element={<Navigate to="/rehber" replace />} />
               <Route path="/katilim" element={<Navigate to="/katilim-ilkeleri" replace />} />
               <Route path="/payment" element={<Navigate to="/ziyaretci" replace />} />
 
               {/* Main Public Pages wrapped with Shared Header & Footer */}
               <Route element={<MainPublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/rehber" element={<MemberHandbook />} />
+                <Route path="/calisma-rehberi" element={<MemberHandbook />} />
                 <Route path="/e4n-nedir" element={<E4NNedir />} />
                 <Route path="/egitim" element={<Navigate to="/uyelik" replace />} />
                 <Route path="/egitim-basvuru" element={<Navigate to="/uyelik" replace />} />

@@ -30,7 +30,11 @@ import {
   MessageCircle,
   Linkedin,
   Instagram,
-  User
+  User,
+  BookOpen,
+  Shield,
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -43,6 +47,16 @@ export function Dashboard() {
   const performance=fresh?performanceState.performance:null;
   const isLoading=fresh?performanceState.isLoading:true;
   const error=fresh?performanceState.error:null;
+
+  const isSubscribed = Boolean(
+    user?.role === 'ADMIN' ||
+    (
+      user?.subscription_plan &&
+      user?.subscription_end_date &&
+      new Date(user.subscription_end_date) > new Date() &&
+      user?.account_status === 'ACTIVE'
+    )
+  );
 
 
   useEffect(() => {
@@ -231,16 +245,113 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Traffic Light & Quick Actions */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Champions Widget */}
-            <ChampionsWidget />
+            {!isSubscribed ? (
+              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-700/80 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"></div>
 
-            {/* Performance Score Card */}
-            <ScoreCard
-              performance={performance}
-              isLoading={isLoading}
-              userName={user.name}
-              onRefresh={()=>void fetchPerformance(user.id)}
-            />
+                <div className="relative z-10">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-600/30 text-red-300 border border-red-500/40">
+                      <BookOpen className="w-3.5 h-3.5" /> E4N Üyelik ve Çalışma Rehberi
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                      Sürüm 1.1 Taslak • 9 Sekmeli Kılavuz
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">
+                    Topluluk Kurallarını ve Çalışma Rehberini İnceleyin
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 mb-6 max-w-3xl leading-relaxed">
+                    E4N profesyonel iş ağında güven, düzenli katılım ve şeffaf kurallar esastır. Henüz aktif bir aboneliğiniz bulunmadığı için performans karnesi yerine toplantı adabı, devamsızlık ve vekil kuralları ile 9 sekmeli resmi rehber öncelikli olarak sunulmaktadır.
+                  </p>
+
+                  {/* 4 Core Pillars Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 shrink-0 mt-0.5">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">15 Dk Geç Kalma Toleransı</h4>
+                        <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">Toplantı saatinden itibaren 15 dakikayı aşan gecikmeler devamsızlık sayılır.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 shrink-0 mt-0.5">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">2 Vekil & 3 Devamsızlık</h4>
+                        <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">4 aylık dönemde 3 devamsızlık ve 2 vekil hakkı; geçerli vekil devamsızlık sayılmaz.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 shrink-0 mt-0.5">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Yılda 1 Ay Dondurma</h4>
+                        <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">Üyeliğinizi yılda bir defa, en fazla bir ay süreyle dondurabilirsiniz.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 shrink-0 mt-0.5">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Meslek Tekilliği & Kota Yok</h4>
+                        <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">Aynı grupta mesleğinizden tek temsilci; zorunlu ciro veya satış kotası bulunmaz.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA Actions */}
+                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-800">
+                    <Button
+                      onClick={() => navigate('/rehber')}
+                      className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-900/40 flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Çalışma Rehberini İncele (9 Sekmeli Kılavuz)
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+
+                    <Button
+                      onClick={() => navigate('/chapter-management')}
+                      variant="outline"
+                      className="w-full sm:w-auto border-slate-600 text-slate-200 hover:bg-slate-800 hover:text-white font-semibold px-5 py-3 rounded-xl"
+                    >
+                      Ücretsiz Ziyaretçi Ol
+                    </Button>
+
+                    <Button
+                      onClick={() => navigate('/membership')}
+                      variant="ghost"
+                      className="w-full sm:w-auto text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 font-semibold px-4 py-3 rounded-xl"
+                    >
+                      Abonelik Satın Al
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Champions Widget */}
+                <ChampionsWidget />
+
+                {/* Performance Score Card */}
+                <ScoreCard
+                  performance={performance}
+                  isLoading={isLoading}
+                  userName={user.name}
+                  onRefresh={()=>void fetchPerformance(user.id)}
+                />
+              </>
+            )}
 
             {/* Tasks between performance and quick actions */}
             <GroupApplicationTasks />
@@ -258,68 +369,114 @@ export function Dashboard() {
             <QuickActions />
             <VisitorInviteWidget />
             <div id="my-groups"><GroupMembersWidget /></div>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Bu Ayki Yönlendirmeler</p>
-                      <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.referrals || 0}</p>
-                    </div>
-                    <Users className="h-8 w-8 text-purple-600" />
+            {isSubscribed ? (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Bu Ayki Yönlendirmeler</p>
+                          <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.referrals || 0}</p>
+                        </div>
+                        <Users className="h-8 w-8 text-purple-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Birebir Görüşmeler</p>
+                          <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.one_to_ones || 0}</p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Getirilen Ziyaretçiler</p>
+                          <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.visitors || 0}</p>
+                        </div>
+                        <Calendar className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Performance Tips */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
+                      Performans İpuçları
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {performance?.recommendations && performance.recommendations.length > 0 ? (
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        {performance.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start">
+                            <span className="text-blue-600 mr-2">•</span>
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500">Harika gidiyorsunuz! Şu an için bir öneri yok.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card className="border-red-100 bg-gradient-to-br from-red-50/40 via-white to-slate-50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-red-600" />
+                    Abonelikle Açılan Özellikler
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3.5 text-sm text-gray-600">
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <span><strong>35 Kişilik Kapalı Grup:</strong> Grubunuzda mesleğinizin tek temsilcisi olun.</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <span><strong>Birebir ve Referanslar:</strong> İş ortaklarıyla doğrudan 1-2-1 ve ticari yönlendirme yapın.</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <span><strong>Performans Karnesi:</strong> Aylık trafik ışığı rozeti ve ticari hacim takibi.</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <span><strong>Loncalar ve Shuffle:</strong> Ayda bir yüz yüze loncalara katılın ve 4 ayda bir yeni ağ kurun.</span>
+                  </div>
+                  <div className="pt-2 border-t border-gray-100 space-y-2">
+                    <Button
+                      onClick={() => navigate('/membership')}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-red-900/20"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      Abonelik Paketlerini İncele
+                    </Button>
+                    <button
+                      onClick={() => navigate('/rehber')}
+                      className="w-full text-center text-xs text-slate-500 hover:text-red-600 font-semibold py-1 transition-colors"
+                    >
+                      Çalışma Rehberini Oku →
+                    </button>
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Birebir Görüşmeler</p>
-                      <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.one_to_ones || 0}</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Getirilen Ziyaretçiler</p>
-                      <p className="text-2xl font-bold text-gray-900">{performance?.breakdown?.visitors || 0}</p>
-                    </div>
-                    <Calendar className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Performance Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
-                  Performans İpuçları
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {performance?.recommendations && performance.recommendations.length > 0 ? (
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    {performance.recommendations.map((rec, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="text-blue-600 mr-2">•</span>
-                        {rec}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-500">Harika gidiyorsunuz! Şu an için bir öneri yok.</p>
-                )}
-              </CardContent>
-            </Card>
+            )}
 
             {/* Visitor Link Generator */}
             <Card>

@@ -6,7 +6,32 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
 
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel — Ücretsiz Ziyaretçi Modeli, Grup İnceleme Popup'ı, Meslek Çakışması Denetimi ve Dashboard Alanı Tamamlandı
+## Güncel — Abone Olmayan Üyeler için Dashboard Kurallar Alanı ve 9 Sekmeli Kapsamlı Çalışma Rehberi Tamamlandı
+
+- Kullanıcının doğrudan talimatıyla dashboard ve rehber deneyimi uyarlandı:
+  - **Abone Olmayan Üye Dashboard Davranışı (`Dashboard.tsx`):**
+    - Aktif aboneliği bulunmayan (`!isSubscribed`) üyeler için kişisel performans durumu (`ScoreCard`), şampiyonlar listesi (`ChampionsWidget`) ve boş 0'lı performans istatistikleri kaldırıldı.
+    - Yerine 15 dakika tolerans, 2 vekil / 3 devamsızlık, yılda 1 ay dondurma ve tekil meslek kuralını özetleyen **"E4N Üyelik ve Çalışma Rehberi"** kartı yerleştirildi.
+    - "Çalışma Rehberini İncele" butonu doğrudan `/rehber` sayfasına yönlendiriyor.
+    - Sağ sütuna "Abonelikle Açılan Özellikler" paneli eklendi; üyelik paketleri satın alma (`/membership`) ve rehber bağlantısı sağlandı.
+  - **9 Sekmeli Kapsamlı Üyelik ve Çalışma Rehberi Sayfası (`/rehber` & `/calisma-rehberi`):**
+    - `src/pages/MemberHandbook.tsx` ve `src/data/handbookData.ts` oluşturuldu.
+    - Kullanıcının ilettiği 11 Ekim 2026 tarihli Sürüm 1.1 Taslak metni 9 sekmeli modern etkileşimli yapıda eksiksiz uygulandı:
+      - *Sekme 1 (hos-geldiniz):* E4N'yi Tanıyın (6 temel değer, E4N bir bakışta tablosu, beklentiler).
+      - *Sekme 2 (uyelik-meslek):* Üyelik ve Meslekler (Platform vs ana grup üyeliği, meslek tekilliği, çakışma çözüm politikası).
+      - *Sekme 3 (gruplar-toplantilar):* Gruplar ve Toplantılar (35 kişi tavan, 120 dk akış, 15 dk tolerans, 2 vekil prosedürü).
+      - *Sekme 4 (isbirligi):* Birebir ve İşbirliği (1-2-1 prosedürü, referans etiği kavram tablosu, dijital kayıt).
+      - *Sekme 5 (shuffle-puan):* Shuffle ve Puanlama (4 aylık dönem, puan bileşenleri tablosu, itiraz usulü).
+      - *Sekme 6 (loncalar-yonetim):* Loncalar ve Yönetim (5-15 kişi yüz yüze loncalar, başkan ve komite rolleri).
+      - *Sekme 7 (etik-gizlilik):* Etik ve Gizlilik (WhatsApp kuralları, veri görünürlük tablosu, AI eşleştirme adabı).
+      - *Sekme 8 (finans-disiplin):* Ücretler ve Üyelik Hakları (Yıllık peşin üyelik, 1 ay dondurma, 2 çıkarılma kuralı).
+      - *Sekme 9 (ilk-adimlar):* İlk 30 Gün ve SSS (Etkileşimli başlangıç kontrol listesi, 30 günlük yol haritası, 17 maddelik akordeon SSS).
+    - Rehber içi anlık kelime araması (search filter), sekmeler arası ileri/geri gezinme ve kopyalanabilir sekme bağlantıları eklendi.
+    - `EDITOR_ONLY` bölümü üye görünümünden tamamen ayrıştırıldı.
+    - `/kurallar` rotası doğrudan `/rehber` sayfasına yönlendirildi (404/yönlendirme koruması).
+- Test ve Kanıt: `node server/test/handbook-and-dashboard-rules-contract.mjs` PASS (5/5), `node server/test/route-ownership-static.mjs` PASS (224 rota), `npx tsc --noEmit` PASS (0 TS hatası), `npm run build` PASS (2821 modül derlendi).
+
+## Önceki — Ücretsiz Ziyaretçi Modeli, Grup İnceleme Popup'ı, Meslek Çakışması Denetimi ve Dashboard Alanı Tamamlandı
 
 - Kullanıcının doğrudan talimatıyla ziyaretçi ve grup keşfi deneyimi zenginleştirildi:
   - **Grup İnceleme Popup'ı (`GroupDiscovery.tsx`):** "İncele" tıklandığında modern modal pencere açılıyor. İki ayrı sekme yer alıyor:

@@ -6,7 +6,25 @@ Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-f
 
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel — Üyelik Fiyatları, %20 KDV, Kazanç Rozetleri ve Sipay Sözleşmesi Tamamlandı (`27d83f7`)
+## Güncel — Ücretsiz Ziyaretçi Modeli (2 Toplantı Hakkı, Grup Ziyaretçi Butonu & Web Sitesi Daveti) Tamamlandı
+
+- Kullanıcının doğrudan talimatıyla abonelik öncesi ücretsiz 2 toplantı ziyaretçi modeli devreye alındı:
+  - Kişi siteye kaydolup henüz abonelik satın almadan kapalı grupları keşfedebilir ve en fazla 2 toplantıya ücretsiz ziyaretçi olarak katılabilir.
+  - Abone olduktan sonra bu özellik ve butonlar otomatik olarak kalkar; üye doğrudan asil üyelik başvuru moduna geçer.
+- Sunucu ve API altyapısı (`server/src/index.js`):
+  - `GET /api/user/free-visits`: Kullanıcının abonelik durumunu, kullanılan/kalan ücretsiz ziyaretçi kotasını (maks 2) ve önceki taleplerini döner.
+  - `POST /api/user/request-visitor`: Abone olmamış üyeden grup ziyaretçi talebini alır, mükerrer grup talebini engeller, `public_visitors` ve `visitors` tablolarına `INVITED` olarak işler.
+- Kullanıcı Arayüzü & Grup Keşfi (`src/components/GroupDiscovery.tsx`):
+  - Abone olmamış üyeler için kalan hak sayacı (X/2) ve "Ziyaretçi olmak istiyorum" butonu + talep modalı entegre edildi.
+  - 2 hak dolduğunda uyarı ve `/membership` yönlendirmesi gösterildi.
+  - Abone olmuş üyelerde bu özellik tamamen gizlendi; sadece asil üyelik akışı gösterildi.
+- Web Sitesi & Pazarlama Entegrasyonu:
+  - `LandingPage.tsx`: Hero'da 2 toplantı ücretsiz rozeti, 2.5 bölümünde "Gelin, ilk önce ziyaretçi olun!" 3 adımlı süreç bölümü ve SSS maddesi eklendi.
+  - `Uyelik.tsx`: Hero rozeti, aşamalar tablosunda ücretsiz ziyaretçi adımı ve model esası açıklaması eklendi.
+  - `KapaliGruplar.tsx` & `NasilCalisir.tsx`: Ziyaretçi daveti ve süreci bağlandı.
+- Test ve Kanıt: `node server/test/free-member-visitor-flow-contract.mjs` PASS, `node server/test/route-ownership-static.mjs` PASS (223 rota), `npx tsc --noEmit` PASS (0 hata), `npm run build` PASS (2819 modül).
+
+## Önceki — Üyelik Fiyatları, %20 KDV, Kazanç Rozetleri ve Sipay Sözleşmesi Tamamlandı (`27d83f7`)
 
 - Kullanıcının doğrudan talimatıyla üyelik paketleri güncellendi:
   - 1 Aylık: 4.000 TL + %20 KDV = 4.800 TL KDV Dahil (Aylık baz paket).

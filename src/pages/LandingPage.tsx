@@ -70,6 +70,10 @@ export function LandingPage() {
 
   const faqItems = [
     {
+      q: 'Üye olmadan önce toplantıları ziyaret edebilir miyim?',
+      a: 'Evet! E4N hesabı açtıktan sonra henüz bir abonelik satın almadan dilediğiniz bir kapalı grubun toplantısına 2 defaya kadar ücretsiz ziyaretçi olarak katılabilirsiniz. Grupları inceleyip "Ziyaretçi olmak istiyorum" butonuyla davetiye isteyebilirsiniz. 2 toplantı sonrasında devam etmek için üyelik paketi satın almanız gerekir.'
+    },
+    {
       q: 'Üye olmak doğrudan bir gruba katılmak mı?',
       a: 'Hesap, abonelik ve kapalı grup kabulü ayrı aşamalardır. Grup başvurusu ayrıca değerlendirilir.'
     },
@@ -107,8 +111,13 @@ export function LandingPage() {
           <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 text-left mb-12 lg:mb-0">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6 backdrop-blur-sm">
-                <span>İş insanları için düzenli ve seçici networking</span>
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 backdrop-blur-sm">
+                  <span>İş insanları için düzenli ve seçici networking</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30">
+                  <span>🎁 2 Toplantı Ücretsiz Ziyaretçi Hakkı</span>
+                </div>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] mb-6">
                 İşinizi anlayan bir çevreyle <br />
@@ -140,6 +149,10 @@ export function LandingPage() {
 
               {/* Bilgi Şeridi */}
               <div className="pt-6 border-t border-white/10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-300 font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="text-emerald-300 font-semibold">2 toplantı ücretsiz ziyaretçi imkânı</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                   <span>35 kişilik kapalı gruplar</span>
@@ -264,6 +277,81 @@ export function LandingPage() {
               <ShieldCheck className="w-4 h-4 text-red-600" />
               <span>Lonca katılımı, E4N aboneliği ve kapalı grup kabulü ayrı süreçlerdir.</span>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.5. Gelin, İlk Önce Ziyaretçi Olun! */}
+      <section className="py-20 lg:py-24 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white relative overflow-hidden border-y border-red-900/30">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-emerald-600/10 blur-[100px]"></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-red-600/10 blur-[100px]"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-3xl mx-auto text-center mb-14">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs uppercase tracking-wider border border-emerald-500/20 mb-4">
+              ÜCRETSİZ DENEYİM İMKÂNI
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+              Gelin, ilk önce <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">ziyaretçi olun!</span>
+            </h2>
+            <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              E4N'nin disiplinli iş birliği ortamını, haftalık toplantı dinamiğini ve 35 kişilik grup enerjisini doğrudan yerinde görün.
+              Abonelik satın almadan önce sisteme ücretsiz kaydolabilir ve seçeceğiniz kapalı grupların toplantılarına{' '}
+              <strong className="text-white font-semibold">2 toplantıya kadar ücretsiz ziyaretçi</strong> olarak katılabilirsiniz.
+            </p>
+          </div>
+
+          {/* 3 Adımda Ziyaretçi Süreci */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm hover:border-emerald-500/40 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg mb-4">
+                1
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Ücretsiz Kaydolun</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                Kredi kartı veya ön ödeme gerekmeden hızlıca E4N hesabı açın. Sisteme üye olmak tamamen ücretsizdir.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm hover:border-emerald-500/40 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg mb-4">
+                2
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Grubunuzu Seçin & Talep Gönderin</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                Paneldeki kapalı grupları inceleyin; uygun bir grup seçip "Ziyaretçi olmak istiyorum" butonuyla davetiye isteyin.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm hover:border-emerald-500/40 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg mb-4">
+                3
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Sistemi Görüp Karar Verin</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                2 toplantıya ücretsiz katılıp üyelerle tanışın, iş sunumlarını izleyin. Modelin size uygunluğundan emin olup aboneliğinizi başlatın.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={() => navigate('/auth/register')}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 h-12 shadow-lg shadow-emerald-900/40 w-full sm:w-auto"
+            >
+              Hemen Ücretsiz Kaydol & Ziyaretçi Ol <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/kapali-gruplar')}
+              className="border-white/20 text-white hover:bg-white/10 font-semibold px-8 h-12 w-full sm:w-auto"
+            >
+              Kapalı Grupları İncele
+            </Button>
           </div>
         </div>
       </section>

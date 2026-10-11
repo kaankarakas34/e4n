@@ -30,7 +30,7 @@ export function NasilCalisir() {
       icon: CreditCard,
       title: "2. Üyelik koşullarını değerlendirin",
       desc: "Güncel abonelik tutarını, ödeme koşullarını ve üyelik kapsamını inceleyin. E4N'nin tek üyelik yapısı, kapalı grup kabulüyle ayrı yönetilir.",
-      note: "Kapalı gruba başvurmak için aktif abonelik gerekir. Abonelik satın almadan önce grup kabulünün ayrıca değerlendirildiğini bilmeniz önemlidir."
+      note: "Kapalı gruba asil üye olarak başvurmak için aktif abonelik gerekir. Abonelik öncesinde sistemi görmek için 2 toplantıya kadar ücretsiz ziyaretçi olarak katılabilirsiniz."
     },
     {
       num: "03",

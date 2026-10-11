@@ -39,9 +39,12 @@ export function Uyelik() {
               size uygun gruba başvurun
             </span>
           </h1>
-          <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
+          <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-4 leading-relaxed font-normal">
             Şirket bilgilerinizle hesabınızı açın, üyelik koşullarını inceleyin ve düzenli networking için uygun kapalı gruba başvurun. Kayıt, abonelik ve grup kabulü ayrı aşamalardır.
           </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold text-xs sm:text-sm border border-emerald-500/30 mb-10">
+            <span>🎁 Henüz abone olmadan 2 toplantıya ücretsiz ziyaretçi olarak katılabilirsiniz!</span>
+          </div>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button
               size="lg"
@@ -49,7 +52,7 @@ export function Uyelik() {
               onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-8 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto shadow-lg shadow-red-900/30"
             >
-              Üye Ol
+              Ücretsiz Üye Ol & Ziyaretçi Ol
             </Button>
             <Button
               size="lg"
@@ -90,6 +93,21 @@ export function Uyelik() {
                 </span>
               </div>
 
+              <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-emerald-50/40">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold flex-shrink-0 text-xl">
+                    🎁
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg">Ücretsiz ziyaretçi deneyimi</h3>
+                    <p className="text-slate-600 text-sm mt-1">Abonelik satın almadan önce kapalı grupların toplantılarına <strong>2 defaya kadar ücretsiz ziyaretçi</strong> olarak katılıp sistemi yerinde test edebilirsiniz.</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full w-fit">
+                  2 Toplantı Ücretsiz
+                </span>
+              </div>
+
               <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold flex-shrink-0">
@@ -123,7 +141,7 @@ export function Uyelik() {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-            ℹ️ Hesap açmak için davetiye veya ön onay gerekmez. Abonelik satın almak gruba otomatik kabul sağlamaz.
+            ℹ️ Hesap açmak için davetiye veya ön onay gerekmez. Abonelik satın almadan önce 2 toplantıya ücretsiz ziyaretçi katılabilirsiniz. Abonelik satın almak gruba otomatik kabul sağlamaz.
           </div>
         </div>
       </section>
@@ -140,6 +158,9 @@ export function Uyelik() {
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed">
             <p>
               E4N'nin üyelik modeli yıllık aidiyet ve düzenli ilişki geliştirme yaklaşımı üzerine kuruludur. Güncel üyelik tutarı, ödeme dönemi ve kapsamı hesabınızdaki üyelik alanında gösterilir.
+            </p>
+            <p>
+              Sistemi yakından görüp karar vermek isteyen profesyoneller için <strong>2 toplantılık ücretsiz ziyaretçi imkânı</strong> sunulur. Böylece toplantı disiplinini ve üye sinerjisini bizzat yaşadıktan sonra aboneliğinizi güvenle başlatabilirsiniz.
             </p>
             <p>
               Ödeme yapmadan önce güncel koşulları inceleyin. Grup katılımının ayrı bir değerlendirmeye bağlı olduğunu dikkate alın.

@@ -161,17 +161,29 @@ export function KapaliGruplar() {
           <p className="text-slate-600 text-base sm:text-lg mb-4 leading-relaxed">
             Grup dağılımı dört ayda bir shuffle ile yenilenir. Bu yapı, bir dönem içinde ilişkileri geliştirmenizi ve sonraki dönemlerde yeni insanlarla tanışmanızı sağlar.
           </p>
-          <p className="text-slate-600 text-sm mb-8 leading-relaxed font-semibold bg-white p-4 rounded-2xl border border-slate-200 max-w-xl mx-auto">
+          <p className="text-slate-600 text-sm mb-6 leading-relaxed font-semibold bg-white p-4 rounded-2xl border border-slate-200 max-w-xl mx-auto">
             Aktif E4N aboneliğinizle grup başvurusu yapabilirsiniz. Başvuru veya ödeme, kabul ve kontenjan garantisi anlamına gelmez.
           </p>
+          <div className="mb-8 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl max-w-xl mx-auto text-emerald-950 text-sm">
+            <span className="font-bold block mb-1">🎁 Henüz abone olmadınız mı? Gelin, ilk önce ziyaretçi olun!</span>
+            <span>Ücretsiz hesap oluşturarak seçeceğiniz kapalı grupların toplantılarına <strong>2 defaya kadar ücretsiz ziyaretçi</strong> olarak katılabilir, sistemi yakından tanıyabilirsiniz.</span>
+          </div>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/uyelik')}
-              className="font-bold px-8 h-12 bg-red-600 hover:bg-red-500 shadow-md shadow-red-200"
+              onClick={() => navigate('/auth/register')}
+              className="font-bold px-8 h-12 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-200"
             >
-              Üyeliği İncele <ArrowRight className="w-4 h-4 ml-1.5" />
+              Ücretsiz Kaydol & Ziyaretçi Ol <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/uyelik')}
+              className="font-bold px-8 h-12 border-slate-300 text-slate-800 hover:bg-slate-50"
+            >
+              Üyeliği İncele
             </Button>
             <Button
               size="lg"

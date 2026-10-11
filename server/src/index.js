@@ -1383,6 +1383,172 @@ app.get('/api/user/visitors', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Free Visitor Quota & Status for authenticated user (Max 2 free visits for unsubscribed members)
+app.get('/api/user/free-visits', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRes = await pool.query(
+      'SELECT id, name, email, phone, company, profession, role, account_status, subscription_plan, subscription_end_date FROM users WHERE id = $1',
+      [userId]
+    );
+    if (!userRes.rowCount) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    const u = userRes.rows[0];
+
+    const isSubscribed = Boolean(
+      u.subscription_plan &&
+      u.subscription_end_date &&
+      new Date(u.subscription_end_date) > new Date() &&
+      u.account_status === 'ACTIVE'
+    );
+
+    // Count free visitor requests made by this user
+    const requestsRes = await pool.query(
+      `SELECT pv.id, pv.group_id, pv.status, pv.created_at, pv.form_data, g.name as group_name
+       FROM public_visitors pv
+       LEFT JOIN groups g ON pv.group_id = g.id
+       WHERE (LOWER(pv.email) = LOWER($1) OR pv.form_data->>'user_id' = $2::text)
+         AND pv.source = 'free_member_visitor'
+         AND pv.status != 'REJECTED'
+       ORDER BY pv.created_at DESC`,
+      [u.email, userId]
+    );
+
+    const visitsUsed = requestsRes.rowCount;
+    const maxVisits = 2;
+    const remainingVisits = Math.max(0, maxVisits - visitsUsed);
+    const canRequestVisitor = !isSubscribed && remainingVisits > 0;
+
+    res.json({
+      isSubscribed,
+      visitsUsed,
+      maxVisits,
+      remainingVisits,
+      canRequestVisitor,
+      requests: requestsRes.rows
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Request to become a visitor for a group (Free, max 2 for unsubscribed members)
+app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
+  const { groupId, notes } = req.body;
+  if (!groupId) return res.status(400).json({ error: 'Grup seçimi zorunludur.' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const userId = req.user.id;
+    const userRes = await client.query(
+      'SELECT id, name, email, phone, company, profession, role, account_status, subscription_plan, subscription_end_date FROM users WHERE id = $1',
+      [userId]
+    );
+    if (!userRes.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+    const u = userRes.rows[0];
+
+    const isSubscribed = Boolean(
+      u.subscription_plan &&
+      u.subscription_end_date &&
+      new Date(u.subscription_end_date) > new Date() &&
+      u.account_status === 'ACTIVE'
+    );
+
+    if (isSubscribed) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Aktif aboneliğiniz bulunmaktadır. Tam üye olarak kapalı gruplara doğrudan başvurabilirsiniz.',
+        code: 'ALREADY_SUBSCRIBED'
+      });
+    }
+
+    // Check group exists
+    const groupRes = await client.query('SELECT id, name FROM groups WHERE id = $1', [groupId]);
+    if (!groupRes.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Grup bulunamadı.' });
+    }
+    const group = groupRes.rows[0];
+
+    // Check total quota (max 2)
+    const countRes = await client.query(
+      `SELECT count(*)::int AS count FROM public_visitors
+       WHERE (LOWER(email) = LOWER($1) OR form_data->>'user_id' = $2::text)
+         AND source = 'free_member_visitor'
+         AND status != 'REJECTED'`,
+      [u.email, userId]
+    );
+
+    const visitsUsed = countRes.rows[0]?.count || 0;
+    if (visitsUsed >= 2) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Ücretsiz ziyaretçi hakkınız (maksimum 2 toplantı) dolmuştur. Toplantılara katılmaya devam etmek için lütfen üyelik paketi satın alın.',
+        code: 'QUOTA_EXHAUSTED'
+      });
+    }
+
+    // Check if already requested for this specific group
+    const existingRes = await client.query(
+      `SELECT 1 FROM public_visitors
+       WHERE (LOWER(email) = LOWER($1) OR form_data->>'user_id' = $2::text)
+         AND group_id = $3
+         AND status IN ('PENDING', 'CONTACTED', 'CONVERTED')`,
+      [u.email, userId, groupId]
+    );
+    if (existingRes.rowCount > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `"${group.name}" grubu için zaten devam eden bir ziyaretçi talebiniz bulunmaktadır.`,
+        code: 'DUPLICATE_GROUP_REQUEST'
+      });
+    }
+
+    const formData = {
+      user_id: u.id,
+      group_name: group.name,
+      notes: typeof notes === 'string' ? notes.trim() : '',
+      type: 'free_member_visitor',
+      requested_at: new Date().toISOString()
+    };
+
+    const insertRes = await client.query(
+      `INSERT INTO public_visitors (
+        name, email, phone, company, profession, source, kvkk_accepted, status, group_id, form_data
+      ) VALUES ($1, $2, $3, $4, $5, 'free_member_visitor', true, 'PENDING', $6, $7)
+      RETURNING *`,
+      [u.name, u.email, u.phone || '', u.company || '', u.profession || '', groupId, JSON.stringify(formData)]
+    );
+
+    // Also record in visitors table so group leaders see them
+    await client.query(
+      `INSERT INTO visitors (inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, 'INVITED')`,
+      [u.id, u.name, u.email, u.phone || '', u.company || '', u.profession || '', groupId]
+    );
+
+    await client.query('COMMIT');
+
+    const newVisitsUsed = visitsUsed + 1;
+    res.status(201).json({
+      success: true,
+      message: `"${group.name}" grubuna ziyaretçi talebiniz başarıyla oluşturuldu. Toplantı davetiyesi e-posta adresinize iletilecektir.`,
+      remainingVisits: Math.max(0, 2 - newVisitsUsed),
+      visitsUsed: newVisitsUsed,
+      maxVisits: 2,
+      request: insertRes.rows[0]
+    });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/events/:id/attendance', authenticateToken, async (req, res) => {
   try {
     const { rows } = await pool.query(`

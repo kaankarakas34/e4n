@@ -10,7 +10,7 @@ const repoDir = path.resolve(serverDir, '..');
 
 console.log('--- Testing Free Member Visitor Flow Contract ---');
 
-// 1. Backend Routes
+// 1. Backend Routes & Profession Conflict Validation
 const serverIndexPath = path.resolve(serverDir, 'src/index.js');
 const serverIndex = readFileSync(serverIndexPath, 'utf8');
 
@@ -23,8 +23,12 @@ assert.ok(
   'server/src/index.js must define POST /api/user/request-visitor'
 );
 assert.ok(
-  serverIndex.includes("source = 'free_member_visitor'"),
-  'server/src/index.js must tag free member visitor requests with source free_member_visitor'
+  serverIndex.includes("app.get('/api/groups/:id/stats'"),
+  'server/src/index.js must define GET /api/groups/:id/stats'
+);
+assert.ok(
+  serverIndex.includes("PROFESSION_CONFLICT"),
+  'server/src/index.js must enforce profession conflict check (PROFESSION_CONFLICT)'
 );
 assert.ok(
   serverIndex.includes("visitsUsed >= 2"),
@@ -47,6 +51,10 @@ assert.ok(
   apiTs.includes('requestGroupVisitor(groupId: string, notes?: string)'),
   'src/api/api.ts must define requestGroupVisitor method'
 );
+assert.ok(
+  apiTs.includes('getGroupStats(groupId: string)'),
+  'src/api/api.ts must define getGroupStats method'
+);
 
 // 3. GroupDiscovery Component
 const groupDiscoveryPath = path.resolve(repoDir, 'src/components/GroupDiscovery.tsx');
@@ -68,8 +76,32 @@ assert.ok(
   groupDiscovery.includes('requestGroupVisitor'),
   'GroupDiscovery must submit visitor request'
 );
+assert.ok(
+  groupDiscovery.includes('inspectModalGroup'),
+  'GroupDiscovery must feature popup modal for inspection'
+);
+assert.ok(
+  groupDiscovery.includes("inspectTab === 'MEMBERS'") && groupDiscovery.includes("inspectTab === 'STATS'"),
+  'GroupDiscovery inspection popup must feature 2 tabs (Members and Stats)'
+);
+assert.ok(
+  groupDiscovery.includes('isGroupProfessionConflicted'),
+  'GroupDiscovery must check and guard against profession conflict'
+);
 
-// 4. Landing Page
+// 4. Dashboard Banner
+const dashboardPath = path.resolve(repoDir, 'src/pages/Dashboard.tsx');
+const dashboard = readFileSync(dashboardPath, 'utf8');
+assert.ok(
+  dashboard.includes('Ziyaretçi olun ve gruptaki üyelerle tanışın (Ücretsiz)'),
+  'Dashboard must feature "Ziyaretçi olun ve gruptaki üyelerle tanışın (Ücretsiz)" banner'
+);
+assert.ok(
+  dashboard.includes('/chapter-management'),
+  'Dashboard visitor banner must link/navigate to /chapter-management'
+);
+
+// 5. Landing Page
 const landingPagePath = path.resolve(repoDir, 'src/pages/LandingPage.tsx');
 const landingPage = readFileSync(landingPagePath, 'utf8');
 
@@ -86,7 +118,7 @@ assert.ok(
   'LandingPage FAQ must answer visitor eligibility'
 );
 
-// 5. Uyelik & KapaliGruplar & NasilCalisir Pages
+// 6. Uyelik & KapaliGruplar & NasilCalisir Pages
 const uyelikPath = path.resolve(repoDir, 'src/pages/Uyelik.tsx');
 const uyelik = readFileSync(uyelikPath, 'utf8');
 assert.ok(
@@ -108,4 +140,4 @@ assert.ok(
   'NasilCalisir page must explain free visitor option in step 2'
 );
 
-console.log('✅ ALL CHECKS PASSED: Free Member Visitor Flow Contract is 100% compliant!');
+console.log('✅ ALL CHECKS PASSED: Free Member Visitor Flow & Group Inspection Contract is 100% compliant!');

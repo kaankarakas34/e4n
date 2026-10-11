@@ -638,6 +638,9 @@ export const api = {
   async getGroupVisitors(groupId: string) {
     return await request(`/groups/${groupId}/visitors`);
   },
+  async getGroupStats(groupId: string) {
+    return await request(`/groups/${groupId}/stats`);
+  },
   async getFreeVisits() {
     return await request('/user/free-visits');
   },

@@ -192,6 +192,42 @@ export function Dashboard() {
           </Alert>
         )}
 
+        {/* Ziyaretçi Olun ve Gruptaki Üyelerle Tanışın Banner'ı */}
+        <div
+          onClick={() => navigate('/chapter-management')}
+          className="mb-8 p-6 rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-red-950 text-white shadow-xl shadow-slate-950/20 cursor-pointer transform hover:-translate-y-0.5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 border border-red-500/20 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+          <div className="flex items-center space-x-4 relative z-10">
+            <div className="p-3.5 bg-red-600/20 text-red-400 border border-red-500/30 rounded-2xl flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Users className="h-7 w-7" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs uppercase tracking-wider mb-1.5 border border-emerald-500/30">
+                <span>🎁 2 Toplantı Ücretsiz Ziyaretçi Hakkı</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Ziyaretçi olun ve gruptaki üyelerle tanışın (Ücretsiz)
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                E4N kapalı gruplarının haftalık toplantılarına katılarak 35 kişilik seçkin iş çevreleriyle tanışın, iş yönlendirmesi ve networking modelini doğrudan yerinde deneyimleyin.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 relative z-10 flex-shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('/chapter-management');
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-lg shadow-red-900/40 whitespace-nowrap flex items-center transition-all group-hover:translate-x-0.5"
+            >
+              Grupları Keşfet & Ziyaretçi Ol
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Traffic Light & Quick Actions */}
           <div className="lg:col-span-2 space-y-6">

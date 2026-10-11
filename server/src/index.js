@@ -1401,16 +1401,15 @@ app.get('/api/user/free-visits', authenticateToken, async (req, res) => {
       u.account_status === 'ACTIVE'
     );
 
-    // Count free visitor requests made by this user
+    // Count free visitor requests made by this user from visitors table
     const requestsRes = await pool.query(
-      `SELECT pv.id, pv.group_id, pv.status, pv.created_at, pv.form_data, g.name as group_name
-       FROM public_visitors pv
-       LEFT JOIN groups g ON pv.group_id = g.id
-       WHERE (LOWER(pv.email) = LOWER($1) OR pv.form_data->>'user_id' = $2::text)
-         AND pv.source = 'free_member_visitor'
-         AND pv.status != 'REJECTED'
-       ORDER BY pv.created_at DESC`,
-      [u.email, userId]
+      `SELECT v.id, v.group_id, v.status, v.created_at, g.name as group_name
+       FROM visitors v
+       LEFT JOIN groups g ON v.group_id = g.id
+       WHERE (v.inviter_id = $1 OR LOWER(v.email) = LOWER($2))
+         AND v.status != 'REJECTED'
+       ORDER BY v.created_at DESC`,
+      [userId, u.email]
     );
 
     const visitsUsed = requestsRes.rowCount;
@@ -1420,6 +1419,7 @@ app.get('/api/user/free-visits', authenticateToken, async (req, res) => {
 
     res.json({
       isSubscribed,
+      userProfession: u.profession || '',
       visitsUsed,
       maxVisits,
       remainingVisits,
@@ -1465,6 +1465,15 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
       });
     }
 
+    const userProfession = (u.profession || '').trim();
+    if (!userProfession) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Profilinizde meslek bilginiz tanımlı değildir. Ziyaretçi talebinde bulunabilmek için lütfen önce profilinizden mesleğinizi belirtiniz.',
+        code: 'MISSING_PROFESSION'
+      });
+    }
+
     // Check group exists
     const groupRes = await client.query('SELECT id, name FROM groups WHERE id = $1', [groupId]);
     if (!groupRes.rowCount) {
@@ -1473,13 +1482,37 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
     }
     const group = groupRes.rows[0];
 
-    // Check total quota (max 2)
+    // MESLEK DENETİMİ: Grupta kullanıcının mesleğinden aktif bir üye OLMAMASI GEREKİR!
+    const conflictRes = await client.query(
+      `SELECT u2.name, u2.profession, u2.company 
+       FROM group_members gm
+       JOIN users u2 ON gm.user_id = u2.id
+       WHERE gm.group_id = $1 
+         AND gm.status = 'ACTIVE'
+         AND LOWER(TRIM(u2.profession)) = LOWER(TRIM($2))`,
+      [groupId, userProfession]
+    );
+
+    if (conflictRes.rowCount > 0) {
+      const conflictMember = conflictRes.rows[0];
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `"${group.name}" grubunda sizin mesleğinizden (${userProfession}) aktif bir üye bulunmaktadır (${conflictMember.name}${conflictMember.company ? ' - ' + conflictMember.company : ''}). E4N ilkeleri gereği her meslek dalından yalnızca tek bir temsilci kabul edilmektedir. Lütfen mesleğinizin boş olduğu başka bir grubu seçiniz.`,
+        code: 'PROFESSION_CONFLICT',
+        conflictMember: {
+          name: conflictMember.name,
+          profession: conflictMember.profession,
+          company: conflictMember.company
+        }
+      });
+    }
+
+    // Check total quota (max 2) from visitors table
     const countRes = await client.query(
-      `SELECT count(*)::int AS count FROM public_visitors
-       WHERE (LOWER(email) = LOWER($1) OR form_data->>'user_id' = $2::text)
-         AND source = 'free_member_visitor'
+      `SELECT count(*)::int AS count FROM visitors
+       WHERE (inviter_id = $1 OR LOWER(email) = LOWER($2))
          AND status != 'REJECTED'`,
-      [u.email, userId]
+      [userId, u.email]
     );
 
     const visitsUsed = countRes.rows[0]?.count || 0;
@@ -1493,11 +1526,11 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
 
     // Check if already requested for this specific group
     const existingRes = await client.query(
-      `SELECT 1 FROM public_visitors
-       WHERE (LOWER(email) = LOWER($1) OR form_data->>'user_id' = $2::text)
+      `SELECT 1 FROM visitors
+       WHERE (inviter_id = $1 OR LOWER(email) = LOWER($2))
          AND group_id = $3
-         AND status IN ('PENDING', 'CONTACTED', 'CONVERTED')`,
-      [u.email, userId, groupId]
+         AND status != 'REJECTED'`,
+      [userId, u.email, groupId]
     );
     if (existingRes.rowCount > 0) {
       await client.query('ROLLBACK');
@@ -1509,24 +1542,26 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
 
     const formData = {
       user_id: u.id,
+      group_id: groupId,
       group_name: group.name,
       notes: typeof notes === 'string' ? notes.trim() : '',
       type: 'free_member_visitor',
       requested_at: new Date().toISOString()
     };
 
-    const insertRes = await client.query(
+    // Insert into public_visitors without relying on group_id column
+    await client.query(
       `INSERT INTO public_visitors (
-        name, email, phone, company, profession, source, kvkk_accepted, status, group_id, form_data
-      ) VALUES ($1, $2, $3, $4, $5, 'free_member_visitor', true, 'PENDING', $6, $7)
-      RETURNING *`,
-      [u.name, u.email, u.phone || '', u.company || '', u.profession || '', groupId, JSON.stringify(formData)]
+        name, email, phone, company, profession, source, kvkk_accepted, status, form_data
+      ) VALUES ($1, $2, $3, $4, $5, 'free_member_visitor', true, 'PENDING', $6)`,
+      [u.name, u.email, u.phone || '', u.company || '', u.profession || '', JSON.stringify(formData)]
     );
 
-    // Also record in visitors table so group leaders see them
-    await client.query(
+    // Also record in visitors table (which has group_id)
+    const visitorInsertRes = await client.query(
       `INSERT INTO visitors (inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, 'INVITED')`,
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, 'INVITED')
+       RETURNING *`,
       [u.id, u.name, u.email, u.phone || '', u.company || '', u.profession || '', groupId]
     );
 
@@ -1539,8 +1574,67 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
       remainingVisits: Math.max(0, 2 - newVisitsUsed),
       visitsUsed: newVisitsUsed,
       maxVisits: 2,
-      request: insertRes.rows[0]
+      request: visitorInsertRes.rows[0]
     });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Group Aggregate Stats (Turnover, Referrals, Visitors, Members)
+app.get('/api/groups/:id/stats', authenticateToken, async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    if (!isUuid(groupId)) return res.status(400).json({ error: 'Geçersiz grup kimliği.' });
+
+    const groupRes = await pool.query('SELECT id, name, meeting_day, meeting_time, current_month FROM groups WHERE id = $1', [groupId]);
+    if (!groupRes.rowCount) return res.status(404).json({ error: 'Grup bulunamadı.' });
+    const group = groupRes.rows[0];
+
+    const refStatsRes = await pool.query(
+      `SELECT 
+         count(*)::int as referral_count,
+         COALESCE(sum(amount), 0)::float as total_turnover
+       FROM referrals r
+       JOIN users g ON r.giver_id = g.id
+       JOIN group_members gm ON g.id = gm.user_id
+       WHERE gm.group_id = $1 AND gm.status = 'ACTIVE'`,
+      [groupId]
+    );
+
+    const memberCountRes = await pool.query(
+      `SELECT count(*)::int as member_count FROM group_members WHERE group_id = $1 AND status = 'ACTIVE'`,
+      [groupId]
+    );
+
+    const visitorCountRes = await pool.query(
+      `SELECT count(*)::int as visitor_count FROM visitors WHERE group_id = $1`,
+      [groupId]
+    );
+
+    const refStats = refStatsRes.rows[0] || { referral_count: 0, total_turnover: 0 };
+    const memberCount = memberCountRes.rows[0]?.member_count || 0;
+    const visitorCount = visitorCountRes.rows[0]?.visitor_count || 0;
+
+    res.json({
+      groupId,
+      groupName: group.name,
+      meetingDay: group.meeting_day || 'Haftalık Toplantı',
+      meetingTime: group.meeting_time || '07:00',
+      currentMonth: group.current_month || 1,
+      totalTurnover: Number(refStats.total_turnover || 0),
+      totalReferrals: Number(refStats.referral_count || 0),
+      visitorCount: Number(visitorCount || 0),
+      activeMembers: Number(memberCount || 0),
+      availableSeats: Math.max(0, 35 - Number(memberCount || 0))
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
   } catch (e) {
     await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ error: e.message });

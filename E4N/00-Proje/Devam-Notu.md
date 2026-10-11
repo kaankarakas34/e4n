@@ -1,6 +1,17 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — MOB-01 / E4N-134 tamamlandı (Kişisel Rapor Mobil Ekran ve API Sözleşmesi Eşitlemesi)
+## Güncel teslim — PAR-01 / E4N-115 tamamlandı (Web ve Mobil Yetenek, Navigasyon ve Rol Matrisi Denetimi)
+
+- **E4N-115 (PAR-01) Done:** Web ve Mobil (React Native / Expo) istemcilerinin kullanıcı rolleri (`ANONYMOUS`, `MEMBER`, `PRESIDENT / VP`, `ADMIN`), navigasyon yapıları ve 20 fonksiyonel yetenek alanı uçtan uca denetlenerek eşitlik matrisi (`server/docs/par-01-web-mobile-capability-and-role-matrix.md`) çıkarıldı.
+  - **Rol ve Navigasyon Bulguları:**
+    - `MEMBER`: 5 sekme ve 10 menü özelliği doğrulandı. MOB-01 ile kişisel raporlar tam eşitlendi (`PARITY_FULL`). Referanslar ve Destek biletleri ortak Express API sözleşmesine bağlıdır.
+    - `PRESIDENT / VP`: Web'de `/group-management` altında 7 gün SLA başvuru kuyruğu ve yoklama bulunurken, mobilde başkanların doğrudan `MEMBER` ile aynı sekmelere yönlendirildiği ve başkanlık kartının eksik olduğu tespit edildi; PAR-04 için çözüm planlandı.
+    - `ADMIN`: Mobilde 12 özellik ve `user.role === 'ADMIN'` rol kapısı doğrulandı. 4 aylık shuffle simülasyonu ve Vercel cron alarm konsolu gibi masaüstü operasyonlarının bilinçli olarak web'de tutulması (`WEB_ONLY_INTENTIONAL`) kararlaştırıldı.
+  - **Eşitlik Dağılımı:** 6 PARITY_FULL, 6 PARITY_PARTIAL, 6 GAP_TO_CLOSE (PAR-02..PAR-05 adımlarıyla kapatılacak), 2 WEB_ONLY_INTENTIONAL.
+  - **Test ve Kanıt:** `node server/test/par-01-matrix-contract.mjs` (PASS), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Kanıt [[E4N/09-Dogrulama/PAR-01-Web-Mobil-Yetenek-Navigasyon-Rol-Matrisi-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-116 / PAR-02]: Ortak API, veri ve rol davranışını iki platformda denetle ve eşitle.
+
+## Önceki teslim — MOB-01 / E4N-134 tamamlandı (Kişisel Rapor Mobil Ekran ve API Sözleşmesi Eşitlemesi)
 
 - **E4N-134 (MOB-01) Done:** Mobil uygulamadaki `ReportsScreen` (`mobile/app/features/reports.tsx`) ekranı, web platformunda doğrulanmış olan `GET /api/reports/me` (`PersonalReport` sözleşmesi) ile uçtan uca eşitlendi.
   - **Düzeltilen Kusurlar ve Yapılan Geliştirmeler:**

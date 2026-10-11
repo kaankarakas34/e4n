@@ -57,10 +57,19 @@ import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard, evaluateLowScoreRemovals, applyLowScoreRemovals } from './utils/scoring.js';
-import { getJwtSecret, validateSecurityConfig } from './config/security.js';
+import { getJwtSecret, validateSecurityConfig, verifyJwt, signJwt } from './config/security.js';
+import { createRateLimiter } from './middleware/rate-limiter.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
+// Global Security Headers Middleware (OWASP Security Standards)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '0');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 // Validate environment security settings
 validateSecurityConfig();
 // Serverless instances cannot own a reliable scheduler. Audited jobs run via the API;
@@ -199,7 +208,7 @@ const sendEmail = async (to, subject, html, attachments = []) => {
   }
 };
 
-// Database routing and middleware setup
+const authLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20 });
 
 app.use(cors());
 app.use(express.json());
@@ -498,16 +507,18 @@ function authenticateToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.sendStatus(403);
+  try {
+    const user = verifyJwt(token);
     req.user = user;
     next();
-  });
+  } catch {
+    return res.sendStatus(403);
+  }
 }
 
 /* --- AUTH ENDPOINTS --- */
 
-installNormalRegistration(app,{pool});
+installNormalRegistration(app,{pool,authLimiter});
 installMembershipReferrals(app,{pool});
 
 /* --- PUBLIC ENDPOINTS --- */
@@ -545,7 +556,7 @@ app.get('/api/public/members/:id', async (req, res) => {
   }
 });
 
-app.post('/api/auth/create-password', async (req, res) => {
+app.post('/api/auth/create-password', authLimiter, async (req, res) => {
   const { token, password } = req.body;
   try {
     const { rows } = await pool.query(
@@ -767,7 +778,7 @@ app.delete('/api/professions/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   console.log('Login attempt for:', email);
   try {
@@ -793,15 +804,9 @@ app.post('/api/auth/login', async (req, res) => {
     let accountStatus = user.account_status || 'ACTIVE';
     if (user.subscription_end_date && new Date(user.subscription_end_date) < new Date()) {
       accountStatus = 'PASSIVE';
-      // Optionally update DB to reflect this if it wasn't already
-      // await pool.query("UPDATE users SET account_status = 'PASSIVE' WHERE id = $1", [user.id]);
     }
 
-    // Determine effective role or access based on status?
-    // For now, allow login but send status to frontend.
-    // user.account_status = accountStatus;
-
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, status: accountStatus }, SECRET_KEY, { expiresIn: '24h' });
+    const token = signJwt({ id: user.id, email: user.email, role: user.role, status: accountStatus }, { expiresIn: '24h' });
     res.json({ token, user: { id: user.id, name: user.name, role: user.role, email: user.email, status: accountStatus }, chapterId });
   } catch (e) {
     res.status(500).json({ error: e.message });

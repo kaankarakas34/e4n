@@ -228,16 +228,24 @@ router.post('/move-member', async (req, res) => {
 router.get('/email-config', async (req, res) => {
     try {
         const { rows } = await pool.query('SELECT * FROM email_configurations ORDER BY created_at DESC');
-        res.json(rows);
+        const sanitized = rows.map(r => ({
+            ...r,
+            smtp_pass: r.smtp_pass ? '********' : ''
+        }));
+        res.json(sanitized);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.post('/email-config', async (req, res) => {
-    const { smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active } = req.body;
+    let { smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active } = req.body;
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        if (smtp_pass === '********') {
+            const existing = (await client.query('SELECT smtp_pass FROM email_configurations WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1')).rows[0];
+            if (existing?.smtp_pass) smtp_pass = existing.smtp_pass;
+        }
         if (is_active) {
             await client.query('UPDATE email_configurations SET is_active = FALSE');
         }
@@ -248,7 +256,8 @@ router.post('/email-config', async (req, res) => {
             [smtp_host, smtp_port, smtp_user, smtp_pass, sender_email, sender_name, is_active || false]
         );
         await client.query('COMMIT');
-        res.status(201).json(rows[0]);
+        const created = { ...rows[0], smtp_pass: rows[0].smtp_pass ? '********' : '' };
+        res.status(201).json(created);
     } catch (e) {
         await client.query('ROLLBACK');
         res.status(500).json({ error: e.message });

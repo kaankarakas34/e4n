@@ -1,13 +1,26 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — SEC-02 / E4N-59 tamamlandı (Güvenli DB Bağlantısı ve JWT Yapılandırması)
+## Güncel teslim — SEC-03 / E4N-120 tamamlandı (Web, Mobil API ve Supabase Güvenlik Denetimi)
+
+- **E4N-120 (SEC-03) Done:** Web ve mobil istemcilerin paylaştığı tüm Express API rotaları, rol bazlı yetkilendirme (RBAC), yetki aşımı (Privilege Escalation), nesne düzeyi yetkilendirme (IDOR), SQL injection / XSS / null-byte girdi güvenliği, kimlik bilgisi hijyeni, hız sınırlama (Rate Limiting) ve Supabase PostgreSQL RLS bariyerleri uçtan uca denetlendi ve güçlendirildi.
+  - **7 Güvenlik Kapısı Tam Doğrulandı (7/7 PASS):**
+    - Gate 1: 15 korumalı rotada anonim/oturumsuz erişim HTTP 401 ile reddedildi.
+    - Gate 2: 16 idari rotada sıradan `MEMBER` rolü HTTP 403 Forbidden ile engellendi.
+    - Gate 3: Grup üyeleri, kişisel PDF faturalar (`/api/invoices/:id`), destek biletleri ve profil vergi alanlarında yatay yetki aşımı (IDOR) engellendi.
+    - Gate 4: Parametrik sorgularla SQL Injection girişimleri (`' OR 1=1 --`) nötralize edildi; geçersiz UUID ve null-byte denemeleri temiz 400/404 ile yakalandı.
+    - Gate 5: `password_hash` alanının hiçbir rotada dönmediği kanıtlandı; `GET /api/admin/email-config` içinde `smtp_pass` `'********'` olarak maskelendi; istemci formundaki (`AdminEmailSettings.tsx`) sabit parola temizlendi; OWASP güvenlik başlıkları (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 0`, `Referrer-Policy`) global olarak bağlandı.
+    - Gate 6: `/api/auth/login`, `/api/auth/register`, `/api/auth/create-password` için sıfır bağımlılıklı kayan pencere hız sınırlayıcı (`server/src/middleware/rate-limiter.js`) kuruldu; kota aşımında HTTP 429 (`RATE_LIMIT_EXCEEDED`) ve `Retry-After` doğrulandı.
+    - Gate 7: 50/50 public tabloda RLS aktifliği, 48 hassas tabloda `42501` PostgREST anon engeli ve 2 CMS tablosunda yayınlanmış-içerik politikası korundu.
+  - **Test ve Kanıt:** `server/test/sec-e2e-api-audit-contract.mjs` (7/7 Gate PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS), `sec-jwt-and-db-config-contract.mjs` (PASS), `sec-rls-access-contract.mjs` (PASS). Kanıt [[E4N/09-Dogrulama/SEC-03-API-ve-Supabase-Guvenlik-Denetimi-2026-10-11]].
+  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde [E4N-108 / P36]: Veri geçişini prova et ve geri dönüş koşullarını yaz.
+
+## Önceki teslim — SEC-02 / E4N-59 tamamlandı (Güvenli DB Bağlantısı ve JWT Yapılandırması)
 
 - **E4N-59 (SEC-02) Done:** Depodaki sabit kodlu JWT geri dönüş parolaları (`'310acce7...'`, `'supersecretkey123'`, `'web_browser_fixture_only'`) tamamen temizlendi; JWT ve veritabanı yapılandırma denetimleri `server/src/config/security.js` merkezi modülünde toplandı.
   - **Fail-Fast Üretim Koruması:** `NODE_ENV === 'production'` modunda eksik (`MISSING_JWT_SECRET`), 32 karakterden kısa (`INSUFFICIENT_SECRET_LENGTH`) veya bilinen 11 zayıf varsayılandan birine (`DISALLOWED_DEFAULT_SECRET`) sahip anahtarlar ile eksik veritabanı parametrelerinde (`MISSING_DB_CONFIG`) sunucunun açılışı engellendi.
   - **Sıfır Kesintili Rotasyon (Zero-Downtime):** `JWT_SECRET_PREVIOUS` desteğiyle aktif kullanıcı oturumları kesintiye uğramadan anahtar rotasyonu yapabilme altyapısı sağlandı.
   - **Şablon Arındırması:** `.env.example` dosyalarındaki gerçekçi Sipay anahtarları ve zayıf JWT değerleri güvenli yer tutuculara dönüştürüldü.
   - **Test ve Kanıt:** `server/test/sec-jwt-and-db-config-contract.mjs` (fail-fast, rotasyon, imzalama/doğrulama, statik kod ve şablon taraması PASS), `npm run check` (203 rota, 0 TS hatası PASS), `membership-referral-contract.mjs` (PASS), `sec-rls-access-contract.mjs` (PASS). `server/docs/sec-secret-rotation-and-jwt-guide.md` ve [[E4N/09-Dogrulama/SEC-02-Guvenli-Baglanti-ve-JWT-Yapilandirmasi-2026-10-11]].
-  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde [E4N-120 / SEC-03]: Geliştirmelerden sonra web, mobil API ve Supabase güvenlik denetimi.
 
 ## Önceki teslim — SEC-01 / E4N-58 tamamlandı (Supabase RLS ve Erişim Güvenlik Planı)
 

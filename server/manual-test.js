@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
 
-const user = 'info@event4network.com';
-const pass = '4hr:b-eSM8_1:R5B';
-const host = 'mail.kurumsaleposta.com';
-const to = 'kaankarakas93@gmail.com';
+const user = process.env.SMTP_USER || 'info@event4network.com';
+const pass = process.env.SMTP_PASS || 'your_smtp_password_here';
+const host = process.env.SMTP_HOST || 'mail.kurumsaleposta.com';
+const to = process.env.TEST_EMAIL_TO || 'test@example.com';
 
 async function testConfig(port, secure) {
     console.log(`\nTesting ${host}:${port} (Secure: ${secure})...`);

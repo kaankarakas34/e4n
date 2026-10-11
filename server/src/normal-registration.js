@@ -4,8 +4,9 @@ import {companyIdentity,companyWriteError} from './company-registration.js';
 import {resolveReferrer,recordMembershipReferral} from './membership-referrals.js';
 const fail=(message,status=400)=>Object.assign(Error(message),{status});
 const text=(body,key,max,required=true)=>{const v=body[key];if(v!==undefined&&typeof v!=='string')throw fail('Geçersiz kayıt bilgisi.');const s=(v??'').trim();if((required&&!s)||s.length>max||s.includes('\0'))throw fail('Kayıt alanları eksik veya geçersiz.');return s;};
-export function installNormalRegistration(app,{pool}){
- app.post('/api/auth/register',async(req,res)=>{
+export function installNormalRegistration(app,{pool,authLimiter}){
+ const limiter = authLimiter || ((req, res, next) => next());
+ app.post('/api/auth/register',limiter,async(req,res)=>{
   res.set('Cache-Control','private, no-store');let client;
   try{
    const b=req.body;if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(req.query).length)throw fail('Geçersiz kayıt isteği.');

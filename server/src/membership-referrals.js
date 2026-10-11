@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { requireCurrentAdmin } from './group-capacity.js';
+import { verifyJwt } from './config/security.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (v) => typeof v === 'string' && UUID_RE.test(v.trim());
@@ -314,7 +315,7 @@ export function installMembershipReferrals(app, { pool }) {
     const token = authHeader.split(' ')[1];
     let payload;
     try {
-      payload = jwt.verify(token, process.env.JWT_SECRET || 'web_browser_fixture_only');
+      payload = verifyJwt(token);
     } catch {
       return res.status(403).json({ error: 'Geçersiz oturum.' });
     }
@@ -347,7 +348,7 @@ export function installMembershipReferrals(app, { pool }) {
     const token = authHeader.split(' ')[1];
     let client;
     try {
-      const user = jwt.verify(token, process.env.JWT_SECRET || 'web_browser_fixture_only');
+      const user = verifyJwt(token);
       client = await pool.connect();
       await requireCurrentAdmin(client, user.id);
 
@@ -382,7 +383,7 @@ export function installMembershipReferrals(app, { pool }) {
     const token = authHeader.split(' ')[1];
     let client;
     try {
-      const user = jwt.verify(token, process.env.JWT_SECRET || 'web_browser_fixture_only');
+      const user = verifyJwt(token);
       client = await pool.connect();
       await requireCurrentAdmin(client, user.id);
 

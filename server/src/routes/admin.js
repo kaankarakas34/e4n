@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import {canonicalProvince} from '../turkey-provinces.js';
 import {companyIdentity,companyWriteError} from '../company-registration.js';
+import { getJwtSecret } from '../config/security.js';
 
 const router = express.Router();
 
@@ -165,7 +166,7 @@ router.post('/members', async (req, res) => {
 router.post('/invite', async (req, res) => {
     const { email } = req.body;
     try {
-        const token = jwt.sign({ inviteEmail: email }, process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b', { expiresIn: '7d' });
+        const token = jwt.sign({ inviteEmail: email }, getJwtSecret(), { expiresIn: '7d' });
         const link = `${process.env.FRONTEND_URL || 'https://www.event4network.com'}/auth/register?token=${token}`;
         
         await sendEmail(

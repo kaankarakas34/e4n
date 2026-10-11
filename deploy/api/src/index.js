@@ -9,7 +9,7 @@ import crypto from 'crypto';
 const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 4000;
-const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey123';
+const SECRET_KEY = process.env.JWT_SECRET || 'e4n_dev_ephemeral_fallback_secret_not_for_production_use_min_32_chars';
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',

@@ -5,9 +5,10 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/email.js';
 import authenticateToken from '../middleware/auth.js';
+import { getJwtSecret, signJwt } from '../config/security.js';
 
 const router = express.Router();
-const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
+const SECRET_KEY = getJwtSecret();
 
 
 router.post('/register', async (req, res) => {

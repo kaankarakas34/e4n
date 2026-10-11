@@ -1,6 +1,15 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — SEC-01 / E4N-58 tamamlandı (Supabase RLS ve Erişim Güvenlik Planı)
+## Güncel teslim — SEC-02 / E4N-59 tamamlandı (Güvenli DB Bağlantısı ve JWT Yapılandırması)
+
+- **E4N-59 (SEC-02) Done:** Depodaki sabit kodlu JWT geri dönüş parolaları (`'310acce7...'`, `'supersecretkey123'`, `'web_browser_fixture_only'`) tamamen temizlendi; JWT ve veritabanı yapılandırma denetimleri `server/src/config/security.js` merkezi modülünde toplandı.
+  - **Fail-Fast Üretim Koruması:** `NODE_ENV === 'production'` modunda eksik (`MISSING_JWT_SECRET`), 32 karakterden kısa (`INSUFFICIENT_SECRET_LENGTH`) veya bilinen 11 zayıf varsayılandan birine (`DISALLOWED_DEFAULT_SECRET`) sahip anahtarlar ile eksik veritabanı parametrelerinde (`MISSING_DB_CONFIG`) sunucunun açılışı engellendi.
+  - **Sıfır Kesintili Rotasyon (Zero-Downtime):** `JWT_SECRET_PREVIOUS` desteğiyle aktif kullanıcı oturumları kesintiye uğramadan anahtar rotasyonu yapabilme altyapısı sağlandı.
+  - **Şablon Arındırması:** `.env.example` dosyalarındaki gerçekçi Sipay anahtarları ve zayıf JWT değerleri güvenli yer tutuculara dönüştürüldü.
+  - **Test ve Kanıt:** `server/test/sec-jwt-and-db-config-contract.mjs` (fail-fast, rotasyon, imzalama/doğrulama, statik kod ve şablon taraması PASS), `npm run check` (203 rota, 0 TS hatası PASS), `membership-referral-contract.mjs` (PASS), `sec-rls-access-contract.mjs` (PASS). `server/docs/sec-secret-rotation-and-jwt-guide.md` ve [[E4N/09-Dogrulama/SEC-02-Guvenli-Baglanti-ve-JWT-Yapilandirmasi-2026-10-11]].
+  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde [E4N-120 / SEC-03]: Geliştirmelerden sonra web, mobil API ve Supabase güvenlik denetimi.
+
+## Önceki teslim — SEC-01 / E4N-58 tamamlandı (Supabase RLS ve Erişim Güvenlik Planı)
 
 - **E4N-58 (SEC-01) Done:** PostgreSQL / Supabase `public` şemasındaki 50 tablonun tamamı için Satır Düzeyi Güvenlik (RLS) ve doğrudan PostgREST erişim bariyerleri denetlendi, hassasiyet kategorizasyonu ve erişim matrisi çıkarıldı, linter bulguları çözümlendi ve izole sözleşme testiyle tam başarı kanıtlandı.
   - **API-Owner Mimarisi:** Express API bağlantı havuzunun (DB owner / süper kullanıcı) 50 tablonun tamamında yetkili operasyonel bütünlüğü korunurken, tarayıcı/istemci doğrudan PostgREST erişimi 48 hassas tabloda (`users`, `payment_transactions`, `invoice_files`, `group_applications`, `email_configurations`, `system_settings` vb.) `REVOKE ALL` ile tamamen kilitlendi.

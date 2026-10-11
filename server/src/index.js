@@ -57,14 +57,17 @@ import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard, evaluateLowScoreRemovals, applyLowScoreRemovals } from './utils/scoring.js';
+import { getJwtSecret, validateSecurityConfig } from './config/security.js';
 // import paymentRoutes from './routes/payment.js';
 const { Pool } = pkg;
 const app = express();
+// Validate environment security settings
+validateSecurityConfig();
 // Serverless instances cannot own a reliable scheduler. Audited jobs run via the API;
 // production scheduling is activated separately when its provider/policy gate is ready.
 const scheduleCron = process.env.NODE_ENV === 'test' || process.env.VERCEL ? () => undefined : cron.schedule.bind(cron);
 const PORT = process.env.PORT || 4000;
-const SECRET_KEY = process.env.JWT_SECRET || '310acce7e62c4e9f16ce17a04d6cbdaf5a859926f896a8e85e1dcfa095378333b';
+const SECRET_KEY = getJwtSecret();
 
 // Static uploads path serving & multer setup (Uses OS tmp directory on Vercel)
 const uploadDir = process.env.VERCEL 

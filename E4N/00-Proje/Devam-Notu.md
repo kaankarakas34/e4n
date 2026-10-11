@@ -1,8 +1,8 @@
 ## Yeni proje — E4N SEO (11 Ekim 2026)
 
 Linear: https://linear.app/e4n/project/e4n-seo-c47b071086ca . 6 sprint milestone, 16 epic (E4N-289..304) oluşturuldu; toplam 24 epic ve 32 alt görev planlandı. Linear ücretsiz issue kotası kalan 8 epic ve alt görevlerin ayrı issue aktarımını engelledi; tam backlog proje belgesinde.
-E4N-289 In Progress; 30 canlı HTTP yanıtıyla ilk envanter üretildi. Render/GSC/schema/CrUX denetimi kaldı; S1 kapanmadı. Canlı değişiklik yok. Güncel açık WhatsApp loncaları kararı korunur.
-Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2 . Plan: E4N/07-Sprintler/E4N-SEO-Sprint-ve-Gorev-Plani-2026-10-11.md; metin ve mimari: E4N/00-Proje/E4N-Yeni-Web-Sitesi-Sayfa-Metinleri-ve-Yapi-2026-10-11.md. Paket A, Paket B, Paket C ve Paket D tamamlandı (Topluluklarimiz, PublicEventsPage güncellendi; BirebirNetworking yeni sayfası oluşturuldu ve /birebir-networking rotası bağlandı; npx tsc ve npm run build PASS). Sıradaki: Paket E (Hakkimizda, SSS, Iletisim); mevcut aktif işleri kesme.
+E4N-289 In Progress. Yeni web sitesi (Paket A-D ve canlı yayın `a6a6135`) tamamlandı. Paket E tamamlandı (Hakkimizda, SSS, Iletisim yeniden yazıldı; 25 FAQ maddesi, kurucular Kaan Karakaş ve Ada Topçu, kurumsal iletişim konuları ve modeller bağlandı; route static, tsc ve build PASS). Sıradaki: Paket E'nin canlı yayını veya ek SEO denetimi.
+Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2 . Plan: E4N/07-Sprintler/E4N-SEO-Sprint-ve-Gorev-Plani-2026-10-11.md; metin ve mimari: E4N/00-Proje/E4N-Yeni-Web-Sitesi-Sayfa-Metinleri-ve-Yapi-2026-10-11.md.
 
 # E4N devam durumu — 11 Ekim 2026
 

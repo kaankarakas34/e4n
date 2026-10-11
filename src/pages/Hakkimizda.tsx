@@ -1,16 +1,62 @@
-import { SEO } from '../components/SEO';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 import { Button } from '../shared/Button';
-import { ArrowRight, Shield, Target, Award, CheckCircle, Handshake, Landmark } from 'lucide-react';
+import {
+  Shield,
+  Handshake,
+  Repeat,
+  Eye,
+  Users,
+  Compass,
+  ArrowRight,
+  UserCheck
+} from 'lucide-react';
 
 export function Hakkimizda() {
   const navigate = useNavigate();
 
+  const values = [
+    {
+      title: 'Güven',
+      desc: 'Uzmanlık ve çalışma biçimi zaman içinde tanınır.',
+      icon: Shield
+    },
+    {
+      title: 'Karşılıklı katkı',
+      desc: 'Bilgi, bağlantı ve deneyim paylaşımı önemlidir.',
+      icon: Handshake
+    },
+    {
+      title: 'Süreklilik',
+      desc: 'Düzenli katılım ve takip, ilişki geliştirme sürecinin parçasıdır.',
+      icon: Repeat
+    },
+    {
+      title: 'Açıklık',
+      desc: 'Katılım yolu, üyelik koşulları ve grup kabulü anlaşılır biçimde açıklanır.',
+      icon: Eye
+    }
+  ];
+
+  const founders = [
+    {
+      name: 'Kaan Karakaş',
+      role: 'Kurucu',
+      desc: 'İş dünyasında sürdürülebilir networking modelinin ve E4N ekosisteminin kurucu lideri.'
+    },
+    {
+      name: 'Ada Topçu',
+      role: 'Kurucu',
+      desc: 'Topluluk yönetimi, üye deneyimi ve iş geliştirme stratejilerinin kurucu ortağı.'
+    }
+  ];
+
   return (
-    <div className="bg-white">
+    <div className="bg-white min-h-screen pt-20 text-slate-900 font-sans selection:bg-red-500 selection:text-white">
       <SEO
-        title="Hakkımızda | Event4Network"
-        description="Event4Network vizyonu, misyonu, kuruluş fikri ve değerleri. Seçici networking, güven ve referans kültürü üzerine inşa edilmiş bir iş ağı."
+        title="E4N Hakkımızda | Event4Network'ün Kuruluş Amacı"
+        description="Event4Network'ün kuruluş amacını, güven ve karşılıklı katkı yaklaşımını ve kurucuları Kaan Karakaş ile Ada Topçu'yu tanıyın."
         canonical="https://www.event4network.com/hakkimizda"
         schema={{
           "@context": "https://schema.org",
@@ -21,187 +67,169 @@ export function Hakkimizda() {
             "alternateName": "E4N",
             "url": "https://www.event4network.com",
             "logo": "https://www.event4network.com/e4n-logo.png",
-            "description": "Event4Network vizyonu, misyonu, kuruluş fikri ve değerleri. Seçici networking, güven ve referans kültürü üzerine inşa edilmiş bir iş ağı."
+            "description": "Event4Network'ün kuruluş amacını, güven ve karşılıklı katkı yaklaşımını ve kurucuları Kaan Karakaş ile Ada Topçu'yu tanıyın."
           }
         }}
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 bg-gray-950 text-white overflow-hidden text-center">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 w-[800px] h-[800px] rounded-full bg-red-950/10 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <section className="relative py-20 sm:py-28 bg-slate-950 text-white overflow-hidden text-center">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 w-[800px] h-[800px] rounded-full bg-red-900/15 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6">
-            Hikayemiz ve Değerlerimiz
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6 backdrop-blur-sm">
+            Kuruluş Amacımız
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">
-            Biz Kimiz?
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-6">
+            İş ilişkilerine süreklilik <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-400 to-red-600">
+              kazandırmak için buradayız
+            </span>
           </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4 leading-relaxed font-light">
-            Event4Network, iş dünyasında ilişkilerin hızlıca kurulup unutulduğu klasik yöntemler yerine, kalıcı ve nitelikli bağlar inşa eden bir referans ekosistemidir.
+          <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
+            Event4Network, iş insanlarının birbirini düzenli olarak tanıyabildiği ve uzmanlığını daha iyi anlayabildiği bir ilişki ağı oluşturmak amacıyla geliştirildi.
           </p>
         </div>
       </section>
 
-      {/* Kuruluş Fikri */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
-            <div>
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-6">
-                Event4Network’ün Kuruluş Fikri
-              </h2>
-              <div className="space-y-6 text-gray-600 leading-relaxed">
-                <p>
-                  Geleneksel networking etkinliklerinde katılımcılar onlarca insanla tanışır, kartvizitlerini paylaşır ve ardından bu bağlantıları sürdüremeyip unuturlar. Güvenin oluşması, zaman ve düzenli temas gerektirir.
-                </p>
-                <p>
-                  Event4Network, bu kopukluğu gidermek amacıyla kurulmuştur. Rastgele buluşmalar yerine dengeli, seçici ve disiplinli bir gruplaşma modeli sunarak, iş insanlarının birbirlerini derinlemesine tanımalarına ve güvene dayalı, sürdürülebilir referans ilişkileri kurmalarına zemin hazırlar.
-                </p>
-              </div>
-            </div>
-            <div className="mt-12 lg:mt-0 bg-gray-50 p-8 rounded-3xl border border-gray-100 shadow-inner flex flex-col justify-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Güven ve Referans Kültürü</h3>
-              <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                Bizler sadece bir networking kulübü değiliz; her üyenin kendi mesleğini en üst düzeyde temsil ettiği, iş itibarının karşılıklı referanslarla ödüllendirildiği profesyonel bir ekosistemiz.
-              </p>
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
-                  <Shield className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm">Seçicilik ve Standart</h4>
-                  <p className="text-gray-500 text-xs">Normal üyelik kaydı açıktır; kapalı grup başvurularını görüşme sonrası grup başkanı değerlendirir.</p>
-                </div>
-              </div>
-            </div>
+      {/* Giriş & Süreç Özeti */}
+      <section className="py-16 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-sm text-slate-700 text-base sm:text-lg leading-relaxed">
+            <p>
+              Yeni bir bağlantının değer kazanması zaman, takip ve karşılıklı güven gerektirir. E4N; açık topluluklar, etkinlikler ve küçük kapalı gruplarla bu sürece düzenli bir çalışma zemini sunar.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Vizyon & Misyon */}
-      <section className="py-24 bg-gray-50 border-t border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200/60 shadow-sm flex gap-6">
-              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-                <Target className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Vizyonumuz</h3>
-                <p className="text-gray-650 text-sm leading-relaxed">
-                  Türkiye ve küresel pazarda, iş dünyası profesyonellerinin referansla büyümesini standartlaştıran en prestijli ve güvenilir seçici networking ekosistemi olmak.
-                </p>
-              </div>
-            </div>
+      {/* Kuruluş Fikrimiz */}
+      <section className="py-20 lg:py-24 bg-white border-b border-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
+            BAŞLANGIÇ NOKTAMIZ
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-6">
+            Kuruluş fikrimiz
+          </h2>
+          <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed">
+            <p>
+              Bir işletmenin güçlü bir çevre oluşturması için işini anlayan insanlarla temas kurması gerekir. Bu insanlar uygun müşterileri, tamamlayıcı hizmetleri veya yeni iş ortaklarını tanıyor olabilir.
+            </p>
+            <p>
+              E4N'nin kuruluş fikri, bu ilişkilerin oluşmasını ve gelişmesini destekleyen bir model kurmaktır. Üyeler işlerini anlatır, birbirini dinler ve zaman içinde nerede ortak değer üretebileceklerini daha iyi görür.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            <div className="bg-white p-8 rounded-2xl border border-gray-200/60 shadow-sm flex gap-6">
-              <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
-                <Award className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Misyonumuz</h3>
-                <p className="text-gray-650 text-sm leading-relaxed">
-                  Doğru iş insanlarını karşılıklı değer ve güven ilkeleri etrafında bir araya getirmek; kurumsal standartlarda dikey ağ buluşmaları ile iş hacimlerini artırmalarına öncülük etmek.
-                </p>
-              </div>
-            </div>
+      {/* Çalışma Yaklaşımımız */}
+      <section className="py-20 lg:py-24 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
+            MODELİMİZ
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-6">
+            Çalışma yaklaşımımız
+          </h2>
+          <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-8">
+            <p>
+              Açık loncalar geniş bir iletişim alanı oluşturur. Etkinlikler yeni insanlarla ve fikirlerle karşılaşma fırsatı sunar. Kapalı gruplar düzenli ve daha odaklı ilişki geliştirmeye imkân verir.
+            </p>
+            <p>
+              Grup kabulünde hizmet dengesi ve uyum değerlendirilir. Dört aylık dönemler ve shuffle, ilişkilerin hem derinleşmesini hem yeni çevrelere açılmasını destekler.
+            </p>
           </div>
         </div>
       </section>
 
       {/* Değerlerimiz */}
-      <section className="py-24 bg-white">
+      <section className="py-20 lg:py-24 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-sm font-semibold text-red-600 uppercase tracking-wider">İlkelerimiz</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">Değerlerimiz</h2>
+          <div className="max-w-3xl mb-12">
+            <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
+              İLKELERİMİZ
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Değerlerimiz
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Shield,
-                title: 'Güven',
-                desc: 'Tüm ilişkilerimizin temel taşıdır. Birbirimizin kalitesine ve taahhütlerine inanırız.'
-              },
-              {
-                icon: CheckCircle,
-                title: 'Nitelik',
-                desc: 'Kalabalık olmaktansa nitelikli olmayı seçer, üye profilimizde kaliteyi koruruz.'
-              },
-              {
-                icon: Award,
-                title: 'Seçicilik',
-                desc: 'Kapalı grup başvurularında meslek koltuğu ve kapasiteyi korur, başkan görüşmesiyle katılımı değerlendiririz.'
-              },
-              {
-                icon: Landmark,
-                title: 'Profesyonel Temsil',
-                desc: 'Her üye, hem kendi işini hem de grubun itibarını en iyi şekilde temsil eder.'
-              },
-              {
-                icon: Handshake,
-                title: 'Karşılıklı Değer',
-                desc: 'Sadece faydalanmak için değil, ekosisteme katkı sağlamak amacıyla hareket ederiz.'
-              },
-              {
-                icon: Target,
-                title: 'Uzun Vadeli İlişki',
-                desc: 'Günübirlik ticari kazançlar yerine, yıllar boyu sürecek stratejik dostluklar hedefleriz.'
-              }
-            ].map((value, idx) => {
-              const Icon = value.icon;
-              return (
-                <div key={idx} className="bg-gray-50 p-8 rounded-2xl border border-gray-100 flex flex-col h-full">
-                  <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center mb-6">
-                    <Icon className="h-5 w-5" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((val, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-50 p-6 sm:p-8 rounded-3xl border border-slate-200 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-12 h-12 bg-white text-red-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-200/60">
+                    <val.icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{value.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{value.desc}</p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">{val.title}</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">{val.desc}</p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gray-950 text-white relative overflow-hidden text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-6">
-            Bizimle İletişime Geçin
+      {/* Kurucular */}
+      <section className="py-20 lg:py-24 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
+            LİDERLİK
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-8">
+            Kurucular
           </h2>
-          <p className="text-lg text-gray-300 mb-10 max-w-2xl mx-auto font-light">
-            Sorularınız, iş birliği teklifleriniz veya kurumsal talepleriniz için ekibimizle temasa geçebilirsiniz.
+
+          <div className="grid sm:grid-cols-2 gap-8">
+            {founders.map((founder, idx) => (
+              <div
+                key={idx}
+                className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-black text-xl mb-6">
+                    <UserCheck className="w-7 h-7 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-1">{founder.name}</h3>
+                  <span className="text-xs font-bold text-red-600 uppercase tracking-wider block mb-4">
+                    {founder.role}
+                  </span>
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    {founder.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Birlikte çalışalım */}
+      <section className="py-20 bg-slate-900 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs font-bold text-red-400 uppercase tracking-widest block mb-2">
+            İLETİŞİM
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-4">
+            Birlikte çalışalım
+          </h2>
+          <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8 max-w-xl mx-auto">
+            Üyelik, etkinlik, konuşmacılık veya kurumsal iş birliği hakkında bizimle iletişime geçebilirsiniz.
           </p>
           <Button
             size="lg"
             variant="primary"
             onClick={() => navigate('/iletisim')}
-            className="text-lg h-14 px-10 font-bold bg-red-600 hover:bg-red-500 shadow-xl shadow-red-900/30"
+            className="font-bold bg-red-600 hover:bg-red-500 text-white px-8 h-12 shadow-lg shadow-red-900/30"
           >
-            İletişim Formunu Doldur <ArrowRight className="ml-2 h-5 w-5" />
+            İletişime Geçin
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
-        </div>
-      </section>
-
-      {/* Kurucular Section */}
-      <section className="py-24 bg-gray-50 border-t border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold text-red-600 uppercase tracking-widest">YÖNETİM</span>
-            <h2 className="text-3xl font-extrabold text-gray-900 mt-2">Kurucular</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm flex items-center justify-center h-32 hover:shadow-md transition-shadow duration-300">
-              <span className="text-xl font-bold text-gray-900">Kaan Karakaş</span>
-            </div>
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm flex items-center justify-center h-32 hover:shadow-md transition-shadow duration-300">
-              <span className="text-xl font-bold text-gray-900">Ada Topçu</span>
-            </div>
-          </div>
         </div>
       </section>
     </div>

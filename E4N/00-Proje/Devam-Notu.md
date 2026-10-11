@@ -1,6 +1,16 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — PAR-01 / E4N-115 tamamlandı (Web ve Mobil Yetenek, Navigasyon ve Rol Matrisi Denetimi)
+## Güncel teslim — PAR-02 / E4N-116 tamamlandı (Ortak API, Veri ve Rol Davranışı Denetimi ve Eşitlemesi)
+
+- **E4N-116 (PAR-02) Done:** Web ve Mobil platformları arasındaki API uç noktası, veri modelleri ve RBAC rol sınırları uzlaştırıldı ve izole ortamda doğrulandı.
+  - **API Sözleşmesi ve Sabitleri (`mobile/constants/api.ts`):** `ONE_TO_ONES` (`LIST`, `LOG`, `REQUEST`, `STATUS`), `MEMBERSHIPS` (`PLANS`, `RECORDS`), `TICKETS` (`LIST`, `DETAIL`, `CREATE`, `MESSAGES`, `STATUS`), `ADMIN` (`PUBLIC_VISITORS`, `PUBLIC_VISITOR_STATUS`, `PAYMENTS_HISTORY`, `MEMBERSHIP_RECORDS`) tanımlandı.
+  - **Ödeme & Abonelik Ekranı (`mobile/app/features/payment.tsx`):** Sunucuda bulunmayan sahte `/payments/me` çağrısı kaldırıldı; `GET /api/membership-records` sözleşmesi bağlandı. Aktif plan (`subscription_plan`), bitiş tarihi (`subscription_end_date`), hesap durumu rozeti (`account_status` - ACTIVE, RESTRICTED, SUSPENDED, PENDING), D07 kısıtlı hesap uyarısı, işlem geçmişi (`payments`) ve resmi e-fatura listesi (`invoices`) render edildi; hata ve retry butonu eklendi.
+  - **Aday ve Ziyaretçi Başvuruları (`mobile/app/admin/applications.tsx`):** Kanonik `GET /api/admin/public-visitors` rotasına geçildi; detay modalına "İletişime Geçildi Olarak İşaretle" (`CONTACTED`) ve "Başvuruyu Reddet" (`REJECTED`) durum aksiyonları eklendi.
+  - **Ödeme İşlemleri Geçmişi (`mobile/app/admin/subscriptions.tsx`):** `API_CONFIG.ENDPOINTS.ADMIN.PAYMENTS_HISTORY` ile bağlandı; `ADMIN` rolü RBAC bariyeri doğrulandı.
+  - **Test ve Kanıt:** `node server/test/par-02-api-data-and-role-contract.mjs` (İzole PG17 Docker + Express ile 5/5 senaryo PASS), `node server/test/par-01-matrix-contract.mjs` (PASS), `node server/test/mobile-personal-reports-contract.mjs` (PASS), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz derleme PASS). Doküman `server/docs/par-02-api-data-and-role-reconciliation.md` ve Kanıt [[E4N/09-Dogrulama/PAR-02-Ortak-API-Veri-ve-Rol-Denetimi-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-117 / PAR-03]: Genel, ziyaretçi ve üye akışlarını web ve mobilde eşitle (Network detay profili, Etkinlik bilet seçimi, Mesajlar).
+
+## Önceki teslim — PAR-01 / E4N-115 tamamlandı (Web ve Mobil Yetenek, Navigasyon ve Rol Matrisi Denetimi)
 
 - **E4N-115 (PAR-01) Done:** Web ve Mobil (React Native / Expo) istemcilerinin kullanıcı rolleri (`ANONYMOUS`, `MEMBER`, `PRESIDENT / VP`, `ADMIN`), navigasyon yapıları ve 20 fonksiyonel yetenek alanı uçtan uca denetlenerek eşitlik matrisi (`server/docs/par-01-web-mobile-capability-and-role-matrix.md`) çıkarıldı.
   - **Rol ve Navigasyon Bulguları:**

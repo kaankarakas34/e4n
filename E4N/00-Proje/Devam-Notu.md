@@ -1,6 +1,24 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — PAR-03 / E4N-117 tamamlandı (Genel, Ziyaretçi ve Üye Akışlarını Web ve Mobilde Eşitleme)
+## Güncel teslim — PAR-04 / E4N-118 tamamlandı (Başkan ve Admin İşlevlerini Web ve Mobilde Eşitleme)
+
+- **E4N-118 (PAR-04) Done:** Web ve mobil platformları arasındaki başkanlık rolü navigasyonu, 7 gün SLA aşımı başvuru inceleme kuyruğu, görüşme ve karar akışları ile haftalık toplantı yoklaması formu eşitlendi ve izole ortamda doğrulandı.
+  - **API Sözleşmesi ve Sabitleri (`mobile/constants/api.ts`):** `USER.GROUPS`, `GROUPS` (`LIST`, `DETAIL`, `MEMBERS`, `APPLICATIONS`), `GROUP_APPLICATIONS` (`TASKS`, `MINE`, `INTERVIEW`, `DECISION`), `ATTENDANCE` (`SUBMIT`, `STATUS`) rotaları tanımlandı.
+  - **Mobil Navigasyon ve Rol Ayrımı (`mobile/app/(tabs)/menu.tsx` & `(tabs)/index.tsx`):** `user.role === 'PRESIDENT' || user.group_role === 'PRESIDENT' || user.group_title === 'PRESIDENT' || user.role === 'ADMIN'` rol kontrolüyle Menü'de özel "Grup Yönetimi (Başkanlık)" kartı, Ana Ekran'da "Başkanlık Hızlı Erişim" banner'ı ve Admin panelinde (`mobile/app/admin/index.tsx`) "Başkanlık Konsolu" bağlandı.
+  - **Grup Başvuru Kuyruğu & 7 Gün SLA Aşımı Takibi (`mobile/app/features/president.tsx`):**
+    - `GET /api/groups/:id/applications` ve `GET /api/group-applications/tasks` entegre edildi.
+    - 7 günü aşan bekleyen başvurular için dinamik `"⚠️ 7 Günlük Görüşme SLA Süresi Aşıldı (X gün)"` rozeti render edildi.
+    - Adayın önceki çıkarılma geçmişi (`removal_history`) gösterildi.
+    - `AWAITING_CALL` durumu için "Görüşme Sonucu Kaydet" modalı ve `POST /api/group-applications/:id/interview` (`{ note }`) ile `INTERVIEWED` durumuna geçiş sağlandı.
+    - `INTERVIEWED` durumu için "Kabul Et" / "Reddet" aksiyonları, zorunlu karar gerekçesi ve `POST /api/group-applications/:id/decision` (`{ decision, note }`) ile üyelik `ACTIVE` promosyonu sağlandı.
+  - **Haftalık Toplantı Yoklaması (`mobile/app/features/president.tsx`):**
+    - `GET /api/groups/:id/members` ile aktif üye kadrosu listelendi; toplantı konusu (`topic`) ve yoklama açıklaması (`reason`) form alanları eklendi.
+    - Her aktif üye için 4'lü durum seçicisi sunuldu: `Katıldı` (`PRESENT`), `Yok` (`ABSENT`), `Geç` (`LATE`), `Vekil` (`SUBSTITUTE`).
+    - İstemcide tekil `uuid.v4()` `requestId` üretilerek `POST /api/events/attendance` sözleşmesine atomik gönderim ve idempotent tekrar (`replayed: true`) sağlandı.
+  - **Test ve Kanıt:** `node server/test/par-04-president-and-admin-contract.mjs` (İzole PG17 Docker + Express ile 5/5 senaryo PASS: RBAC sınırları, 7 gün SLA kuyruğu, görüşme notu, kabul/ret kararı, haftalık yoklama ve idempotent replay), `mobile` dizininde `npx tsc --noEmit` (0 TS hatası PASS), `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Doküman `server/docs/par-04-president-and-admin-reconciliation.md` ve Kanıt [[E4N/09-Dogrulama/PAR-04-Baskan-ve-Admin-Islevleri-2026-10-11]].
+  - **Sıradaki Sprint 7 İşi:** Kullanıcı "devam" dediğinde [E4N-119 / PAR-05]: Web ve mobil özellik eşitliğini uçtan uca doğrula.
+
+## Önceki teslim — PAR-03 / E4N-117 tamamlandı (Genel, Ziyaretçi ve Üye Akışlarını Web ve Mobilde Eşitleme)
 
 - **E4N-117 (PAR-03) Done:** Web ve mobil istemciler arasındaki açık kurumsal kayıt, detaylı profil kartı/keşfi, P25/P26 etkinlik bilet hakları & çoklu bilet seçimi, doğrudan mesajlaşma ve profil düzenleme akışları eşitlendi ve izole ortamda doğrulandı.
   - **Açık Kurumsal Kayıt (`mobile/app/(auth)/register.tsx`):** Web `POST /api/auth/register` (BAŞ-01 / E4N-161) sözleşmesine uygun olarak zorunlu şirket unvanı (`company`), 10 haneli VKN veya 11 haneli TCKN (`taxNumber`), vergi dairesi (`taxOffice`), fatura adresi (`billingAddress`), il seçimi (`city`) ve opsiyonel sponsor referans kodu (`ref` / BAŞ-02) eklendi; istemci ve API doğrulaması sağlandı.

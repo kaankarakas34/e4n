@@ -1,19 +1,16 @@
 # E4N devam durumu — 11 Ekim 2026
 
-## Güncel teslim — P36 / E4N-108 tamamlandı (Veri Geçişi Provası ve Geri Dönüş Koşulları)
+## Güncel teslim — P38 / E4N-110 tamamlandı (Sprint 6 Kapanışı: Sürüm Kararı, Dokümantasyon ve İzlenebilirlik)
 
-- **E4N-108 (P36) Done:** PostgreSQL 17 / Supabase mimarisinde 28 şema sürümü (`schema_migrations`), 50 uygulama tablosu (`tablename <> 'schema_migrations'`), ilişkili kısıtlar, tetikleyiciler, indeksler, RLS politikaları ve PostgreSQL `bytea` formatında saklanan kalıcı PDF fatura/belge dosyaları izole Docker PG17 ortamında uçtan uca yedekleme (`pg_dump -Fc`), geri yükleme (`pg_restore`), bozulma tespiti (corruption detection) ve atomik geri dönüş (clean rollback) provasıyla doğrulandı.
-  - **Doğrulanan Kapılar ve Kanıtlar (PASS):**
-    - 51 Tablo Satır Sayısı ve Row Manifest Eşleşmesi (`restoredEqual: true`): 51 tablonun tamamında sıralı JSONB `ORDER BY to_jsonb(t)::text COLLATE "C"` SHA-256 hash manifesti kaynakla %100 birebir eşleşti.
-    - Şema Kataloğu ve Nesne Eşitliği: Tablolar, sütunlar, veri tipleri, primary key, foreign key, check kısıtları, sequence sayaçları, effective ACL ve RLS politikaları tam doğrulandı.
-    - Sıfır Tekrar Uygulama (`repeatApplied: 0`): Geri yüklenen veritabanında sürümlü migration tekrarında 0 yeni sürüm uygulandı.
-    - Bytea Bozulma Tespiti (`corruptionDetected: true`): `invoice_files` PDF ikili içeriği yapay olarak bozulduğunda, satır sayısı aynı kalsa bile row-level SHA-256 manifestinin bunu derhal tespit ettiği kanıtlandı.
-    - Temiz ve Atomik Geri Dönüş (`cleanRollbackEqual: true`): `--clean --if-exists --exit-on-error --single-transaction` ile orijinal sağlam yedeğe hatasız geri dönüldü.
-    - İmmutable Denetim Koruması: `DELETE FROM group_membership_history` sorgusu veritabanı tetikleyicisi tarafından `23514 (check_violation)` ile engellendi.
-    - API İndirme ve Güvenlik Bariyeri (`downloadAndOwnerBoundaryPassed: true`): Geri yüklenen veritabanında `GET /api/invoices/:id` fatura sahibi üye 200, anonim 401, yabancı üye 404, sahte admin 404, güncel admin 200, rolü düşürülmüş eski admin 404; `GET /api/user/profile-settings` parola sızıntısız profil doğrulaması PASS.
-  - **Operasyonel Dokümantasyon:** 6 geri dönüş tetikleyicisi (RT-1 ... RT-6), bakım modu protokolü, snapshot prosedürü ve RTO < 15 dk / RPO = 0 hedeflerini içeren operasyon rehberi (`server/docs/p36-data-migration-and-rollback-runbook.md`) oluşturuldu.
-  - **Test ve Kanıt:** `npm --prefix server run test:restore` (PASS), `output/backup-restore-rehearsal.json`, `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz PASS). Kanıt [[E4N/09-Dogrulama/P36-Veri-Gecisi-Provasi-ve-Geri-Donus-2026-10-11]].
-  - **Sıradaki Sprint 6 İşi:** Kullanıcı "devam" dediğinde Sprint 6'nın son görevi olan [E4N-110 / P38]: Sürüm kararı, dokümantasyon ve izlenebilirliği kapat.
+- **E4N-110 (P38) Done & Sprint 6 Closed:** Sprint 6 ("Operasyon ve sürüm") ve E4N Web Foundation platformunun kapanış kapısı başarıyla tamamlandı. Sistem resmi olarak **CANLI YAYINA HAZIR (RELEASE READY - GO)** statüsüne ulaştı.
+  - **Sürüm Kararı (GO):** D01-D04 (Puanlama & 8 ay çıkarma yasağı), D05-D08-D10 (Kurumsal vergi, 35 kapasite, meslek tekilliği), SHUFFLE-CUTOFF (Kanonik dönemler & kesim), P25-P26 (Dış etkinlik hakları & çoklu bilet), P34-P35 (Scheduler, stale alarm & bytea fatura), P30-P31 (Üye/başkan/admin akışları), P39-P41 (Web API uyumu), P37 (51/51 kabul), SEC-01 (50 RLS / 48 anon engel), SEC-02 (Fail-fast & rotasyon), SEC-03 (7 güvenlik kapısı), P36 (Rehearsal, manifest hash & rollback runbook) kapılarının tamamı kapatıldı.
+  - **Sistem Dokümantasyonu:** Tek birleşik sistem mimarisi, teknoloji yığını, 28 sürüm & 50 tablo envanteri, 203 rota & RBAC güvenlik matrisi, Vercel cron, stale job kurtarma, kalıcı fatura ve DR felaket kurtarma runbook'larını içeren `server/docs/p38-release-decision-and-system-documentation.md` oluşturuldu.
+  - **Uçtan Uca İzlenebilirlik Kapanışı:** Linear görevleri, iş kararları, kod bileşenleri, sözleşme testleri ve doğrulama raporları arasındaki izlenebilirlik bağı eksiksiz kapatıldı.
+  - **Doğrulama ve Kanıt:** `npm run check` (203 rota, 0 TS hatası PASS), `npm run build` (2814 modül temiz derleme PASS), `server/test/backup-restore-rehearsal.mjs` (PASS), `server/test/sec-e2e-api-audit-contract.mjs` (PASS). Kanıt [[E4N/09-Dogrulama/P38-Surum-Karari-Dokumantasyon-ve-Izlenebilirlik-2026-10-11]].
+  - **Sprint 6 Tamamlandı (100% DONE):** SEC-01 (E4N-58) + SEC-02 (E4N-59) + SEC-03 (E4N-120) + P36 (E4N-108) + P38 (E4N-110) ile Sprint 6 kapatıldı.
+  - **Sıradaki Kapsam:** Kullanıcı talimatına göre Sprint 7 (Mobil Uygulama) veya Sprint 8 (LMS Kurs/Sınav Modülleri) başlatılacaktır.
+
+## Önceki teslim — P36 / E4N-108 tamamlandı (Veri Geçişi Provası ve Geri Dönüş Koşulları)
 
 ## Önceki teslim — SEC-03 / E4N-120 tamamlandı (Web, Mobil API ve Supabase Güvenlik Denetimi)
 

@@ -57,24 +57,35 @@ export function MembershipPage() {
             plan: '1_MONTH' as MembershipPlan,
             title: 'Aylık Paket',
             price: membershipPrices['1_MONTH'],
-            netPrice: '6.000 TL + KDV',
-            monthly: '7.200 TL KDV Dahil',
-            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu']
+            netPrice: '4.000 TL + KDV',
+            vatAmount: 800,
+            monthly: '4.800 TL KDV Dahil / ay (4.000 TL + KDV)',
+            discountBadge: null,
+            savingsText: null,
+            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
+            popular: false
         },
         {
             plan: '6_MONTHS' as MembershipPlan,
             title: '6 Aylık Paket',
             price: membershipPrices['6_MONTHS'],
-            netPrice: '32.500 TL + KDV',
-            monthly: 'Ort. 6.500 TL KDV Dahil / ay',
-            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu']
+            netPrice: '18.000 TL + KDV',
+            vatAmount: 3600,
+            monthly: 'Ort. 3.600 TL KDV Dahil / ay (3.000 TL + KDV)',
+            discountBadge: '%25 Kazanç',
+            savingsText: 'Aylık pakete göre 7.200 TL kazanç (%25 indirim)',
+            features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
+            popular: false
         },
         {
             plan: '12_MONTHS' as MembershipPlan,
             title: '12 Aylık Paket',
             price: membershipPrices['12_MONTHS'],
-            netPrice: '57.500 TL + KDV',
-            monthly: 'Ort. 5.750 TL KDV Dahil / ay',
+            netPrice: '32.400 TL + KDV',
+            vatAmount: 6480,
+            monthly: 'Ort. 3.240 TL KDV Dahil / ay (2.700 TL + KDV)',
+            discountBadge: '%32.5 Kazanç',
+            savingsText: 'Aylık pakete göre 18.720 TL kazanç (%32.5 indirim)',
             features: ['Etkinlikleri ve katılım koşullarını inceleme', 'Networking ağı ve üye paneli', 'Grup analizi ve başvurusu'],
             popular: true
         }
@@ -195,38 +206,59 @@ export function MembershipPage() {
                 {/* Pricing Cards */}
                 <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
                     {PLANS.map((plan) => (
-                        <div key={plan.plan} className={`relative p-8 bg-white border rounded-2xl shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md ${plan.popular ? 'ring-2 ring-indigo-600 border-transparent' : 'border-gray-200'}`}>
-                            {plan.popular && (
-                                <div className="absolute top-0 right-0 -mt-4 mr-4">
-                                    <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-600 text-white shadow-sm">
+                        <div key={plan.plan} className={`relative p-8 bg-white border rounded-2xl shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md ${plan.popular ? 'ring-2 ring-indigo-600 border-transparent shadow-indigo-100' : 'border-gray-200'}`}>
+                            <div className="absolute top-0 right-0 -mt-3.5 mr-4 flex items-center gap-2">
+                                {plan.discountBadge && (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide bg-emerald-600 text-white shadow-sm">
+                                        {plan.discountBadge}
+                                    </span>
+                                )}
+                                {plan.popular && (
+                                    <span className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-600 text-white shadow-sm">
                                         En Çok Tercih Edilen
                                     </span>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900">{plan.title}</h3>
-                                <div className="mt-4">
+                                <div className="mt-4 flex items-baseline">
                                     <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">₺{plan.price.toLocaleString('tr-TR')}</span>
-                                    <span className="ml-2 text-sm font-medium text-gray-500">KDV Dahil</span>
+                                    <span className="ml-2 text-sm font-semibold text-gray-500">KDV Dahil</span>
                                 </div>
-                                <div className="mt-1 text-xs font-semibold text-indigo-600 bg-indigo-50 inline-block px-2.5 py-1 rounded">
-                                    {plan.netPrice}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md">
+                                        {plan.netPrice}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                        (%20 KDV: ₺{plan.vatAmount.toLocaleString('tr-TR')})
+                                    </span>
                                 </div>
-                                <p className="text-sm text-gray-500 mt-2">
+                                <p className="text-sm text-gray-700 font-medium mt-2">
                                     {plan.monthly}
                                 </p>
+
+                                {plan.savingsText ? (
+                                    <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/70 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-200 text-emerald-800 text-[11px] font-bold">✓</span>
+                                        <span><strong>Kazancınız:</strong> {plan.savingsText}</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-3 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-500">
+                                        Aylık baz paket (Standart periyot)
+                                    </div>
+                                )}
 
                                 <ul className="mt-6 space-y-4 border-t border-gray-100 pt-6">
                                     {plan.features.map((feature) => (
                                         <li key={feature} className="flex items-center">
-                                            <Check className="flex-shrink-0 w-5 h-5 text-indigo-500" aria-hidden="true" />
+                                            <Check className="flex-shrink-0 w-5 h-5 text-emerald-600" aria-hidden="true" />
                                             <span className="ml-3 text-sm text-gray-600">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                             <Button
-                                className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-xl text-center font-semibold text-base transition-colors ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
+                                className={`mt-8 block w-full py-3.5 px-6 border border-transparent rounded-xl text-center font-bold text-base transition-colors ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-100' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'}`}
                                 onClick={() => handleSelectPlan(plan)}
                                 disabled={isPaymentModalOpen || ownRecord?.account_status === 'SUSPENDED'}
                             >

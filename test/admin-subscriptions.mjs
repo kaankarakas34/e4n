@@ -24,6 +24,7 @@ compiled = compiled.replace(/import \{([^}]+)\} from ['"]([^'"]+)['"];?/g, (line
   if (module === '../stores/authStore') return 'const useAuthStore = () => ({ user: { role: "ADMIN" } });';
   if (module === '../stores/membershipStore') return 'const useMembershipStore = () => globalThis.subscriptionMembership;';
   if (module === '../api/api') return 'const api = {};';
+  if (module === 'react-router-dom') return 'const useNavigate = () => () => {};';
   return names.split(',').map(name => `const ${name.trim()} = '${name.trim()}';`).join('\n');
 });
 const { AdminSubscriptions } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);

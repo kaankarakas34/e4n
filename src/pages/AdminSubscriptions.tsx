@@ -289,9 +289,9 @@ export function AdminSubscriptions() {
                 className="w-full h-[42px] rounded-xl border border-slate-200 bg-[#f8fafc] px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="ALL">Tüm Paketler</option>
-                <option value="1_MONTH">Aylık Paket (7.200 ₺)</option>
-                <option value="6_MONTHS">6 Aylık Paket (39.000 ₺)</option>
-                <option value="12_MONTHS">12 Aylık Paket (69.000 ₺)</option>
+                <option value="1_MONTH">Aylık Paket (4.800 ₺)</option>
+                <option value="6_MONTHS">6 Aylık Paket (21.600 ₺)</option>
+                <option value="12_MONTHS">12 Aylık Paket (38.880 ₺)</option>
               </select>
             </div>
 
@@ -478,9 +478,9 @@ export function AdminSubscriptions() {
                 onChange={(e) => setEditPlan(e.target.value)}
                 className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="1_MONTH">Aylık Paket (7.200 ₺)</option>
-                <option value="6_MONTHS">6 Aylık Paket (39.000 ₺)</option>
-                <option value="12_MONTHS">12 Aylık Paket (69.000 ₺)</option>
+                <option value="1_MONTH">Aylık Paket (4.800 ₺)</option>
+                <option value="6_MONTHS">6 Aylık Paket (21.600 ₺)</option>
+                <option value="12_MONTHS">12 Aylık Paket (38.880 ₺)</option>
                 <option value="MANUAL">Özel Tanımlı</option>
               </select>
             </div>

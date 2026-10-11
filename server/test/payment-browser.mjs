@@ -6,6 +6,7 @@ import {once} from 'node:events';
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import bcrypt from 'bcryptjs';
+import {membershipPrices} from '../../shared/membership-pricing.js';
 
 export async function verifyPaymentBrowser({cli,pool,userId,apiBase}) {
   const root=path.resolve(import.meta.dirname,'../..');
@@ -32,7 +33,7 @@ export async function verifyPaymentBrowser({cli,pool,userId,apiBase}) {
     const payload=r.output.match(/### Result\r?\n([^\r\n]+)/)?.[1];assert.ok(payload,r.output);
     const result=JSON.parse(payload);assert.deepEqual(result.issues,[]);
     const state=(await pool.query('SELECT subscription_plan,account_status,last_membership_payment_amount FROM users WHERE id=$1',[userId])).rows[0];
-    assert.equal(state.subscription_plan,'1_MONTH');assert.equal(state.account_status,'ACTIVE');assert.equal(Number(state.last_membership_payment_amount),7200);
+    assert.equal(state.subscription_plan,'1_MONTH');assert.equal(state.account_status,'ACTIVE');assert.equal(Number(state.last_membership_payment_amount),membershipPrices['1_MONTH']);
     const report={cases:result.cases.map(name=>({name,status:'PASS'})),passed:result.cases.length,failed:0,finalDatabase:state,productionWrites:false,realMail:false,realPayment:false};
     const reportPath=path.join(runDir,'report.json');fs.writeFileSync(reportPath,JSON.stringify(report,null,2));console.log(JSON.stringify({report:path.relative(root,reportPath),passed:report.passed,failed:0}));
   }finally {await browser(['close']);await vite.close();}

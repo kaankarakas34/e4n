@@ -349,9 +349,14 @@ export function PaymentModal({ isOpen, onClose, planTitle, amount, onSuccess, is
                     <div>
                         <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Plan / Ürün</p>
                         <p className="text-base font-bold text-gray-900">{planTitle}</p>
+                        {isMembership && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                Net: ₺{Math.round(finalAmount / 1.2).toLocaleString('tr-TR')} + %20 KDV (₺{(finalAmount - Math.round(finalAmount / 1.2)).toLocaleString('tr-TR')})
+                            </p>
+                        )}
                     </div>
                     <div className="text-right">
-                        <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Ödenecek Tutar</p>
+                        <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Ödenecek Tutar (Sipay)</p>
                         <div className="flex flex-col items-end">
                             <span className="text-lg font-extrabold text-indigo-600">₺{finalAmount.toLocaleString('tr-TR')} <span className="text-xs font-normal text-gray-500">KDV Dahil</span></span>
                         </div>

@@ -1,6 +1,7 @@
 ## Son çalışma — başkanlığı kaldırma ve üye çıkarma / 12 Ekim 2026
 
 - Açık kullanıcı yayın onayıyla ilk d5b3d57 production dpl_8mLNQoyJ1BMMZE27i8XFQj99siJH READY, group200/yeni kontrol metinleri/anon401. Son kontrol: açık başvuruların eski başkan referansı atama kaldırma/çıkarma transactionında güncel başkan veya admin'e devredilir; yeni mail/başvuru yok, in-flight/geçmiş mail geri alınmaz. İlgili HTTP adaptör regresyonu PASS; aynı paketin tamamlayıcı final yayını sürüyor.
+- Final7855b07 main/foundation push; dpl_FwbrscG3U6abLSJsWrQyiMJayE2T READY/custom domains/group200/anon presidency401 doğrulandı. Başkan kaldırma + manuel çıkarma + açık başvuru devri kodu canlı. Eski aşağıdaki kod canlı bekliyor satırı bu final yayın kaydıyla geçersizdir; yeni iş olarak tekrar uygulama.
 
 - Kullanıcı kararı: admin başkan atamasını kaldırabilir; boş başkanlıkta admin yönetir. Ayrılan kişinin Diamond üyeliği ve başkanlığı canlıda kaldırıldı; ayrı SELECT üyelik0/başkan0/history1 doğruladı. Kalıcı kod: admin clear API+düğme, boş grup admin discovery fallback, manuel çıkarma REMOVAL→izinli GROUP_UPDATE (canlı constraint rollback hatasının kaynağı), history okuyucu/yerel rol/PENDING uyumu. 234rota/check/build/syntax ve izole HTTP+fixturebrowser PASS; PG ve production oturumlu browser yok, mevcut lint açıkları sürer. Kod canlı yayını bekliyor. Karar [[E4N/01-Kararlar/Baskan-Atamasini-Kaldirma-ve-Admin-Yonetimi-2026-10-12]]; tek kanıt [[E4N/09-Dogrulama/Baskanlik-Kaldirma-ve-Uye-Cikarma-Duzeltmesi-2026-10-12]].
 

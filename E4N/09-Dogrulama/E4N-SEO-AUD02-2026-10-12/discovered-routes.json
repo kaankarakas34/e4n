@@ -1,0 +1,88 @@
+[
+  {
+    "url": "https://www.event4network.com/networking/istanbul",
+    "status": 200,
+    "rawCanonical": [
+      "<link rel=\"canonical\" href=\"https://www.event4network.com/\" />"
+    ],
+    "rendered": {
+      "url": "https://www.event4network.com/networking/istanbul",
+      "title": "İstanbul Networking | E4N Topluluk ve Etkinlik Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/",
+        "https://www.event4network.com/networking/istanbul"
+      ],
+      "robots": [
+        "noindex, follow"
+      ],
+      "h1": [
+        "İstanbul'da iş çevrenizi E4N ile geliştirin"
+      ],
+      "text": "İSTANBUL YEREL BİLGİLENDİRME\nİstanbul'da iş çevrenizi E4N ile geliştirin\n\nİstanbul'da şirketinizi, uzmanlığınızı ve iş geliştirme hedeflerinizi anlayan yeni insanlarla tanışmak için E4N'nin açık topluluklarını ve duyurularını takip edebilirsiniz.\n\nÜyeliği İncele\nAçık Topluluklara Katıl\nKATILIM YOLLARI\nİhtiyacınıza göre bir katılım yolu seçin\n\nSektör odaklı açık loncalarda bilgi paylaşabilir, yayımlanan etkinliklere katılabilir veya düzenli grup çalışması için üyelik koşullarını inceleyebilirsiniz.\n\nKapalı grup modeli 35 kişilik yapı, hizmet çakışması kontrolü, başkan görüşmesi ve dört ayda bir"
+    }
+  },
+  {
+    "url": "https://www.event4network.com/networking/ankara",
+    "status": 200,
+    "rawCanonical": [
+      "<link rel=\"canonical\" href=\"https://www.event4network.com/\" />"
+    ],
+    "rendered": {
+      "url": "https://www.event4network.com/networking/ankara",
+      "title": "Ankara Networking | E4N Topluluk ve Katılım Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/",
+        "https://www.event4network.com/networking/ankara"
+      ],
+      "robots": [
+        "noindex, follow"
+      ],
+      "h1": [
+        "Ankara'da yeni profesyonel bağlantılar için E4N'yi tanıyın"
+      ],
+      "text": "ANKARA YEREL BİLGİLENDİRME\nAnkara'da yeni profesyonel bağlantılar için E4N'yi tanıyın\n\nİşinizi daha açık anlatabileceğiniz, farklı uzmanlıkları tanıyabileceğiniz ve uygun iş birliklerini konuşabileceğiniz bir çevre arıyorsanız E4N'nin katılım modelini inceleyebilirsiniz.\n\nNasıl Çalışır?\nTopluluklara Katıl\nKATILIM YOLLARI\nAçık topluluklardan başlayın\n\nİlginize uygun lonca kanalına katılarak sektör paylaşımlarını ve E4N duyurularını takip edin. Bu kanallar ücretsiz ve geniş katılımlıdır; kapalı grup üyeliğinden ayrı çalışır.\n\nKAPALI GRUPLAR\nKapalı grup modelini öğrenin\n\nE4N'nin düzenli grup yapı"
+    }
+  },
+  {
+    "url": "https://www.event4network.com/networking/izmir",
+    "status": 200,
+    "rawCanonical": [
+      "<link rel=\"canonical\" href=\"https://www.event4network.com/\" />"
+    ],
+    "rendered": {
+      "url": "https://www.event4network.com/networking/izmir",
+      "title": "İzmir Networking | E4N İş Ağı ve Topluluk Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/",
+        "https://www.event4network.com/networking/izmir"
+      ],
+      "robots": [
+        "noindex, follow"
+      ],
+      "h1": [
+        "İzmir'de iş ilişkilerinizi geliştirmek için yeni bir başlangıç"
+      ],
+      "text": "İZMİR YEREL BİLGİLENDİRME\nİzmir'de iş ilişkilerinizi geliştirmek için yeni bir başlangıç\n\nYeni profesyonellerle tanışmak, iş ihtiyaçlarınızı paylaşmak ve farklı uzmanlıklarla bağlantı kurmak için E4N'nin açık topluluklarını keşfedin.\n\nÜyelik Koşulları\nTopluluklara Katıl\nKATILIM YOLLARI\nSektörünüzü ve tamamlayıcı iş alanlarını tanıyın\n\nLoncalar, kendi alanınızdaki gelişmeleri izlemenize ve birlikte çalışabileceğiniz diğer iş alanlarını tanımanıza yardımcı olur. Topluluk katılımı ücretsizdir; E4N aboneliği veya kapalı grup kabulü sağlamaz.\n\nKAPALI GRUPLAR\nDaha düzenli bir çalışma için kapalı gru"
+    }
+  },
+  {
+    "url": "https://www.event4network.com/is-agi-rehberi",
+    "status": 200,
+    "rawCanonical": [
+      "<link rel=\"canonical\" href=\"https://www.event4network.com/\" />"
+    ],
+    "rendered": {
+      "url": "https://www.event4network.com/blog",
+      "title": "Rehber | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/",
+        "https://www.event4network.com/blog"
+      ],
+      "robots": [],
+      "h1": [
+        "Rehber"
+      ],
+      "text": "BİLGİ VE TECRÜBE PAYLAŞIMI\nRehber\n\nSeçici networking prensipleri, referansla müşteri kazanımı ve iş dünyasında profesyonel temsil kültürüne dair rehber içeriklerimiz.\n\nRehber"
+    }
+  }
+]

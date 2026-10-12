@@ -1,0 +1,77 @@
+{
+  "primaryRows": 29,
+  "extraRows": 4,
+  "primaryRequestErrors": 0,
+  "rawPagesWithoutH1": 29,
+  "duplicateCanonicalRows": 19,
+  "schemaParseErrors": 0,
+  "faqAnswersMatched": 25,
+  "mobilePagesWithoutOverflow": 6,
+  "mobilePagesTotal": 6,
+  "sitemapClientRedirectRows": [
+    "https://www.event4network.com/degerlendirme-basvurusu",
+    "https://www.event4network.com/egitim"
+  ],
+  "lh": [
+    {
+      "url": "https://www.event4network.com/",
+      "scores": {
+        "performance": 32,
+        "accessibility": 89,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "value": 7341.940999999999,
+          "display": "7.3 s"
+        },
+        "largest-contentful-paint": {
+          "value": 16119.920999999997,
+          "display": "16.1 s"
+        },
+        "total-blocking-time": {
+          "value": 1360,
+          "display": "1,360 ms"
+        },
+        "cumulative-layout-shift": {
+          "value": 0,
+          "display": "0"
+        },
+        "speed-index": {
+          "value": 7905.6440159319145,
+          "display": "7.9 s"
+        }
+      }
+    },
+    {
+      "url": "https://www.event4network.com/uyelik",
+      "scores": {
+        "performance": 48,
+        "accessibility": 89,
+        "seo": 92
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "value": 8659.1246,
+          "display": "8.7 s"
+        },
+        "largest-contentful-paint": {
+          "value": 12165.2428,
+          "display": "12.2 s"
+        },
+        "total-blocking-time": {
+          "value": 343.615600000001,
+          "display": "340 ms"
+        },
+        "cumulative-layout-shift": {
+          "value": 0.0763241303340031,
+          "display": "0.076"
+        },
+        "speed-index": {
+          "value": 8659.1246,
+          "display": "8.7 s"
+        }
+      }
+    }
+  ]
+}

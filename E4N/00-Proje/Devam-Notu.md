@@ -1,3 +1,9 @@
+## SEO — AUD-02 güncel denetim / 12 Ekim 2026
+
+- E4N-289 In Progress. Yerel denetim teslim: 23 sitemap URL + temsilî/keşfedilen yollar = 33 URL; 6 mobil sayfa; 2 Lighthouse mobile koşusu. 19/29 ana DOM örneğinde çift canonical; /uyelik Lighthouse canonical hatası. Olmayan URL 200 + render noindex; sitemapte /egitim ve /degerlendirme-basvurusu client redirect. Şehir sayfaları bilinçli noindex; index açma.
+- Mobil laboratuvar: ana sayfa32/LCP16,12s/TBT1360ms; üyelik48/LCP12,17s/TBT344ms. Gerçek CrUX/INP değil. SSS25/25 şema yanıtı DOM ile eşleşti; JSON parse hatası yok. Event/Article gerçek yayımlanmış URL örneği yok.
+- GSC property anonim erişimde yok; Rich Results giriş istiyor; PSI429. Dış doğrulama PASS değil; EP-01/S1 kapanmadı. Kanıt [[E4N/09-Dogrulama/E4N-SEO-AUD02-Render-Schema-Mobil-2026-10-12]]. Sıradaki ARC-01/E4N-291, sonra E4N-290 TECH-01/02/04. Canlı yazma/yayın ve uygulama değişikliği yok.
+
 ## Son çalışma — üye yönetimi görünümü / 12 Ekim 2026
 
 - Yayın tamamlandı: 6705726 main/foundation; production dpl_6JXamf6dvKT1GZ1gKpg2XT7ot8dQ READY/custom domains. /admin/members ve yeni index-CemrhYzB.js 200; son katılanlar/sıralama/7gün filtre metinleri, anon directory401 doğrulandı. Aşağıdaki yayın sonucu eklenecek ifadesi tarihsel; tekrar uygulama.

@@ -1,0 +1,107 @@
+{
+  "count": 25,
+  "answersMatched": 25,
+  "matches": [
+    {
+      "question": "E4N nedir?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Hesap açmak için davetiye gerekir mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Hesap açmak abonelik satın almak mı?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Abonelik satın aldığımda gruba otomatik girer miyim?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Kapalı gruba başvurmak için şirket şartı var mı?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Gruplar kaç kişilik?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Aynı meslekten birden fazla kişi aynı grupta olabilir mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Aynı sektördeki kişiler birlikte olabilir mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Başkan görüşmesinde neler konuşulur?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Shuffle nedir?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Shuffle sonrası eski ilişkilerimi sürdürebilir miyim?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Toplantılar ne sıklıkla yapılır?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Aylık puan tablosu neden var?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Katılım koşullarını karşılamazsam ne olur?",
+      "answerInDOM": true
+    },
+    {
+      "question": "İkinci kez gruptan çıkarılırsam ne olur?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Gruptan çıktığımda etkinlik haklarım devam eder mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Loncalara katılmak ücretli mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Loncalarda aynı meslekten insanlar bulunabilir mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "E4N'ye üye olmadan etkinliğe katılabilir miyim?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Birebir görüşmelerin amacı nedir?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Yapay zekâ eşleştirmesi şu anda kullanılabiliyor mu?",
+      "answerInDOM": true
+    },
+    {
+      "question": "E4N müşteri, satış veya ciro garantisi veriyor mu?",
+      "answerInDOM": true
+    },
+    {
+      "question": "İstanbul, Ankara ve İzmir'de grup seçebilir miyim?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Pardus Business Chamber E4N üyeliğine dahil mi?",
+      "answerInDOM": true
+    },
+    {
+      "question": "Başka sorum varsa ne yapmalıyım?",
+      "answerInDOM": true
+    }
+  ],
+  "scope": "Rendered accordion answers compared to JSON-LD; Google Rich Results eligibility not asserted."
+}

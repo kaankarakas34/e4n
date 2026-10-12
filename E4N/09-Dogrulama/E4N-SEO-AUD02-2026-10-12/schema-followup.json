@@ -1,0 +1,217 @@
+{
+  "faq": {
+    "count": 25,
+    "questions": [
+      {
+        "question": "E4N nedir?",
+        "questionInDOM": true,
+        "answerInDOM": true,
+        "hasAnswer": true
+      },
+      {
+        "question": "Hesap açmak için davetiye gerekir mi?",
+        "questionInDOM": true,
+        "answerInDOM": true,
+        "hasAnswer": true
+      },
+      {
+        "question": "Hesap açmak abonelik satın almak mı?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Abonelik satın aldığımda gruba otomatik girer miyim?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Kapalı gruba başvurmak için şirket şartı var mı?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Gruplar kaç kişilik?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Aynı meslekten birden fazla kişi aynı grupta olabilir mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Aynı sektördeki kişiler birlikte olabilir mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Başkan görüşmesinde neler konuşulur?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Shuffle nedir?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Shuffle sonrası eski ilişkilerimi sürdürebilir miyim?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Toplantılar ne sıklıkla yapılır?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Aylık puan tablosu neden var?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Katılım koşullarını karşılamazsam ne olur?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "İkinci kez gruptan çıkarılırsam ne olur?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Gruptan çıktığımda etkinlik haklarım devam eder mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Loncalara katılmak ücretli mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Loncalarda aynı meslekten insanlar bulunabilir mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "E4N'ye üye olmadan etkinliğe katılabilir miyim?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Birebir görüşmelerin amacı nedir?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Yapay zekâ eşleştirmesi şu anda kullanılabiliyor mu?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "E4N müşteri, satış veya ciro garantisi veriyor mu?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "İstanbul, Ankara ve İzmir'de grup seçebilir miyim?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Pardus Business Chamber E4N üyeliğine dahil mi?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      },
+      {
+        "question": "Başka sorum varsa ne yapmalıyım?",
+        "questionInDOM": true,
+        "answerInDOM": false,
+        "hasAnswer": true
+      }
+    ],
+    "parseOnly": true
+  },
+  "schemaResources": [
+    {
+      "path": "/e4n-logo.png",
+      "status": 200,
+      "contentType": "image/png"
+    },
+    {
+      "path": "/logo.png",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/biz_kimiz_network.png",
+      "status": 200,
+      "contentType": "image/png"
+    }
+  ],
+  "placeholders": [
+    {
+      "url": "https://www.event4network.com/on-bilgilendirme-formu",
+      "h1": [
+        "Event4Network",
+        "Ön Bilgilendirme Formu"
+      ],
+      "mainText": "Geri Dön\nÖn Bilgilendirme Formu\n1. SATICI BİLGİLERİ\nŞirket Ünvanı: Pardus Ticaret Haydar Karakaş (Event4Network)\nAdres: Çeliktepe, İsmet İnönü Cd. no:11 NO: 501, 34413 Kağıthane/İstanbul\nTelefon: 0536 319 7697\nE-posta: info@event4network.com\nVergi No: 5130029725\n2. KONU\n\nİşbu Ön Bilgilendirme Formu'nun (\"Form\") konusu, ALICI'nın SATICI'ya ait Event4Network platformu (\"Platform\") üzerinden elektronik ortamda sipariş verdiği, nitelikleri ve satış fiyatı belirtilen üyeliğin/hizmetin (\"Hizmet\") satışı ve ifası ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri uyarınca ALICI'nın bilgilendirilmesidir.\n\n3. SÖZLEŞMEYE KONU HİZMETİN TEMEL"
+    },
+    {
+      "url": "https://www.event4network.com/kullanim-kosullari",
+      "h1": [
+        "Event4Network",
+        "Kullanım Koşulları"
+      ],
+      "mainText": "Geri Dön\nKullanım Koşulları\n1. TARAFLAR VE KABUL\n\nİşbu Kullanım Koşulları (\"Koşullar\"), Pardus Ticaret Haydar Karakaş (\"Event4Network\") tarafından işletilen www.event4network.com isimli web sitesini (\"Site\") ve Event4Network platformunu ziyaret eden, bu platforma üye olan tüm kullanıcılar (\"Kullanıcı\" veya \"Üye\") için geçerlidir. Platformu kullanarak bu şartları tamamen okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.\n\n2. PLATFORMUN AMACI VE KULLANIMI\nEvent4Network, iş insanlarını bir araya getirerek ticaret hacmini artırmayı, nitelikli işbirlikleri ve referans ağları (\"Network\") kurmayı amaçlayan iletişim bazlı bir platformdur.\nSite üzerinde ve toplantılarda yürütülen tü"
+    },
+    {
+      "url": "https://www.event4network.com/cerez-politikasi",
+      "h1": [
+        "Event4Network",
+        "Çerez (Cookie) Politikası"
+      ],
+      "mainText": "Geri Dön\nÇerez (Cookie) Politikası\n1. ÇEREZ NEDİR?\n\nÇerezler (cookies), ziyaret ettiğiniz web siteleri tarafından tarayıcınız aracılığıyla bilgisayarınıza veya mobil cihazınıza kaydedilen, genellikle harf ve rakamlardan oluşan küçük metin dosyalarıdır. Event4Network (\"Şirket\") olarak, www.event4network.com sitemizi ziyaret eden kullanıcılarımızın (\"Kullanıcı\") deneyimini zenginleştirmek ve hizmetlerimizi optimize etmek amacıyla çerez kullanıyoruz.\n\n2. KULLANDIĞIMIZ ÇEREZ TÜRLERİ VE KULLANIM AMAÇLARI\nZorunlu Çerezler: Sitenin düzgün bir şekilde çalışabilmesi için kesinlikle gerekli olan çerezlerdir. Kimlik doğrulama, mevcut oturumunuzu sürdürme ve güvenlik sağlama amaçlarıyla kullanılır.\nPerf"
+    },
+    {
+      "url": "https://www.event4network.com/mesafeli-satis-sozlesmesi",
+      "h1": [
+        "Event4Network",
+        "Mesafeli Satış Sözleşmesi"
+      ],
+      "mainText": "Geri Dön\nMesafeli Satış Sözleşmesi\nMADDE 1 – TARAFLAR\n\n1.1. SATICI BİLGİLERİ:\n\nÜnvanı: Pardus Ticaret Haydar Karakaş (Event4Network)\nAdresi: Çeliktepe, İsmet İnönü Cd. no:11 NO: 501, 34413 Kağıthane/İstanbul\nTelefon: 0536 319 7697\nVergi No: 5130029725\nE-posta: info@event4network.com\n\n1.2. ALICI BİLGİLERİ:\n\nPlatform üzerinden üyelik/hizmet satın alan gerçek veya tüzel kişi (\"Alıcı\") olarak anılacaktır.\n\nMADDE 2 – KONU\n\nİşbu sözleşmenin konusu, ALICI'nın SATICI'ya ait Event4Network platformu üzerinden elektronik ortamda siparişini (satın almasını) yaptığı üyelik ve networking hizmetlerinin satışı ve ifası ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmele"
+    },
+    {
+      "url": "https://www.event4network.com/iptal-ve-iade-kosullari",
+      "h1": [
+        "Event4Network",
+        "İptal ve İade Koşulları"
+      ],
+      "mainText": "Geri Dön\nİptal ve İade Koşulları\n1. GENEL BİLGİLER\n\nİşbu İptal ve İade Koşulları, Event4Network tarafından sunulan üyelik, grup katılımı (Shuffle) ve diğer networking hizmetlerinden faydalanan tüm kullanıcılar için geçerlidir. Kullanıcılar (Üyeler), platform üzerinden hizmet satın alarak veya platformdaki gruplara dahil olarak bu şartları kabul etmiş sayılırlar.\n\n2. İPTAL VE İADE ŞARTLARI (SHUFFLE DÖNEMİ İÇİN)\n\nEvent4Network platformunda grupların yeniden karma hale getirildiği (Shuffle) dönemler, üyelik sürecinin yapı taşıdır ve grupların yapısında köklü değişiklikler içerir.\n\nShuffle'dan 2 Gün Öncesine Kadar: Üyeler, katılacakları veya dahil oldukları yeni Shuffle (Grup oluşturma) işlemind"
+    }
+  ]
+}

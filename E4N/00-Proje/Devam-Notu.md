@@ -1,3 +1,7 @@
+## Son çalışma — üye yönetimi görünümü / 12 Ekim 2026
+
+- Kullanıcı isteği: yeni gelen kişi görünür, son kayıt en üstte, düzgün ekran. API/istemci/diğer üye işlemleri created_at DESC/nullson/id. Üstte son3/yeni7gün, ad-şirket-meslek-iletişim/grup/kayıttarihi/hesapdurumu, Türkçe rol/filtreler, profil/detay ve mevcut yazım işlemlerine erişim. check/build/235rota/yeni componentlint, izole HTTP+TS ve desktop/mobile fixturebrowser PASS; PG/prod oturumlu E2E yok. Canlı readonly aggregate29hesap/kimlik ve kayıtdateNULL0; kişisel satır yok, kullanıcı veri yazımı/migration yok. Tek kanıt [[E4N/09-Dogrulama/Uye-Yonetimi-Yeni-Kayitlar-ve-Liste-Duzeni-2026-10-12]]. WEB14/E4N-148 devam düzeltmesi; yayın sonucu eklenecek.
+
 ## Son çalışma — başkanlığı kaldırma ve üye çıkarma / 12 Ekim 2026
 
 - Kullanıcı devam isteği: tüm atanmış liderlik kartlarında Değiştir yanına Görevden al. Başkan önceki endpoint; diğer5görev admin-only leadership endpoint, unvan temizleme/üyelik ve ayrı ADMIN-PRES koruma/stale409. 235rota/check/build, rol5+tekrar/yetki/scope HTTP adaptör ve fixturebrowser PASS; PG/production kullanıcı mutasyonu yok; eski lint açıkları sürer. Aynı paket notuna eklendi; devam düzeltmesinin yayını sürüyor.

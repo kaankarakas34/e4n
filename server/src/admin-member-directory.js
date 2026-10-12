@@ -11,7 +11,7 @@ export function installAdminMemberDirectory(app,{pool,authenticateToken}) {
       if(!owner){await client.query('ROLLBACK');return res.sendStatus(401);}
       if(owner.role!=='ADMIN'){await client.query('ROLLBACK');return res.sendStatus(403);}
       const users=(await client.query(`SELECT id,name,email,phone,city,profession,company,role,account_status,created_at,
-        position,linkedin_profile FROM users ORDER BY lower(name),id LIMIT 5001`)).rows;
+        position,linkedin_profile FROM users ORDER BY created_at DESC NULLS LAST,id LIMIT 5001`)).rows;
       if(users.length>5000){await client.query('ROLLBACK');return res.status(503).json({error:'Directory exceeds supported size'});}
       const memberships=users.length?(await client.query(`SELECT gm.user_id,g.id,g.name,g.status AS group_status,
         gm.status AS membership_status,gm.joined_at FROM group_members gm JOIN groups g ON g.id=gm.group_id

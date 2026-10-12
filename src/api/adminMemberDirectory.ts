@@ -20,14 +20,27 @@ export const directoryStatus=(value:string|null)=>{
   const labels:Record<string,string>={UNSUBSCRIBED:'Abonelik yok',ACTIVE:'Aktif',INACTIVE:'Pasif',PENDING:'Bekliyor',REQUESTED:'Talep edildi',DRAFT:'Taslak'};
   return value&&Object.prototype.hasOwnProperty.call(labels,value)?labels[value]:value?`Diğer durum (${value})`:'Bilinmiyor';
 };
+export const directoryRole=(value:string|null)=>{
+  const labels:Record<string,string>={ADMIN:'Yönetici',PRESIDENT:'Grup Başkanı',VICE_PRESIDENT:'Komite Başkanı',SECRETARY_TREASURER:'Sekreter / Sayman',MEMBER:'Üye',VISITOR:'Ziyaretçi'};
+  return value&&Object.prototype.hasOwnProperty.call(labels,value)?labels[value]:value?`Diğer rol (${value})`:'Rol belirtilmemiş';
+};
+export function sortMembersNewestFirst<T extends {id:string;created_at:string|null}>(members:T[]):T[]{
+  const time=(v:string|null)=>v&&Number.isFinite(Date.parse(v))?Date.parse(v):-Infinity;
+  return [...members].sort((a,b)=>{const first=time(a.created_at),second=time(b.created_at);return first===second?a.id.localeCompare(b.id):first>second?-1:1;});
+}
+export function recentlyJoined(m:Pick<DirectoryMember,'created_at'>,asOf:string):boolean{
+  if(!m.created_at)return false;
+  const age=Date.parse(asOf)-Date.parse(m.created_at);
+  return Number.isFinite(age)&&age>=0&&age<=7*24*60*60*1000;
+}
 export function filterDirectory(members:DirectoryMember[],filters:{search:string;role:string;status:string;group:string}):DirectoryMember[] {
   const search=filters.search.trim().toLocaleLowerCase('tr-TR');
   const role=filters.role.startsWith('VALUE:')?filters.role.slice(6):filters.role;
   const status=filters.status.startsWith('VALUE:')?filters.status.slice(6):filters.status;
-  return members.filter(m=>(!search||[m.name,m.email,m.company,m.profession,m.city].some(v=>v?.toLocaleLowerCase('tr-TR').includes(search)))
+  return sortMembersNewestFirst(members.filter(m=>(!search||[m.name,m.email,m.phone,m.company,m.profession,m.city].some(v=>v?.toLocaleLowerCase('tr-TR').includes(search)))
     &&(filters.role==='ALL'||(filters.role==='UNKNOWN'?m.role===null:m.role===role))
     &&(filters.status==='ALL'||(filters.status==='UNKNOWN'?m.account_status===null:m.account_status===status))
-    &&(filters.group==='ALL'||(filters.group==='NONE'?m.groups.length===0:m.groups.some(g=>g.id===filters.group))));
+    &&(filters.group==='ALL'||(filters.group==='NONE'?m.groups.length===0:m.groups.some(g=>g.id===filters.group)))));
 }
 export const adminMemberDirectoryApi={async read(owner:string):Promise<MemberDirectory>{
   if(!uuid(owner))throw new Error('Invalid directory owner');

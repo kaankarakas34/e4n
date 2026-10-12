@@ -4,7 +4,7 @@ import {setMembershipOperationContext} from './membership-operation-context.js';
 const link=id=>`/group-management?tab=applications&group=${id}`;
 const subscribed=u=>u?.account_status==='ACTIVE'&&typeof u.subscription_plan==='string'&&!!u.subscription_plan&&u.subscription_end_date&&new Date(u.subscription_end_date)>new Date();
 const presidentSql=`SELECT u.id,u.name FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=$1 AND gm.status='ACTIVE' AND (gm.role='PRESIDENT' OR u.role='PRESIDENT' OR to_jsonb(u)->>'group_title'='PRESIDENT') ORDER BY u.id`;
-async function president(c,g){
+export async function president(c,g){
   const rows=(await c.query(presidentSql,[g])).rows;
   if(rows.length===1)return rows[0];
   if(rows.length>1)throw groupError('GROUP_ROLE_AMBIGUOUS','Grupta birden fazla başkan kaydı var. Rol kayıtlarını kontrol edin.');

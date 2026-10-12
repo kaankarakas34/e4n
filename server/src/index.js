@@ -1,6 +1,6 @@
 import {retiredGuildRequest} from './retired-guilds.js';
 import {installGroupApplications} from './group-applications.js';
-import {installGroupPresidency,clearGroupPresident} from './group-presidency.js';
+import {installGroupPresidency,clearGroupPresident,handoffGroupApplications} from './group-presidency.js';
 import {membershipPrices} from '../../shared/membership-pricing.js';
 import {installNormalRegistration} from './normal-registration.js';
 import {installMembershipReferrals} from './membership-referrals.js';
@@ -3661,6 +3661,7 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
     if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
     const formerRole=(await client.query('SELECT role,group_title FROM users WHERE id=$1',[req.params.userId])).rows[0];
     if(formerRole?.role==='PRESIDENT'||formerRole?.group_title==='PRESIDENT')await clearGroupPresident(client,req.params.id,req.params.userId,true);
+    await handoffGroupApplications(client,req.params.id,req.params.userId);
     const groupName=(await client.query('SELECT name FROM groups WHERE id=$1',[req.params.id])).rows[0]?.name||'Grup';
     const payload=JSON.stringify({category,categoryLabel:VALID_REASONS[category],note,groupId:req.params.id,groupName});
     await client.query("INSERT INTO notifications(user_id,type,title,message,action_url) VALUES($1,'GROUP_UPDATE','Gruptan Çıkarılma',$2,'/membership-history')",[req.params.userId,`${groupName} grubundan çıkarıldınız. Neden: ${VALID_REASONS[category]}.${note?' Açıklama: '+note:''} ::: ${payload}`]);

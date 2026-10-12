@@ -1,5 +1,13 @@
 import {beginGroupMutation,requireCurrentAdmin,groupError,isUuid,enforceGroupCapacity,sendGroupMutationError} from './group-capacity.js';
 import {setMembershipOperationContext} from './membership-operation-context.js';
+import {president} from './group-applications.js';
+
+export async function handoffGroupApplications(client,groupId,formerPresidentId){
+  const pending=await client.query("SELECT id FROM group_applications WHERE group_id=$1 AND president_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED') LIMIT 1",[groupId,formerPresidentId]);
+  if(!pending.rowCount)return;
+  const manager=await president(client,groupId);
+  await client.query("UPDATE group_applications SET president_id=$3 WHERE group_id=$1 AND president_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED')",[groupId,formerPresidentId,manager.id]);
+}
 
 export async function clearGroupPresident(client,groupId,userId,preserveOther=false){
   const other=(await client.query("SELECT gm.id FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.user_id=$1 AND gm.group_id<>$2 AND gm.status='ACTIVE' AND (gm.role='PRESIDENT' OR u.role='PRESIDENT' OR to_jsonb(u)->>'group_title'='PRESIDENT')",[userId,groupId])).rows;
@@ -19,6 +27,7 @@ export function installGroupPresidency(app,{pool,authenticateToken}){
       if(!member)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
       await setMembershipOperationContext(c,req.user.id,'ROLE_ASSIGNMENT');
       await clearGroupPresident(c,req.params.id,req.body.userId);await enforceGroupCapacity(c,[req.params.id]);
+      await handoffGroupApplications(c,req.params.id,req.body.userId);
       await c.query('COMMIT');res.json({success:true,groupId:req.params.id,userId:req.body.userId,cleared:true});
     }catch(error){if(c)await c.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{c?.release();}
   });

@@ -14,13 +14,18 @@ const dto=row=>{
   const answers={};
   for(const key of formFields){const value=row.form_data?.[key];if(typeof value==='string')answers[key]=value;
     else if(Array.isArray(value)&&value.every(v=>typeof v==='string'))answers[key]=value;}
+  if(row.source==='free_member_visitor'){
+    for(const key of ['user_id','group_id'])if(uuid(row.form_data?.[key]))answers[key]=row.form_data[key];
+    for(const key of ['group_name','notes','requested_at'])if(typeof row.form_data?.[key]==='string')answers[key]=row.form_data[key];
+  }
   const {form_data,...data}=row;
-  return {...data,form_data:answers,category:['visitor_invite','visitor_payment'].includes(row.source)?'registrations':'visitors'};
+  return {...data,form_data:answers,category:['visitor_invite','visitor_payment','visitor_free'].includes(row.source)?'registrations':'visitors'};
 };
 export function installAdminVisitorQueue(app,{pool,authenticateToken}) {
   const run=mutate=>async(req,res)=>{
     res.set('Cache-Control','private, no-store');
-    if(Object.keys(req.query).length||mutate&&(!uuid(req.params.id)||!req.body||Object.keys(req.body).length))return res.status(400).json({error:'Invalid visitor request'});
+    const memberRequests=!mutate&&req.query.kind==='member-requests';
+    if(Object.keys(req.query).some(k=>k!=='kind')||Object.keys(req.query).length&&(!memberRequests||mutate)||mutate&&(!uuid(req.params.id)||!req.body||Object.keys(req.body).length))return res.status(400).json({error:'Invalid visitor request'});
     if(!uuid(req.user.id))return res.sendStatus(401);
     let client;
     try {
@@ -35,7 +40,7 @@ export function installAdminVisitorQueue(app,{pool,authenticateToken}) {
         if(row.status==='PENDING')await client.query("UPDATE public_visitors SET status='CONTACTED' WHERE id=$1",[row.id]);
         row.status='CONTACTED';await client.query('COMMIT');return res.json({version:1,ownerId:req.user.id,visitor:dto(row)});
       }
-      const rows=(await client.query(select+` WHERE ${scope} ORDER BY pv.created_at DESC NULLS LAST,pv.id LIMIT 5001`)).rows;
+      const rows=(await client.query(select+` WHERE ${scope}${memberRequests?" AND pv.source='free_member_visitor'":''} ORDER BY pv.created_at DESC NULLS LAST,pv.id LIMIT 5001`)).rows;
       if(rows.length>5000){await client.query('ROLLBACK');return res.status(503).json({error:'Visitor queue exceeds supported size'});}
       await client.query('COMMIT');res.json({version:1,ownerId:req.user.id,visitors:rows.map(dto)});
     }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});console.error('Visitor queue failed:',error.message);res.status(500).json({error:'Visitor queue unavailable'});}

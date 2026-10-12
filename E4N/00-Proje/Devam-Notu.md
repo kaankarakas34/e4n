@@ -1,3 +1,11 @@
+## Son çalışma — üye grup ziyaret talepleri / 12 Ekim 2026
+
+- Kullanıcı kararı: önce hesap, sonra panelden gruba ziyaret isteği; yönetim /admin/visitors içinde görür. Varsayılan Üyelerin Ziyaret Talepleri sekmesi hazır; grup/not/üye bilgileri, grup-durum filtresi, detay/profil/iletişim ve hata-retry. Mevcut source için sunucu filtresi/allowlist/güncel ADMIN; anonim kaynak taklidi engeli. Yeni ziyaret PENDING; sahte mail vaadi kaldırıldı. Migration yok. check/build/233rota, izole HTTP+DTO ve ücretsiz akış contract PASS; fixture browser/görsel PASS. Gerçek PG yok; önceden14any lint hatası sürer. Canlı yayın bu paket için bekliyor. Kanıt [[E4N/09-Dogrulama/Uye-Grup-Ziyaret-Talepleri-Yonetici-Sekmesi-2026-10-12]]. Ana kapsam açık.
+
+## Son kontrol — giriş hatası / 12 Ekim 2026
+
+- `/api/users/me` business_profile eksik sütun 500 hatası için mevcut 81b05f7 düzeltmesi, kullanıcının açık canlı yayın onayıyla production yayımlandı. dpl_8kZtiReqZ46YH3FR2QPBRM5fY9oJ READY; iki custom domain, yeni asset/CSP, login200 ve anon401 doğrulandı. Sözdizimi, İş DNA 5 test, 233 rota ve izole handler4/4 PASS; Docker kapalı olduğundan gerçek PG testi yok. Gerçek kullanıcı giriş onayı beklenir. Ayrıntı [[E4N/09-Dogrulama/Giris-Business-Profile-Canli-Duzeltme-2026-10-12]]. Ana kalan kapsam açık; aynı düzeltmeyi tekrar uygulama.
+
 ## Yeni proje — E4N SEO (11 Ekim 2026)
 
 Linear: https://linear.app/e4n/project/e4n-seo-c47b071086ca . 6 sprint milestone, 16 epic (E4N-289..304) oluşturuldu; toplam 24 epic ve 32 alt görev planlandı. Linear ücretsiz issue kotası kalan 8 epic ve alt görevlerin ayrı issue aktarımını engelledi; tam backlog proje belgesinde.

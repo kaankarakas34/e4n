@@ -1573,7 +1573,7 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
     // Also record in visitors table (which has group_id)
     const visitorInsertRes = await client.query(
       `INSERT INTO visitors (inviter_id, name, email, phone, company, profession, visited_at, group_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, 'INVITED')
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, 'PENDING')
        RETURNING *`,
       [u.id, u.name, u.email, u.phone || '', u.company || '', u.profession || '', groupId]
     );
@@ -1583,7 +1583,7 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
     const newVisitsUsed = visitsUsed + 1;
     res.status(201).json({
       success: true,
-      message: `"${group.name}" grubuna ziyaretçi talebiniz başarıyla oluşturuldu. Toplantı davetiyesi e-posta adresinize iletilecektir.`,
+      message: `"${group.name}" grubuna ziyaretçi talebiniz alındı. Yönetim talebinizi inceleyerek sizinle iletişime geçecektir.`,
       remainingVisits: Math.max(0, 2 - newVisitsUsed),
       visitsUsed: newVisitsUsed,
       maxVisits: 2,
@@ -2674,6 +2674,7 @@ app.get('/api/visitor-invite/verify', async (req, res) => {
 // Public Visitors API
 app.post('/api/visitors/apply', async (req, res) => {
   const { name, email, phone, company, profession, source, kvkk_accepted, inviter_id, title, web_linkedin, activity_area, duration, target_customer, why_join, value_add, previous_groups, form_data, token, event_id } = req.body;
+  if (source === 'free_member_visitor') return res.status(400).json({ error: 'Grup ziyaret talebinizi üye panelinden gönderiniz.' });
   try {
     let finalInviterId = inviter_id;
     let finalSource = source || 'web';

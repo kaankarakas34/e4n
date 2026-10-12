@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
+import { AdminVisitorQueue } from '../components/AdminVisitorQueue';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
@@ -52,7 +53,7 @@ export function AdminVisitors() {
     const [visitors, setVisitors] = useState<PublicVisitor[]>([]);
     const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'registrations' | 'members' | 'education'>('visitors');
+    const [activeTab, setActiveTab] = useState<'groupRequests' | 'visitors' | 'registrations' | 'members' | 'education'>('groupRequests');
     const [groups, setGroups] = useState<any[]>([]);
     const [events, setEvents] = useState<any[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<string>('');
@@ -64,7 +65,7 @@ export function AdminVisitors() {
                     return false;
                 }
                 // Exclude payments and token invitations from visitor_checkout
-                if (v.source === 'visitor_invite' || v.source === 'visitor_payment') {
+                if (v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free' || v.source === 'free_member_visitor') {
                     return false;
                 }
                 if (v.why_join && v.why_join.trim() !== '') return true;
@@ -80,7 +81,7 @@ export function AdminVisitors() {
                 if (selectedEventId && v.event_id !== selectedEventId) {
                     return false;
                 }
-                return v.source === 'visitor_invite' || v.source === 'visitor_payment';
+                return v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free';
             });
         } else if (activeTab === 'education') {
             return visitors.filter(v => {
@@ -105,8 +106,8 @@ export function AdminVisitors() {
     const [inviteError, setInviteError] = useState('');
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (activeTab !== 'groupRequests' && user?.role === 'ADMIN') fetchData();
+    }, [activeTab, user?.id, user?.role]);
 
     const fetchData = async () => {
         try {
@@ -231,14 +232,14 @@ export function AdminVisitors() {
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">Gelen Başvurular</h1>
                     <div className="flex space-x-3">
-                        <Button onClick={() => {
+                        {activeTab !== 'groupRequests' && <Button onClick={() => {
                             setIsInviteModalOpen(true);
                             setInviteStatus('idle');
                             setInviteEmail('');
                         }} className="bg-red-600 hover:bg-red-700 text-white flex items-center">
                             <Mail className="h-4 w-4 mr-2" />
                             Ziyaretçi Davet Et
-                        </Button>
+                        </Button>}
                         <Button onClick={() => navigate('/admin')} className="flex items-center" variant="outline">
                             <Shield className="h-4 w-4 mr-2" />
                             Admin Paneli
@@ -247,14 +248,19 @@ export function AdminVisitors() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex space-x-4 mb-6 border-b border-gray-200">
+                <div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200" aria-label="Başvuru türü">
+                    <button aria-pressed={activeTab === 'groupRequests'}
+                        onClick={() => setActiveTab('groupRequests')}
+                        className={`pb-2 px-4 text-sm font-medium border-b-2 ${activeTab === 'groupRequests' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                        Üyelerin Ziyaret Talepleri
+                    </button>
                     <button
                         onClick={() => setActiveTab('visitors')}
                         className={`pb-2 px-4 text-sm font-medium transition-colors border-b-2 flex items-center ${activeTab === 'visitors' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Ziyaretçi Formları ({visitors.filter(v => {
-                            if (v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free') return false;
+                            if (v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free' || v.source === 'free_member_visitor') return false;
                             if (v.why_join && v.why_join.trim() !== '') return true;
                             return (
                                 v.source !== 'education_application' && 
@@ -287,7 +293,7 @@ export function AdminVisitors() {
                     </button>
                 </div>
 
-                <Card>
+                {activeTab === 'groupRequests' ? <AdminVisitorQueue memberRequestsOnly onOpenMemberships={() => setActiveTab('members')} /> : <Card>
                     <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 pb-4 border-b border-gray-100">
                         <CardTitle>
                             {activeTab === 'visitors' 
@@ -460,7 +466,7 @@ export function AdminVisitors() {
                             </div>
                         )}
                     </CardContent>
-                </Card>
+                </Card>}
             </div>
 
 

@@ -12,11 +12,12 @@ const date=(v:unknown)=>v===null||typeof v==='string'&&Number.isFinite(Date.pars
 const formKeys=new Set('education_level work_status job_title company_size main_services sector experience_years differentiating_factor value_provided ideal_referral success_story network_size network_sectors network_opportunities referral_example network_sharing_approach primary_expectation target_connection_types ideal_referral_definition time_commitment core_value discovery_source referral_name title web_linkedin activity_area duration target_customer why_join value_add previous_groups'.split(' '));
 export function validQueueVisitor(v:any):v is QueueVisitor {
   return !!v&&uuid(v.id)&&typeof v.name==='string'&&['visitors','registrations'].includes(v.category)
-    &&v.category===(['visitor_invite','visitor_payment'].includes(v.source)?'registrations':'visitors')
+    &&v.category===(['visitor_invite','visitor_payment','visitor_free'].includes(v.source)?'registrations':'visitors')
     &&['email','phone','company','profession','source','status','event_title','inviter_name','title','web_linkedin','activity_area','duration','target_customer','why_join','value_add','previous_groups'].every(k=>text(v[k]))
     &&date(v.created_at)&&date(v.event_start_at)&&(v.event_id===null||uuid(v.event_id))
     &&v.form_data&&typeof v.form_data==='object'&&!Array.isArray(v.form_data)
-    &&Object.keys(v.form_data).every(key=>formKeys.has(key))
+    &&Object.keys(v.form_data).every(key=>formKeys.has(key)||v.source==='free_member_visitor'&&['user_id','group_id','group_name','notes','requested_at'].includes(key))
+    &&['user_id','group_id'].every(key=>v.form_data[key]===undefined||uuid(v.form_data[key]))
     &&Object.values(v.form_data).every(a=>typeof a==='string'||Array.isArray(a)&&a.every(x=>typeof x==='string'));
 }
 export const queueStatus=(v:string|null)=>{
@@ -24,10 +25,10 @@ export const queueStatus=(v:string|null)=>{
   return v&&Object.prototype.hasOwnProperty.call(labels,v)?labels[v]:(v?`Diğer durum (${v})`:'Durum bilinmiyor');
 };
 export const adminVisitorQueueApi={
-  async read(owner:string):Promise<QueueVisitor[]> {
-    const data=await referralTransport.get<any>('/admin/visitor-queue');
+  async read(owner:string,memberRequestsOnly=false):Promise<QueueVisitor[]> {
+    const data=await referralTransport.get<any>('/admin/visitor-queue'+(memberRequestsOnly?'?kind=member-requests':''));
     if(!data||data.version!==1||data.ownerId!==owner||!Array.isArray(data.visitors)||data.visitors.length>5000
-      ||!data.visitors.every(validQueueVisitor)||new Set(data.visitors.map((v:QueueVisitor)=>v.id)).size!==data.visitors.length)throw new Error('Invalid visitor queue');
+      ||!data.visitors.every(validQueueVisitor)||memberRequestsOnly&&data.visitors.some((v:QueueVisitor)=>v.source!=='free_member_visitor')||new Set(data.visitors.map((v:QueueVisitor)=>v.id)).size!==data.visitors.length)throw new Error('Invalid visitor queue');
     return data.visitors;
   },
   async contacted(owner:string,id:string):Promise<QueueVisitor> {

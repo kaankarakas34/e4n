@@ -65,8 +65,9 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   }));
  app.post('/api/groups/:id/join',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id)||Object.keys(req.body??{}).length||Object.keys(req.query).length)throw groupError('INVALID_REQUEST','Geçersiz başvuru.',400);
-  const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
+  const u=(await c.query('SELECT account_status,subscription_plan,subscription_end_date,business_profile FROM users WHERE id=$1 FOR UPDATE',[req.user.id])).rows[0];
   if(!subscribed(u))throw groupError('SUBSCRIPTION_REQUIRED','Gruba başvurmak için aktif abonelik gerekir.',403);
+  if(u.business_profile?.status!=='completed')throw groupError('BUSINESS_PROFILE_REQUIRED','Kapalı gruba başvurabilmek için Seviye 1 İş DNA profilinizi tamamlamanız gerekmektedir.',403);
   if(!(await c.query("SELECT id FROM groups WHERE id=$1 AND status='ACTIVE' FOR UPDATE",[req.params.id])).rowCount)throw groupError('GROUP_NOT_FOUND','Aktif grup bulunamadı.',404);
   const removalStats=(await c.query("SELECT count(*)::int AS removal_count, max(recorded_at) AS last_removed_at FROM group_membership_history WHERE user_id=$1 AND operation='DELETE' AND operation_context->>'action'='MEMBER_REMOVAL'",[req.user.id])).rows[0];
   if(removalStats&&removalStats.removal_count>=2&&removalStats.last_removed_at){

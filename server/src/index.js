@@ -56,6 +56,7 @@ import { installDocuments } from './documents.js';
 import { installMessages } from './messages.js';
 import { installConnections } from './connections.js';
 import { installAdminReports } from './admin-reports.js';
+import { installBusinessProfile } from './business-profile.js';
 import { installPaymentProcessing, validRequestKey, paymentFingerprint, paymentReceipt } from './payment-processing.js';
 import { calculateMemberScore, getScoreLedger, reconcileUserScore, finalizePeriod, applyScoreAdjustment, getMonthlyScores, getMemberScorecard, evaluateLowScoreRemovals, applyLowScoreRemovals } from './utils/scoring.js';
 import { getJwtSecret, validateSecurityConfig, verifyJwt, signJwt } from './config/security.js';
@@ -279,6 +280,9 @@ scheduleCron('59 23 31 12 *', async () => {
 
 /* --- NEW ENDPOINTS: NOTIFICATIONS --- */
 installNotifications(app,{pool,authenticateToken});
+
+/* --- BUSINESS PROFILE (İŞ DNA'SI) --- */
+installBusinessProfile(app,{pool,authenticateToken});
 
 /* --- NEW ENDPOINTS: REPORTS --- */
 app.get('/api/reports/score-ledger', authenticateToken, async (req, res) => {
@@ -819,7 +823,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date FROM users WHERE id = $1', [req.user.id]);
+    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date, business_profile FROM users WHERE id = $1', [req.user.id]);
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -2580,11 +2584,11 @@ app.post('/api/visitor-invite', authenticateToken, async (req, res) => {
   }
   
   try {
-    // Generate token valid for 6 hours
+    // Generate token valid for 7 days
     const token = jwt.sign(
       { email: email.trim().toLowerCase(), inviter_id: req.user.id, type: 'visitor_invite' },
       SECRET_KEY,
-      { expiresIn: '6h' }
+      { expiresIn: '7d' }
     );
     
     // Construct invitation link
@@ -2604,9 +2608,6 @@ app.post('/api/visitor-invite', authenticateToken, async (req, res) => {
           <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">Aşağıdaki bağlantıya tıklayarak <strong>ücretsiz</strong> ziyaretçi kaydınızı oluşturabilirsiniz:</p>
           <div style="text-align: center; margin: 35px 0;">
             <a href="${inviteLink}" style="background-color: #ef4444; color: white; padding: 14px 30px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Daveti Kabul Et ve Kaydol</a>
-          </div>
-          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 8px; margin: 25px 0;">
-            <p style="color: #991b1b; font-size: 14px; font-weight: 600; margin: 0;">Önemli Not: Bu davet bağlantısı güvenlik amacıyla sadece 6 saat geçerlidir.</p>
           </div>
           <p style="font-size: 16px; color: #1e293b; line-height: 1.6;">Toplantımızda sizi de aramızda görmekten memnuniyet duyacağız.</p>
         </div>
@@ -2682,8 +2683,8 @@ app.post('/api/visitors/apply', async (req, res) => {
       } catch (err) {
         return res.status(400).json({ error: 'invalid_token', message: 'Davet linkinin süresi dolmuş veya geçersiz.' });
       }
-    } else if (source === 'visitor_payment') {
-      paymentInfo = { payment_status: 'PAID', payment_amount: 1000 };
+    } else {
+      paymentInfo = { payment_status: 'FREE', payment_amount: 0 };
     }
 
     const normalizedPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '____NON_EXISTENT____';

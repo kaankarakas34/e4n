@@ -27,6 +27,15 @@ export interface User {
   kvkk_consent?: boolean;
   marketing_consent?: boolean;
   consent_date?: string;
+  business_profile?: {
+    status: 'not_started' | 'draft' | 'completed';
+    schemaVersion?: number;
+    consentAccepted?: boolean;
+    isPublicToGroup?: boolean;
+    completedAt?: string;
+    updatedAt?: string;
+    currentStep?: number;
+  };
   // Performance Metrics (stats)
   metric_referrals?: number;
   metric_revenue?: number;

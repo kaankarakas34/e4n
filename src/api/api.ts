@@ -945,6 +945,36 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+  async getMyBusinessProfile() {
+    return await request('/business-profile/me');
+  },
+  async saveBusinessProfileConsent(consentAccepted: boolean, consentTextVersion = '1.0') {
+    return await request('/business-profile/consent', {
+      method: 'POST',
+      body: JSON.stringify({ consentAccepted, consentTextVersion })
+    });
+  },
+  async saveBusinessProfileDraft(answers: any, currentStep = 1) {
+    return await request('/business-profile/draft', {
+      method: 'PUT',
+      body: JSON.stringify({ answers, currentStep })
+    });
+  },
+  async completeBusinessProfile(answers: any) {
+    return await request('/business-profile/complete', {
+      method: 'POST',
+      body: JSON.stringify({ answers })
+    });
+  },
+  async updateBusinessProfileVisibility(isPublicToGroup: boolean) {
+    return await request('/business-profile/visibility', {
+      method: 'PUT',
+      body: JSON.stringify({ isPublicToGroup })
+    });
+  },
+  async getBusinessProfileById(userId: string) {
+    return await request(`/business-profile/${userId}`);
   }
 };
 

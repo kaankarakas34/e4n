@@ -42,7 +42,7 @@ export function VisitorInviteWidget() {
                     Ziyaretçi Davet Et
                 </CardTitle>
                 <p className="text-xs text-gray-500 mt-1">
-                    İş ortaklarınıza 6 saat geçerli ücretsiz toplantı katılım davetiyesi gönderin.
+                    İş ortaklarınıza ücretsiz toplantı katılım davetiyesi gönderin.
                 </p>
             </CardHeader>
             <CardContent>

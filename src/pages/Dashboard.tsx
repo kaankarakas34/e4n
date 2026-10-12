@@ -35,9 +35,11 @@ import {
   Shield,
   Sparkles,
   CheckCircle2,
-  FileCheck
+  FileCheck,
+  Fingerprint
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/notificationStore';
+import { BusinessDnaConsentModal } from '../components/BusinessDnaConsentModal';
 
 export function Dashboard() {
   const { user, token } = useAuthStore();
@@ -59,6 +61,44 @@ export function Dashboard() {
     )
   );
 
+  const [businessProfile, setBusinessProfile] = useState<any>(user?.business_profile || null);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+  const [isSavingConsent, setIsSavingConsent] = useState(false);
+
+  useEffect(() => {
+    if (user && token) {
+      api.getMyBusinessProfile()
+        .then((res: any) => {
+          if (res?.profile) {
+            setBusinessProfile(res.profile);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user, token]);
+
+  const handleStartBusinessDna = () => {
+    if (businessProfile?.consentAccepted) {
+      navigate('/is-dna');
+    } else {
+      setIsConsentModalOpen(true);
+    }
+  };
+
+  const handleAcceptConsent = async () => {
+    setIsSavingConsent(true);
+    try {
+      await api.saveBusinessProfileConsent(true, '1.0');
+      setIsConsentModalOpen(false);
+      navigate('/is-dna');
+    } catch (e) {
+      console.error('Consent save failed', e);
+      setIsConsentModalOpen(false);
+      navigate('/is-dna');
+    } finally {
+      setIsSavingConsent(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -372,6 +412,75 @@ export function Dashboard() {
                 {/* Champions Widget */}
                 <ChampionsWidget />
 
+                {/* Business DNA (İş Profili) Banner Card - Directly above ScoreCard */}
+                {(() => {
+                  const status = businessProfile?.status || 'not_started';
+                  const isCompleted = status === 'completed';
+                  const isDraft = status === 'draft';
+                  const completedDate = businessProfile?.completedAt ? new Date(businessProfile.completedAt).toLocaleDateString('tr-TR') : null;
+
+                  return (
+                    <div className="mb-6 p-6 rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl shadow-slate-950/20 border border-indigo-500/30 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16"></div>
+
+                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                        <div className="flex items-start sm:items-center gap-4">
+                          <div className={`p-3.5 rounded-2xl shrink-0 ${isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'}`}>
+                            {isCompleted ? <CheckCircle2 className="h-7 w-7" /> : <Fingerprint className="h-7 w-7" />}
+                          </div>
+
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full font-extrabold text-[11px] uppercase tracking-wider border ${
+                                isCompleted
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                  : isDraft
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                              }`}>
+                                <Sparkles className="w-3 h-3" />
+                                {isCompleted
+                                  ? '✓ Seviye 1 İş DNA Tamamlandı'
+                                  : isDraft
+                                    ? '⏳ Taslak Kaydedildi • Devam Edin'
+                                    : '★ Yeni • İş DNA Profilini Tamamla'}
+                              </span>
+                              {businessProfile?.isPublicToGroup && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                  Grup Arkadaşlarına Açık
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-xl font-black tracking-tight text-white">
+                              {isCompleted ? 'Seviye 1 Üye İş DNA’nız Hazır' : 'Yapay Zekâ Eşleştirmesi ve İş DNA’nızı Tamamlayın'}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                              {isCompleted
+                                ? `İş profiliniz ve yönlendirme kriterleriniz kaydedildi${completedDate ? ` (${completedDate})` : ''}. Dilerseniz bilgilerinizi güncelleyebilir veya grup görünürlüğünüzü yönetebilirsiniz.`
+                                : 'Size daha nitelikli iş yönlendirmeleri ve otomatik toplantı eşleştirmesi sağlamak için işinizi, müşterilerinizi ve hedeflerinizi 16 adımda tanımlayın. Shuffle ve grup başvuruları için zorunludur.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <Button
+                            onClick={handleStartBusinessDna}
+                            className={`${
+                              isCompleted
+                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600'
+                                : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/40'
+                            } font-extrabold px-6 py-3 rounded-xl text-sm whitespace-nowrap flex items-center transition-all cursor-pointer`}
+                          >
+                            {isCompleted ? 'Profili İncele & Düzenle' : isDraft ? 'Taslağa Devam Et' : 'İş Profilini Başlat'}
+                            <ArrowRight className="h-4 w-4 ml-1.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Performance Score Card */}
                 <ScoreCard
                   performance={performance}
@@ -541,6 +650,14 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Business DNA Bilgilendirme ve Gizlilik Modalı */}
+      <BusinessDnaConsentModal
+        isOpen={isConsentModalOpen}
+        onClose={() => setIsConsentModalOpen(false)}
+        onAccept={handleAcceptConsent}
+        isLoading={isSavingConsent}
+      />
     </div>
   );
 }

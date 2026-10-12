@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Check, User, Mail, Phone, Building, Briefcase, FileText, Landmark, MapPin, ShieldAlert, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, User, Mail, Phone, Building, Briefcase, FileText, Landmark, MapPin, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Logo } from '../shared/Logo';
 import { api } from '../api/api';
-import { PaymentModal } from '../components/PaymentModal';
 
 const visitorPaymentSchema = z.object({
   name: z.string().min(3, 'Ad soyad en az 3 karakter olmalıdır'),
@@ -28,23 +27,14 @@ type VisitorPaymentFormData = z.infer<typeof visitorPaymentSchema>;
 
 export function VisitorPaymentPage() {
   const navigate = useNavigate();
-  const { search } = useLocation();
-  const token = new URLSearchParams(search).get('token');
-  const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
-  const verifySequence = useRef(0);
+  const [token, setToken] = useState<string | null>(null);
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
   const [inviterName, setInviterName] = useState<string>('');
   const [tokenLoading, setTokenLoading] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
 
-  const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [paymentNotice, setPaymentNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState<VisitorPaymentFormData | null>(null);
-  const [registrationError, setRegistrationError] = useState<string | null>(null);
-  const registrationPending = useRef(false);
-  const pageActive = useRef(true);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<VisitorPaymentFormData>({
     resolver: zodResolver(visitorPaymentSchema),
@@ -54,43 +44,20 @@ export function VisitorPaymentPage() {
   });
 
   useEffect(() => {
-    pageActive.current = true;
-    setPaymentModalOpen(false);
-    setPendingFormData(null);
-    setRegistrationError(null);
-    setIsSubmitted(false);
-    setPaymentNotice(false);
-    if (token) {
-      verifyToken(token);
-    } else {
-      setIsTokenValid(null);
-      setTokenLoading(false);
-      setTokenError(null);
-      setVerifiedToken(null);
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    if (tokenParam) {
+      setToken(tokenParam);
+      verifyToken(tokenParam);
     }
-    return () => { pageActive.current = false; verifySequence.current++; };
-  }, [token]);
-
-  const checkingToken = !!token && (tokenLoading || verifiedToken !== token);
-  const verifiedInvite = !!token && !checkingToken && isTokenValid === true;
-  const inviteBlocked = checkingToken || (!!token && isTokenValid === null);
+  }, []);
 
   const verifyToken = async (t: string) => {
-    const sequence = ++verifySequence.current;
     setTokenLoading(true);
-    setIsTokenValid(null);
     setTokenError(null);
     try {
       const res = await api.verifyVisitorInvite(t);
-      if (sequence !== verifySequence.current) return;
-      if (!res || typeof res.valid !== 'boolean' ||
-        (res.valid && (typeof res.email !== 'string' || !res.email.trim())) ||
-        (res.inviter_name != null && typeof res.inviter_name !== 'string') ||
-        (res.error != null && typeof res.error !== 'string')) {
-        throw new Error('Invalid invite response');
-      }
-      setVerifiedToken(t);
-      if (res.valid === true) {
+      if (res.valid) {
         setIsTokenValid(true);
         setInviterName(res.inviter_name || 'E4N Üyesi');
         setValue('email', res.email);
@@ -99,33 +66,20 @@ export function VisitorPaymentPage() {
         setTokenError(res.error || 'Davet linki geçersiz.');
       }
     } catch (err: any) {
-      if (sequence !== verifySequence.current) return;
-      setVerifiedToken(t);
-      setIsTokenValid(null);
-      setTokenError('Davetiye kontrol edilemedi. Lütfen tekrar deneyin.');
+      setIsTokenValid(false);
+      setTokenError('Davetiyenin süresi dolmuş veya geçersiz.');
+      console.error(err);
     } finally {
-      if (sequence === verifySequence.current) setTokenLoading(false);
+      setTokenLoading(false);
     }
   };
 
   const handleFormSubmit = (data: VisitorPaymentFormData) => {
-    if (isSubmitting || registrationPending.current || inviteBlocked) return;
-    if (verifiedInvite) {
-      // Free registration
-      return submitRegistration(data);
-    } else {
-      // Payment required
-      setPendingFormData(data);
-      setPaymentModalOpen(true);
-    }
+    submitRegistration(data);
   };
 
   const submitRegistration = async (data: VisitorPaymentFormData) => {
-    if (!verifiedInvite || registrationPending.current) return;
-    registrationPending.current = true;
-    const sequence = verifySequence.current;
     setIsSubmitting(true);
-    setRegistrationError(null);
     try {
       const payload = {
         name: data.name,
@@ -134,46 +88,27 @@ export function VisitorPaymentPage() {
         company: data.company,
         profession: data.profession,
         kvkk_accepted: true,
-        source: 'visitor_invite',
-        token,
+        source: isTokenValid ? 'visitor_invite' : 'visitor_free',
+        token: isTokenValid ? token : undefined,
         form_data: {
           tax_office: data.taxOffice,
           tax_number: data.taxNumber,
           address: data.address,
           payment_status: 'FREE',
           payment_amount: 0,
-          payment_date: new Date().toISOString(),
-          payment_card_holder: null
+          payment_date: new Date().toISOString()
         }
       };
 
-      const result = await api.submitPublicVisitorApplication(payload);
-      if (!pageActive.current || sequence !== verifySequence.current) return;
-      if (!result || typeof result.id !== 'string' || !result.id.trim()) throw new Error('Invalid visitor registration response');
+      await api.submitPublicVisitorApplication(payload);
       setIsSubmitted(true);
-      setPaymentModalOpen(false);
-    } catch {
-      if (pageActive.current && sequence === verifySequence.current) {
-        setRegistrationError('Başvuru sonucu doğrulanamadı. Yeni başvuru göndermeden mevcut kaydınızı kontrol edin.');
-      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
     } finally {
-      registrationPending.current = false;
-      if (pageActive.current) setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
-
-  if (paymentNotice) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <Helmet><title>Ödeme Bildirimi | Event4Network</title></Helmet>
-        <div role="status" className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Ödeme bildirimi alındı</h2>
-          <p className="text-gray-600 mb-8">Başvurunuzun ve ödemenizin sonucu henüz bu ekranda doğrulanmadı. Tekrar ödeme yapmadan işlem durumunuzu sistem yöneticisiyle kontrol edin.</p>
-          <Button variant="primary" onClick={() => navigate('/')} className="w-full">Ana Sayfaya Dön</Button>
-        </div>
-      </div>
-    );
-  }
 
   if (isSubmitted) {
     return (
@@ -187,7 +122,7 @@ export function VisitorPaymentPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Başvurunuz Alındı!</h2>
           <p className="text-gray-600 mb-8">
-            Ziyaretçi başvurunuz kaydedildi.
+            Ziyaretçi kaydınız başarıyla tamamlandı. Detaylı bilgiler e-posta adresinize gönderilecektir.
           </p>
           <Button variant="primary" onClick={() => navigate('/')} className="w-full">
             Ana Sayfaya Dön
@@ -223,57 +158,49 @@ export function VisitorPaymentPage() {
 
           <div className="p-8">
             {/* Token Status Feedback */}
-            {checkingToken && (
-              <div role="status" className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center space-x-3 text-blue-700 animate-pulse">
+            {tokenLoading && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center space-x-3 text-blue-700 animate-pulse">
                 <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-blue-600 animate-spin"></div>
                 <span className="text-sm font-medium">Davetiye kontrol ediliyor...</span>
               </div>
             )}
 
-            {!checkingToken && tokenError && isTokenValid === null && (
-              <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p>{tokenError}</p>
-                <Button onClick={() => token && verifyToken(token)}>Tekrar dene</Button>
-              </div>
-            )}
-
-            {verifiedInvite && (
+            {!tokenLoading && token && isTokenValid && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start space-x-3">
                 <ShieldCheck className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-green-800">Özel Davetiye Geçerli</h4>
+                  <h4 className="text-sm font-bold text-green-800">Özel Davetiye Doğrulandı</h4>
                   <p className="text-xs text-green-700 mt-1">
-                    <strong>{inviterName}</strong> tarafından gönderilen davetiyeniz doğrulandı. Bu kayıt sizin için <strong>ücretsizdir</strong> (1000 TL katılım bedeli muafiyeti uygulanmıştır).
+                    <strong>{inviterName}</strong> tarafından gönderilen davetiyeniz doğrulandı. Toplantı katılımınız ücretsizdir.
                   </p>
                 </div>
               </div>
             )}
 
-            {!checkingToken && token && isTokenValid === false && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-3">
-                <ShieldAlert className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            {!tokenLoading && token && isTokenValid === false && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
+                <FileText className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-red-800">Davetiye Doğrulanamadı</h4>
-                  <p className="text-xs text-red-700 mt-1">
-                    {tokenError || 'Davet bağlantısı geçersiz.'} Ücretli kayıt seçeneğini kullanabilirsiniz.
+                  <h4 className="text-sm font-bold text-amber-800">Ücretsiz Ziyaretçi Kaydı</h4>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Davet bağlantınız geçersiz veya süresi dolmuş olabilir; ancak Event4Network toplantılarına ziyaretçi katılımı ücretsizdir. Formu doldurarak kaydınızı tamamlayabilirsiniz.
                   </p>
                 </div>
               </div>
             )}
 
             {!token && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
-                <FileText className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start space-x-3">
+                <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-amber-800">Standart Kayıt</h4>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Toplantılarımıza katılım standart olarak <strong>1000 TL</strong> katılım bedeline tabidir. Kayıt işleminin sonunda ödeme adımına yönlendirileceksiniz.
+                  <h4 className="text-sm font-bold text-blue-800">Ücretsiz Katılım</h4>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Event4Network iş toplantılarına ziyaretçi olarak katılım <strong>ücretsizdir</strong>. Aşağıdaki formu doldurarak toplantı kaydınızı hemen oluşturabilirsiniz.
                   </p>
                 </div>
               </div>
             )}
 
-            {registrationError && <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">{registrationError}</div>}
             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -295,8 +222,8 @@ export function VisitorPaymentPage() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       {...register('email')}
-                      readOnly={verifiedInvite}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${verifiedInvite ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-gray-50'} ${errors.email ? 'border-red-300' : 'border-gray-200'}`}
+                      readOnly={!!isTokenValid}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none ${isTokenValid ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-gray-50'} ${errors.email ? 'border-red-300' : 'border-gray-200'}`}
                       placeholder="ornek@sirket.com"
                     />
                   </div>
@@ -412,64 +339,14 @@ export function VisitorPaymentPage() {
                   variant="primary"
                   className="w-full h-12 text-lg shadow-lg shadow-red-200 flex items-center justify-center"
                   isLoading={isSubmitting}
-                  disabled={isSubmitting || inviteBlocked}
                 >
-                  {verifiedInvite ? (
-                    <>
-                      Kaydı Tamamla <Check className="ml-2 h-5 w-5" />
-                    </>
-                  ) : (
-                    <>
-                      Ödeme Adımına Geç (₺1.000) <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
+                  Kaydı Tamamla (Ücretsiz) <Check className="ml-2 h-5 w-5" />
                 </Button>
               </div>
             </form>
           </div>
         </div>
       </main>
-
-      {isPaymentModalOpen && pendingFormData && !inviteBlocked && !verifiedInvite && (
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setPaymentModalOpen(false)}
-          planTitle="Ziyaretçi Katılım Bedeli"
-          amount={1000}
-          initialBillingData={{
-            company: pendingFormData.company,
-            tax_number: pendingFormData.taxNumber,
-            tax_office: pendingFormData.taxOffice,
-            billing_address: pendingFormData.address,
-            email: pendingFormData.email,
-            phone: pendingFormData.phone
-          }}
-          onSuccess={() => {
-            // The server payment action inserts the visitor record. The popup
-            // notification is not authority to submit another PAID application.
-            setPaymentModalOpen(false);
-            setPendingFormData(null);
-            setPaymentNotice(true);
-          }}
-          action={{
-            type: 'visitor_registration',
-            data: {
-              name: pendingFormData.name,
-              email: pendingFormData.email,
-              phone: pendingFormData.phone,
-              company: pendingFormData.company,
-              profession: pendingFormData.profession,
-              kvkk_accepted: true,
-              source: 'visitor_payment',
-              form_data: {
-                tax_office: pendingFormData.taxOffice,
-                tax_number: pendingFormData.taxNumber,
-                address: pendingFormData.address
-              }
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

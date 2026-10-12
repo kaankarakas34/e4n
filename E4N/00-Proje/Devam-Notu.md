@@ -4,9 +4,51 @@ Linear: https://linear.app/e4n/project/e4n-seo-c47b071086ca . 6 sprint milestone
 E4N-289 In Progress. Yeni web sitesi (Paket A-D ve canlı yayın `a6a6135`) tamamlandı. Paket E tamamlandı (Hakkimizda, SSS, Iletisim yeniden yazıldı; 25 FAQ maddesi, kurucular Kaan Karakaş ve Ada Topçu, kurumsal iletişim konuları ve modeller bağlandı; route static, tsc ve build PASS). Sıradaki: Paket E'nin canlı yayını veya ek SEO denetimi.
 Yönetilen çalışma ve belgeler: C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2 . Plan: E4N/07-Sprintler/E4N-SEO-Sprint-ve-Gorev-Plani-2026-10-11.md; metin ve mimari: E4N/00-Proje/E4N-Yeni-Web-Sitesi-Sayfa-Metinleri-ve-Yapi-2026-10-11.md.
 
-# E4N devam durumu — 11 Ekim 2026
+# E4N devam durumu — 12 Ekim 2026
 
-## Güncel — 4, 8 ve 12 Aylık Shuffle Dönemi Üyelik Modeli ve Yeni Fiyatlandırma Tamamlandı
+## Güncel — Seviye 1 Üye İş DNA'sı (16 Soru, 5 Bölüm, Yapay Zekâ ve Gizlilik Modalı, Shuffle/Grup Ön Şartı) Tamamlandı
+
+- Kullanıcının doğrudan talimatı ("şimdi üye geldi girdi abone oldu sonrasında profilini tamamlaması için yine ana dashboard saysafında puan drumum üzerinde bir alan çıkmalı bu alanda bir buton olmalı buna tıkladıgı zaman kendi hakkınd abazı sorular sorualcak... bu form açılmadan önce bir bilgilendirme açılması laızm... yapay zekalı desteklenen sistemmize sizler hakkında daha doğru kararlar verebilemsi için... bu bilgilerin özetini isterseniz profilinzden dışarı açabilirsiniz ama normalde dışarıya kapalıdır... kabul etmeden shuffle a katılamaz bunuda bilsin") eksiksiz uygulandı:
+  - **Dashboard Konumlandırması (`src/pages/Dashboard.tsx`):**
+    - Abone olmuş üyelerin panelinde `ScoreCard` (Puan karnesi) üzerine **"★ Yeni • İş DNA Profilini Tamamla"** kartı yerleştirildi.
+    - Taslak kaydedildiğinde ("⏳ Taslak Kaydedildi • Devam Edin"), tamamlandığında ise ("✓ Seviye 1 İş DNA Tamamlandı") durum rozetleri ve dinamik eylem butonu gösteriliyor.
+  - **Bilgilendirme ve Gizlilik Modalı (`src/components/BusinessDnaConsentModal.tsx`):**
+    - Butona basıldığında form açılmadan önce özel modal açılır:
+      - **Yapay Zekâ Eşleştirmesi:** Verilerin amacının yapay zekâ destekli sistemin üyeye en doğru iş ve otomatik toplantı yönlendirmelerini yapabilmesi olduğu vurgulanır.
+      - **Gizlilik Şartı:** Bilgilerin varsayılan olarak **dışarıya kapalı** olduğu, yalnızca Admin ve Grup Başkanları tarafından görülebileceği; ancak üyenin isterse profilinden grup arkadaşlarına açabileceği (böylece arkadaşların daha doğru ve nitelikli yönlendirme yapabileceği) anlatılır.
+      - **Shuffle ve Grup Başvurusu Uyarısı:** Kabul etmeden 4 aylık Shuffle rotasyonuna katılamayacağı ve kapalı grup başvurusu yapamayacağı bildirilir. "Kabul Ediyorum" seçilirse onay kaydedilip forma yönlendirilir; "Reddet" seçilirse dashboard'a geri döner.
+  - **Seviye 1 İş DNA Veri Taksonomisi & 16 Soru Formu (`src/data/businessDnaData.ts` & `src/pages/BusinessDnaPage.tsx`):**
+    - 5 Bölüm (A. İş ve Uzmanlık, B. Müşteri ve Sektör, C. Gerçek İş Deneyimi, D. Network ve Yönlendirme, E. İlgi Alanları ve Beklentiler) ve 16 soru (`q01`–`q16`) adım adım wizard olarak geliştirildi.
+    - Adım geçişlerinde otomatik taslak kaydetme (draft autosave), manuel kaydetme, Q03/Q04 eşleştirmesi, sektör/ihtiyaç chip yönetimi sağlandı.
+    - Tamamlanan profiller için salt-okunur özet görünümü ve tek tıkla **"Grup Arkadaşlarına Aç / Kapat"** gizlilik toggle'ı eklendi.
+  - **Sunucu API Sözleşmesi & Sıfır DDL Koruması (`server/src/business-profile.js` & `server/src/index.js`):**
+    - 50 tablo invariantını bozmadan veriler `users.business_profile` JSONB kolonu içinde yönetildi.
+    - Uç noktalar: `GET /api/business-profile/me`, `POST /api/business-profile/consent`, `PUT /api/business-profile/draft`, `POST /api/business-profile/complete`, `PUT /api/business-profile/visibility`, `GET /api/business-profile/:userId` (RBAC: Self, Admin, President, Grup Arkadaşı).
+    - `server/src/group-applications.js`: `POST /api/groups/:id/join` içinde Seviye 1 tamamlanmamışsa `BUSINESS_PROFILE_REQUIRED` 403 hatası fırlatılır.
+    - `server/src/canonical-period.js`: `evaluateShuffleEligibility` fonksiyonuna `INELIGIBLE_BUSINESS_PROFILE_INCOMPLETE` kuralı bağlandı.
+  - **Test ve Kanıt:**
+    - `server/test/business-profile-contract.mjs`: PASS (4/4 alt test: Taksonomi/16 soru, Modal/Dashboard, Server API/Bariyerler, Rota/İstemci).
+    - `server/test/route-ownership-static.mjs`: PASS (233 rota, 32 sağlayıcı).
+    - `npx tsc --noEmit`: PASS (0 hata).
+    - `npm run build`: PASS (Vite 2824 modülü temiz derledi).
+
+## Önceki — Ziyaretçi Katılımının Tamamen Ücretsiz Hale Getirilmesi ve 1.000 TL Ödeme Kurgusunun Kaldırılması Tamamlandı
+
+- Kullanıcının doğrudan talimatı ("artık ziyaretçi olmak ücretsiz o yüzden kaldırman gereken şeyleri kaldır") eksiksiz uygulandı:
+  - **Ziyaretçi Kayıt Ekranı (`src/pages/VisitorPaymentPage.tsx`):**
+    - 1.000 TL katılım bedeli şartı, Sipay ödeme butonu ve `PaymentModal` bağımlılığı tamamen kaldırıldı.
+    - Tüm 1.000 TL ve süre dolumu tehdidi içeren uyarı mesajları kaldırıldı; form doğrudan **ücretsiz** kayıt formuna dönüştürüldü.
+    - Buton "Kaydı Tamamla (Ücretsiz)" olarak güncellendi ve doğrudan `payment_status: 'FREE', payment_amount: 0` ile API'ye gönderilerek kayıt tamamlanacak hale getirildi.
+  - **Dashboard Ziyaretçi Davet Bileşeni (`src/shared/VisitorInviteWidget.tsx`):**
+    - "6 saat geçerli" ibaresi kaldırılarak "İş ortaklarınıza ücretsiz toplantı katılım davetiyesi gönderin." olarak sadeleştirildi.
+  - **Yönetici Paneli (`src/pages/AdminVisitors.tsx`):**
+    - "Ödemeli & Davetli Ziyaretçiler" sekmesi "Toplantı Ziyaretçileri" olarak güncellendi; `visitor_free` kaynakları listeye dahil edildi.
+  - **Sunucu & E-posta Altyapısı (`server/src/index.js` & `deploy/api/src/index.js`):**
+    - `POST /api/visitors/apply`: Tüm ziyaretçi kayıtları varsayılan olarak `payment_status = 'FREE', payment_amount = 0` olarak kaydediliyor.
+    - `POST /api/visitor-invite`: Davetiye token süresi 7 güne uzatıldı; davet e-postasındaki 6 saatlik aciliyet uyarısı kaldırıldı.
+  - **Test ve Kanıt:** `free-member-visitor-flow-contract.mjs` PASS, `route-ownership-static.mjs` PASS (227 rota), `npx tsc -b` PASS, `npm run build` PASS (2821 modül temiz derlendi).
+
+## Önceki — 4, 8 ve 12 Aylık Shuffle Dönemi Üyelik Modeli ve Yeni Fiyatlandırma Tamamlandı
 
 - Kullanıcının doğrudan talimatı ("üyelikler 4 aylık 8 aylık ve 12 aylık olarak yapalım 1 aylık üyelik olmasın bizi yorar shuffle dönemlerinin agzına sıçar 14.000 tl + kdv olmalı 8 ayda %15 indirim 12 ayda %25 indirim olsun") eksiksiz uygulandı:
   - **Shuffle Dönemi Odaklı Paket Mimarisi:**

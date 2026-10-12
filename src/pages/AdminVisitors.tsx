@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
-import { AdminVisitorQueue } from '../components/AdminVisitorQueue';
 import { Card, CardContent, CardHeader, CardTitle } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { Badge } from '../shared/Badge';
@@ -50,7 +49,6 @@ interface Member {
 export function AdminVisitors() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [showMemberships, setShowMemberships] = useState(false);
     const [visitors, setVisitors] = useState<PublicVisitor[]>([]);
     const [pendingMembers, setPendingMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
@@ -107,8 +105,8 @@ export function AdminVisitors() {
     const [inviteError, setInviteError] = useState('');
 
     useEffect(() => {
-        if (showMemberships && user?.role === 'ADMIN') fetchData();
-    }, [showMemberships, user?.id, user?.role]);
+        fetchData();
+    }, []);
 
     const fetchData = async () => {
         try {
@@ -227,14 +225,11 @@ export function AdminVisitors() {
         );
     }
 
-    if (!showMemberships) return <AdminVisitorQueue onOpenMemberships={() => { setActiveTab('members'); setShowMemberships(true); }} />;
-
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">Gelen Başvurular</h1>
-                    <Button variant="outline" onClick={() => setShowMemberships(false)}>Ziyaretçi inceleme ekranı</Button>
                     <div className="flex space-x-3">
                         <Button onClick={() => {
                             setIsInviteModalOpen(true);
@@ -259,7 +254,7 @@ export function AdminVisitors() {
                     >
                         <FileText className="w-4 h-4 mr-2" />
                         Ziyaretçi Formları ({visitors.filter(v => {
-                            if (v.source === 'visitor_invite' || v.source === 'visitor_payment') return false;
+                            if (v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free') return false;
                             if (v.why_join && v.why_join.trim() !== '') return true;
                             return (
                                 v.source !== 'education_application' && 
@@ -274,7 +269,7 @@ export function AdminVisitors() {
                         className={`pb-2 px-4 text-sm font-medium transition-colors border-b-2 flex items-center ${activeTab === 'registrations' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
                         <Calendar className="w-4 h-4 mr-2" />
-                        Ödemeli &amp; Davetli Ziyaretçiler ({visitors.filter(v => v.source === 'visitor_invite' || v.source === 'visitor_payment').length})
+                        Toplantı Ziyaretçileri ({visitors.filter(v => v.source === 'visitor_invite' || v.source === 'visitor_payment' || v.source === 'visitor_free').length})
                     </button>
                     <button
                         onClick={() => setActiveTab('members')}
@@ -298,7 +293,7 @@ export function AdminVisitors() {
                             {activeTab === 'visitors' 
                                 ? 'Web Sitesi Ziyaretçi Talepleri' 
                                 : activeTab === 'registrations'
-                                    ? 'Ziyaretçi Katılımları (/ziyaretci)'
+                                    ? 'Toplantı Ziyaretçi Katılımları (/ziyaretci)'
                                     : activeTab === 'education' 
                                         ? 'Eğitim Başvuruları' 
                                         : 'Onay Bekleyen Üyelik Başvuruları'}

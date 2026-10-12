@@ -89,6 +89,7 @@ import { BirebirNetworking } from './pages/BirebirNetworking';
 import { CityNetworkingPage } from './pages/CityNetworkingPage';
 import { MemberHandbook } from './pages/MemberHandbook';
 import { MembershipActivationPage } from './pages/MembershipActivationPage';
+import { BusinessDnaPage } from './pages/BusinessDnaPage';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 
@@ -271,6 +272,10 @@ function App() {
               {/* LMS Routes */}
               <Route path="/lms" element={<LMS />} />
               <Route path="/lms/course/:id" element={<CourseViewer />} />
+
+              {/* Member Business Profile (İş DNA'sı) */}
+              <Route path="/is-dna" element={<BusinessDnaPage />} />
+              <Route path="/is-profili" element={<BusinessDnaPage />} />
 
               <Route path="/profile" element={<Profile />} />
               <Route path="/membership" element={<MembershipPage />} />

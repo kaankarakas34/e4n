@@ -173,6 +173,16 @@ export function evaluateShuffleEligibility(member, { cutoffDate, now = new Date(
     });
   }
 
+  // 4b. Business Profile (İş DNA'sı) Completion Check
+  const bp = member.business_profile;
+  const isProfileComplete = bp && typeof bp === 'object' ? bp.status === 'completed' : false;
+  if (!isProfileComplete) {
+    reasons.push({
+      code: 'INELIGIBLE_BUSINESS_PROFILE_INCOMPLETE',
+      detail: "Seviye 1 İş DNA profili tamamlanmadığı için dağıtıma dahil edilemez.",
+    });
+  }
+
   // 5. Subscription Cutoff (D06)
   if (cutoffDate && member.subscription_end_date) {
     const subEnd = new Date(member.subscription_end_date);

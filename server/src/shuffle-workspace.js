@@ -10,6 +10,7 @@ export async function readShuffleWorkspace(client, { lock = false, asOf = null }
     SELECT u.id, u.name AS full_name, u.profession, u.role, u.account_status,
       to_jsonb(u)->>'subscription_plan' AS subscription_plan,
       to_jsonb(u)->>'subscription_end_date' AS subscription_end_date,
+      u.business_profile,
       COALESCE(
         (
           SELECT (h.after_state->>'group_id')::uuid

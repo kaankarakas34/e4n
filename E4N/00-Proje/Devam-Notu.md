@@ -1,5 +1,7 @@
 ## Son çalışma — üye yönetimi görünümü / 12 Ekim 2026
 
+- Yayın tamamlandı: 6705726 main/foundation; production dpl_6JXamf6dvKT1GZ1gKpg2XT7ot8dQ READY/custom domains. /admin/members ve yeni index-CemrhYzB.js 200; son katılanlar/sıralama/7gün filtre metinleri, anon directory401 doğrulandı. Aşağıdaki yayın sonucu eklenecek ifadesi tarihsel; tekrar uygulama.
+
 - Kullanıcı isteği: yeni gelen kişi görünür, son kayıt en üstte, düzgün ekran. API/istemci/diğer üye işlemleri created_at DESC/nullson/id. Üstte son3/yeni7gün, ad-şirket-meslek-iletişim/grup/kayıttarihi/hesapdurumu, Türkçe rol/filtreler, profil/detay ve mevcut yazım işlemlerine erişim. check/build/235rota/yeni componentlint, izole HTTP+TS ve desktop/mobile fixturebrowser PASS; PG/prod oturumlu E2E yok. Canlı readonly aggregate29hesap/kimlik ve kayıtdateNULL0; kişisel satır yok, kullanıcı veri yazımı/migration yok. Tek kanıt [[E4N/09-Dogrulama/Uye-Yonetimi-Yeni-Kayitlar-ve-Liste-Duzeni-2026-10-12]]. WEB14/E4N-148 devam düzeltmesi; yayın sonucu eklenecek.
 
 ## Son çalışma — başkanlığı kaldırma ve üye çıkarma / 12 Ekim 2026

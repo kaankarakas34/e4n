@@ -6,6 +6,7 @@
 - İlgili unvan temizlenir, yalnız VICE_PRESIDENT görev rolü MEMBER'e indirilir; üyelik ile varsa ayrı ADMIN/PRESIDENT yetkisi korunur. Eski unvan değişmişse409; başka grupta aktif kayıt varsa global unvanı sessizce değiştirmek yerine409. İşlem kilidi/currentDBADMIN, üyelik kontrolü, transaction ve doğrulanmış DTO; tekrar güvenli.
 - 235rota/check/build/syntax/diff PASS. Beş görev, tekrar, MEMBER'e dönüş, ayrı ADMIN/PRESIDENT koruma, unvan değişimi/diğer grup409 ve admin403 gerçek HTTP+izole sorgu adaptörü regresyonu PASS. PG/production gerçek kullanıcı mutasyonu yapılmadı.
 - Gerçek AdminGroupDetail fixture browser: Değiştir+Görevden al; ziyaretçi komitesi görevi kaldırılır, kart Atanmamış/Ata olur, kişi üyelerde kalır. output/playwright/leadership-clear-{before,after}.txt/png. Hedef lintte önceki7error/1warning (any hariç) sürer; yeni bulgu yok. Bu aynı başkanlık/görev yönetimi paketinin devam düzeltmesidir; yeni teslim görevi yok.
+- Devam ürün f5a3cdb main/foundation push; production dpl_AJ74w5ReoT4YH9khXBdjPn878iRJ READY, www/event4network aliasları aynı SHA. Canlı group200, index-BSybU61V.js Görevden al metni, oturumsuz leadership DELETE401 doğrulandı. Gerçek kullanıcı görevi production'da kaldırılmadı; bu teslim buton/akış düzeltmesidir.
 
 ## Canlı veri işlemi
 

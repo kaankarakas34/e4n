@@ -3,18 +3,45 @@
 
 import { isUuid } from './group-capacity.js';
 
+let columnEnsured = false;
+export async function ensureBusinessProfileColumn(pool) {
+  if (columnEnsured) return;
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS business_profile JSONB DEFAULT NULL');
+    columnEnsured = true;
+  } catch (err) {
+    console.warn('Failed to ensure business_profile column:', err.message);
+  }
+}
+
 export function installBusinessProfile(app, { pool, authenticateToken }) {
   // GET /api/business-profile/me
   // Returns current user's business profile status, consent, visibility and answers
   app.get('/api/business-profile/me', authenticateToken, async (req, res) => {
     try {
-      const { rows } = await pool.query(
-        `SELECT id, name, email, company, profession, role, account_status, subscription_plan, subscription_end_date, business_profile
-         FROM users WHERE id = $1`,
-        [req.user.id]
-      );
-      if (rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-      const user = rows[0];
+      await ensureBusinessProfileColumn(pool);
+      let user;
+      try {
+        const { rows } = await pool.query(
+          `SELECT id, name, email, company, profession, role, account_status, subscription_plan, subscription_end_date, business_profile
+           FROM users WHERE id = $1`,
+          [req.user.id]
+        );
+        user = rows[0];
+      } catch (colErr) {
+        if (colErr.message.includes('business_profile')) {
+          await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS business_profile JSONB DEFAULT NULL').catch(() => {});
+          const { rows } = await pool.query(
+            `SELECT id, name, email, company, profession, role, account_status, subscription_plan, subscription_end_date
+             FROM users WHERE id = $1`,
+            [req.user.id]
+          );
+          user = rows[0];
+        } else {
+          throw colErr;
+        }
+      }
+      if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
 
       const profile = user.business_profile || {
         status: 'not_started',
@@ -46,6 +73,7 @@ export function installBusinessProfile(app, { pool, authenticateToken }) {
         return res.status(400).json({ error: 'Bilgilendirme ve gizlilik şartları onaylanmalıdır.' });
       }
 
+      await ensureBusinessProfileColumn(pool);
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -95,6 +123,7 @@ export function installBusinessProfile(app, { pool, authenticateToken }) {
     try {
       const { answers = {}, currentStep = 1 } = req.body || {};
 
+      await ensureBusinessProfileColumn(pool);
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -210,6 +239,7 @@ export function installBusinessProfile(app, { pool, authenticateToken }) {
         return res.status(400).json({ error: 'Formda eksik veya geçersiz alanlar bulunmaktadır.', details: errors });
       }
 
+      await ensureBusinessProfileColumn(pool);
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -272,6 +302,7 @@ export function installBusinessProfile(app, { pool, authenticateToken }) {
         return res.status(400).json({ error: 'isPublicToGroup değeri boolean olmalıdır.' });
       }
 
+      await ensureBusinessProfileColumn(pool);
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -327,6 +358,7 @@ export function installBusinessProfile(app, { pool, authenticateToken }) {
       const actorId = req.user.id;
       const isAdmin = req.user.role === 'ADMIN';
 
+      await ensureBusinessProfileColumn(pool);
       const targetRes = await pool.query(
         `SELECT id, name, company, profession, role, business_profile
          FROM users WHERE id = $1`,

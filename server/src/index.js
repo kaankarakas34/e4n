@@ -823,8 +823,17 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date, business_profile FROM users WHERE id = $1', [req.user.id]);
-    res.json(rows[0]);
+    try {
+      const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date, business_profile FROM users WHERE id = $1', [req.user.id]);
+      return res.json(rows[0]);
+    } catch (colErr) {
+      if (colErr.message.includes('business_profile')) {
+        await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS business_profile JSONB DEFAULT NULL').catch(() => {});
+        const { rows } = await pool.query('SELECT id, name, email, role, profession, performance_score, performance_color, account_status, subscription_end_date, subscription_plan, company, tax_number, tax_office, billing_address, phone, city, explicit_consent, kvkk_consent, marketing_consent, consent_date FROM users WHERE id = $1', [req.user.id]);
+        return res.json({ ...rows[0], business_profile: null });
+      }
+      throw colErr;
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -16,7 +16,7 @@ export function installAdminGroupDetail(app, { pool, authenticateToken }) {
         visitor_email_subject,visitor_email_template FROM groups WHERE id=$1`, [req.params.id])).rows[0];
       if (!group) { await client.query('ROLLBACK'); return res.sendStatus(404); }
       const args = [group.id];
-      const members = (await client.query(`SELECT u.id,u.name AS full_name,u.profession,u.email,u.role,u.performance_score,u.performance_color,
+      const members = (await client.query(`SELECT u.id,u.name AS full_name,u.profession,u.email,CASE WHEN gm.role='PRESIDENT' THEN 'PRESIDENT' ELSE u.role END AS role,to_jsonb(u)->>'group_title' AS group_title,u.performance_score,u.performance_color,
         gm.status,gm.joined_at AS created_at,
         (SELECT count(*)::int FROM attendance a JOIN events e ON e.id=a.event_id
           WHERE a.user_id=u.id AND e.group_id=$1 AND a.status='ABSENT') AS absence_count

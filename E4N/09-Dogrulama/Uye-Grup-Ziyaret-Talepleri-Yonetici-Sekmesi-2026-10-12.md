@@ -1,5 +1,11 @@
 # Üyelerin grup ziyaret talepleri — 12 Ekim 2026
 
+## Diamond görünürlük düzeltmesi
+
+- Kullanıcının ekran görüntüsü sonrası salt okunur inceleme: canlı Diamond kaydı status=NULL,11aktif üyelik ve1başkan; keşif API'si yalnız groups.status='ACTIVE' okuyor. UI ek filtreyle Diamond'ı gizlemiyor.
+- Kullanıcı “tamam yap” dedi. e4n Supabase projesinde yalnız id=97ebe739-9246-4ffb-b270-54577d092fab/name=Diamond/status IS NULL koşullu UPDATE ile status=ACTIVE yapıldı; RETURNING tek kayıt.
+- Ayrı SELECT, aynı status='ACTIVE' filtresinde Diamond dahil dört grubu ve Diamond11aktif üyelik kaydını doğruladı. Kod değişikliği/deploy yapılmadı; kullanıcının panelde Yenile ile sonucu görmesi beklenir. Canlı oturumlu tarayıcı testi yapılmadı.
+
 Kullanıcı kararı: kişi önce hesabını oluşturur, panelinden ziyaret etmek istediği gruba istek gönderir; yönetim /admin/visitors içinde görür. Eski formlarla karışması halinde ayrı sekme kullanılabilir.
 
 ## Teslim

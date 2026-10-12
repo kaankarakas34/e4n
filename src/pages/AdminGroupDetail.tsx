@@ -54,6 +54,18 @@ export function AdminGroupDetail() {
     const readContext = `${user?.id}:${user?.role}:${token}:${id}`;
 
     const memberActions=useGroupMemberActions({scope:readContext,kind:'group',groupId:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
+    const [presidentBusy,setPresidentBusy]=useState(false);
+    const [presidentNotice,setPresidentNotice]=useState('');
+    const presidentContext=useRef(readContext);presidentContext.current=readContext;
+    const presidentLock=useRef(false);
+    async function removePresident(userId:string){
+        if(presidentLock.current||!id||user?.role!=='ADMIN')return;
+        if(!confirm('Başkan atamasını kaldırmak istiyor musunuz? Üye grupta kalır; yönetimi admin yürütür.'))return;
+        const context=readContext;presidentLock.current=true;setPresidentBusy(true);setPresidentNotice('');
+        try{await api.clearGroupPresident(id,userId);if(presidentContext.current!==context)return;setPresidentNotice('Başkan ataması kaldırıldı.');setRetryCount(count=>count+1);}
+        catch{if(presidentContext.current===context){setPresidentNotice('Başkan ataması sonucu doğrulanamadı. Güncel listeyi kontrol edin.');setRetryCount(count=>count+1);}}
+        finally{presidentLock.current=false;setPresidentBusy(false);}
+    }
     const currentContext = useRef(readContext); currentContext.current = readContext;
     useEffect(() => { setShowEditModal(false); setIsSaving(false); }, [readContext]);
 
@@ -542,7 +554,7 @@ export function AdminGroupDetail() {
                                         // Find current holder
                                         const current = members.find(m => {
 
-                                            return roleDef.role === 'PRESIDENT' ? m.role === 'PRESIDENT' : m.group_title === roleDef.group_title;
+                                            return m.status==='ACTIVE'&&(roleDef.role === 'PRESIDENT' ? m.role === 'PRESIDENT' : m.group_title === roleDef.group_title);
                                         });
                                         const Icon = roleDef.icon;
                                         const borderColor = roleDef.color === 'indigo' ? 'border-indigo-100' : roleDef.color === 'purple' ? 'border-purple-100' : 'border-blue-100';
@@ -579,6 +591,7 @@ export function AdminGroupDetail() {
                                                             size="sm"
                                                             variant="outline"
                                                             className="w-full text-xs"
+                                                            disabled={presidentBusy}
                                                             onClick={() => {
                                                                 setTargetRoleDef(roleDef);
                                                                 setCurrentAssignee(current);
@@ -587,6 +600,9 @@ export function AdminGroupDetail() {
                                                         >
                                                             {current ? 'Değiştir' : 'Ata'}
                                                         </Button>
+                                                        {roleDef.role==='PRESIDENT'&&current&&<Button size="sm" variant="outline" className="w-full mt-2 text-xs text-red-600" disabled={presidentBusy} onClick={()=>removePresident(current.id)}>Başkan atamasını kaldır</Button>}
+                                                        {roleDef.role==='PRESIDENT'&&!current&&<p className="text-xs text-gray-500 mt-2">Başkan atanmamış. Yönetimi admin yürütür.</p>}
+                                                        {roleDef.role==='PRESIDENT'&&presidentNotice&&<p role="status" className="text-xs mt-2">{presidentNotice}</p>}
                                                     </div>
                                                 )}
                                             </div>

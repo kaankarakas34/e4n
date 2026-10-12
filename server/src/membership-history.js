@@ -14,7 +14,7 @@ export function installMembershipHistory(app,{pool,authenticateToken}){
    // Keep microseconds in cursor; the JS Date conversion would lose them.
    const events=(await c.query("SELECT id,user_id,user_name,operation,to_char(recorded_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') as recorded_at,before_state,after_state,operation_context FROM group_membership_history WHERE user_id=$1"+(beforeAt?' AND (recorded_at,id)<($2::timestamptz,$3::uuid)':'')+' ORDER BY group_membership_history.recorded_at DESC,id DESC LIMIT 51',beforeAt?[target,beforeAt,beforeId]:[target])).rows;
    const VALID_REASONS={LOW_SCORE:'Puan Düşüklüğü',ATTENDANCE:'Devamsızlık',VOLUNTARY:'Kendi İsteğiyle Ayrılma',ADMIN_DISCIPLINARY:'Disiplin / İdari Karar'};
-   const notifs=(await c.query("SELECT message,created_at FROM notifications WHERE user_id=$1 AND type='REMOVAL' ORDER BY created_at DESC LIMIT 50",[target])).rows;
+   const notifs=(await c.query("SELECT message,created_at FROM notifications WHERE user_id=$1 AND (type='REMOVAL' OR type='GROUP_UPDATE' AND title='Gruptan Çıkarılma') ORDER BY created_at DESC LIMIT 50",[target])).rows;
    const removalList=notifs.map(n=>{
      const parts=n.message.split(':::');let category='ADMIN_DISCIPLINARY',note='',groupName='',groupId='';
      try{if(parts[1]){const p=JSON.parse(parts[1].trim());category=p.category||category;note=p.note||'';groupName=p.groupName||'';groupId=p.groupId||'';}}catch{}

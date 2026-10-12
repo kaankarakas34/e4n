@@ -253,6 +253,11 @@ export const api = {
   async assignRole(userId: string, role: string, groupTitle?: string, contextId?: string, type?: 'GROUP' | 'POWER_TEAM') {
     return await request('/admin/assign-role', { method: 'POST', body: JSON.stringify({ userId, role, groupTitle, contextId, type }) });
   },
+  async clearGroupPresident(groupId:string,userId:string){
+    const result=await request(`/admin/groups/${groupId}/president`,{method:'DELETE',body:JSON.stringify({userId})});
+    if(result?.success!==true||result?.cleared!==true||result?.groupId!==groupId||result?.userId!==userId)throw new Error('Başkan ataması sonucu doğrulanamadı. Listeyi kontrol edin.');
+    return result;
+  },
 
   // Admin Reports
   async getAdminStats() {

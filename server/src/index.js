@@ -1,5 +1,6 @@
 import {retiredGuildRequest} from './retired-guilds.js';
 import {installGroupApplications} from './group-applications.js';
+import {installGroupPresidency,clearGroupPresident} from './group-presidency.js';
 import {membershipPrices} from '../../shared/membership-pricing.js';
 import {installNormalRegistration} from './normal-registration.js';
 import {installMembershipReferrals} from './membership-referrals.js';
@@ -1825,7 +1826,7 @@ app.get('/api/groups/:id/members', authenticateToken, async (req, res) => {
     if(!access.rowCount)return res.status(403).json({error:'Grup üyelerini görüntüleme yetkiniz yok. Grup inceleme alanını kullanın.'});
     // Return all users that are members of this group
     const { rows } = await pool.query(
-      `SELECT u.id, u.name as full_name, u.profession, u.email, u.role, u.performance_score, u.performance_color, gm.status, gm.joined_at as created_at,
+      `SELECT u.id, u.name as full_name, u.profession, u.email, CASE WHEN gm.role='PRESIDENT' THEN 'PRESIDENT' ELSE u.role END AS role, to_jsonb(u)->>'group_title' AS group_title, u.performance_score, u.performance_color, gm.status, gm.joined_at as created_at,
        (SELECT count(*)::int 
         FROM attendance a 
         JOIN events e ON a.event_id = e.id 
@@ -3658,9 +3659,11 @@ app.delete('/api/groups/:id/members/:userId', authenticateToken, async (req, res
     if((await client.query("SELECT id FROM group_applications WHERE group_id=$1 AND user_id=$2 AND state IN ('AWAITING_CALL','INTERVIEWED')",[req.params.id,req.params.userId])).rowCount)throw groupError('APPLICATION_WORKFLOW_REQUIRED','Başvuruyu görüşme kuyruğundan sonuçlandırın.');
     const result=await client.query('DELETE FROM group_members WHERE group_id=$1 AND user_id=$2 RETURNING user_id',[req.params.id,req.params.userId]);
     if(!result.rowCount)throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
+    const formerRole=(await client.query('SELECT role,group_title FROM users WHERE id=$1',[req.params.userId])).rows[0];
+    if(formerRole?.role==='PRESIDENT'||formerRole?.group_title==='PRESIDENT')await clearGroupPresident(client,req.params.id,req.params.userId,true);
     const groupName=(await client.query('SELECT name FROM groups WHERE id=$1',[req.params.id])).rows[0]?.name||'Grup';
     const payload=JSON.stringify({category,categoryLabel:VALID_REASONS[category],note,groupId:req.params.id,groupName});
-    await client.query("INSERT INTO notifications(user_id,type,title,message,action_url) VALUES($1,'REMOVAL','Gruptan Çıkarılma',$2,'/membership-history')",[req.params.userId,`${groupName} grubundan çıkarıldınız. Neden: ${VALID_REASONS[category]}.${note?' Açıklama: '+note:''} ::: ${payload}`]);
+    await client.query("INSERT INTO notifications(user_id,type,title,message,action_url) VALUES($1,'GROUP_UPDATE','Gruptan Çıkarılma',$2,'/membership-history')",[req.params.userId,`${groupName} grubundan çıkarıldınız. Neden: ${VALID_REASONS[category]}.${note?' Açıklama: '+note:''} ::: ${payload}`]);
     await client.query('COMMIT');
     res.json({success:true,groupId:req.params.id,userId:req.params.userId,removed:true,reasonCategory:category,reasonNote:note});
   }catch(error){if(client)await client.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}
@@ -4382,6 +4385,7 @@ installMembershipRecords(app,{pool,authenticateToken});
 installWebJobOperations(app,{pool,authenticateToken,sendMail:sendEmail});
 installWebActivities(app, { pool, authenticateToken });
 installGroupSettings(app, { pool, authenticateToken });
+installGroupPresidency(app, { pool, authenticateToken });
 installPowerTeamSettings(app,{pool,authenticateToken});
 
 const __filename = fileURLToPath(import.meta.url);

@@ -286,7 +286,7 @@ export function GroupDiscovery() {
                         )}
                       </div>
                       <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                        Başkan: {g.president ?? 'Başkan bilgisi doğrulanamadı'}
+                        Başkan: {g.president ?? (g.president_ready?'Admin yönetiminde':'Başkan bilgisi doğrulanamadı')}
                         {g.city ? ` • ${g.city}` : ''}
                         {g.meeting_time ? ` • Toplantı: ${g.meeting_time}` : ''}
                       </p>
@@ -417,7 +417,7 @@ export function GroupDiscovery() {
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Başkan: {inspectModalGroup.president ?? 'Başkan bilgisi doğrulanamadı'} • {inspectModalGroup.meeting_time ? `Toplantı: ${inspectModalGroup.meeting_time}` : 'Haftalık Toplantı'}
+                  Başkan: {inspectModalGroup.president ?? (inspectModalGroup.president_ready?'Admin yönetiminde':'Başkan bilgisi doğrulanamadı')} • {inspectModalGroup.meeting_time ? `Toplantı: ${inspectModalGroup.meeting_time}` : 'Haftalık Toplantı'}
                 </p>
               </div>
               <button

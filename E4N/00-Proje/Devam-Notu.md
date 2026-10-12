@@ -1,4 +1,10 @@
+## Son çalışma — başkanlığı kaldırma ve üye çıkarma / 12 Ekim 2026
+
+- Kullanıcı kararı: admin başkan atamasını kaldırabilir; boş başkanlıkta admin yönetir. Ayrılan kişinin Diamond üyeliği ve başkanlığı canlıda kaldırıldı; ayrı SELECT üyelik0/başkan0/history1 doğruladı. Kalıcı kod: admin clear API+düğme, boş grup admin discovery fallback, manuel çıkarma REMOVAL→izinli GROUP_UPDATE (canlı constraint rollback hatasının kaynağı), history okuyucu/yerel rol/PENDING uyumu. 234rota/check/build/syntax ve izole HTTP+fixturebrowser PASS; PG ve production oturumlu browser yok, mevcut lint açıkları sürer. Kod canlı yayını bekliyor. Karar [[E4N/01-Kararlar/Baskan-Atamasini-Kaldirma-ve-Admin-Yonetimi-2026-10-12]]; tek kanıt [[E4N/09-Dogrulama/Baskanlik-Kaldirma-ve-Uye-Cikarma-Duzeltmesi-2026-10-12]].
+
 ## Son çalışma — üye grup ziyaret talepleri / 12 Ekim 2026
+
+- Diamond keşifte görünmeme nedeni canlı groups.status=NULL idi. Kullanıcı açık düzeltme onayıyla yalnız Diamond kaydı NULL→ACTIVE güncellendi; sonraki SELECT keşif filtresinde Diamond dahil4grup ve Diamond11aktifüyelik doğruladı. Kod/deploy yok. Ayrıntı aynı ziyaret talepleri paket notunun Diamond bölümünde.
 
 - Kullanıcı kararı: önce hesap, sonra panelden gruba ziyaret isteği; yönetim /admin/visitors içinde görür. Varsayılan Üyelerin Ziyaret Talepleri sekmesi teslim; grup/not/üye bilgileri, grup-durum filtresi, detay/profil/iletişim ve hata-retry. Mevcut source için sunucu filtresi/allowlist/güncel ADMIN; anonim kaynak taklidi engeli. Yeni ziyaret PENDING; sahte mail vaadi kaldırıldı. Migration yok. check/build/233rota, izole HTTP+DTO ve ücretsiz akış contract PASS; fixture browser/görsel PASS. Gerçek PG yok; önceden14any lint hatası sürer. Açık kullanıcı onayıyla ürün646b02a main/foundation push ve production dpl_8nbf2Ds6dASovCyeTs3x9a3G5v5B READY; custom domain, yeni asset/sekme kodu200 ve anon queue401 doğrulandı. Gerçek yöneticiyle canlı E2E yapılmadı. Kanıt [[E4N/09-Dogrulama/Uye-Grup-Ziyaret-Talepleri-Yonetici-Sekmesi-2026-10-12]]. Ana kapsam açık.
 

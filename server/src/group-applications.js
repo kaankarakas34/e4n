@@ -7,6 +7,7 @@ const presidentSql=`SELECT u.id,u.name FROM group_members gm JOIN users u ON u.i
 async function president(c,g){
   const rows=(await c.query(presidentSql,[g])).rows;
   if(rows.length===1)return rows[0];
+  if(rows.length>1)throw groupError('GROUP_ROLE_AMBIGUOUS','Grupta birden fazla başkan kaydı var. Rol kayıtlarını kontrol edin.');
   const admin=(await c.query("SELECT id,name FROM users WHERE role='ADMIN' ORDER BY id LIMIT 1")).rows[0];
   if(admin)return admin;
   throw groupError('PRESIDENT_UNAVAILABLE','Grubun başkan kaydı doğrulanamıyor. Lütfen başka bir grubu inceleyin veya destekle iletişime geçin.');
@@ -76,7 +77,8 @@ export function installGroupApplications(app,{pool,authenticateToken}){
     (SELECT state FROM group_applications WHERE group_id=g.id AND user_id=$1) application_state
     FROM groups g WHERE g.status='ACTIVE' ORDER BY g.name,g.id LIMIT 501`,[req.user.id])).rows;
    if(groups.length>500)throw groupError('CATALOG_LIMIT','Grup listesi sınırı aşıldı.',503);
-   return {ownerId:req.user.id,hasSubscription:!!subscribed(u),geographyEnabled:false,removal_ban:removalBan,groups:groups.map(g=>{const presidents=g.members.filter(m=>m.president);const count=g.members.length-presidents.length;return {...g,member_count:count,capacity:35,available_seats:Math.max(0,35-count),president:presidents.length===1?presidents[0].name:null,president_ready:presidents.length===1};})};
+   const adminAvailable=Boolean((await c.query("SELECT id FROM users WHERE role='ADMIN' ORDER BY id LIMIT 1")).rows[0]);
+   return {ownerId:req.user.id,hasSubscription:!!subscribed(u),geographyEnabled:false,removal_ban:removalBan,groups:groups.map(g=>{const presidents=g.members.filter(m=>m.president);const count=g.members.length-presidents.length;return {...g,member_count:count,capacity:35,available_seats:Math.max(0,35-count),president:presidents.length===1?presidents[0].name:null,president_ready:presidents.length===1||presidents.length===0&&adminAvailable};})};
   }));
  app.post('/api/groups/:id/join',authenticateToken,route(async(c,req)=>{
   if(!isUuid(req.params.id)||Object.keys(req.body??{}).length||Object.keys(req.query).length)throw groupError('INVALID_REQUEST','Geçersiz başvuru.',400);
@@ -121,7 +123,7 @@ export function installGroupApplications(app,{pool,authenticateToken}){
   const VALID_REASONS={LOW_SCORE:'Puan Düşüklüğü',ATTENDANCE:'Devamsızlık',VOLUNTARY:'Kendi İsteğiyle Ayrılma',ADMIN_DISCIPLINARY:'Disiplin / İdari Karar'};
   const applications=(await c.query(`SELECT a.id,a.user_id,u.name,u.phone,u.company,u.profession,a.state,a.created_at,a.interview_at,a.interview_note,a.decision_note,COALESCE(CASE WHEN m.state='SENDING' AND m.updated_at<now()-interval '2 minutes' THEN 'UNKNOWN' ELSE m.state END,'QUEUED') mail_state,CASE WHEN a.state='AWAITING_CALL' AND a.created_at<now()-interval '7 days' THEN true ELSE false END AS sla_breached,EXTRACT(DAY FROM now()-a.created_at)::int AS days_waiting FROM group_applications a JOIN users u ON u.id=a.user_id LEFT JOIN group_application_mail m ON m.application_id=a.id WHERE a.group_id=$1 ORDER BY a.created_at DESC LIMIT 200`,[req.params.id])).rows;
   for(const app of applications){
-    const notifs=(await c.query("SELECT message,created_at FROM notifications WHERE user_id=$1 AND type='REMOVAL' ORDER BY created_at DESC LIMIT 5",[app.user_id])).rows;
+    const notifs=(await c.query("SELECT message,created_at FROM notifications WHERE user_id=$1 AND (type='REMOVAL' OR type='GROUP_UPDATE' AND title='Gruptan Çıkarılma') ORDER BY created_at DESC LIMIT 5",[app.user_id])).rows;
     app.removal_history=notifs.map(n=>{
       const parts=n.message.split(':::');let category='ADMIN_DISCIPLINARY',note='',groupName='';
       try{if(parts[1]){const p=JSON.parse(parts[1].trim());category=p.category||category;note=p.note||'';groupName=p.groupName||'';}}catch{}

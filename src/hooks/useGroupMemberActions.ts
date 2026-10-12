@@ -17,7 +17,7 @@ export function useGroupMemberActions({scope,kind='group',groupId,onMembers,onRe
   const visible=state.scope===scope?state:{scope,busy:false,error:'',needsReview:false};
   async function readMembers(){
     const rows=await (api.getGroupMembers(groupId!));
-    const statuses=['ACTIVE','REQUESTED','INACTIVE'];
+    const statuses=['ACTIVE','REQUESTED','INACTIVE','PENDING'];
     if(!Array.isArray(rows)||rows.some(row=>!row||!uuid(row.id)||!statuses.includes(row.status))
         ||new Set(rows.map(row=>row.id)).size!==rows.length)throw Error('Üye listesi doğrulanamadı.');
     return rows as GroupMemberRow[];

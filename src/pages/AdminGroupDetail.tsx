@@ -55,19 +55,19 @@ export function AdminGroupDetail() {
 
     const memberActions=useGroupMemberActions({scope:readContext,kind:'group',groupId:id,onMembers:setMembers,onRefresh:()=>setRetryCount(count=>count+1)});
     const [presidentBusy,setPresidentBusy]=useState(false);
-    const [presidentNotice,setPresidentNotice]=useState('');
+    const [presidentNotice,setPresidentNotice]=useState({groupTitle:'',text:''});
     const presidentContext=useRef(readContext);presidentContext.current=readContext;
     const presidentLock=useRef(false);
-    async function removePresident(userId:string){
+    async function removePresident(userId:string,groupTitle:string,title:string){
         if(presidentLock.current||!id||user?.role!=='ADMIN')return;
-        if(!confirm('Başkan atamasını kaldırmak istiyor musunuz? Üye grupta kalır; yönetimi admin yürütür.'))return;
-        const context=readContext;presidentLock.current=true;setPresidentBusy(true);setPresidentNotice('');
-        try{await api.clearGroupPresident(id,userId);if(presidentContext.current!==context)return;setPresidentNotice('Başkan ataması kaldırıldı.');setRetryCount(count=>count+1);}
-        catch{if(presidentContext.current===context){setPresidentNotice('Başkan ataması sonucu doğrulanamadı. Güncel listeyi kontrol edin.');setRetryCount(count=>count+1);}}
+        if(!confirm(`${title} atamasını kaldırmak istiyor musunuz? Üye grupta kalır.`))return;
+        const context=readContext;presidentLock.current=true;setPresidentBusy(true);setPresidentNotice({groupTitle,text:''});
+        try{await api.clearGroupLeadership(id,userId,groupTitle);if(presidentContext.current!==context)return;setPresidentNotice({groupTitle,text:'Görev ataması kaldırıldı.'});setRetryCount(count=>count+1);}
+        catch{if(presidentContext.current===context){setPresidentNotice({groupTitle,text:'Görevden alma sonucu doğrulanamadı. Güncel listeyi kontrol edin.'});setRetryCount(count=>count+1);}}
         finally{presidentLock.current=false;setPresidentBusy(false);}
     }
     const currentContext = useRef(readContext); currentContext.current = readContext;
-    useEffect(() => { setShowEditModal(false); setIsSaving(false); }, [readContext]);
+    useEffect(() => { setShowEditModal(false); setIsSaving(false); setPresidentNotice({groupTitle:'',text:''}); }, [readContext]);
 
     // Dynamic Stats
     const stats = {
@@ -600,9 +600,9 @@ export function AdminGroupDetail() {
                                                         >
                                                             {current ? 'Değiştir' : 'Ata'}
                                                         </Button>
-                                                        {roleDef.role==='PRESIDENT'&&current&&<Button size="sm" variant="outline" className="w-full mt-2 text-xs text-red-600" disabled={presidentBusy} onClick={()=>removePresident(current.id)}>Başkan atamasını kaldır</Button>}
+                                                        {current&&<Button size="sm" variant="outline" className="w-full mt-2 text-xs text-red-600" disabled={presidentBusy} onClick={()=>removePresident(current.id,roleDef.group_title,roleDef.title)}>Görevden al</Button>}
                                                         {roleDef.role==='PRESIDENT'&&!current&&<p className="text-xs text-gray-500 mt-2">Başkan atanmamış. Yönetimi admin yürütür.</p>}
-                                                        {roleDef.role==='PRESIDENT'&&presidentNotice&&<p role="status" className="text-xs mt-2">{presidentNotice}</p>}
+                                                        {presidentNotice.groupTitle===roleDef.group_title&&presidentNotice.text&&<p role="status" className="text-xs mt-2">{presidentNotice.text}</p>}
                                                     </div>
                                                 )}
                                             </div>

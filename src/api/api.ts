@@ -258,6 +258,12 @@ export const api = {
     if(result?.success!==true||result?.cleared!==true||result?.groupId!==groupId||result?.userId!==userId)throw new Error('Başkan ataması sonucu doğrulanamadı. Listeyi kontrol edin.');
     return result;
   },
+  async clearGroupLeadership(groupId:string,userId:string,groupTitle:string){
+    if(groupTitle==='PRESIDENT')return this.clearGroupPresident(groupId,userId);
+    const result=await request(`/admin/groups/${groupId}/leadership`,{method:'DELETE',body:JSON.stringify({userId,groupTitle})});
+    if(result?.success!==true||result?.cleared!==true||result?.groupId!==groupId||result?.userId!==userId||result?.groupTitle!==groupTitle)throw new Error('Görevden alma sonucu doğrulanamadı. Listeyi kontrol edin.');
+    return result;
+  },
 
   // Admin Reports
   async getAdminStats() {

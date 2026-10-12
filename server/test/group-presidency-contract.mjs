@@ -19,9 +19,10 @@ const client={release(){},async query(sql,values=[]){
   if(sql.startsWith('SELECT name FROM users'))return {rows:[{name:'Fixture admin'}]};
   if(sql.startsWith('SELECT role,group_title'))return {rows:[{role:state.role,group_title:state.title}]};
   if(sql.startsWith('SELECT gm.id FROM group_members')&&sql.includes('group_id<>'))return {rows:state.other?[{id:'other'}]:[]};
+  if(sql.startsWith('SELECT id FROM group_members')&&sql.includes('group_id<>'))return {rows:state.other?[{id:'other'}]:[]};
   if(sql.startsWith('SELECT id FROM group_members'))return {rows:state.member?[{id:target}]:[]};
   if(sql.startsWith('UPDATE group_members SET role')){state.localRole='MEMBER';return {rows:[]};}
-  if(sql.startsWith('UPDATE users SET role=CASE')){if(state.role==='PRESIDENT')state.role='MEMBER';if(state.title==='PRESIDENT')state.title=null;return {rows:[]};}
+  if(sql.startsWith('UPDATE users SET role=CASE')){if(sql.includes("role='VICE_PRESIDENT'")){if(state.role==='VICE_PRESIDENT')state.role='MEMBER';state.title=null;}else{if(state.role==='PRESIDENT')state.role='MEMBER';if(state.title==='PRESIDENT')state.title=null;}return {rows:[]};}
   if(sql.startsWith('SELECT g.id,')&&sql.includes('active_records'))return {rows:[{id:group,active_records:state.count,president_records:state.member&&(state.role==='PRESIDENT'||state.localRole==='PRESIDENT')?1:0}]};
   if(sql.startsWith('SELECT id FROM group_applications'))return {rowCount:sql.includes('president_id')&&state.pending&&state.assigned===target?1:0,rows:[]};
   if(sql.startsWith('SELECT u.id,u.name FROM group_members'))return {rows:[]};
@@ -59,5 +60,15 @@ try{
   const removed=await call('/api/groups/'+group+'/members/'+target,'DELETE',{reason_category:'VOLUNTARY'});assert.equal(removed.status,200);assert.equal((await removed.json()).removed,true);assert.equal(state.member,false);assert.equal(state.role,'MEMBER');assert.equal(state.notification,true);assert.equal(state.assigned,admin);
   const discovery=await call('/api/group-discovery');assert.equal(discovery.status,200);const dto=await discovery.json();assert.equal(dto.groups[0].president,null);assert.equal(dto.groups[0].president_ready,true,'Admin must manage an unassigned group');
   state.adminRole='MEMBER';const unavailable=await call('/api/group-discovery');assert.equal((await unavailable.json()).groups[0].president_ready,false);
+  const titles=['MEMBERSHIP_PRESIDENT','VISITOR_PRESIDENT','ONE_TO_ONE_COORD','EDUCATION_COORD','EVENT_COORDINATOR'];
+  const dismiss=title=>call('/api/admin/groups/'+group+'/leadership','DELETE',{userId:target,groupTitle:title});
+  for(const title of titles){reset();state.pending=false;state.role=title.endsWith('PRESIDENT')?'VICE_PRESIDENT':'MEMBER';state.title=title;
+    assert.equal((await dismiss(title)).status,200);assert.equal(state.member,true);assert.equal(state.role,'MEMBER');assert.equal(state.title,null);assert.equal((await dismiss(title)).status,200);
+  }
+  reset();state.title='VISITOR_PRESIDENT';state.role='ADMIN';assert.equal((await dismiss(state.title)).status,200);assert.equal(state.role,'ADMIN','Clearing a task must preserve admin authority');
+  reset();state.title='VISITOR_PRESIDENT';assert.equal((await dismiss(state.title)).status,200);assert.equal(state.role,'PRESIDENT','Clearing a committee task must preserve separate presidency');
+  reset();state.title='VISITOR_PRESIDENT';assert.equal((await dismiss('EDUCATION_COORD')).status,409);assert.equal(state.title,'VISITOR_PRESIDENT');
+  reset();state.title='VISITOR_PRESIDENT';state.other=true;assert.equal((await dismiss(state.title)).status,409);assert.equal(state.title,'VISITOR_PRESIDENT');
+  reset();state.title='VISITOR_PRESIDENT';state.adminRole='MEMBER';assert.equal((await dismiss(state.title)).status,403);assert.equal(state.title,'VISITOR_PRESIDENT');
   console.log('Group presidency/real remove HTTP handlers: PASS (admin-only, clear/replay, capacity rollback, other scope, GROUP_UPDATE, admin fallback). Isolated query adapter; not PostgreSQL.');
 }finally{await new Promise(r=>server.close(r));}

@@ -1,5 +1,7 @@
 ## Son çalışma — başkanlığı kaldırma ve üye çıkarma / 12 Ekim 2026
 
+- Kullanıcı devam isteği: tüm atanmış liderlik kartlarında Değiştir yanına Görevden al. Başkan önceki endpoint; diğer5görev admin-only leadership endpoint, unvan temizleme/üyelik ve ayrı ADMIN-PRES koruma/stale409. 235rota/check/build, rol5+tekrar/yetki/scope HTTP adaptör ve fixturebrowser PASS; PG/production kullanıcı mutasyonu yok; eski lint açıkları sürer. Aynı paket notuna eklendi; devam düzeltmesinin yayını sürüyor.
+
 - Açık kullanıcı yayın onayıyla ilk d5b3d57 production dpl_8mLNQoyJ1BMMZE27i8XFQj99siJH READY, group200/yeni kontrol metinleri/anon401. Son kontrol: açık başvuruların eski başkan referansı atama kaldırma/çıkarma transactionında güncel başkan veya admin'e devredilir; yeni mail/başvuru yok, in-flight/geçmiş mail geri alınmaz. İlgili HTTP adaptör regresyonu PASS; aynı paketin tamamlayıcı final yayını sürüyor.
 - Final7855b07 main/foundation push; dpl_FwbrscG3U6abLSJsWrQyiMJayE2T READY/custom domains/group200/anon presidency401 doğrulandı. Başkan kaldırma + manuel çıkarma + açık başvuru devri kodu canlı. Eski aşağıdaki kod canlı bekliyor satırı bu final yayın kaydıyla geçersizdir; yeni iş olarak tekrar uygulama.
 

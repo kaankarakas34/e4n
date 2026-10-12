@@ -1,5 +1,12 @@
 # Başkanlık kaldırma ve üye çıkarma düzeltmesi — 12 Ekim 2026
 
+## Devam düzeltmesi — tüm görev kartlarında Görevden al
+
+- Kullanıcı “buralarda görevden al olması lazım değiştirme dışında bi de” dedi. Tüm atanmış liderlik/görev kartlarında Değiştir yanında Görevden al; boş kartta Ata. Başkan işlemi önceki API'yi kullanır; diğer beş görev için admin-only DELETE /admin/groups/:id/leadership.
+- İlgili unvan temizlenir, yalnız VICE_PRESIDENT görev rolü MEMBER'e indirilir; üyelik ile varsa ayrı ADMIN/PRESIDENT yetkisi korunur. Eski unvan değişmişse409; başka grupta aktif kayıt varsa global unvanı sessizce değiştirmek yerine409. İşlem kilidi/currentDBADMIN, üyelik kontrolü, transaction ve doğrulanmış DTO; tekrar güvenli.
+- 235rota/check/build/syntax/diff PASS. Beş görev, tekrar, MEMBER'e dönüş, ayrı ADMIN/PRESIDENT koruma, unvan değişimi/diğer grup409 ve admin403 gerçek HTTP+izole sorgu adaptörü regresyonu PASS. PG/production gerçek kullanıcı mutasyonu yapılmadı.
+- Gerçek AdminGroupDetail fixture browser: Değiştir+Görevden al; ziyaretçi komitesi görevi kaldırılır, kart Atanmamış/Ata olur, kişi üyelerde kalır. output/playwright/leadership-clear-{before,after}.txt/png. Hedef lintte önceki7error/1warning (any hariç) sürer; yeni bulgu yok. Bu aynı başkanlık/görev yönetimi paketinin devam düzeltmesidir; yeni teslim görevi yok.
+
 ## Canlı veri işlemi
 
 - Kullanıcının belirttiği ayrılan kişinin Diamond aktif üyeliği ve global başkanlık rolü/unvanı tutarsızdı. Kullanıcı gruptan çıkarma ve başkanlığını kaldırma yetkisi verdi; platform hesabının silinmesi uygulanmadı.

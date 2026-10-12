@@ -17,6 +17,26 @@ export async function clearGroupPresident(client,groupId,userId,preserveOther=fa
 }
 
 export function installGroupPresidency(app,{pool,authenticateToken}){
+  app.delete('/api/admin/groups/:id/leadership',authenticateToken,async(req,res)=>{
+    res.set('Cache-Control','private, no-store');
+    const titles=['MEMBERSHIP_PRESIDENT','VISITOR_PRESIDENT','ONE_TO_ONE_COORD','EDUCATION_COORD','EVENT_COORDINATOR'];
+    const b=req.body;
+    if(!isUuid(req.params.id)||!isUuid(b?.userId)||!titles.includes(b?.groupTitle)||Object.keys(b).some(k=>!['userId','groupTitle'].includes(k))||Object.keys(req.query).length)return res.status(400).json({error:'Geçersiz görevden alma isteği.'});
+    let c;
+    try{
+      c=await pool.connect();await beginGroupMutation(c);await requireCurrentAdmin(c,req.user.id);
+      if(!(await c.query('SELECT id FROM group_members WHERE group_id=$1 AND user_id=$2 FOR UPDATE',[req.params.id,b.userId])).rows[0])throw groupError('MEMBERSHIP_NOT_FOUND','Grup üyelik kaydı bulunamadı.',404);
+      const u=(await c.query('SELECT role,group_title FROM users WHERE id=$1 FOR UPDATE',[b.userId])).rows[0];
+      if(!u)throw groupError('USER_NOT_FOUND','Üye bulunamadı.',404);
+      if(u.group_title===null&&['MEMBER','ADMIN','PRESIDENT'].includes(u.role)){await c.query('COMMIT');return res.json({success:true,groupId:req.params.id,userId:b.userId,groupTitle:b.groupTitle,cleared:true});}
+      if(u.group_title!==b.groupTitle)throw groupError('ROLE_CHANGED','Görev ataması değişmiş. Listeyi yenileyin.');
+      if((await c.query("SELECT id FROM group_members WHERE user_id=$1 AND group_id<>$2 AND status='ACTIVE'",[b.userId,req.params.id])).rows.length)throw groupError('OTHER_GROUP_ROLE','Üyenin başka grupta aktif kaydı var; ortak görev unvanı birlikte incelenmelidir.');
+      await setMembershipOperationContext(c,req.user.id,'ROLE_ASSIGNMENT');
+      await c.query("UPDATE group_members SET role='MEMBER' WHERE group_id=$1 AND user_id=$2 AND role IN ($3,'VICE_PRESIDENT')",[req.params.id,b.userId,b.groupTitle]);
+      await c.query("UPDATE users SET role=CASE WHEN role='VICE_PRESIDENT' THEN 'MEMBER' ELSE role END,group_title=NULL WHERE id=$1 AND group_title=$2",[b.userId,b.groupTitle]);
+      await c.query('COMMIT');res.json({success:true,groupId:req.params.id,userId:b.userId,groupTitle:b.groupTitle,cleared:true});
+    }catch(error){if(c)await c.query('ROLLBACK').catch(()=>{});sendGroupMutationError(res,error);}finally{c?.release();}
+  });
   app.delete('/api/admin/groups/:id/president',authenticateToken,async(req,res)=>{
     res.set('Cache-Control','private, no-store');
     if(!isUuid(req.params.id)||!isUuid(req.body?.userId)||Object.keys(req.body).some(k=>k!=='userId')||Object.keys(req.query).length)return res.status(400).json({error:'Geçersiz başkan ataması isteği.'});

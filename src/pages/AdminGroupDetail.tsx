@@ -8,7 +8,8 @@ import { api } from '../api/api';
 import {useGroupMemberActions} from '../hooks/useGroupMemberActions';
 import { adminGroupDetailApi, groupMoney, groupRecordStatus } from '../api/adminGroupDetail';
 import type { AdminGroupDetailSnapshot } from '../api/adminGroupDetail';
-import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, UserPlus, Trash2, Send } from 'lucide-react';
+import { GroupApplicationQueue } from '../components/GroupApplicationQueue';
+import { Layers, Users, ArrowLeft, BarChart3, DollarSign, Calendar, UserPlus, Trash2, Send, FileCheck } from 'lucide-react';
 
 export function AdminGroupDetail() {
     const { id } = useParams<{ id: string }>();
@@ -63,7 +64,7 @@ export function AdminGroupDetail() {
         activeMembers: members.filter(m => m.status === 'ACTIVE').length,
     };
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'REFERRALS' | 'MEETINGS'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ATTENDANCE' | 'VISITORS' | 'APPLICATIONS' | 'REFERRALS' | 'MEETINGS'>('OVERVIEW');
 
     useEffect(() => {
         let cancelled = false;
@@ -386,7 +387,7 @@ export function AdminGroupDetail() {
 
                 {/* Tabs */}
                 <div className="flex space-x-4 border-b border-gray-200 mb-6 overflow-x-auto">
-                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'REFERRALS', ...([])].map((tab) => (
+                    {['OVERVIEW', 'ATTENDANCE', 'VISITORS', 'APPLICATIONS', 'REFERRALS'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -397,7 +398,8 @@ export function AdminGroupDetail() {
                         >
                             {tab === 'OVERVIEW' ? 'Genel Bakış' :
                                 tab === 'ATTENDANCE' ? 'Yoklama' :
-                                    tab === 'VISITORS' ? 'Ziyaretçiler' : 'Yönlendirmeler'}
+                                    tab === 'VISITORS' ? 'Ziyaretçiler' :
+                                        tab === 'APPLICATIONS' ? 'Başvurular' : 'Yönlendirmeler'}
                         </button>
                     ))}
                 </div>
@@ -847,6 +849,15 @@ export function AdminGroupDetail() {
                             )}
                         </CardContent>
                     </Card>
+                )}
+
+                {activeTab === 'APPLICATIONS' && (
+                    <div className="space-y-6">
+                        <GroupApplicationQueue 
+                            groupId={id!} 
+                            onChanged={() => setRetryCount(count => count + 1)} 
+                        />
+                    </div>
                 )}
 
                 {/* SYNERGY TAB */}

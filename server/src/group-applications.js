@@ -4,8 +4,23 @@ import {setMembershipOperationContext} from './membership-operation-context.js';
 const link=id=>`/group-management?tab=applications&group=${id}`;
 const subscribed=u=>u?.account_status==='ACTIVE'&&typeof u.subscription_plan==='string'&&!!u.subscription_plan&&u.subscription_end_date&&new Date(u.subscription_end_date)>new Date();
 const presidentSql=`SELECT u.id,u.name FROM group_members gm JOIN users u ON u.id=gm.user_id WHERE gm.group_id=$1 AND gm.status='ACTIVE' AND (gm.role='PRESIDENT' OR u.role='PRESIDENT' OR to_jsonb(u)->>'group_title'='PRESIDENT') ORDER BY u.id`;
-async function president(c,g){const rows=(await c.query(presidentSql,[g])).rows;if(rows.length!==1)throw groupError('PRESIDENT_UNAVAILABLE','Grubun başkan kaydı doğrulanamıyor. Lütfen başka bir grubu inceleyin veya destekle iletişime geçin.');return rows[0];}
-async function currentPresident(c,actor,g){const p=await president(c,g);if(p.id!==actor)throw groupError('FORBIDDEN','Yalnız bu grubun başkanı karar verebilir.',403);return p;}
+async function president(c,g){
+  const rows=(await c.query(presidentSql,[g])).rows;
+  if(rows.length===1)return rows[0];
+  const admin=(await c.query("SELECT id,name FROM users WHERE role='ADMIN' ORDER BY id LIMIT 1")).rows[0];
+  if(admin)return admin;
+  throw groupError('PRESIDENT_UNAVAILABLE','Grubun başkan kaydı doğrulanamıyor. Lütfen başka bir grubu inceleyin veya destekle iletişime geçin.');
+}
+async function currentPresident(c,actor,g){
+  const actorRole=(await c.query("SELECT role FROM users WHERE id=$1",[actor])).rows[0]?.role;
+  if(actorRole==='ADMIN'){
+    const rows=(await c.query(presidentSql,[g])).rows;
+    return rows[0] || (await c.query("SELECT id,name FROM users WHERE id=$1",[actor])).rows[0];
+  }
+  const p=await president(c,g);
+  if(p.id!==actor)throw groupError('FORBIDDEN','Yalnız bu grubun başkanı veya sistem yöneticisi karar verebilir.',403);
+  return p;
+}
 const safeText=(v,max)=>typeof v==='string'&&v.trim()&&v.trim().length<=max&&!v.includes('\0');
 export async function deliverApplicationMail(pool,id){
  const claimed=(await pool.query("UPDATE group_application_mail SET state='SENDING',attempts=attempts+1,updated_at=now() WHERE application_id=$1 AND state IN ('QUEUED','FAILED') RETURNING application_id",[id])).rowCount;

@@ -1,0 +1,9 @@
+.git
+.github
+.obsidian
+E4N
+mobile
+deploy
+server/docs
+output
+*.log

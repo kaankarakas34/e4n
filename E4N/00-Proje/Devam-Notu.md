@@ -1,9 +1,9 @@
-## SEO statik temel paketi — 13 Ekim 2026
+## SEO canlı yayın — 13 Ekim 2026
 
-- E4N-290/291 In Progress. 26 kamu sayfası prerender; tek canonical/description/H1;22 sitemap URL;45 eski adres301;61 client+API rewrite;bilinmeyen404;refId/query ve blogslug korunur;şehir/rehber/özel alan noindex. Kod yerelde hazır, canlı yayına çıkmadı.
-- API235/check-build,hedefli lint,26 ham/render sayfa,6 redirect,özel/login bariyeri,4 mobil,SPA noindex→index,gzip/CSP/HTTP veJSON-LD guard PASS. Entry2353→352KB,gzip635→105KB;hero PNG1479391→WebP190512byte. GTM tek sağlayıcı sahibi;Facebook PageView1,GA4 finalde2 görüldü ve MET kapsamında açık.
-- Yerel mobil lab:ana59/üyelik77;SEO kontrol100/100,a11y95. CrUX/INP veya üretim sonucu değil. Kalan:yayın+platformHTTP/GSC/RichResults/CrUX,dinamik Event/Article,kalanGTM/perf ve tam niyet verisi. E4N-289/S1 ve290/291 Done değil; yeni küçük issue yok.
-- Plan [[E4N/07-Sprintler/E4N-SEO-Sorgu-URL-Mimarisi-2026-10-12]];tek kanıt [[E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13]]. Yönetilen foundation checkout korunur;mobile m pakete dahil değil;DB/mail/ödeme/üretim mutasyonu yok.
+- Kod0ae32d3; e4n production READY `dpl_CgvtNatN3Rpt9AmfRsrnit9SZ5xX`; www.event4network.com beklenen index-Dgi8bxxD.js. Üretim build’i stage→promote; mobile m dışarıda, API/DB/cron değişmedi.
+- Canlı26 ham/render sayfa,22 sitemap,6 redirect/query/slug,404,noindex/login/admin401,4 mobil ve0 pageerror PASS. APIhealth200/ok/DBsuccess;ana sayfa kamu event okuması200. Platformta APIcleanUrls hedefi ve ana sayfanın admin okuması düzeltildi;final build/type/API235/SEO26/hedefli lint geçti.
+- E4N-289/290/291 In Progress;GSC/RichResults/CrUX,dinamik gerçek Event/Article servermetadata/404/sitemap,kalanGA4 çiftpageview/perf ve tam niyet kabulü açık. Sıradaki bu bağımlılıkları çöz; yeni küçük issue üretme, aktif diğer işleri kesme.
+- Tek kanıt yönetilen checkout E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13.md;aynı paketteproduction/JSON,görseller,SHA256. Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2.
 
 ## SEO — AUD-02 güncel denetim / 12 Ekim 2026
 

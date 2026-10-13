@@ -1,0 +1,34 @@
+{
+  "deployment": "dpl_CgvtNatN3Rpt9AmfRsrnit9SZ5xX",
+  "entry": "index-Dgi8bxxD.js",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "entry": "index-Dgi8bxxD.js"
+    },
+    {
+      "path": "/api/health-check",
+      "status": 200,
+      "health": "ok",
+      "dbAttempt": "success"
+    },
+    {
+      "path": "/api/events",
+      "status": 200,
+      "publicEventCount": 0
+    },
+    {
+      "path": "/api/events?mode=admin",
+      "status": 401
+    },
+    {
+      "path": "/auth/login",
+      "status": 200
+    },
+    {
+      "path": "/unmapped-seo-release",
+      "status": 404
+    }
+  ]
+}

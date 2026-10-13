@@ -1,0 +1,366 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "title": "Event4Network | 35 Kişilik Gruplarla İş Ağınızı Geliştirin",
+      "canonical": [
+        "https://www.event4network.com/"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/e4n-nedir",
+      "title": "E4N Nedir? | İş İnsanları İçin Networking Ekosistemi",
+      "canonical": [
+        "https://www.event4network.com/e4n-nedir"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/nasil-calisir",
+      "title": "E4N Nasıl Çalışır? | Üyelik, Grup Kabulü ve Shuffle",
+      "canonical": [
+        "https://www.event4network.com/nasil-calisir"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/kapali-gruplar",
+      "title": "E4N Kapalı Gruplar | 35 Kişilik Seçici İş Ağı",
+      "canonical": [
+        "https://www.event4network.com/kapali-gruplar"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/shuffle",
+      "title": "E4N Shuffle | Dört Ayda Bir Yenilenen Networking Grupları",
+      "canonical": [
+        "https://www.event4network.com/shuffle"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/katilim-ilkeleri",
+      "title": "E4N Katılım İlkeleri | Aylık Değerlendirme ve Grup Hakları",
+      "canonical": [
+        "https://www.event4network.com/katilim-ilkeleri"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/birebir-networking",
+      "title": "E4N Birebir Networking | İşinizi Daha İyi Anlatın",
+      "canonical": [
+        "https://www.event4network.com/birebir-networking"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/uyelik",
+      "title": "E4N Üyelik | Abonelik ve Kapalı Grup Başvurusu",
+      "canonical": [
+        "https://www.event4network.com/uyelik"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/etkinlikler",
+      "title": "E4N Etkinlikleri | Networking Buluşmaları ve Eğitimler",
+      "canonical": [
+        "https://www.event4network.com/etkinlikler"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/topluluklarimiz",
+      "title": "E4N Toplulukları ve Loncaları | Açık İş Ağı Kanalları",
+      "canonical": [
+        "https://www.event4network.com/topluluklarimiz"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/blog",
+      "title": "Rehber | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/blog"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/hakkimizda",
+      "title": "E4N Hakkımızda | Event4Network'ün Kuruluş Amacı",
+      "canonical": [
+        "https://www.event4network.com/hakkimizda"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/sikca-sorulan-sorular",
+      "title": "E4N Sıkça Sorulan Sorular | Üyelik ve Grup Katılımı",
+      "canonical": [
+        "https://www.event4network.com/sikca-sorulan-sorular"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/iletisim",
+      "title": "E4N İletişim | Üyelik, Etkinlik ve İş Birliği",
+      "canonical": [
+        "https://www.event4network.com/iletisim"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/kvkk",
+      "title": "KVKK Aydınlatma Metni | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/kvkk"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/gizlilik-politikasi",
+      "title": "Gizlilik Politikası | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/gizlilik-politikasi"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/ziyaretci-basvurusu",
+      "title": "Ziyaretçi Başvurusu | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/ziyaretci-basvurusu"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/rehber",
+      "title": "E4N Üyelik ve Çalışma Rehberi | Topluluk ve Katılım Esasları",
+      "canonical": [
+        "https://www.event4network.com/rehber"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "noindex, follow",
+      "overflow": false
+    },
+    {
+      "path": "/on-bilgilendirme-formu",
+      "title": "Ön Bilgilendirme Formu | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/on-bilgilendirme-formu"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/kullanim-kosullari",
+      "title": "Kullanım Koşulları | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/kullanim-kosullari"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/cerez-politikasi",
+      "title": "Çerez Politikası | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/cerez-politikasi"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/mesafeli-satis-sozlesmesi",
+      "title": "Mesafeli Satış Sözleşmesi | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/mesafeli-satis-sozlesmesi"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/iptal-ve-iade-kosullari",
+      "title": "İptal ve İade Koşulları | Event4Network",
+      "canonical": [
+        "https://www.event4network.com/iptal-ve-iade-kosullari"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "index, follow",
+      "overflow": false
+    },
+    {
+      "path": "/networking/istanbul",
+      "title": "İstanbul Networking | E4N Topluluk ve Etkinlik Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/networking/istanbul"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "noindex, follow",
+      "overflow": false
+    },
+    {
+      "path": "/networking/ankara",
+      "title": "Ankara Networking | E4N Topluluk ve Katılım Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/networking/ankara"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "noindex, follow",
+      "overflow": false
+    },
+    {
+      "path": "/networking/izmir",
+      "title": "İzmir Networking | E4N İş Ağı ve Topluluk Bilgileri",
+      "canonical": [
+        "https://www.event4network.com/networking/izmir"
+      ],
+      "descriptions": 1,
+      "h1": 1,
+      "robots": "noindex, follow",
+      "overflow": false
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/egitim?utm_source=seo",
+      "status": 301,
+      "location": "/uyelik?utm_source=seo"
+    },
+    {
+      "source": "/public-events",
+      "status": 301,
+      "location": "/etkinlikler"
+    },
+    {
+      "source": "/degerlendirme-basvurusu?refId=legacy-abc&utm_source=seo",
+      "status": 301,
+      "location": "/ziyaretci-basvurusu?refId=legacy-abc&utm_source=seo"
+    },
+    {
+      "source": "/degerlendirme-basvurusu?utm_source=seo",
+      "status": 301,
+      "location": "/auth/register?utm_source=seo"
+    },
+    {
+      "source": "/is-agi-rehberi/eski-baslik?utm_source=seo",
+      "status": 301,
+      "location": "/blog/eski-baslik?utm_source=seo"
+    },
+    {
+      "source": "/business-networking",
+      "status": 301,
+      "location": "/e4n-nedir"
+    }
+  ],
+  "missingStatus": 404,
+  "auth": {
+    "robots": "noindex, follow",
+    "canonicals": 0
+  },
+  "dashboardGuard": "login",
+  "mobile": [
+    {
+      "path": "/",
+      "overflow": false,
+      "h1": 1
+    },
+    {
+      "path": "/uyelik",
+      "overflow": false,
+      "h1": 1
+    },
+    {
+      "path": "/topluluklarimiz",
+      "overflow": false,
+      "h1": 1
+    },
+    {
+      "path": "/networking/istanbul",
+      "overflow": false,
+      "h1": 1
+    }
+  ],
+  "errors": [],
+  "eventReads": [
+    {
+      "path": "/api/events",
+      "status": 200
+    },
+    {
+      "path": "/api/events",
+      "status": 200
+    },
+    {
+      "path": "/api/events",
+      "status": 200
+    }
+  ],
+  "scope": "Real production custom domain, read-only anonymous browser; no API mocks, no form submission. Not GSC or field CWV verification."
+}

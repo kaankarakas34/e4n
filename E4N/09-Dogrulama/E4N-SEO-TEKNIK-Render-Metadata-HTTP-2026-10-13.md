@@ -1,7 +1,7 @@
 # E4N SEO — Statik render, metadata ve HTTP temeli
 
 Teslim: 13 Ekim 2026. Çalışma: 12–13 Ekim. E4N-291 / ARC-01 ve E4N-290 / TECH-01..04.
-Başlangıç: 30e49df / codex/e4n-sprint1-foundation. Uygulama yerelde doğrulandı; üretim dağıtımı yapılmadı.
+Başlangıç: 30e49df / codex/e4n-sprint1-foundation. Uygulama yerelde doğrulandı ve 13 Ekim 2026 üretime yayımlandı; aşağıdaki canlı kabul bölümü güncel durumdur.
 
 ## Çıktı
 
@@ -53,3 +53,23 @@ Tek paket: E4N/09-Dogrulama/E4N-SEO-TEKNIK-2026-10-13/; browser-result.json,spa-
 URL planı: [[E4N/07-Sprintler/E4N-SEO-Sorgu-URL-Mimarisi-2026-10-12]]:30 aday (10 kullanıcı önerisi+20 türetilen),18 küme ve ilk15 içerik adayının sahipliği. Tam GSC/SERP birleştirme ve yeni URL yayın kararı açık; Excel'de sağlanmayan satırlar gerçek veri diye sunulmadı.
 
 E4N-290/E4N-291 In Progress. Statik temel yerel kabulü teslim; üretim yayını ve aynı URL/301/404/özel alan kabulü, GSC/Rich Results/CrUX, dinamik gerçek kayıt testi ve kalan tag/performance işi açık. Yeni küçük düzeltme issue'su oluşturulmadı. Mobil alt depodaki mevcut değişiklikler pakete dahil değil.
+
+
+## Üretim yayını ve kabul — 13 Ekim 2026
+
+Kod `0ae32d3`; Vercel e4n / production / READY: `dpl_CgvtNatN3Rpt9AmfRsrnit9SZ5xX`. Test edilen üretim build’i skip-domain sonrası promote edildi; https://www.event4network.com üzerinde beklenen `index-Dgi8bxxD.js` doğrulandı. Mobil alt depo değişiklikleri vercelignore ile dışarıda, API/DB kodu ve cron değişmedi; DDL veya form/ödeme/mail mutasyonu çalıştırılmadı.
+
+Platform kontrolü cleanUrls ile `/api/index.js` hedefinin 404 verdiğini yakaladı; hedef `/api/index` olarak düzeltildi. [Vercel cleanUrls/rewrite sözleşmesi](https://vercel.com/docs/project-configuration/vercel-json) doğrulandı ve extension guard eklendi. İlk canlı browser turunda ana sayfanın yönetici etkinlik okuması 401 verdi; mevcut `getPublicEvents()` kullanıldı. Gerçek endpoint sahibi server/src/index.js salt SELECT okumasıdır; aynı adlı kullanılmayan eski router bu kabulün sahibi değildir.
+
+| Kontrol | Canlı sonuç |
+|---|---|
+| Ham HTML |26 sayfa200;tek canonical/H1;şehir/rehber noindex;22 sitemap URL |
+| Browser |26 renderda tek canonical/description/H1;6 adet301,refId/query/slug korunur;bilinmeyen404 |
+| Erişim |auth noindex/canonical0;dashboard→login;anon admin401 |
+| Mobil |4 sayfa390×844;taşma yok;H1tek |
+| Runtime/API |0 yakalanmamış pageerror;3 kamu `/api/events` okuması200;admin çağrısı yok;health200/ok/DBsuccess |
+| Yerel yayın kapısı |full build/type/API235;26 build sözleşmesi;hedefli LandingPage lint PASS |
+
+Kanıt aynı paketin `production/` altındadır:release.json,http/browser/stage/routing-stage sonuçları,buildlog,4 mobil görsel ve SHA256 manifesti. HTTP-only kontroller ile runtime/kamu veri akışı birlikte doğrulandı; prod browser’da API mock kullanılmadı. İlk turdaki401 düzeltildi, final browser eventReads yalnız200.
+
+Üretim yayını/platform kabulü artık teslim. E4N-290/291 In Progress kalır: gerçek dinamik Event/Article server metadata/404/sitemap ve schema/Rich Results, GSC, CrUX/INP, GA4 çift page_view ve kalan performans/niyet kabulü açık. Gerçek yayımlanmış kayıt uydurulmadı; Google indeksleme veya CWV PASS denmedi.

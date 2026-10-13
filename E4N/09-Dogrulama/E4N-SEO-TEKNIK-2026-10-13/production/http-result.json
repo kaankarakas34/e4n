@@ -1,0 +1,171 @@
+{
+  "checkedAt": "2026-10-13T08:58:58.052Z",
+  "base": "https://www.event4network.com",
+  "rows": [
+    {
+      "path": "/",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/e4n-nedir",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/nasil-calisir",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/kapali-gruplar",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/shuffle",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/katilim-ilkeleri",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/birebir-networking",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/uyelik",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/etkinlikler",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/topluluklarimiz",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/blog",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/hakkimizda",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/sikca-sorulan-sorular",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/iletisim",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/kvkk",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/gizlilik-politikasi",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/ziyaretci-basvurusu",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/rehber",
+      "status": 200,
+      "robots": "noindex, follow",
+      "server": "Vercel"
+    },
+    {
+      "path": "/on-bilgilendirme-formu",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/kullanim-kosullari",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/cerez-politikasi",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/mesafeli-satis-sozlesmesi",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/iptal-ve-iade-kosullari",
+      "status": 200,
+      "robots": null,
+      "server": "Vercel"
+    },
+    {
+      "path": "/networking/istanbul",
+      "status": 200,
+      "robots": "noindex, follow",
+      "server": "Vercel"
+    },
+    {
+      "path": "/networking/ankara",
+      "status": 200,
+      "robots": "noindex, follow",
+      "server": "Vercel"
+    },
+    {
+      "path": "/networking/izmir",
+      "status": 200,
+      "robots": "noindex, follow",
+      "server": "Vercel"
+    }
+  ],
+  "sitemapCount": 22,
+  "unknownStatus": 404,
+  "api": {
+    "health": "ok",
+    "dbAttempt": "success",
+    "anonymousAdminStatus": 401
+  },
+  "entry": "index-Dgi8bxxD.js",
+  "robotsSitemap": true
+}

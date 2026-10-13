@@ -1,0 +1,42 @@
+[
+  {
+    "file": "browser-result.json",
+    "sha256": "bbc70d80df8495dd6814924f247dd1037827f28e36e2fc3b5cf0a74f73efaab8"
+  },
+  {
+    "file": "build.log",
+    "sha256": "9a513dc62dab9b081c6f7e6e5c290d7874ad0a18e3d2ec496c44c5f00fcd2e6c"
+  },
+  {
+    "file": "http-result.json",
+    "sha256": "47f39049a7f90bd99e6bf711af61dd223f65183f9587e5df52f815b22c4522c1"
+  },
+  {
+    "file": "mobile-home.png",
+    "sha256": "7ed686240c6cbe32d78385fe2448d085143d7e16bb97d2746a3381e72d6d0d5e"
+  },
+  {
+    "file": "mobile-networkingistanbul.png",
+    "sha256": "fc74506447118251310e9c47ddd26b13abfaca480f73b70ec12873b9b1ed1aa2"
+  },
+  {
+    "file": "mobile-topluluklarimiz.png",
+    "sha256": "09962ad4b96c4d1ebf9ae997d3de9a0aed16ef5fa78cf0fcad23349a40ef350a"
+  },
+  {
+    "file": "mobile-uyelik.png",
+    "sha256": "6ca7cebeaa2b26532addd582f9ad550b8b0a2af44eb6dae669b5e6af69e16ef6"
+  },
+  {
+    "file": "release.json",
+    "sha256": "c176e28d868ffe04782ca5f99aa748c80076db1e5cfb53242fab215191bba3f6"
+  },
+  {
+    "file": "routing-stage-result.json",
+    "sha256": "34b8ff795fb45b13c796096c4df0541c9626d7c09d172bd521309bcec21ee8f2"
+  },
+  {
+    "file": "stage-result.json",
+    "sha256": "580531711efd49de4e203dbab94e34cf6e87585a5016641bac0fab3a0c8c1c1c"
+  }
+]

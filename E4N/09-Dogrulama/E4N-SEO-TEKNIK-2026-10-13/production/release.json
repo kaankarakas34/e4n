@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-13",
+  "team": "team_iAyBI2OlylEzbQfuyqgkJ81E",
+  "project": "prj_YssF8PUmjbp8Vijyk6d1o9VEHSdH",
+  "codeCommit": "0ae32d3",
+  "deployment": "dpl_CgvtNatN3Rpt9AmfRsrnit9SZ5xX",
+  "environment": "production",
+  "state": "READY",
+  "site": "https://www.event4network.com",
+  "entry": "index-Dgi8bxxD.js",
+  "flow": "production --skip-domain; stage validation; promote same build; custom-domain HTTP/browser verification",
+  "changes": [
+    "cleanUrls API rewrite destination /api/index",
+    "anonymous homepage getPublicEvents"
+  ],
+  "checks": {
+    "build": true,
+    "apiRoutes": 235,
+    "type": true,
+    "targetedLandingLint": true,
+    "staticRoutes": 26,
+    "redirects": 6,
+    "mobile": 4,
+    "pageErrors": 0,
+    "publicEventReadStatus": 200,
+    "adminAnonymous": 401
+  },
+  "notVerified": [
+    "GSC URL Inspection",
+    "Rich Results live samples",
+    "CrUX/INP",
+    "dynamic record server metadata/404",
+    "GA4 duplicate page_view follow-up"
+  ]
+}

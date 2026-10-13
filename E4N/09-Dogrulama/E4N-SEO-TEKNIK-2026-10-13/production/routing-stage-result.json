@@ -1,0 +1,166 @@
+{
+  "deployment": "dpl_3y4AUcBTt8AdDxY4agvanzfhx6jm",
+  "rows": [
+    {
+      "path": "/",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/e4n-nedir",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/nasil-calisir",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/kapali-gruplar",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/shuffle",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/katilim-ilkeleri",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/birebir-networking",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/uyelik",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/etkinlikler",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/topluluklarimiz",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/blog",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/hakkimizda",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/sikca-sorulan-sorular",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/iletisim",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/kvkk",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/gizlilik-politikasi",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/ziyaretci-basvurusu",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/rehber",
+      "status": 200,
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/on-bilgilendirme-formu",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/kullanim-kosullari",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/cerez-politikasi",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/mesafeli-satis-sozlesmesi",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/iptal-ve-iade-kosullari",
+      "status": 200,
+      "robots": "noindex"
+    },
+    {
+      "path": "/networking/istanbul",
+      "status": 200,
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/networking/ankara",
+      "status": 200,
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/networking/izmir",
+      "status": 200,
+      "robots": "noindex, follow"
+    }
+  ],
+  "checks": [
+    {
+      "path": "/unmapped-seo-release",
+      "status": 404,
+      "robots": "noindex"
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/egitim",
+      "status": 301,
+      "robots": "noindex",
+      "location": "/uyelik"
+    },
+    {
+      "path": "/degerlendirme-basvurusu?refId=release-check&utm_source=seo",
+      "status": 301,
+      "robots": "noindex",
+      "location": "/ziyaretci-basvurusu?refId=release-check&utm_source=seo"
+    },
+    {
+      "path": "/is-agi-rehberi/release-check",
+      "status": 301,
+      "robots": "noindex",
+      "location": "/blog/release-check"
+    }
+  ],
+  "scope": "Intermediate staged production version; same routing config as final version. Final API/homepage validation in stage-result.json."
+}

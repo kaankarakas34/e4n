@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
-import {createContentHandler} from '../server/src/public-content-seo.mjs';
+import {createContentHandler} from '../dist-content/public-content-seo.mjs';
 import {eventSchema,blogMetadata} from '../src/seo/contentMetadata.mjs';
 import {contentHtml} from '../src/seo/contentHtml.mjs';
 const publicId='00000000-0000-4000-8000-000000000001',privateId='00000000-0000-4000-8000-000000000002';
@@ -24,4 +24,6 @@ assert.equal((await request('/blog/test-yazisi','HEAD')).body,'');assert.equal((
 const failing=createContentHandler({query:async()=>{throw Object.assign(new Error('DB_SECRET'),{code:'ECONNREFUSED'});}});const failed=await request('/blog/test','GET',failing);assert.equal(failed.status,503);assert(!failed.body.includes('DB_SECRET'));assert.equal(failed.headers['retry-after'],'60');
 assert.equal(eventSchema({...base,status:'CANCELLED'}).eventStatus,'https://schema.org/EventCancelled');assert.equal(eventSchema({...base,status:'COMPLETED'}).eventStatus,undefined);assert.equal(eventSchema({...base,location:null}),undefined);assert.equal(eventSchema({...base,is_online:true,location:'Özel Zoom bağlantısı'}),undefined);assert.equal(eventSchema({...base,is_online:true,location:'https://example.com/public'}).location.url,'https://example.com/public');
 assert.equal(blogMetadata({...blog,canonical_url:'javascript:alert(1)'}).canonical,'https://www.event4network.com/blog/test-yazisi');assert(!contentHtml('<svg onload=alert(1)><a href="//evil.test">x</a></svg>').includes('onload'));
+assert.equal(blogMetadata({...blog,robots:'noindex, nofollow'}).robots,'noindex, nofollow');
+assert.equal(blogMetadata({...blog,robots:'none'}).noindex,true);
 const result={scope:'Isolated synthetic contract fixtures; no production records created or changed',results,sitemap:true,head:true,method405:true,outage503:true,parameterBinding:true,privateDraftExclusion:true,htmlSafety:true,eventLifecycle:true,missingVenueNoInventedSchema:true,readOnlySql:true};await writeFile('output/seo-content-contract.json',JSON.stringify(result,null,2));console.log('Dynamic SEO contract PASS: '+results.length+' public/archive/noindex/private/draft/missing cases; sitemap;HEAD/405/503;SQL binding;HTML safety;Event lifecycle.');

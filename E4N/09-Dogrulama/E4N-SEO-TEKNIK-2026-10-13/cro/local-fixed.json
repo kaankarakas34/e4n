@@ -1,0 +1,190 @@
+{
+  "url": "http://127.0.0.1:4178/etkinlikler",
+  "rows": [
+    {
+      "width": 320,
+      "scrollWidth": 320,
+      "buttons": [
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "İstanbul",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Ankara",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "İzmir",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Networking",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Eğitim",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Özel Oturum",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Yüz Yüze",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Online",
+          "height": 44,
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scrollWidth": 390,
+      "buttons": [
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "İstanbul",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Ankara",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "İzmir",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Networking",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Eğitim",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Özel Oturum",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Yüz Yüze",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Online",
+          "height": 44,
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "scrollWidth": 768,
+      "buttons": [
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "İstanbul",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Ankara",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "İzmir",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Networking",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Eğitim",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Özel Oturum",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Tümü",
+          "height": 44,
+          "selected": "true"
+        },
+        {
+          "text": "Yüz Yüze",
+          "height": 44,
+          "selected": "false"
+        },
+        {
+          "text": "Online",
+          "height": 44,
+          "selected": "false"
+        }
+      ]
+    }
+  ],
+  "selectionControls": true,
+  "scope": "Isolated local production build with read-only empty-event fixture"
+}

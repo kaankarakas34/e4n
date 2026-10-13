@@ -1,3 +1,12 @@
+## SEO — mobil kabul ve CRO devamı / 13 Ekim 2026
+
+- Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2; branch codex/e4n-sprint1-foundation. Kod 0cccd09; canlı READY dpl_AjbrFCMv62zpY1WyAcSKx9Lw2zJw. Aktif diğer işleri veya mobile m değişikliklerini kesme/kopyalama.
+- Makale, üyelik, etkinlikler, topluluklar, nasıl çalışır ve kayıt formu gerçek anonim Playwright ile 320/390/768px'te doğrulandı:18 ölçüm, taşma0/pageerror0. Önceki mobil390 kabul boşluğu kapandı. Etkinlik filtresindeki320px→362px taşma düzeltildi;11 düğme44px ve erişilebilir seçili durum.
+- Makale→üyelik/etkinlik; üyelik→açık kayıt; boş takvim→topluluklar PASS.10 ücretsiz WhatsApp daveti anonim görünür; katılım için hesap/abonelik şartı yok. Gerçek kayıt submit/ödeme/ziyaret/WhatsApp katılımı yapılmadı. Public PUBLISHED etkinlik0; gerçek gelecek etkinlik katılım kabulü açık.
+- Onaylı ilk makale published; /blog/networking-etkinligine-hazirlik. Güncel sitemap23; kullanıcı kararıyla tam7 eski etkinlik noindex/sitemap dışı ve HTTP200 korunur. Mekân/program isteme veya uydurma. GSC istek kabulü önceki tur; gerçek indekslenme/Rich Results/CWV henüz PASS değil.
+- E4N-292 In Progress. Sıradaki bağlı paket CMS-01 küme/pillar/ilgili içerik ve izinli kapak/upload kalite süreci; sonra gerçek gelecek etkinlik verisiyle katılım kabulü. BRAND-01 tüm ürün karar uzlaşması ayrı açık; mevcut küçük düzeltme için yeni issue üretme veya epic'i Done yapma.
+- Build/type242 rota, hedefli lint0/0, statik26 sözleşme; yerel+stage+gerçek canlı mobil akış PASS. Tek kanıt E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13.md ve cro/ JSON-görsel-log-SHA256. DDL/RLS/grant/ödeme/mail/özel kayda yazma yok.
+
 ## SEO — onaylı ilk yayın ve eski arşiv kararı / 13 Ekim 2026
 
 - Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2; branchcodex/e4n-sprint1-foundation. CMSce4da36, arşiv02b1356; canlıdpl_FS2LwCc7jxzfvoLJ66V4SfGaoyA1. Başka aktif işler/mobile m korunur.

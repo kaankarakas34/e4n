@@ -1,0 +1,32 @@
+{
+  "deployment": "dpl_AjbrFCMv62zpY1WyAcSKx9Lw2zJw",
+  "rows": [
+    {
+      "path": "/etkinlikler",
+      "status": 200
+    },
+    {
+      "path": "/api/health-check",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs",
+      "status": 401
+    },
+    {
+      "path": "/api/events",
+      "status": 200
+    },
+    {
+      "path": "/blog/networking-etkinligine-hazirlik",
+      "status": 200
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200
+    }
+  ],
+  "sitemapCount": 23,
+  "newFilters": true,
+  "scope": "Authenticated CLI stage reads only; no stored authentication headers"
+}

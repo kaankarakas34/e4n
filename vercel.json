@@ -901,6 +901,15 @@
       ]
     },
     {
+      "source": "/sitemap-static.xml",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {

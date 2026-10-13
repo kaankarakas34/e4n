@@ -27,7 +27,7 @@ if (process.argv.includes('--write')) {
   const generatedSources = new Set([
     ...rewrites.filter(row => row.destination === '/_app').map(row => row.source),
     ...catalog.filter(row => !row.index).map(row => row.path),
-    '/_app', '/_content', '/seo-manifest.json', '/assets/(.*)',
+    '/_app', '/_content', '/seo-manifest.json', '/sitemap-static.xml', '/assets/(.*)',
   ]);
   config.headers = config.headers.filter(row => !generatedSources.has(row.source));
   config.headers.push(...[...generatedSources].filter(source => source !== '/assets/(.*)').map(source => ({

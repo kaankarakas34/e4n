@@ -2,7 +2,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, unlink } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import catalog from './routeCatalog.json';
 import { RouteMetadata } from './RouteMetadata';
@@ -61,6 +61,7 @@ const shell = (index: boolean) => template.replace('</head>', '<title data-rh="t
 await writeFile(resolve('dist/_app.html'), shell(false));
 await writeFile(resolve('dist/_content.html'), shell(true));
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + catalog.filter(row => row.index).map(row => '  <url><loc>https://www.event4network.com' + row.path + '</loc><lastmod>' + row.lastmod + '</lastmod></url>').join('\n') + '\n</urlset>\n';
-await writeFile(resolve('dist/sitemap.xml'), sitemap);
+await writeFile(resolve('dist/sitemap-static.xml'), sitemap);
+await unlink(resolve('dist/sitemap.xml'));
 await writeFile(resolve('dist/seo-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log('SEO prerender: ' + catalog.length + ' static pages, ' + catalog.filter(row => row.index).length + ' sitemap URLs, real 404 artifact and isolated app/content shells; no API/DB requests.');

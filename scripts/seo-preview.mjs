@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { createContentHandler } from '../server/src/public-content-seo.mjs';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, sep, extname } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -6,6 +7,7 @@ import { redirects, rewrites } from './seo-routing.mjs';
 const dist = resolve('dist');
 const port = Number(process.env.PORT || 4178);
 const config = JSON.parse(await readFile('vercel.json', 'utf8'));
+const contentHandler=createContentHandler({query:async()=>({rows:[]})});
 const mime = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.xml':'application/xml', '.txt':'text/plain; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png', '.webp':'image/webp', '.ico':'image/x-icon' };
 export function matchRoute(source, path) {
   const names = [];
@@ -44,6 +46,7 @@ createServer(async (req, res) => {
       res.writeHead(url.pathname === '/api/events' ? 200 : 401, { 'Content-Type':'application/json' }); res.end(JSON.stringify(data)); return;
     }
     const clean = decodeURIComponent(url.pathname).replace(/\/$/, '') || '/';
+    if(clean==='/sitemap.xml' || /^\/(blog|event)\/[^/]+$/.test(clean)) { await contentHandler(req,res);return; }
     for (const file of [clean === '/' ? '/index.html' : clean, clean + '.html']) {
       try { if ((await stat(resolve(dist, '.' + file))).isFile()) { await sendFile(res, file, 200, undefined, acceptsGzip); return; } } catch { /* explicit rewrites below */ }
     }

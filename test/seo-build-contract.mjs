@@ -6,7 +6,8 @@ assert.deepEqual(config.redirects, redirects, 'Vercel redirects differ from rout
 assert.deepEqual(config.rewrites, rewrites, 'Vercel rewrites differ from route catalog');
 assert(!config.cleanUrls || rewrites.every(row=>!row.destination.endsWith('.js') && !row.destination.endsWith('.html')), 'cleanUrls rewrite destinations must omit extensions');
 assert(!rewrites.some(row => row.source === '/(.*)'), 'Unknown paths must not become 200 SPA fallback');
-assert.equal(await readFile('dist/sitemap.xml','utf8'), sitemap);
+assert.equal(await readFile('dist/sitemap-static.xml','utf8'), sitemap);
+await assert.rejects(readFile('dist/sitemap.xml','utf8'), {code:'ENOENT'}, 'Static sitemap must not shadow the live content function');
 assert.equal(await readFile('public/sitemap.xml','utf8'), sitemap);
 assert(!sitemap.includes('/egitim<') && !sitemap.includes('/degerlendirme-basvurusu<') && !sitemap.includes('/networking/'), 'Redirect/noindex pages in sitemap');
 const errors=[];

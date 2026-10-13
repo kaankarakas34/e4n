@@ -43,7 +43,7 @@ export function LandingPage() {
   }, []);
 
   useEffect(() => {
-    api.getEvents()
+    api.getPublicEvents()
       .then((data: unknown) => {
         if (Array.isArray(data)) {
           const publicEvents = data

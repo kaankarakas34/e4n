@@ -13,8 +13,6 @@ import {
   Sparkles,
   Lock,
   History,
-  Filter,
-  CheckCircle2,
   Video
 } from 'lucide-react';
 
@@ -47,7 +45,7 @@ export function PublicEventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        let data: any = [];
+        let data: EventItem[] = [];
         try {
           data = await api.getPublicEvents();
         } catch {
@@ -55,8 +53,8 @@ export function PublicEventsPage() {
         }
 
         if (Array.isArray(data)) {
-          const publicEvents = data.filter((e: any) => e.is_public && e.status === 'PUBLISHED');
-          publicEvents.sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+          const publicEvents = data.filter(e => e.is_public && e.status === 'PUBLISHED');
+          publicEvents.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
           setEvents(publicEvents);
         }
       } catch {
@@ -155,13 +153,14 @@ export function PublicEventsPage() {
             {/* Filtre Kontrolleri */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Şehir Filtresi */}
-              <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+              <div role="group" aria-label="Şehir filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
                 <span className="text-xs font-semibold text-slate-500 px-2">Şehir:</span>
                 {cities.map((city) => (
                   <button
                     key={city}
+                    aria-pressed={selectedCity === city}
                     onClick={() => setSelectedCity(city)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                       selectedCity === city
                         ? 'bg-red-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -173,13 +172,14 @@ export function PublicEventsPage() {
               </div>
 
               {/* Tür Filtresi */}
-              <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+              <div role="group" aria-label="Etkinlik türü filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
                 <span className="text-xs font-semibold text-slate-500 px-2">Tür:</span>
                 {eventTypes.map((type) => (
                   <button
                     key={type}
+                    aria-pressed={selectedType === type}
                     onClick={() => setSelectedType(type)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                       selectedType === type
                         ? 'bg-red-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -191,13 +191,14 @@ export function PublicEventsPage() {
               </div>
 
               {/* Format Filtresi */}
-              <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+              <div role="group" aria-label="Etkinlik formatı filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
                 <span className="text-xs font-semibold text-slate-500 px-2">Format:</span>
                 {modes.map((mode) => (
                   <button
                     key={mode}
+                    aria-pressed={selectedMode === mode}
                     onClick={() => setSelectedMode(mode)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                       selectedMode === mode
                         ? 'bg-red-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'

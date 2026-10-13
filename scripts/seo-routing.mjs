@@ -10,7 +10,7 @@ redirects.push(
 export const clientPaths = [...new Set([...appSource.matchAll(/<Route\s+path="([^"]+)"/g)].map(m => m[1]))]
   .filter(path => path !== '*' && !catalog.some(row => row.path === path) && path !== '/networking/:city' && !redirects.some(row => row.source === path));
 export const rewrites = [
-  { source: '/api/(.*)', destination: '/api/index.js' },
+  { source: '/api/(.*)', destination: '/api/index' },
   ...clientPaths.map(source => ({ source, destination: source.startsWith('/event/') || source.startsWith('/blog/') ? '/_content' : '/_app' })),
 ];
 export const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + catalog.filter(row => row.index).map(row => '  <url><loc>https://www.event4network.com' + row.path + '</loc><lastmod>' + row.lastmod + '</lastmod></url>').join('\n') + '\n</urlset>\n';

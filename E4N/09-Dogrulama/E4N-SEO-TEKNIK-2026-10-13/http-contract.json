@@ -1,0 +1,164 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/e4n-nedir",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/nasil-calisir",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/kapali-gruplar",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/shuffle",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/katilim-ilkeleri",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/birebir-networking",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/uyelik",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/etkinlikler",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/topluluklarimiz",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/blog",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/hakkimizda",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/sikca-sorulan-sorular",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/iletisim",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/kvkk",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/gizlilik-politikasi",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/ziyaretci-basvurusu",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/rehber",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/on-bilgilendirme-formu",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/kullanim-kosullari",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/cerez-politikasi",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/mesafeli-satis-sozlesmesi",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/iptal-ve-iade-kosullari",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": null
+    },
+    {
+      "path": "/networking/istanbul",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/networking/ankara",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": "noindex, follow"
+    },
+    {
+      "path": "/networking/izmir",
+      "status": 200,
+      "encoding": "gzip",
+      "robots": "noindex, follow"
+    }
+  ],
+  "unknownStatus": 404,
+  "privateNoindex": true,
+  "jsonLdInjectionGuard": true,
+  "scope": "Local static host with generated Vercel config headers and gzip; not a remote deployment test"
+}

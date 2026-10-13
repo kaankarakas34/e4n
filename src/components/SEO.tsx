@@ -1,3 +1,4 @@
+import { jsonLd } from '../seo/metadata';
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
@@ -51,7 +52,7 @@ export function SEO({
       {/* Structured Data / JSON-LD */}
       {schema && (
         <script type="application/ld+json">
-          {JSON.stringify(schema)}
+          {jsonLd(schema)}
         </script>
       )}
     </Helmet>

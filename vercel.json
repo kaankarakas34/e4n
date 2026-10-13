@@ -1,66 +1,1143 @@
 {
-    "crons": [
+  "crons": [
+    {
+      "path": "/api/cron/web-jobs/event-completion",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/web-jobs/subscription-reminders",
+      "schedule": "0 6 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/auth/login",
+      "destination": "/_app"
+    },
+    {
+      "source": "/auth/register",
+      "destination": "/_app"
+    },
+    {
+      "source": "/auth/register-community",
+      "destination": "/_app"
+    },
+    {
+      "source": "/auth/forgot-password",
+      "destination": "/_app"
+    },
+    {
+      "source": "/create-password",
+      "destination": "/_app"
+    },
+    {
+      "source": "/auth/pending",
+      "destination": "/_app"
+    },
+    {
+      "source": "/membership/activate",
+      "destination": "/_app"
+    },
+    {
+      "source": "/sozlesmeler",
+      "destination": "/_app"
+    },
+    {
+      "source": "/checkout/review",
+      "destination": "/_app"
+    },
+    {
+      "source": "/event/:id",
+      "destination": "/_content"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/_content"
+    },
+    {
+      "source": "/ziyaretci",
+      "destination": "/_app"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/_app"
+    },
+    {
+      "source": "/group-management",
+      "destination": "/_app"
+    },
+    {
+      "source": "/chapter-management",
+      "destination": "/_app"
+    },
+    {
+      "source": "/referrals",
+      "destination": "/_app"
+    },
+    {
+      "source": "/meetings",
+      "destination": "/_app"
+    },
+    {
+      "source": "/activities",
+      "destination": "/_app"
+    },
+    {
+      "source": "/messages",
+      "destination": "/_app"
+    },
+    {
+      "source": "/revenue-entry",
+      "destination": "/_app"
+    },
+    {
+      "source": "/reports",
+      "destination": "/_app"
+    },
+    {
+      "source": "/education",
+      "destination": "/_app"
+    },
+    {
+      "source": "/profile/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/lms",
+      "destination": "/_app"
+    },
+    {
+      "source": "/lms/course/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/is-dna",
+      "destination": "/_app"
+    },
+    {
+      "source": "/is-profili",
+      "destination": "/_app"
+    },
+    {
+      "source": "/profile",
+      "destination": "/_app"
+    },
+    {
+      "source": "/membership",
+      "destination": "/_app"
+    },
+    {
+      "source": "/membership-history",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/membership-history/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/membership-records",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/membership-records",
+      "destination": "/_app"
+    },
+    {
+      "source": "/events",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/events",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/visitors",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/crm",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/blogs",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/blogs/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/members",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/members/new",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/members/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/subscriptions",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/accounting",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/shuffle",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/shuffle-history",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/web-jobs",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/groups",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/groups/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/groups/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/exams",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/lms",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/lms/course/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/reports",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/email-settings",
+      "destination": "/_app"
+    },
+    {
+      "source": "/meeting-timer",
+      "destination": "/_app"
+    },
+    {
+      "source": "/documents",
+      "destination": "/_app"
+    },
+    {
+      "source": "/support",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/support",
+      "destination": "/_app"
+    },
+    {
+      "source": "/admin/professions",
+      "destination": "/_app"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
         {
-            "path": "/api/cron/web-jobs/event-completion",
-            "schedule": "0 5 * * *"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         },
         {
-            "path": "/api/cron/web-jobs/subscription-reminders",
-            "schedule": "0 6 * * *"
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/index.js"
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
         },
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
         }
-    ],
-    "headers": [
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
         {
-            "source": "/api/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-                },
-                {
-                    "key": "Access-Control-Allow-Headers",
-                    "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
-                }
-            ]
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
         },
         {
-            "source": "/(.*)",
-            "headers": [
-                {
-                    "key": "Referrer-Policy",
-                    "value": "strict-origin-when-cross-origin"
-                },
-                {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                },
-                {
-                    "key": "X-Frame-Options",
-                    "value": "SAMEORIGIN"
-                },
-                {
-                    "key": "X-XSS-Protection",
-                    "value": "1; mode=block"
-                },
-                {
-                    "key": "Content-Security-Policy",
-                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http: https://www.facebook.com; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://stats.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://*.run.app https://*.on.aws; frame-src 'self' https://chat.whatsapp.com https://www.youtube.com https://*.facebook.com https://*.doubleclick.net;"
-                }
-            ]
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http: https://www.facebook.com; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://stats.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://*.run.app https://*.on.aws; frame-src 'self' https://chat.whatsapp.com https://www.youtube.com https://*.facebook.com https://*.doubleclick.net;"
         }
-    ]
+      ]
+    },
+    {
+      "source": "/auth/login",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/auth/register",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/auth/register-community",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/auth/forgot-password",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/create-password",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/auth/pending",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/membership/activate",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/sozlesmeler",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/checkout/review",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/ziyaretci",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/dashboard",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/group-management",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/chapter-management",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/referrals",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/meetings",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/activities",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/messages",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/revenue-entry",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/reports",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/education",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/profile/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/lms",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/lms/course/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/is-dna",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/is-profili",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/profile",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/membership",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/membership-history",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/membership-history/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/membership-records",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/membership-records",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/events",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/events",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/visitors",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/crm",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/blogs",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/blogs/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/members",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/members/new",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/members/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/subscriptions",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/accounting",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/shuffle",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/shuffle-history",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/web-jobs",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/groups",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/groups/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/groups/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/exams",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/lms",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/lms/course/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/reports",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/email-settings",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/meeting-timer",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/documents",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/support",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/support",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/professions",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/rehber",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/networking/istanbul",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/networking/ankara",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/networking/izmir",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/_app",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/_content",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/seo-manifest.json",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/login",
+      "destination": "/auth/login",
+      "statusCode": 301
+    },
+    {
+      "source": "/register",
+      "destination": "/auth/register",
+      "statusCode": 301
+    },
+    {
+      "source": "/signin",
+      "destination": "/auth/login",
+      "statusCode": 301
+    },
+    {
+      "source": "/signup",
+      "destination": "/auth/register",
+      "statusCode": 301
+    },
+    {
+      "source": "/auth/sign-in",
+      "destination": "/auth/login",
+      "statusCode": 301
+    },
+    {
+      "source": "/auth/sign-up",
+      "destination": "/auth/register",
+      "statusCode": 301
+    },
+    {
+      "source": "/ziyaretci-ol",
+      "destination": "/ziyaretci-basvurusu",
+      "statusCode": 301
+    },
+    {
+      "source": "/basvuru",
+      "destination": "/ziyaretci-basvurusu",
+      "statusCode": 301
+    },
+    {
+      "source": "/degerlendirme",
+      "destination": "/ziyaretci-basvurusu",
+      "statusCode": 301
+    },
+    {
+      "source": "/public-events",
+      "destination": "/etkinlikler",
+      "statusCode": 301
+    },
+    {
+      "source": "/etkinlik",
+      "destination": "/etkinlikler",
+      "statusCode": 301
+    },
+    {
+      "source": "/networking-etkinlikleri",
+      "destination": "/etkinlikler",
+      "statusCode": 301
+    },
+    {
+      "source": "/networking-etkinlikleri/istanbul",
+      "destination": "/networking/istanbul",
+      "statusCode": 301
+    },
+    {
+      "source": "/networking-etkinlikleri/ankara",
+      "destination": "/networking/ankara",
+      "statusCode": 301
+    },
+    {
+      "source": "/networking-etkinlikleri/izmir",
+      "destination": "/networking/izmir",
+      "statusCode": 301
+    },
+    {
+      "source": "/networking",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/topluluklar",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/loncalar",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/loncalar/girisimcilik",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/gruplar",
+      "destination": "/kapali-gruplar",
+      "statusCode": 301
+    },
+    {
+      "source": "/business-networking",
+      "destination": "/e4n-nedir",
+      "statusCode": 301
+    },
+    {
+      "source": "/is-insanlari-kulubu",
+      "destination": "/e4n-nedir",
+      "statusCode": 301
+    },
+    {
+      "source": "/b2b-is-gelistirme",
+      "destination": "/kapali-gruplar",
+      "statusCode": 301
+    },
+    {
+      "source": "/nitelikli-is-yonlendirmesi",
+      "destination": "/birebir-networking",
+      "statusCode": 301
+    },
+    {
+      "source": "/e4n-nasil-calisir",
+      "destination": "/nasil-calisir",
+      "statusCode": 301
+    },
+    {
+      "source": "/is-agi-rehberi",
+      "destination": "/blog",
+      "statusCode": 301
+    },
+    {
+      "source": "/sss",
+      "destination": "/sikca-sorulan-sorular",
+      "statusCode": 301
+    },
+    {
+      "source": "/faq",
+      "destination": "/sikca-sorulan-sorular",
+      "statusCode": 301
+    },
+    {
+      "source": "/biz-kimiz",
+      "destination": "/hakkimizda",
+      "statusCode": 301
+    },
+    {
+      "source": "/about",
+      "destination": "/hakkimizda",
+      "statusCode": 301
+    },
+    {
+      "source": "/contact",
+      "destination": "/iletisim",
+      "statusCode": 301
+    },
+    {
+      "source": "/kurallar",
+      "destination": "/rehber",
+      "statusCode": 301
+    },
+    {
+      "source": "/katilim",
+      "destination": "/katilim-ilkeleri",
+      "statusCode": 301
+    },
+    {
+      "source": "/payment",
+      "destination": "/ziyaretci",
+      "statusCode": 301
+    },
+    {
+      "source": "/sozlesme",
+      "destination": "/sozlesmeler",
+      "statusCode": 301
+    },
+    {
+      "source": "/aktivasyon",
+      "destination": "/membership/activate",
+      "statusCode": 301
+    },
+    {
+      "source": "/calisma-rehberi",
+      "destination": "/rehber",
+      "statusCode": 301
+    },
+    {
+      "source": "/egitim",
+      "destination": "/uyelik",
+      "statusCode": 301
+    },
+    {
+      "source": "/egitim-basvuru",
+      "destination": "/uyelik",
+      "statusCode": 301
+    },
+    {
+      "source": "/power-teams",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/power-teams/:id",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/admin/power-teams/:id",
+      "destination": "/topluluklarimiz",
+      "statusCode": 301
+    },
+    {
+      "source": "/is-agi-rehberi/:slug",
+      "destination": "/blog/:slug",
+      "statusCode": 301
+    },
+    {
+      "source": "/degerlendirme-basvurusu",
+      "destination": "/ziyaretci-basvurusu",
+      "has": [
+        {
+          "type": "query",
+          "key": "refId"
+        }
+      ],
+      "statusCode": 301
+    },
+    {
+      "source": "/degerlendirme-basvurusu",
+      "destination": "/auth/register",
+      "statusCode": 301
+    }
+  ]
 }

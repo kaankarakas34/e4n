@@ -1,0 +1,210 @@
+[
+  {
+    "path": "/",
+    "component": "LandingPage",
+    "title": "Event4Network | 35 Kişilik Gruplarla İş Ağınızı Geliştirin",
+    "description": "E4N'nin açık loncalarını, 35 kişilik kapalı gruplarını ve dört ayda bir yenilenen networking modelini keşfedin. Üyelik ve grup başvurusunu öğrenin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/e4n-nedir",
+    "component": "E4NNedir",
+    "title": "E4N Nedir? | İş İnsanları İçin Networking Ekosistemi",
+    "description": "Event4Network'ün açık loncalar, etkinlikler ve 35 kişilik kapalı gruplardan oluşan iş ağı modelini ve karşılıklı katkı yaklaşımını tanıyın.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/nasil-calisir",
+    "component": "NasilCalisir",
+    "title": "E4N Nasıl Çalışır? | Üyelik, Grup Kabulü ve Shuffle",
+    "description": "Hesap açma, E4N aboneliği, başkan görüşmesi ve kapalı grup kabulünü öğrenin. Dört aylık shuffle ve düzenli katılım modelini inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/kapali-gruplar",
+    "component": "KapaliGruplar",
+    "title": "E4N Kapalı Gruplar | 35 Kişilik Seçici İş Ağı",
+    "description": "35 kişilik E4N gruplarında hizmet dengesi, başkan görüşmesi ve düzenli networking yaklaşımını öğrenin. Grup kabul koşullarını inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/shuffle",
+    "component": "ShufflePage",
+    "title": "E4N Shuffle | Dört Ayda Bir Yenilenen Networking Grupları",
+    "description": "E4N shuffle sistemiyle grup dağılımının dört ayda bir nasıl yenilendiğini ve hizmet uyumu ile kapasitenin neden korunduğunu öğrenin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/katilim-ilkeleri",
+    "component": "KatilimIlkeleri",
+    "title": "E4N Katılım İlkeleri | Aylık Değerlendirme ve Grup Hakları",
+    "description": "E4N kapalı gruplarında aktif katılım, aylık puan değerlendirmesi, gruptan çıkarılma ve üyelik haklarının devamına ilişkin modeli inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/birebir-networking",
+    "component": "BirebirNetworking",
+    "title": "E4N Birebir Networking | İşinizi Daha İyi Anlatın",
+    "description": "Birebir networking görüşmelerinde iş modelinizi, hedef müşterilerinizi ve olası iş birliklerini konuşun. E4N'nin görüşme yaklaşımını öğrenin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/uyelik",
+    "component": "Uyelik",
+    "title": "E4N Üyelik | Abonelik ve Kapalı Grup Başvurusu",
+    "description": "E4N hesabı, yıllık üyelik yaklaşımı ve kapalı grup kabulünü inceleyin. Aktif abonelik, hizmet uyumu ve başkan görüşmesi adımlarını öğrenin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/etkinlikler",
+    "component": "PublicEventsPage",
+    "title": "E4N Etkinlikleri | Networking Buluşmaları ve Eğitimler",
+    "description": "E4N'nin yaklaşan açık networking etkinliklerini, eğitimlerini ve özel buluşmalarını inceleyin. Şehir, tarih ve katılım koşullarını görün.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/topluluklarimiz",
+    "component": "Topluluklarimiz",
+    "title": "E4N Toplulukları ve Loncaları | Açık İş Ağı Kanalları",
+    "description": "E4N'nin ücretsiz açık loncalarına katılın. Sektörel paylaşımları, etkinlik duyurularını ve iş dünyası topluluklarını keşfedin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/blog",
+    "component": "BlogListPage",
+    "title": "Rehber | Event4Network",
+    "description": "Event4Network Rehber. Seçici networking, referans kültürü, B2B iş geliştirme ve profesyonel temsil hakkında rehber içerikler.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/hakkimizda",
+    "component": "Hakkimizda",
+    "title": "E4N Hakkımızda | Event4Network'ün Kuruluş Amacı",
+    "description": "Event4Network'ün kuruluş amacını, güven ve karşılıklı katkı yaklaşımını ve kurucuları Kaan Karakaş ile Ada Topçu'yu tanıyın.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/sikca-sorulan-sorular",
+    "component": "SSS",
+    "title": "E4N Sıkça Sorulan Sorular | Üyelik ve Grup Katılımı",
+    "description": "E4N hesabı, abonelik, 35 kişilik gruplar, shuffle, loncalar ve katılım koşulları hakkındaki soruların yanıtlarını bulun.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/iletisim",
+    "component": "ContactPage",
+    "title": "E4N İletişim | Üyelik, Etkinlik ve İş Birliği",
+    "description": "E4N üyeliği, kapalı grup katılımı, etkinlikler ve kurumsal iş birliği hakkında ekibe ulaşın. Talebinizi ilgili konu başlığıyla iletin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/kvkk",
+    "component": "KVKK",
+    "title": "KVKK Aydınlatma Metni | Event4Network",
+    "description": "Event4Network Kişisel Verilerin Korunması Kanunu (KVKK) aydınlatma ve açık rıza metinleri.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/gizlilik-politikasi",
+    "component": "PrivacyPolicy",
+    "title": "Gizlilik Politikası | Event4Network",
+    "description": "Event4Network Gizlilik ve KVKK Politikası. Verilerinizin nasıl işlendiği ve saklandığına dair tüm detaylar.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/ziyaretci-basvurusu",
+    "component": "DegerlendirmeBasvurusu",
+    "title": "Ziyaretçi Başvurusu | Event4Network",
+    "description": "Event4Network’e katılım ön değerlendirme süreciyle ilerler. İş profilinizi, profesyonel deneyiminizi ve topluluğa katabileceğiniz değeri paylaşarak başvurunuzu iletin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/rehber",
+    "component": "MemberHandbook",
+    "title": "E4N Üye Çalışma Rehberi | Event4Network",
+    "description": "Event4Network grup çalışması, üyelik hakları, toplantı katılımı ve iş yönlendirme kurallarını inceleyin.",
+    "index": false,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/on-bilgilendirme-formu",
+    "component": "PreInformationForm",
+    "title": "Ön Bilgilendirme Formu | Event4Network",
+    "description": "Event4Network üyelik ve hizmetlerine ilişkin satıcı bilgileri, hizmet koşulları ve ön bilgilendirme metni.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/kullanim-kosullari",
+    "component": "TermsOfUse",
+    "title": "Kullanım Koşulları | Event4Network",
+    "description": "Event4Network platformunun kullanım, üyelik ve iş ağı iletişim koşullarını inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/cerez-politikasi",
+    "component": "CookiePolicy",
+    "title": "Çerez Politikası | Event4Network",
+    "description": "Event4Network sitesinde kullanılan çerezler, kullanım amaçları ve çerez tercihleri hakkında bilgi.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/mesafeli-satis-sozlesmesi",
+    "component": "DistanceSellingContract",
+    "title": "Mesafeli Satış Sözleşmesi | Event4Network",
+    "description": "Event4Network üyelik ve hizmet satışına ilişkin taraflar, hizmet koşulları ve mesafeli satış sözleşmesi.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/iptal-ve-iade-kosullari",
+    "component": "CancellationRefundPolicy",
+    "title": "İptal ve İade Koşulları | Event4Network",
+    "description": "Event4Network üyelik, hizmet ve grup katılımında geçerli iptal ve iade koşullarını inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/networking/istanbul",
+    "component": "CityNetworkingPage",
+    "title": "İstanbul Networking | E4N Topluluk ve Etkinlik Bilgileri",
+    "description": "Istanbul için E4N topluluk, networking ve gerçek yerel duyuru bilgilerini inceleyin.",
+    "index": false,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/networking/ankara",
+    "component": "CityNetworkingPage",
+    "title": "Ankara Networking | E4N Topluluk ve Katılım Bilgileri",
+    "description": "Ankara için E4N topluluk, networking ve gerçek yerel duyuru bilgilerini inceleyin.",
+    "index": false,
+    "lastmod": "2026-10-12"
+  },
+  {
+    "path": "/networking/izmir",
+    "component": "CityNetworkingPage",
+    "title": "İzmir Networking | E4N İş Ağı ve Topluluk Bilgileri",
+    "description": "Izmir için E4N topluluk, networking ve gerçek yerel duyuru bilgilerini inceleyin.",
+    "index": false,
+    "lastmod": "2026-10-12"
+  }
+]

@@ -1,3 +1,4 @@
+import { jsonLd } from '../seo/metadata';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { supabase } from '../api/supabase';
@@ -71,7 +72,7 @@ export function BlogPostPage() {
     "description": blog.meta_description || blog.excerpt,
     "image": blog.featured_image ? [blog.featured_image] : [],
     "author": {
-      "@type": "Person",
+      "@type": blog.author?.name ? "Person" : "Organization",
       "name": blog.author?.name || "Event4Network"
     },
     "publisher": {
@@ -79,7 +80,7 @@ export function BlogPostPage() {
       "name": "Event4Network",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://www.event4network.com/logo.png"
+        "url": "https://www.event4network.com/e4n-logo.png"
       }
     },
     "datePublished": blog.published_at || blog.created_at,
@@ -126,7 +127,7 @@ export function BlogPostPage() {
 
         {/* Schema JSON-LD */}
         <script type="application/ld+json">
-          {JSON.stringify(schemaOrgJSONLD)}
+          {jsonLd(schemaOrgJSONLD)}
         </script>
       </Helmet>
 

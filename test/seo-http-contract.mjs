@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import ts from 'typescript';
+import { catalog } from '../scripts/seo-routing.mjs';
+const base = 'http://127.0.0.1:4178';
+const rows=[];
+for (const row of catalog) {
+ const response=await fetch(base+row.path,{headers:{'Accept-Encoding':'gzip'}});
+ const html=await response.text();
+ assert.equal(response.status,200,row.path);
+ assert.equal(response.headers.get('content-encoding'),'gzip',row.path);
+ assert(response.headers.get('content-security-policy')?.includes("default-src 'self'"),'CSP not applied');
+ assert.equal((html.match(/rel="canonical"/g)||[]).length,1,row.path);
+ if(!row.index)assert(response.headers.get('x-robots-tag')?.includes('noindex'),row.path);
+ rows.push({path:row.path,status:response.status,encoding:response.headers.get('content-encoding'),robots:response.headers.get('x-robots-tag')});
+}
+const missing=await fetch(base+'/unmapped-seo-contract');
+assert.equal(missing.status,404);
+assert(missing.headers.get('x-robots-tag')?.includes('noindex'));
+const login=await fetch(base+'/auth/login');
+assert.equal(login.status,200);
+assert(login.headers.get('x-robots-tag')?.includes('noindex'));
+const source=await readFile('src/seo/metadata.ts','utf8');
+const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2020}}).outputText;
+const {jsonLd}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
+const payload={headline:'</script><img src=x onerror=alert(1)>',name:'İş ağı'};
+const encoded=jsonLd(payload);
+assert(!encoded.includes('</script>'));
+assert.deepEqual(JSON.parse(encoded),payload);
+const result={routes:rows,unknownStatus:missing.status,privateNoindex:true,jsonLdInjectionGuard:true,scope:'Local static host with generated Vercel config headers and gzip; not a remote deployment test'};
+await writeFile('output/seo-http-result.json',JSON.stringify(result,null,2));
+console.log('SEO HTTP contract PASS: '+rows.length+' gzip/CSP static pages; private/noindex; unmapped404; JSON-LD script injection guard.');

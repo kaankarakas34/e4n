@@ -1,0 +1,5 @@
+
+> e4n2@0.0.0 seo:check
+> node test/seo-build-contract.mjs
+
+SEO build contract PASS: 26 static pages; single canonical/description/H1; raw content/link/schema; redirects/noindex/sitemap/private/dynamic/404; inspector excluded.

@@ -1,0 +1,325 @@
+{
+  "date": "2026-10-13",
+  "scope": "Local generated static pages, Vercel header/routing model, gzip, anonymous fixtures; no remote deployment/GSC/CrUX verification",
+  "browser": {
+    "routes": 26,
+    "redirectCases": 6,
+    "missingStatus": 404,
+    "mobile": 4,
+    "errors": [],
+    "auth": {
+      "robots": "noindex, follow",
+      "canonicals": 0
+    },
+    "dashboardGuard": "login"
+  },
+  "spa": {
+    "cityNoindexToMembershipIndex": {
+      "path": "/uyelik",
+      "canonical": [
+        "https://www.event4network.com/uyelik"
+      ],
+      "descriptions": 1,
+      "robots": "index, follow",
+      "h1": 1
+    }
+  },
+  "measurements": [
+    {
+      "file": "lighthouse-controlled-home.json",
+      "url": "http://127.0.0.1:4178/",
+      "fetchTime": "2026-10-12T20:56:48.781Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 36,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 4807.129150000001,
+        "largest-contentful-paint": 5886.448675,
+        "total-blocking-time": 5148.7604999999985,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          },
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": false
+    },
+    {
+      "file": "lighthouse-controlled-uyelik.json",
+      "url": "http://127.0.0.1:4178/uyelik",
+      "fetchTime": "2026-10-12T20:57:45.813Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 36,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 5168.410125,
+        "largest-contentful-paint": 5801.21795,
+        "total-blocking-time": 4534.722125,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          },
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": false
+    },
+    {
+      "file": "lighthouse-csp-home.json",
+      "url": "http://127.0.0.1:4178/",
+      "fetchTime": "2026-10-13T07:11:19.258Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 42,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 4717.217850000001,
+        "largest-contentful-paint": 5595.258425,
+        "total-blocking-time": 1365.499999999999,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          },
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": false
+    },
+    {
+      "file": "lighthouse-final-home.json",
+      "url": "http://127.0.0.1:4178/",
+      "fetchTime": "2026-10-13T07:19:18.186Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 59,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 3098.7366500000003,
+        "largest-contentful-paint": 3773.73665,
+        "total-blocking-time": 1151.0000000000005,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          },
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": true
+    },
+    {
+      "file": "lighthouse-final-uyelik.json",
+      "url": "http://127.0.0.1:4178/uyelik",
+      "fetchTime": "2026-10-13T07:19:41.041Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 77,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 1665.9318999999998,
+        "largest-contentful-paint": 2152.75245,
+        "total-blocking-time": 819.5,
+        "cumulative-layout-shift": 0.08065433291499491
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          },
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": true
+    },
+    {
+      "file": "lighthouse-home.json",
+      "url": "http://127.0.0.1:4178/",
+      "fetchTime": "2026-10-12T20:42:03.361Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 36,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 4926.449523456665,
+        "largest-contentful-paint": 5901.873026807617,
+        "total-blocking-time": 5302.686479894286,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": [
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          },
+          {
+            "id": [
+              "1850698832727063"
+            ],
+            "status": 200
+          }
+        ]
+      },
+      "selected": false
+    },
+    {
+      "file": "lighthouse-uyelik.json",
+      "url": "http://127.0.0.1:4178/uyelik",
+      "fetchTime": "2026-10-12T20:43:00.390Z",
+      "version": "12.8.2",
+      "scores": {
+        "performance": 36,
+        "accessibility": 95,
+        "seo": 100
+      },
+      "metrics": {
+        "first-contentful-paint": 5035.220899999999,
+        "largest-contentful-paint": 5752.123599999999,
+        "total-blocking-time": 5191.184400000001,
+        "cumulative-layout-shift": 0
+      },
+      "canonicalScore": 1,
+      "observedPageViews": {
+        "ga4": [
+          {
+            "id": [
+              "G-F7E2G1MSXK"
+            ],
+            "status": 204
+          }
+        ],
+        "facebook": []
+      },
+      "selected": false
+    }
+  ],
+  "payload": {
+    "initialTechnicalBuildEntryKiB": 2352.75,
+    "finalEntryKiB": 351.62,
+    "initialGzipKiB": 634.57,
+    "finalGzipKiB": 105.37,
+    "originalHeroPngBytes": 1479391,
+    "newHeroWebpBytes": 190512
+  }
+}

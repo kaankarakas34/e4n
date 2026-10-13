@@ -5,23 +5,16 @@ import { Button } from '../shared/Button';
 import { api } from '../api/api';
 import {
   ArrowRight,
-  CheckCircle,
   Users,
   Calendar,
-  Handshake,
-  Sparkles,
-  Award,
   MessageCircle,
   Repeat,
   ShieldCheck,
-  Layers,
   ChevronDown,
-  Clock,
-  MapPin,
   FileText
 } from 'lucide-react';
-import processMeeting from '../assets/process-meeting.png';
-import bizKimizNetwork from '../assets/biz_kimiz_network.png';
+import processMeeting from '../assets/seo/process-meeting.webp';
+import bizKimizNetwork from '../assets/seo/biz_kimiz_network.webp';
 
 interface EventItem {
   id: string;
@@ -51,11 +44,11 @@ export function LandingPage() {
 
   useEffect(() => {
     api.getEvents()
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (Array.isArray(data)) {
           const publicEvents = data
-            .filter((e: any) => e.is_public && e.status === 'PUBLISHED')
-            .sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+            .filter((e: EventItem) => e.is_public && e.status === 'PUBLISHED')
+            .sort((a: EventItem, b: EventItem) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
             .slice(0, 3);
           setEvents(publicEvents);
         }
@@ -174,6 +167,9 @@ export function LandingPage() {
               <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl backdrop-blur-sm bg-white/5 p-2">
                 <img
                   src={processMeeting}
+                  width={1024}
+                  height={1024}
+                  decoding="async"
                   alt="Event4Network Seçici İş Ağı Buluşması"
                   className="rounded-2xl object-cover w-full h-[320px] sm:h-[400px]"
                 />
@@ -393,6 +389,10 @@ export function LandingPage() {
               <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 bg-white p-2">
                 <img
                   src={bizKimizNetwork}
+                  width={1024}
+                  height={1024}
+                  decoding="async"
+                  loading="lazy"
                   alt="E4N Hizmet Dengesi ve Küçük Gruplar"
                   className="rounded-2xl object-cover w-full h-[320px] sm:h-[380px]"
                 />

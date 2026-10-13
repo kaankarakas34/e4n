@@ -191,6 +191,8 @@ export function PublicHeader() {
           {/* Mobile menu trigger button */}
           <div className="md:hidden flex items-center">
             <button
+              aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
+              aria-expanded={isOpen}
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
             >
@@ -211,6 +213,8 @@ export function PublicHeader() {
               </Link>
               <button
                 type="button"
+                aria-label="Nasıl çalışır alt menüsü"
+                aria-expanded={mobileNasilCalisir}
                 onClick={() => setMobileNasilCalisir(!mobileNasilCalisir)}
                 className="p-1 text-gray-400"
               >
@@ -241,6 +245,8 @@ export function PublicHeader() {
               </Link>
               <button
                 type="button"
+                aria-label="Topluluklar alt menüsü"
+                aria-expanded={mobileTopluluklar}
                 onClick={() => setMobileTopluluklar(!mobileTopluluklar)}
                 className="p-1 text-gray-400"
               >

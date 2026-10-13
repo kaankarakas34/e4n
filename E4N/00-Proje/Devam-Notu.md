@@ -1,3 +1,10 @@
+## SEO statik temel paketi — 13 Ekim 2026
+
+- E4N-290/291 In Progress. 26 kamu sayfası prerender; tek canonical/description/H1;22 sitemap URL;45 eski adres301;61 client+API rewrite;bilinmeyen404;refId/query ve blogslug korunur;şehir/rehber/özel alan noindex. Kod yerelde hazır, canlı yayına çıkmadı.
+- API235/check-build,hedefli lint,26 ham/render sayfa,6 redirect,özel/login bariyeri,4 mobil,SPA noindex→index,gzip/CSP/HTTP veJSON-LD guard PASS. Entry2353→352KB,gzip635→105KB;hero PNG1479391→WebP190512byte. GTM tek sağlayıcı sahibi;Facebook PageView1,GA4 finalde2 görüldü ve MET kapsamında açık.
+- Yerel mobil lab:ana59/üyelik77;SEO kontrol100/100,a11y95. CrUX/INP veya üretim sonucu değil. Kalan:yayın+platformHTTP/GSC/RichResults/CrUX,dinamik Event/Article,kalanGTM/perf ve tam niyet verisi. E4N-289/S1 ve290/291 Done değil; yeni küçük issue yok.
+- Plan [[E4N/07-Sprintler/E4N-SEO-Sorgu-URL-Mimarisi-2026-10-12]];tek kanıt [[E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13]]. Yönetilen foundation checkout korunur;mobile m pakete dahil değil;DB/mail/ödeme/üretim mutasyonu yok.
+
 ## SEO — AUD-02 güncel denetim / 12 Ekim 2026
 
 - E4N-289 In Progress. Yerel denetim teslim: 23 sitemap URL + temsilî/keşfedilen yollar = 33 URL; 6 mobil sayfa; 2 Lighthouse mobile koşusu. 19/29 ana DOM örneğinde çift canonical; /uyelik Lighthouse canonical hatası. Olmayan URL 200 + render noindex; sitemapte /egitim ve /degerlendirme-basvurusu client redirect. Şehir sayfaları bilinçli noindex; index açma.

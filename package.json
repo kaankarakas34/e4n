@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node server/test/route-ownership-static.mjs && tsc -b && vite build",
+    "build": "node server/test/route-ownership-static.mjs && tsc -b && vite build && vite build --ssr src/seo/prerender.tsx --target node20 --outDir dist-ssr && node dist-ssr/prerender.js",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "node server/test/route-ownership-static.mjs && tsc -b --noEmit"
+    "check": "node server/test/route-ownership-static.mjs && tsc -b --noEmit",
+    "seo:check": "node test/seo-build-contract.mjs",
+    "seo:preview": "node scripts/seo-preview.mjs",
+    "seo:routes": "node scripts/seo-routing.mjs --write"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

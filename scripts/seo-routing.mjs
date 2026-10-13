@@ -10,8 +10,11 @@ redirects.push(
 export const clientPaths = [...new Set([...appSource.matchAll(/<Route\s+path="([^"]+)"/g)].map(m => m[1]))]
   .filter(path => path !== '*' && !catalog.some(row => row.path === path) && path !== '/networking/:city' && !redirects.some(row => row.source === path));
 export const rewrites = [
+  { source: '/sitemap.xml', destination: '/api/content' },
+  { source: '/blog/:slug', destination: '/api/content' },
+  { source: '/event/:id', destination: '/api/content' },
   { source: '/api/(.*)', destination: '/api/index' },
-  ...clientPaths.map(source => ({ source, destination: source.startsWith('/event/') || source.startsWith('/blog/') ? '/_content' : '/_app' })),
+  ...clientPaths.filter(source=>!source.startsWith('/event/') && !source.startsWith('/blog/')).map(source => ({ source, destination: '/_app' })),
 ];
 export const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + catalog.filter(row => row.index).map(row => '  <url><loc>https://www.event4network.com' + row.path + '</loc><lastmod>' + row.lastmod + '</lastmod></url>').join('\n') + '\n</urlset>\n';
 if (process.argv.includes('--write')) {
@@ -20,6 +23,7 @@ if (process.argv.includes('--write')) {
   config.cleanUrls = true;
   config.redirects = redirects;
   config.rewrites = rewrites;
+  config.functions = {...config.functions, 'api/content.js': {includeFiles: '{dist/_content.html,src/seo/routeCatalog.json}', maxDuration: 15}};
   const generatedSources = new Set([
     ...rewrites.filter(row => row.destination === '/_app').map(row => row.source),
     ...catalog.filter(row => !row.index).map(row => row.path),

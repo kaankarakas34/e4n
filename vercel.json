@@ -11,6 +11,18 @@
   ],
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/content"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/content"
+    },
+    {
+      "source": "/event/:id",
+      "destination": "/api/content"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     },
@@ -49,14 +61,6 @@
     {
       "source": "/checkout/review",
       "destination": "/_app"
-    },
-    {
-      "source": "/event/:id",
-      "destination": "/_content"
-    },
-    {
-      "source": "/blog/:slug",
-      "destination": "/_content"
     },
     {
       "source": "/ziyaretci",
@@ -1139,5 +1143,11 @@
       "destination": "/auth/register",
       "statusCode": 301
     }
-  ]
+  ],
+  "functions": {
+    "api/content.js": {
+      "includeFiles": "{dist/_content.html,src/seo/routeCatalog.json}",
+      "maxDuration": 15
+    }
+  }
 }

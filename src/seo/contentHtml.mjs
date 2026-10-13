@@ -1,0 +1,2 @@
+import sanitize from 'sanitize-html';
+export const contentHtml=value=>sanitize(String(value||'').replace(/\n/g,'<br/>'),{allowedTags:['p','br','h2','h3','h4','ul','ol','li','strong','em','b','i','blockquote','a','img','table','thead','tbody','tr','th','td','code','pre'],allowedAttributes:{a:['href','title'],img:['src','alt','width','height'],th:['scope']},allowedSchemes:['http','https','mailto'],allowProtocolRelative:false});

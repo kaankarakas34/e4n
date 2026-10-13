@@ -9,6 +9,7 @@ export function RouteMetadata() {
   const path = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
   const route = catalog.find(row => row.path === path);
   const dynamic = /^\/(blog|event)\/[^/]+$/.test(path);
+  if (dynamic) return <Helmet><meta name="robots" content="noindex, follow" /></Helmet>;
   const title = route?.title || (dynamic ? 'E4N İçerik ve Etkinlik | Event4Network' : 'Event4Network Üye Alanı');
   const description = route?.description || 'Event4Network üyelik, topluluk ve etkinlik bilgileri.';
   const canonical = route || dynamic ? SITE_URL + path : undefined;

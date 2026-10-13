@@ -18,7 +18,7 @@ export function SEO({
   canonical,
   ogType = 'website',
   ogImage = 'https://www.event4network.com/biz_kimiz_network.png',
-  noindex = false,
+  noindex,
   schema,
 }: SEOProps) {
   const siteUrl = 'https://www.event4network.com';
@@ -31,7 +31,7 @@ export function SEO({
 
       {/* Meta tags */}
       <meta name="description" content={description} />
-      {noindex && <meta name="robots" content="noindex, follow" />}
+      {noindex !== undefined && <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow'} />}
       <link rel="canonical" href={canonicalUrl} />
 
       {/* Open Graph */}

@@ -1,19 +1,27 @@
+import { eventSchema as createEventSchema, eventMetadata, breadcrumb } from '../seo/contentMetadata.mjs';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/api';
 import { Button } from '../shared/Button';
-import { Calendar, MapPin, Clock, Share2, Users, CheckCircle, ArrowLeft, ShieldAlert, Video, Ticket } from 'lucide-react';
+import { Calendar, MapPin, Clock, Share2, CheckCircle, ArrowLeft, ShieldAlert, Video, Ticket } from 'lucide-react';
 import { Input } from '../shared/Input';
 import { PaymentModal } from '../components/PaymentModal';
 import { readEventPrice, readEventCurrency, formatEventPrice } from '../utils/eventPrice';
 
+interface EventData {
+ id:string;title:string;start_at:string;description?:string;location?:string;city?:string;
+ status:string;is_public:boolean;is_online?:boolean;price?:string|number;currency?:string;
+ has_member_ticket_privilege?:boolean;member_price?:string|number;effective_price?:string|number;
+ is_free_for_member?:boolean;max_attendees?:number;is_registered?:boolean;ticket_payment_status?:string;
+ my_tickets?:Array<{id:string;ticket_number:string;payment_status:string}>;
+}
 export function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user, token } = useAuthStore();
-    const [event, setEvent] = useState<any>(null);
+    const [event, setEvent] = useState<EventData | null>(null);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
     const [registered, setRegistered] = useState(false);
@@ -38,6 +46,7 @@ export function EventDetail() {
     const latestContext = useRef(pageContext);
     latestContext.current = pageContext;
     const price = readEventPrice(event?.price);
+    const registrationClosed = ['COMPLETED', 'CANCELLED'].includes(event?.status);
     const memberPrice = event?.has_member_ticket_privilege && event?.member_price != null ? readEventPrice(event?.member_price) : null;
     const effectivePrice = event?.has_member_ticket_privilege && event?.effective_price != null ? readEventPrice(event?.effective_price) : price;
     const payableAmount = effectivePrice !== null ? effectivePrice : price;
@@ -96,7 +105,7 @@ export function EventDetail() {
                 || typeof data.start_at !== 'string' || !Number.isFinite(Date.parse(data.start_at))
                 || typeof data.is_public !== 'boolean'
                 || ['description', 'location', 'city'].some(key => data[key] != null && typeof data[key] !== 'string')
-                || (data.attendees != null && (!Array.isArray(data.attendees) || data.attendees.some((att: any) => !att || typeof att !== 'object' || Array.isArray(att) || typeof att.id !== 'string' || !att.id.trim())))) {
+                || (data.attendees != null && (!Array.isArray(data.attendees) || data.attendees.some((att: {id?:unknown}) => !att || typeof att !== 'object' || Array.isArray(att) || typeof att.id !== 'string' || !att.id.trim())))) {
                 throw new Error('Invalid event response');
             }
             setEvent(data);
@@ -112,7 +121,7 @@ export function EventDetail() {
                 }
             }
         } catch (e) {
-            if (isCurrent()) setLoadError('Etkinlik bilgileri yüklenemedi.');
+            if (isCurrent()) setLoadError((e as {status?:number})?.status===404 ? 'Etkinlik Bulunamadı' : 'Etkinlik bilgileri yüklenemedi.');
         } finally {
             if (isCurrent()) { setLoadedContext(pageContext); setLoading(false); }
         }
@@ -200,7 +209,7 @@ export function EventDetail() {
     if (loadError) {
         return (
             <div role="alert" className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-                <p>{loadError}</p>
+                <h1>{loadError}</h1>
                 {registrationAck.current && <p>Sunucu kaydı onayladı. Yeniden göndermeyin; güncel kaydı tekrar kontrol edin.</p>}
                 <Button onClick={() => id && loadEvent(id)}>Tekrar dene</Button>
             </div>
@@ -210,7 +219,7 @@ export function EventDetail() {
     if (!event) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Etkinlik Bulunamadı</h2>
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">Etkinlik Bulunamadı</h1>
                 <Button onClick={() => navigate(-1)}>Geri Dön</Button>
             </div>
         );
@@ -237,35 +246,8 @@ export function EventDetail() {
         );
     }
 
-    const eventSchema = event ? {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": event.title,
-        "description": event.description || event.title,
-        "startDate": event.start_at,
-        "endDate": event.end_at || event.start_at,
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": event.is_online ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
-        "location": event.is_online
-            ? {
-                "@type": "VirtualLocation",
-                "url": event.location && event.location.startsWith('http') ? event.location : "https://www.event4network.com"
-            }
-            : {
-                "@type": "Place",
-                "name": event.location || "Event4Network Etkinlik Alanı",
-                "address": {
-                    "@type": "PostalAddress",
-                    "addressLocality": event.city || "İstanbul",
-                    "addressCountry": "TR"
-                }
-            },
-        "organizer": {
-            "@type": "Organization",
-            "name": "Event4Network",
-            "url": "https://www.event4network.com"
-        }
-    } : undefined;
+    const eventSchema = createEventSchema(event);
+    const metadata = eventMetadata(event);
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
@@ -273,9 +255,10 @@ export function EventDetail() {
             {registrationError && <div role="alert" className="p-4 bg-red-50 text-red-700"><p>{registrationError}</p><Button onClick={() => id && loadEvent(id)}>Kaydımı kontrol et</Button></div>}
             <SEO
                 title={`${event.title} | Event4Network Etkinlik`}
-                description={event.description ? event.description.slice(0, 150) : event.title}
+                description={metadata.description}
                 canonical={`https://www.event4network.com/event/${id}`}
-                schema={eventSchema}
+                schema={[eventSchema, breadcrumb(metadata, event.title, 'event')].filter(Boolean)}
+                noindex={metadata.noindex}
             />
             {/* Hero Section */}
             <div className="relative h-64 md:h-96 bg-gray-900 overflow-hidden">
@@ -457,12 +440,12 @@ export function EventDetail() {
                                             <CheckCircle className="h-4 w-4 mr-2" /> Kayıtlısınız
                                         </Button>
                                         {event.ticket_payment_status === 'PENDING' && paymentAvailable && payableAmount! > 0 && (
-                                            <Button className="w-full mt-3" onClick={() => setIsPaymentModalOpen(true)} disabled={registering || registrationUncertain}>
+                                            <Button className="w-full mt-3" onClick={() => setIsPaymentModalOpen(true)} disabled={registrationClosed || registering || registrationUncertain}>
                                                 Ödemeyi tamamla
                                             </Button>
                                         )}
                                         {paymentAvailable && (
-                                            <Button variant="outline" className="w-full mt-2" onClick={() => setIsPaymentModalOpen(true)} disabled={registering || registrationUncertain}>
+                                            <Button variant="outline" className="w-full mt-2" onClick={() => setIsPaymentModalOpen(true)} disabled={registrationClosed || registering || registrationUncertain}>
                                                 Ek Bilet Satın Al ({ticketQuantity} Adet)
                                             </Button>
                                         )}
@@ -472,13 +455,13 @@ export function EventDetail() {
                                         variant="primary"
                                         className="w-full shadow-md shadow-red-200"
                                         onClick={handleRegister}
-                                        disabled={registering || registrationUncertain || (!!user && (typeof event.is_registered !== 'boolean' || !paymentAvailable))}
+                                        disabled={registrationClosed || registering || registrationUncertain || (!!user && (typeof event.is_registered !== 'boolean' || !paymentAvailable))}
                                     >
-                                        {registering ? 'İşleniyor...' : (user ? (totalPayable > 0 ? `${formatEventPrice(totalPayable, currency)} ile Kayıt Ol` : 'Hemen Kayıt Ol') : 'Giriş Yap ve Kayıt Ol')}
+                                        {registrationClosed ? (event.status==='CANCELLED' ? 'Etkinlik iptal edildi' : 'Etkinlik tamamlandı') : registering ? 'İşleniyor...' : (user ? (totalPayable > 0 ? `${formatEventPrice(totalPayable, currency)} ile Kayıt Ol` : 'Hemen Kayıt Ol') : 'Giriş Yap ve Kayıt Ol')}
                                     </Button>
                                 )}
 
-                                {!user && event.is_public && paymentAvailable && (
+                                {!registrationClosed && !user && event.is_public && paymentAvailable && (
                                     <div className="mt-3 space-y-3">
                                         <div className="text-center">
                                             <span className="text-xs text-gray-400">veya</span>
@@ -507,7 +490,7 @@ export function EventDetail() {
                                                     label="Ad Soyad"
                                                     placeholder="Adınız ve Soyadınız"
                                                     value={guestName}
-                                                    onChange={(e: any) => setGuestName(e.target.value)}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestName(e.target.value)}
                                                     required
                                                 />
                                                 <Input
@@ -515,7 +498,7 @@ export function EventDetail() {
                                                     type="email"
                                                     placeholder="ornek@sirket.com"
                                                     value={guestEmail}
-                                                    onChange={(e: any) => setGuestEmail(e.target.value)}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestEmail(e.target.value)}
                                                     required
                                                 />
                                                 <Input
@@ -523,7 +506,7 @@ export function EventDetail() {
                                                     type="tel"
                                                     placeholder="05xxxxxxxxx"
                                                     value={guestPhone}
-                                                    onChange={(e: any) => setGuestPhone(e.target.value)}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuestPhone(e.target.value)}
                                                     required
                                                 />
                                                 {guestError && <p className="text-xs text-red-600">{guestError}</p>}
@@ -543,7 +526,7 @@ export function EventDetail() {
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                         <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Biletleriniz ({event.my_tickets.length})</h4>
                                         <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                                            {event.my_tickets.map((t: any) => (
+                                            {event.my_tickets.map((t) => (
                                                 <div key={t.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200 text-xs">
                                                     <div className="flex items-center gap-1.5">
                                                         <Ticket className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
@@ -581,7 +564,7 @@ export function EventDetail() {
             </div>
 
             {paymentAvailable && <PaymentModal
-                isOpen={isPaymentModalOpen}
+                isOpen={isPaymentModalOpen && !registrationClosed}
                 onClose={() => setIsPaymentModalOpen(false)}
                 planTitle={`${event?.title || ''} (${ticketQuantity} Bilet)`}
                 amount={totalPayable}

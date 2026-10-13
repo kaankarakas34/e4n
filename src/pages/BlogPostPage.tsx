@@ -1,6 +1,8 @@
 import { jsonLd } from '../seo/metadata';
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { blogMetadata, breadcrumb } from '../seo/contentMetadata.mjs';
+import { contentHtml } from '../seo/contentHtml.mjs';
 import { supabase } from '../api/supabase';
 import { BlogPost } from '../types';
 import { Calendar, User, ChevronRight, Home } from 'lucide-react';
@@ -13,14 +15,18 @@ export function BlogPostPage() {
   const [blog, setBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const requestSequence = useRef(0);
 
   useEffect(() => {
+    setLoading(true);setBlog(null);setError(false);
     if (slug) {
       fetchBlog(slug);
     }
+    return () => { requestSequence.current++; };
   }, [slug]);
 
   const fetchBlog = async (slug: string) => {
+    const sequence=++requestSequence.current;
     try {
       const { data, error } = await supabase
         .from('blogs')
@@ -35,13 +41,14 @@ export function BlogPostPage() {
 
       if (error) throw error;
       if (!data) throw new Error('Not found');
+      if(sequence!==requestSequence.current)return;
       
       setBlog(data as unknown as BlogPost);
     } catch (err) {
       console.error('Error fetching blog post:', err);
-      setError(true);
+      if(sequence===requestSequence.current)setError(true);
     } finally {
-      setLoading(false);
+      if(sequence===requestSequence.current)setLoading(false);
     }
   };
 
@@ -54,45 +61,19 @@ export function BlogPostPage() {
   }
 
   if (error || !blog) {
-    return <Navigate to="/blog" replace />;
+    return <main className="max-w-4xl mx-auto px-6 py-16"><Helmet><title>Yazı Bulunamadı | Event4Network</title><meta name="robots" content="noindex, follow" /></Helmet><h1>Yazı Bulunamadı</h1><Link to="/blog">Blog yazıları</Link></main>;
   }
 
-  const defaultCanonicalUrl = `https://www.event4network.com/blog/${blog.slug}`;
-  const canonicalUrl = blog.canonical_url || defaultCanonicalUrl;
-  
-  // JSON-LD Schema
-  const schemaOrgJSONLD = {
-    "@context": "https://schema.org",
-    "@type": blog.schema_type || "BlogPosting",
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": canonicalUrl
-    },
-    "headline": blog.meta_title || blog.title,
-    "description": blog.meta_description || blog.excerpt,
-    "image": blog.featured_image ? [blog.featured_image] : [],
-    "author": {
-      "@type": blog.author?.name ? "Person" : "Organization",
-      "name": blog.author?.name || "Event4Network"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Event4Network",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://www.event4network.com/e4n-logo.png"
-      }
-    },
-    "datePublished": blog.published_at || blog.created_at,
-    "dateModified": blog.updated_at
-  };
+  const metadata = blogMetadata(blog);
+  const canonicalUrl = metadata.canonical;
+  const schemaOrgJSONLD = [metadata.schema, breadcrumb(metadata, blog.title, 'blog')];
 
   return (
     <div className="bg-white min-h-screen">
       <Helmet>
         {/* Basic SEO */}
-        <title>{blog.meta_title || `${blog.title} | Rehber | Event4Network`}</title>
-        <meta name="description" content={blog.meta_description || blog.excerpt || blog.title} />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
         
         {/* Keywords */}
         {(blog.focus_keyword || (blog.secondary_keywords && blog.secondary_keywords.length > 0)) && (
@@ -103,7 +84,7 @@ export function BlogPostPage() {
         <link rel="canonical" href={canonicalUrl} />
 
         {/* Robots */}
-        <meta name="robots" content={blog.robots || 'index, follow'} />
+        <meta name="robots" content={metadata.noindex ? 'noindex, follow' : 'index, follow'} />
 
         {/* Open Graph */}
         <meta property="og:type" content="article" />
@@ -199,7 +180,7 @@ export function BlogPostPage() {
                 prose-p:mb-6 prose-a:text-red-600 hover:prose-a:text-red-700
                 prose-img:rounded-2xl prose-img:shadow-md
                 prose-blockquote:border-l-4 prose-blockquote:border-red-500 prose-blockquote:bg-gray-50 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:not-italic prose-blockquote:rounded-r-lg"
-              dangerouslySetInnerHTML={{ __html: blog.content?.replace(/\n/g, '<br />') || '' }}
+              dangerouslySetInnerHTML={{ __html: contentHtml(blog.content) }}
             />
 
             {/* Tags */}

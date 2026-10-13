@@ -1,3 +1,13 @@
+## SEO — onaylı ilk yayın ve eski arşiv kararı / 13 Ekim 2026
+
+- Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2; branchcodex/e4n-sprint1-foundation. CMSce4da36, arşiv02b1356; canlıdpl_FS2LwCc7jxzfvoLJ66V4SfGaoyA1. Başka aktif işler/mobile m korunur.
+- Kullanıcı onayı “Metin uygun; yayımla” uygulandı. İlk makale /blog/networking-etkinligine-hazirlik published; kayıtfe1a5375-6d52-4811-9375-b5cd13945219;13Ekim13:50TSİ. Sahte testkaydı/yazar yok;authorOrganizationEvent4Network;kapakboş. Yeni CMS JWT+DBADMIN/revision/review/archive kapıları ve published publicAPI canlı.
+- Kullanıcı eski7etkinlik indeks istemiyor; tam IDallowlistnoindex/sitemapdışı,200içerikkorunur. Mekân/program tekraristenmez/uydurulmaz. Güncelsitemap23=22statik+1blog;eski29tarihsel.
+- Build/type242rota/statik26/dinamik10/izolePG15 18CMSisteği PASS. CanlıyazıHTML/API/metadata/schema/sitemap ve gerçekclientbloglist PASS. Lint0error/1hookwarning. Mobil390ölçümüChromeoverrideuygulanmadığıiçin açık;RichResultsArticlebağımsızkabul yok.
+- GSCGooglecanlıakıllıtelefonfetch/tarama/indexizinEvet/canonicaldoğru/Breadcrumb1;indeksisteğikabul/sırada. Gerçekindekslenme/CWV açık;garanti/PASSdeme.
+- E4N-292InProgress:CMSçekirdeği+ilkgerçekyayın teslim;kapak/upload,küme/pillar/ilgiliiçerik ve CRO-01 ana kapsam açık. Sonraki iş bu CMS/CRO kabulü ve mobil yayın kapısı; yeni küçük issue açma. E4N-289/290/291/295 tam kapsam kapanmadı.
+- Tek kanıt E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13.md, publication/JSON-ekran-log-SHA256. Canlı mutasyon yetkisi yalnız onaylımakale;DDL/RLS/grant/ödeme/mail/özelkayıt değişikliği yok.
+
 ## SEO dinamik yayın ve GSC — 13 Ekim 2026
 
 - Kod839ae5e;production READY dpl_A8ju4Nd24jfR67N1uWsKK2aNCG5D. Statik26 korunur;dinamik content fonksiyonu salt SELECT;22 statik+7 gerçek public COMPLETED arşiv=29sitemap. Tekil HTML/metadata/Breadcrumb,404/noindex,editorialrobots,503outage ve arşiv kayıt kapısı teslim. DDL/ödeme/mail/veri mutasyonu yok;mobile m korunur.

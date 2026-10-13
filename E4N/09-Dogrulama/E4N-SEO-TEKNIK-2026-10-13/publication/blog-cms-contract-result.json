@@ -1,0 +1,106 @@
+{
+  "scope": "Isolated local PostgreSQL15 instance, fresh exact CMS migration tables; no production connection",
+  "rows": [
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 409
+    },
+    {
+      "path": "/api/blogs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d",
+      "method": "PUT",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d",
+      "method": "PUT",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d",
+      "method": "PUT",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d",
+      "method": "PUT",
+      "status": 409
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d",
+      "method": "PUT",
+      "status": 409
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs/675c2d7a-497e-4d31-949c-bae9fa3d170d/archive",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 403
+    }
+  ],
+  "tests": {
+    "dbRoleGate": true,
+    "draftHidden": true,
+    "publicationReview": true,
+    "organizationAuthor": true,
+    "revisionConflict": true,
+    "publishedSlugProtected": true,
+    "recoverableArchive": true,
+    "adminDemotion": true,
+    "noRlsChanges": true
+  }
+}

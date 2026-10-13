@@ -1,0 +1,5 @@
+
+> e4n2@0.0.0 check
+> node server/test/route-ownership-static.mjs && tsc -b --noEmit
+
+Route ownership static PASS: 242 routes; 34 providers;17 preserved legacy; shadow/mount/installer/unresolved guards.

@@ -1,0 +1,6 @@
+
+> e4n2@0.0.0 seo:content
+> node test/seo-content-contract.mjs
+
+Public content rendering failed: ECONNREFUSED
+Dynamic SEO contract PASS: 10 public/archive/noindex/private/draft/missing cases; sitemap;HEAD/405/503;SQL binding;HTML safety;Event lifecycle.

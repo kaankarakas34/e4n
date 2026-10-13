@@ -1,0 +1,30 @@
+{
+  "deployment": "dpl_FS2LwCc7jxzfvoLJ66V4SfGaoyA1",
+  "rows": [
+    {
+      "path": "/api/health-check",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/e4n-not-published",
+      "status": 404
+    },
+    {
+      "path": "/api/admin/blogs",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blogs/00000000-0000-4000-8000-000000000000",
+      "status": 401
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200
+    }
+  ],
+  "scope": "Real staged production read/anonymous checks; no write requests"
+}

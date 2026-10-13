@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {blogMetadata,eventMetadata,breadcrumb,textContent,isoDate,ORIGIN} from '../../src/seo/contentMetadata.mjs';
+import {blogMetadata,eventMetadata,breadcrumb,textContent,isoDate,ORIGIN,excludedEventIds} from '../../src/seo/contentMetadata.mjs';
 import {contentHtml} from '../../src/seo/contentHtml.mjs';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
@@ -18,7 +18,7 @@ export function createContentHandler({query,loadTemplate=()=>readFile(resolve('d
     const rows=catalog.filter(r=>r.index).map(r=>({url:ORIGIN+r.path,date:r.lastmod}));
     for(const b of blogs.rows){const meta=blogMetadata(b);if(b.include_in_sitemap===true && !meta.noindex && meta.canonical===ORIGIN+meta.path)rows.push({url:meta.canonical,date:isoDate(b.updated_at || b.published_at || b.created_at)});}
     // Events have no reliable modification timestamp; omit lastmod instead of inventing one.
-    for(const e of events.rows)rows.push({url:ORIGIN+'/event/'+encodeURIComponent(e.id)});
+    for(const e of events.rows)if(!excludedEventIds.has(e.id))rows.push({url:ORIGIN+'/event/'+encodeURIComponent(e.id)});
     const body='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+[...new Map(rows.map(r=>[r.url,r])).values()].map(r=>`<url><loc>${escape(r.url)}</loc>${r.date?`<lastmod>${escape(r.date)}</lastmod>`:''}</url>`).join('')+'</urlset>';
     res.statusCode=200;res.setHeader('Content-Type','application/xml; charset=utf-8');return res.end(req.method==='HEAD'?undefined:body);
    }

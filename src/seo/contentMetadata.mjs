@@ -1,4 +1,6 @@
 export const ORIGIN = 'https://www.event4network.com';
+// Owner decision, 13 October 2026: these seven legacy archives are not search targets.
+export const excludedEventIds = new Set(['385b913c-1709-4fcd-ad9f-fb7724cfd331','ac7e0298-3e0a-4387-950f-3793fc3179ea','d69755ae-d6fb-4ced-9671-9bb383eae16f','e97da9cf-a6b6-42af-97b7-b6f08eafed2b','c70fc637-fc4f-402c-878d-2533adf2fd69','5acf8aa6-0376-4e94-8357-5f6150614d35','13e3afcc-cbf0-460f-ad4f-ccbf469ba5ef']);
 export const textContent = value => String(value || '').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/\s+/g, ' ').trim();
 export const isoDate = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : undefined;
 export const safeUrl = value => { try { const url=new URL(value);return ['https:','http:'].includes(url.protocol) && !url.username && !url.password ? url.href : undefined; } catch { return undefined; } };
@@ -25,5 +27,5 @@ export function eventSchema(event) {
  else if(event.status==='PUBLISHED')schema.eventStatus='https://schema.org/EventScheduled';
  return schema;
 }
-export function eventMetadata(event) {return {path:'/event/'+encodeURIComponent(event.id),canonical:ORIGIN+'/event/'+encodeURIComponent(event.id),title:`${event.title} | Event4Network Etkinlik`,description:textContent(event.description || event.title).slice(0,160),noindex:!event.is_public,schema:eventSchema(event),ogType:'website'};}
+export function eventMetadata(event) {return {path:'/event/'+encodeURIComponent(event.id),canonical:ORIGIN+'/event/'+encodeURIComponent(event.id),title:`${event.title} | Event4Network Etkinlik`,description:textContent(event.description || event.title).slice(0,160),noindex:!event.is_public||excludedEventIds.has(event.id),schema:eventSchema(event),ogType:'website'};}
 export function breadcrumb(meta,title,kind){return {'@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Event4Network',item:ORIGIN+'/'},{'@type':'ListItem',position:2,name:kind==='blog'?'Blog':'Etkinlikler',item:ORIGIN+(kind==='blog'?'/blog':'/etkinlikler')},{'@type':'ListItem',position:3,name:title,item:meta.canonical}]};}

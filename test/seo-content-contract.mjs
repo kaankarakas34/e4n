@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {createContentHandler} from '../dist-content/public-content-seo.mjs';
-import {eventSchema,blogMetadata} from '../src/seo/contentMetadata.mjs';
+import {eventSchema,blogMetadata,eventMetadata,excludedEventIds} from '../src/seo/contentMetadata.mjs';
 import {contentHtml} from '../src/seo/contentHtml.mjs';
 const publicId='00000000-0000-4000-8000-000000000001',privateId='00000000-0000-4000-8000-000000000002';
 const base={id:publicId,title:'Test etkinliği <güvenli>',description:'Görünür açıklama',start_at:'2026-11-01T10:00:00+03:00',end_at:'2026-11-01T12:00:00+03:00',is_public:true,status:'PUBLISHED',location:'Gerçek Test Mekânı',city:'Ankara',online_link:'PRIVATE_SECRET'};
@@ -26,4 +26,6 @@ assert.equal(eventSchema({...base,status:'CANCELLED'}).eventStatus,'https://sche
 assert.equal(blogMetadata({...blog,canonical_url:'javascript:alert(1)'}).canonical,'https://www.event4network.com/blog/test-yazisi');assert(!contentHtml('<svg onload=alert(1)><a href="//evil.test">x</a></svg>').includes('onload'));
 assert.equal(blogMetadata({...blog,robots:'noindex, nofollow'}).robots,'noindex, nofollow');
 assert.equal(blogMetadata({...blog,robots:'none'}).noindex,true);
+assert.equal(excludedEventIds.size,7);
+for(const id of excludedEventIds)assert.equal(eventMetadata({...base,id}).noindex,true);
 const result={scope:'Isolated synthetic contract fixtures; no production records created or changed',results,sitemap:true,head:true,method405:true,outage503:true,parameterBinding:true,privateDraftExclusion:true,htmlSafety:true,eventLifecycle:true,missingVenueNoInventedSchema:true,readOnlySql:true};await writeFile('output/seo-content-contract.json',JSON.stringify(result,null,2));console.log('Dynamic SEO contract PASS: '+results.length+' public/archive/noindex/private/draft/missing cases; sitemap;HEAD/405/503;SQL binding;HTML safety;Event lifecycle.');

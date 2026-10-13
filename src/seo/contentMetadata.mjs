@@ -5,12 +5,13 @@ export const safeUrl = value => { try { const url=new URL(value);return ['https:
 export function blogMetadata(blog) {
  const path='/blog/'+encodeURIComponent(blog.slug), fallback=ORIGIN+path;
  const canonical=safeUrl(blog.canonical_url)||fallback;
- const noindex=/\bnoindex\b/i.test(blog.robots || '');
+ const noindex=/\b(noindex|none)\b/i.test(blog.robots || '');
+ const robots=(noindex?'noindex':'index')+', '+(/\b(nofollow|none)\b/i.test(blog.robots || '')?'nofollow':'follow');
  const title=blog.meta_title || `${blog.title} | Rehber | Event4Network`;
  const description=textContent(blog.meta_description || blog.excerpt || blog.title);
  const schema={ '@context':'https://schema.org','@type':['Article','BlogPosting','NewsArticle'].includes(blog.schema_type)?blog.schema_type:'BlogPosting',mainEntityOfPage:{'@type':'WebPage','@id':canonical},headline:blog.title,description,author:{'@type':blog.author?.name?'Person':'Organization',name:blog.author?.name||'Event4Network'},publisher:{'@type':'Organization',name:'Event4Network',logo:{'@type':'ImageObject',url:ORIGIN+'/e4n-logo.png'}},datePublished:isoDate(blog.published_at || blog.created_at),dateModified:isoDate(blog.updated_at)};
  const image=safeUrl(blog.featured_image);if(image)schema.image=[image];
- return {path,canonical,title,description,noindex,schema,image,ogType:'article'};
+ return {path,canonical,title,description,noindex,robots,schema,image,ogType:'article'};
 }
 export function eventSchema(event) {
  if(!event.is_public || !['PUBLISHED','COMPLETED','CANCELLED'].includes(event.status) || !isoDate(event.start_at))return undefined;

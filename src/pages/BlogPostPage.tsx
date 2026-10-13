@@ -84,7 +84,7 @@ export function BlogPostPage() {
         <link rel="canonical" href={canonicalUrl} />
 
         {/* Robots */}
-        <meta name="robots" content={metadata.noindex ? 'noindex, follow' : 'index, follow'} />
+        <meta name="robots" content={metadata.robots} />
 
         {/* Open Graph */}
         <meta property="og:type" content="article" />

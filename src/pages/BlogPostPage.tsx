@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { blogMetadata, breadcrumb } from '../seo/contentMetadata.mjs';
 import { contentHtml } from '../seo/contentHtml.mjs';
-import { supabase } from '../api/supabase';
+import { api } from '../api/api';
 import { BlogPost } from '../types';
 import { Calendar, User, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
@@ -28,18 +28,8 @@ export function BlogPostPage() {
   const fetchBlog = async (slug: string) => {
     const sequence=++requestSequence.current;
     try {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select(`
-          *,
-          author:users(name),
-          category:blog_categories(name)
-        `)
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .single();
+      const data = await api.getPublicBlog(slug);
 
-      if (error) throw error;
       if (!data) throw new Error('Not found');
       if(sequence!==requestSequence.current)return;
       

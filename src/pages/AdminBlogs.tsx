@@ -1,55 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../api/supabase';
-import { BlogPost } from '../types';
+import { api } from '../api/api';
+import {useAuthStore} from '../stores/authStore';
+import type {CmsBlog} from '../api/blogCms';
 import { Button } from '../shared/Button';
-import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 export function AdminBlogs() {
   const navigate = useNavigate();
-  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [blogs, setBlogs] = useState<CmsBlog[]>([]);
+  const {user,token}=useAuthStore();
+  const [readError,setReadError]=useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchBlogs();
-  }, []);
-
-  const fetchBlogs = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('blogs')
-        .select(`
-          *,
-          author:users(name),
-          category:blog_categories(name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBlogs(data as unknown as BlogPost[]);
-    } catch (err) {
-      console.error('Error fetching blogs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Bu blog yazısını silmek istediğinize emin misiniz?')) return;
-    
-    try {
-      const { error } = await supabase.from('blogs').delete().eq('id', id);
-      if (error) throw error;
-      setBlogs(blogs.filter(b => b.id !== id));
-    } catch (err) {
-      console.error('Error deleting blog:', err);
-      alert('Silinirken bir hata oluştu.');
-    }
-  };
+  useEffect(() => { let active=true;setLoading(true);setBlogs([]);setReadError(''); if(user?.role==='ADMIN')api.getAdminBlogs(user.id).then(data=>{if(active)setBlogs(data);}).catch(e=>{if(active)setReadError(e.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[user?.id,user?.role,token]);
+  const handleDelete = async (id:string) => {const blog=blogs.find(b=>b.id===id);if(!blog||!user)return;if(!window.confirm('Bu yazı arşivlensin mi? İçerik saklanır ve yayından kalkar.'))return;const owner=user.id;try{const saved=await api.archiveAdminBlog(blog,owner);if(useAuthStore.getState().user?.id===owner)setBlogs(rows=>rows.map(b=>b.id===id?saved:b));}catch(e){alert(e.message);}};
 
   const filteredBlogs = blogs.filter(b => 
     b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,6 +37,7 @@ export function AdminBlogs() {
         </Button>
       </div>
 
+      {readError && <p role="alert" className="p-4 bg-red-50 text-red-700">{readError}</p>}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex gap-4">
           <div className="relative flex-1 max-w-md">
@@ -150,7 +119,7 @@ export function AdminBlogs() {
                         <button
                           onClick={() => handleDelete(blog.id)}
                           className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Sil"
+                          title="Arşivle"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

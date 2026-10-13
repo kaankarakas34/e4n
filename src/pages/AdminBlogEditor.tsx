@@ -1,20 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../api/supabase';
+import {api} from '../api/api';
+import {useAuthStore} from '../stores/authStore';
+import type {CmsBlog} from '../api/blogCms';
 import { Button } from '../shared/Button';
-import { ArrowLeft, Save, Globe, Settings, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
-import { BlogPost } from '../types';
+import { ArrowLeft, Save, Globe, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
-export function AdminBlogEditor() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const isNew = id === 'new';
-
-  const [activeTab, setActiveTab] = useState<'general' | 'content' | 'seo' | 'og'>('general');
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  
-  const [formData, setFormData] = useState<Partial<BlogPost>>({
+const initialForm:Partial<CmsBlog> = {
     title: '',
     slug: '',
     content: '',
@@ -34,7 +27,24 @@ export function AdminBlogEditor() {
     change_frequency: 'monthly',
     og_title: '',
     og_description: ''
-  });
+  };
+
+export function AdminBlogEditor() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isNew = id === 'new';
+  const {user,token}=useAuthStore();
+  const [reviewConfirmed,setReviewConfirmed]=useState(false);
+  const [loadedFor,setLoadedFor]=useState('');
+  const [readError,setReadError]=useState('');
+  const savePending=useRef(false);
+  const contextKey=id+':'+user?.id+':'+token;
+
+  const [activeTab, setActiveTab] = useState<'general' | 'content' | 'seo' | 'og'>('general');
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const [formData,setFormData]=useState<Partial<CmsBlog>>({...initialForm});
 
   const [secondaryKeysInput, setSecondaryKeysInput] = useState('');
   const [tagsInput, setTagsInput] = useState('');
@@ -83,7 +93,7 @@ export function AdminBlogEditor() {
       const webpBlob = await convertToWebP(file);
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}.webp`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('blog-images')
         .upload(fileName, webpBlob, {
           contentType: 'image/webp',
@@ -99,34 +109,15 @@ export function AdminBlogEditor() {
 
       setFormData(prev => ({ ...prev, featured_image: publicUrl }));
       alert('Görsel başarıyla yüklenip WebP formatına dönüştürüldü!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Upload error:', err);
-      alert('Görsel yüklenirken hata oluştu: ' + (err.message || err));
+      alert('Görsel yüklenirken hata oluştu: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUploading(false);
     }
   };
 
-  useEffect(() => {
-    if (!isNew && id) {
-      fetchBlog();
-    }
-  }, [id]);
-
-  const fetchBlog = async () => {
-    try {
-      const { data, error } = await supabase.from('blogs').select('*').eq('id', id).single();
-      if (error) throw error;
-      if (data) {
-        setFormData(data);
-        if (data.secondary_keywords) setSecondaryKeysInput(data.secondary_keywords.join(', '));
-        if (data.tags) setTagsInput(data.tags.join(', '));
-      }
-    } catch (err) {
-      console.error('Error fetching blog:', err);
-      alert('Yazı yüklenirken hata oluştu.');
-    }
-  };
+  useEffect(()=>{let active=true;setLoadedFor('');setReadError('');setReviewConfirmed(false);if(isNew){setFormData({...initialForm});setSecondaryKeysInput('');setTagsInput('');setLoadedFor(contextKey);}else if(id && user?.role==='ADMIN'){api.getAdminBlog(id,user.id).then(data=>{if(active){setFormData(data);setSecondaryKeysInput((data.secondary_keywords||[]).join(', '));setTagsInput((data.tags||[]).join(', '));setLoadedFor(contextKey);}}).catch(e=>{if(active)setReadError(e.message);});}return()=>{active=false;};},[id,isNew,user?.id,user?.role,token,contextKey]);
 
   const generateSlug = (text: string) => {
     const trMap: { [key: string]: string } = {
@@ -153,8 +144,8 @@ export function AdminBlogEditor() {
   const handleRobotsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     const isNoIndex = val.includes('noindex');
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       robots: val,
       include_in_sitemap: !isNoIndex // Auto set include_in_sitemap
     });
@@ -174,47 +165,27 @@ export function AdminBlogEditor() {
 
     try {
       setSaving(true);
-      const { data: userData } = await supabase.auth.getUser();
-      
-      const payload = {
-        ...formData,
-        secondary_keywords: secondaryKeysInput.split(',').map(s => s.trim()).filter(Boolean),
-        tags: tagsInput.split(',').map(s => s.trim()).filter(Boolean),
-        updated_at: new Date().toISOString(),
-      };
-
-      if (isNew) {
-        payload.author_id = userData.user?.id;
-        if (payload.status === 'published') {
-          payload.published_at = new Date().toISOString();
-        }
-        const { error } = await supabase.from('blogs').insert([payload]);
-        if (error) throw error;
-        alert('Yazı başarıyla oluşturuldu!');
-        navigate('/admin/blogs');
-      } else {
-        if (payload.status === 'published' && !formData.published_at) {
-          payload.published_at = new Date().toISOString();
-        }
-        const { error } = await supabase.from('blogs').update(payload).eq('id', id);
-        if (error) throw error;
-        alert('Yazı başarıyla güncellendi!');
-      }
-    } catch (err: any) {
+      if(!user || user.role!=='ADMIN')throw new Error('Yönetici oturumu gerekli.');
+      const owner=user.id,context=token;
+      const saved=await api.saveAdminBlog(isNew?null:id,{...formData,secondary_keywords:secondaryKeysInput.split(',').map(s=>s.trim()).filter(Boolean),tags:tagsInput.split(',').map(s=>s.trim()).filter(Boolean)},owner,reviewConfirmed);
+      if(useAuthStore.getState().user?.id!==owner || useAuthStore.getState().token!==context)return;
+      setFormData(saved);setReviewConfirmed(false);alert('Yazı kaydedildi.');if(isNew)navigate('/admin/blogs/'+saved.id);
+    } catch (err: unknown) {
       console.error('Error saving blog:', err);
-      if (err.code === '23505') {
+      if ((err as {code?:string}).code === '23505') {
         alert('Bu URL (slug) zaten kullanılıyor. Lütfen benzersiz bir URL belirleyin.');
       } else {
-        alert('Kaydedilirken hata oluştu.');
+        alert(err instanceof Error ? err.message : 'Kaydetme sonucu doğrulanamadı. Yazı listesindeki güncel kaydı kontrol edin.');
       }
     } finally {
-      setSaving(false);
+      savePending.current=false;setSaving(false);
     }
   };
 
+  if(loadedFor!==contextKey)return <main className="p-6"><p role={readError?'alert':'status'}>{readError||'Yazı yükleniyor…'}</p><Button onClick={()=>navigate('/admin/blogs')}>Yazı listesi</Button></main>;
   return (
     <div className="p-6 max-w-6xl mx-auto pb-24">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/admin/blogs')} className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
             <ArrowLeft className="h-5 w-5 text-gray-600" />
@@ -224,10 +195,10 @@ export function AdminBlogEditor() {
             <p className="text-sm text-gray-500 mt-1">İçeriği ve SEO ayarlarını yönetin.</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <select 
+        <div className="flex flex-wrap gap-3">
+          <select
             value={formData.status}
-            onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+            onChange={e => setFormData({ ...formData, status: e.target.value as CmsBlog['status'] })}
             className="border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 font-medium"
           >
             <option value="draft">Taslak</option>
@@ -235,7 +206,8 @@ export function AdminBlogEditor() {
             <option value="scheduled">Planlandı</option>
             <option value="archived">Arşivlendi</option>
           </select>
-          <Button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6">
+          {formData.status==='published' && <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={reviewConfirmed} onChange={e=>setReviewConfirmed(e.target.checked)}/>İçerik ve uzman incelemesi tamamlandı</label>}
+          <Button onClick={handleSave} disabled={saving || (formData.status==='published' && !reviewConfirmed)} className="flex items-center gap-2 px-6">
             <Save className="h-4 w-4" />
             {saving ? 'Kaydediliyor...' : 'Kaydet'}
           </Button>
@@ -309,7 +281,7 @@ export function AdminBlogEditor() {
                 </div>
                 {!isNew && (
                   <p className="mt-2 text-sm text-amber-600 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" /> 
+                    <AlertCircle className="h-4 w-4" />
                     URL'yi değiştirirseniz 301 yönlendirmesi eklemeyi unutmayın!
                   </p>
                 )}
@@ -332,9 +304,9 @@ export function AdminBlogEditor() {
                   {formData.featured_image ? (
                     <div className="relative border border-gray-300 rounded-lg p-2 bg-gray-50 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <img 
-                          src={formData.featured_image} 
-                          alt="Thumbnail" 
+                        <img
+                          src={formData.featured_image}
+                          alt="Thumbnail"
                           className="w-12 h-12 rounded object-cover border border-gray-200 flex-shrink-0"
                         />
                         <span className="text-xs text-gray-500 truncate">{formData.featured_image.split('/').pop()}</span>
@@ -370,7 +342,7 @@ export function AdminBlogEditor() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kapak Görseli Alt Metni 
+                    Kapak Görseli Alt Metni
                     {formData.featured_image && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   <input
@@ -600,7 +572,7 @@ export function AdminBlogEditor() {
                     placeholder="Boş bırakırsanız Meta Description kullanılır"
                   />
                 </div>
-                
+
                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800">
                   <p><strong>Not:</strong> Open Graph görseli olarak yazının "Kapak Görseli (Featured Image)" otomatik olarak kullanılacaktır. Ayrı bir sosyal medya görseli eklemenize gerek yoktur.</p>
                 </div>

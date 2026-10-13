@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../api/supabase';
+import { api } from '../api/api';
 import { BlogPost } from '../types';
 import { Calendar, User, ArrowRight, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
@@ -17,17 +17,8 @@ export function BlogListPage() {
 
   const fetchBlogs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select(`
-          *,
-          author:users(name),
-          category:blog_categories(name)
-        `)
-        .eq('status', 'published')
-        .order('published_at', { ascending: false });
+      const data = await api.getPublicBlogs();
 
-      if (error) throw error;
       setBlogs(data as unknown as BlogPost[]);
     } catch (err) {
       console.error('Error fetching blogs:', err);

@@ -1,4 +1,6 @@
 import { emailService } from '../services/emailService';
+import {cmsPayload,cmsResult,cmsError} from './blogCms';
+import type {CmsBlog} from './blogCms';
 import type {UserDetailSnapshot} from './userDetail';
 export const profileFields = ['name','profession','phone','city','website','bio','linkedin_profile','company','tax_number','tax_office','billing_address'] as const;
 export type ProfilePatch = Partial<Record<typeof profileFields[number],string|null>>;
@@ -346,6 +348,12 @@ export const api = {
     ];
   },
 
+  async getAdminBlogs(owner:string){return cmsResult(await request('/admin/blogs',undefined,false,owner).catch(e=>{throw cmsError(e);}),owner,true).blogs;},
+  async getPublicBlogs(){return await request('/blogs');},
+  async getPublicBlog(slug:string){return await request('/blogs/'+encodeURIComponent(slug));},
+  async getAdminBlog(id:string,owner:string){return cmsResult(await request('/admin/blogs/'+id,undefined,false,owner).catch(e=>{throw cmsError(e);}),owner).blog;},
+  async saveAdminBlog(id:string|null,data:Partial<CmsBlog>,owner:string,reviewConfirmed=false){return cmsResult(await request('/admin/blogs'+(id?'/'+id:''),{method:id?'PUT':'POST',body:JSON.stringify(cmsPayload(data,reviewConfirmed))},false,owner).catch(e=>{throw cmsError(e);}),owner).blog;},
+  async archiveAdminBlog(blog:CmsBlog,owner:string){return cmsResult(await request('/admin/blogs/'+blog.id+'/archive',{method:'POST',body:JSON.stringify({revision:blog.revision})},false,owner),owner).blog;},
   // Events (admin-only)
   async getPublicEvents() {
     return await request('/events');

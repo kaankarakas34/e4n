@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-13",
+  "codeCommit": "839ae5e",
+  "deployment": "dpl_A8ju4Nd24jfR67N1uWsKK2aNCG5D",
+  "environment": "production",
+  "state": "READY",
+  "site": "https://www.event4network.com",
+  "sitemapCount": 29,
+  "realEventArchives": 7,
+  "realPublishedBlogs": 0,
+  "readOnly": true,
+  "ddl": false,
+  "registrationSubmission": false,
+  "lint": {
+    "errors": 0,
+    "warnings": 4
+  },
+  "remaining": [
+    "real Article publication acceptance",
+    "Event venue/program details and eligible Rich Results",
+    "actual Google indexing",
+    "CrUX/INP insufficient data",
+    "GA4 double page_view/performance"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "deployment": "dpl_A8ju4Nd24jfR67N1uWsKK2aNCG5D",
+  "sitemap": {
+    "status": 200,
+    "count": 29,
+    "dynamicCount": 7,
+    "cache": "private, no-store",
+    "urls": [
+      "https://www.event4network.com/",
+      "https://www.event4network.com/e4n-nedir",
+      "https://www.event4network.com/nasil-calisir",
+      "https://www.event4network.com/kapali-gruplar",
+      "https://www.event4network.com/shuffle",
+      "https://www.event4network.com/katilim-ilkeleri",
+      "https://www.event4network.com/birebir-networking",
+      "https://www.event4network.com/uyelik",
+      "https://www.event4network.com/etkinlikler",
+      "https://www.event4network.com/topluluklarimiz",
+      "https://www.event4network.com/blog",
+      "https://www.event4network.com/hakkimizda",
+      "https://www.event4network.com/sikca-sorulan-sorular",
+      "https://www.event4network.com/iletisim",
+      "https://www.event4network.com/kvkk",
+      "https://www.event4network.com/gizlilik-politikasi",
+      "https://www.event4network.com/ziyaretci-basvurusu",
+      "https://www.event4network.com/on-bilgilendirme-formu",
+      "https://www.event4network.com/kullanim-kosullari",
+      "https://www.event4network.com/cerez-politikasi",
+      "https://www.event4network.com/mesafeli-satis-sozlesmesi",
+      "https://www.event4network.com/iptal-ve-iade-kosullari",
+      "https://www.event4network.com/event/385b913c-1709-4fcd-ad9f-fb7724cfd331",
+      "https://www.event4network.com/event/ac7e0298-3e0a-4387-950f-3793fc3179ea",
+      "https://www.event4network.com/event/d69755ae-d6fb-4ced-9671-9bb383eae16f",
+      "https://www.event4network.com/event/e97da9cf-a6b6-42af-97b7-b6f08eafed2b",
+      "https://www.event4network.com/event/c70fc637-fc4f-402c-878d-2533adf2fd69",
+      "https://www.event4network.com/event/5acf8aa6-0376-4e94-8357-5f6150614d35",
+      "https://www.event4network.com/event/13e3afcc-cbf0-460f-ad4f-ccbf469ba5ef"
+    ]
+  },
+  "rows": [
+    {
+      "path": "/event/385b913c-1709-4fcd-ad9f-fb7724cfd331",
+      "status": 200,
+      "title": "Online Networking | Event4Network Etkinlik"
+    },
+    {
+      "path": "/event/ac7e0298-3e0a-4387-950f-3793fc3179ea",
+      "status": 200,
+      "title": "Online Networking | Event4Network Etkinlik"
+    },
+    {
+      "path": "/event/d69755ae-d6fb-4ced-9671-9bb383eae16f",
+      "status": 200,
+      "title": "Online Networking | Event4Network Etkinlik"
+    },
+    {
+      "path": "/event/e97da9cf-a6b6-42af-97b7-b6f08eafed2b",
+      "status": 200,
+      "title": "Dikmen Vadisi’nden Bugüne: Kentsel Dönüşümde 40 Milyon m²’lik Deneyim | Event4Network Etkinlik"
+    },
+    {
+      "path": "/blog/e4n-seo-missing-20261013",
+      "status": 404
+    },
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000000",
+      "status": 404
+    },
+    {
+      "path": "/event/not-valid-uuid",
+      "status": 404
+    }
+  ],
+  "health": "ok",
+  "scope": "Real staged production config and read-only live records; no records created"
+}

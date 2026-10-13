@@ -1,0 +1,55 @@
+{
+  "scope": "Isolated synthetic contract fixtures; no production records created or changed",
+  "results": [
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000001",
+      "status": 200
+    },
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000004",
+      "status": 200
+    },
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000005",
+      "status": 200
+    },
+    {
+      "path": "/blog/test-yazisi",
+      "status": 200
+    },
+    {
+      "path": "/blog/noindex",
+      "status": 200
+    },
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000002",
+      "status": 404
+    },
+    {
+      "path": "/event/00000000-0000-4000-8000-000000000003",
+      "status": 404
+    },
+    {
+      "path": "/event/not-uuid",
+      "status": 404
+    },
+    {
+      "path": "/blog/taslak",
+      "status": 404
+    },
+    {
+      "path": "/blog/missing",
+      "status": 404
+    }
+  ],
+  "sitemap": true,
+  "head": true,
+  "method405": true,
+  "outage503": true,
+  "parameterBinding": true,
+  "privateDraftExclusion": true,
+  "htmlSafety": true,
+  "eventLifecycle": true,
+  "missingVenueNoInventedSchema": true,
+  "readOnlySql": true
+}

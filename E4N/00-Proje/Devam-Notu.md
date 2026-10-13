@@ -1,9 +1,10 @@
-## SEO canlı yayın — 13 Ekim 2026
+## SEO dinamik yayın ve GSC — 13 Ekim 2026
 
-- Kod0ae32d3; e4n production READY `dpl_CgvtNatN3Rpt9AmfRsrnit9SZ5xX`; www.event4network.com beklenen index-Dgi8bxxD.js. Üretim build’i stage→promote; mobile m dışarıda, API/DB/cron değişmedi.
-- Canlı26 ham/render sayfa,22 sitemap,6 redirect/query/slug,404,noindex/login/admin401,4 mobil ve0 pageerror PASS. APIhealth200/ok/DBsuccess;ana sayfa kamu event okuması200. Platformta APIcleanUrls hedefi ve ana sayfanın admin okuması düzeltildi;final build/type/API235/SEO26/hedefli lint geçti.
-- E4N-289/290/291 In Progress;GSC/RichResults/CrUX,dinamik gerçek Event/Article servermetadata/404/sitemap,kalanGA4 çiftpageview/perf ve tam niyet kabulü açık. Sıradaki bu bağımlılıkları çöz; yeni küçük issue üretme, aktif diğer işleri kesme.
-- Tek kanıt yönetilen checkout E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13.md;aynı paketteproduction/JSON,görseller,SHA256. Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2.
+- Kod839ae5e;production READY dpl_A8ju4Nd24jfR67N1uWsKK2aNCG5D. Statik26 korunur;dinamik content fonksiyonu salt SELECT;22 statik+7 gerçek public COMPLETED arşiv=29sitemap. Tekil HTML/metadata/Breadcrumb,404/noindex,editorialrobots,503outage ve arşiv kayıt kapısı teslim. DDL/ödeme/mail/veri mutasyonu yok;mobile m korunur.
+- Full build/type/API235,statik26/dinamik10 sözleşmesi,7 canlı HTML/browser arşiv,2 eksik404,health/admin401,mobil ve0pageerror PASS. Hedefli lint0error/4hookwarning;geniş repo lint yok.
+- GSC domain mülkü mevcutChromeoturumunda erişilir. Uyelik Google canlıtestfetch/indexEvet/canonicaldoğru/Breadcrumb1;indeksleme isteği kabul/sırada. SitemapGooglebaşarıyla işlendi/29keşfedildi. İndekslenme garanti/PASS değil;CWV veri yok.
+- E4N-289/290/291 açık;E4N-295 tam yayıncılık/CRO kapsamı bekler. Sıradaki gerçek etkinlikkonum/program,uygunEvent/RichResults ve ilk gerçek publishedblog/Article kabulü;7arşivde eksik konumdan Event schema yok,gerçek blog0. GA4çiftpageview/perf/niyet de açık. Yeni küçük issue açma;aktif diğer işleri kesme.
+- Tek kanıt yönetilen checkout E4N/09-Dogrulama/E4N-SEO-TEKNIK-Render-Metadata-HTTP-2026-10-13.md;aynı pakette dynamic/JSON,GSCgörseller,loglar,SHA256. Checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2.
 
 ## SEO — AUD-02 güncel denetim / 12 Ekim 2026
 

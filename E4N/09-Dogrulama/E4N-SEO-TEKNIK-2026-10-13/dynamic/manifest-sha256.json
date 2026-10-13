@@ -1,0 +1,58 @@
+[
+  {
+    "file": "browser-result.json",
+    "sha256": "625abd9ccce696836938897b14d76195b1e9fd93c1430719096ca19335ee95fe"
+  },
+  {
+    "file": "build.log",
+    "sha256": "1923467d2ba4177e7aebfb2a335b00d60fddf07b17a8f86f2738ba53a850e800"
+  },
+  {
+    "file": "contract-result.json",
+    "sha256": "c42152f40965b751ace61218c9e4ad263f6acee4a9d4c1fa89528367ffb3c578"
+  },
+  {
+    "file": "contract.log",
+    "sha256": "a4cce6d8aa737280a00e5c025c0b313e69d4a6049f0462ce602db069540982d0"
+  },
+  {
+    "file": "gsc-result.json",
+    "sha256": "007e5955452b41493e3af4e815f67bcaf3d62c805abe7df86e231ffdf21250da"
+  },
+  {
+    "file": "gsc-sitemap-processed.jpg",
+    "sha256": "0f7ed7275921e82f6a866da62bc153b048871a0f14b7a372b44f012590243646"
+  },
+  {
+    "file": "gsc-uyelik-index-request.jpg",
+    "sha256": "8ae8fd5afcb7e5a928c5f6b47e8fb4caa45c2f386c2cba0f5599a6b1cb4963fa"
+  },
+  {
+    "file": "gsc-uyelik-live.jpg",
+    "sha256": "573ac00005b73bc73321d84659f230600cc69db62b577cd8ff018a547e143b80"
+  },
+  {
+    "file": "lint.log",
+    "sha256": "d7475eafe10359d662b7d37ced0e7a4a3e6236459e95a72ae089642dd24428d8"
+  },
+  {
+    "file": "mobile-archive.png",
+    "sha256": "d34dba4be94bf6cecf60989d850cdd972da02f9080c8ad6d848b0d5120c23aaa"
+  },
+  {
+    "file": "production-result.json",
+    "sha256": "4a031f207233bb5d597bf7a96a5e05dbb6f9d85aec0d97eac85bd71da08d021a"
+  },
+  {
+    "file": "release.json",
+    "sha256": "2f6ea27e7d74f7433d037ddfd2d679e0a1e9917126f76c0c719d6b43dad2f931"
+  },
+  {
+    "file": "stage-result.json",
+    "sha256": "526f7babbda5e09e06ec65bf9bbf6efd6ca79f4e63d0417af268fe33ad691850"
+  },
+  {
+    "file": "static-contract.log",
+    "sha256": "102045b343b8a77d0c5d7678e7429818e8cef63475213e803c89f5f570fd12e8"
+  }
+]

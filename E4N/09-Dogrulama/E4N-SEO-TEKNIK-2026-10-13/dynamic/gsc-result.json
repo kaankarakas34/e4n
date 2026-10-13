@@ -1,0 +1,29 @@
+{
+  "property": "sc-domain:event4network.com",
+  "date": "2026-10-13",
+  "overview": {
+    "indexed": 3,
+    "notIndexed": 3,
+    "coreWebVitals": "insufficient data"
+  },
+  "membership": {
+    "url": "https://www.event4network.com/uyelik",
+    "indexBefore": "unknown to Google",
+    "liveTestTime": "2026-10-13T12:34:24+03:00",
+    "fetch": "successful",
+    "crawlAllowed": true,
+    "indexAllowed": true,
+    "declaredCanonical": "https://www.event4network.com/uyelik",
+    "validBreadcrumbItems": 1,
+    "indexRequest": "accepted, queued; indexing not confirmed"
+  },
+  "submittedSitemapsBefore": 0,
+  "sitemap": {
+    "url": "https://www.event4network.com/sitemap.xml",
+    "submission": "accepted",
+    "processing": "successful",
+    "lastReadDate": "2026-10-13",
+    "discoveredPages": 29,
+    "indexingNotConfirmed": true
+  }
+}

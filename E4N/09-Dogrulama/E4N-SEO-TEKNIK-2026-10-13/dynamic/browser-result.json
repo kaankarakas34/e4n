@@ -1,0 +1,120 @@
+{
+  "rows": [
+    {
+      "path": "/event/385b913c-1709-4fcd-ad9f-fb7724cfd331",
+      "title": "Online Networking | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/385b913c-1709-4fcd-ad9f-fb7724cfd331"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/ac7e0298-3e0a-4387-950f-3793fc3179ea",
+      "title": "Online Networking | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/ac7e0298-3e0a-4387-950f-3793fc3179ea"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/d69755ae-d6fb-4ced-9671-9bb383eae16f",
+      "title": "Online Networking | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/d69755ae-d6fb-4ced-9671-9bb383eae16f"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/e97da9cf-a6b6-42af-97b7-b6f08eafed2b",
+      "title": "Dikmen Vadisi’nden Bugüne: Kentsel Dönüşümde 40 Milyon m²’lik Deneyim | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/e97da9cf-a6b6-42af-97b7-b6f08eafed2b"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/c70fc637-fc4f-402c-878d-2533adf2fd69",
+      "title": "Odak & Verimlilik: Hedefe Giden Sistem | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/c70fc637-fc4f-402c-878d-2533adf2fd69"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/5acf8aa6-0376-4e94-8357-5f6150614d35",
+      "title": "Bilanço Nedir? İşletmeniz Hakkında Size Ne Anlatır? | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/5acf8aa6-0376-4e94-8357-5f6150614d35"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    },
+    {
+      "path": "/event/13e3afcc-cbf0-460f-ad4f-ccbf469ba5ef",
+      "title": "Endüstri 4.0 gerçekten nedir, ne değildir? | Event4Network Etkinlik",
+      "h1": 1,
+      "canonical": [
+        "https://www.event4network.com/event/13e3afcc-cbf0-460f-ad4f-ccbf469ba5ef"
+      ],
+      "robots": "index, follow",
+      "schemaTypes": [
+        "BreadcrumbList"
+      ],
+      "status": "COMPLETED",
+      "registrationClosed": true
+    }
+  ],
+  "missing": [
+    {
+      "canonicalCount": 0,
+      "robots": "noindex, follow",
+      "path": "/blog/e4n-seo-missing-20261013"
+    },
+    {
+      "canonicalCount": 0,
+      "robots": "noindex, follow",
+      "path": "/event/00000000-0000-4000-8000-000000000000"
+    }
+  ],
+  "mobile": {
+    "width": 390,
+    "overflow": false
+  },
+  "errors": [],
+  "scope": "Real production anonymous reads, no API mocks or registrations"
+}

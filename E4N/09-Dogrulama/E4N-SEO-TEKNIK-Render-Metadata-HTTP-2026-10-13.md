@@ -73,3 +73,27 @@ Platform kontrolü cleanUrls ile `/api/index.js` hedefinin 404 verdiğini yakala
 Kanıt aynı paketin `production/` altındadır:release.json,http/browser/stage/routing-stage sonuçları,buildlog,4 mobil görsel ve SHA256 manifesti. HTTP-only kontroller ile runtime/kamu veri akışı birlikte doğrulandı; prod browser’da API mock kullanılmadı. İlk turdaki401 düzeltildi, final browser eventReads yalnız200.
 
 Üretim yayını/platform kabulü artık teslim. E4N-290/291 In Progress kalır: gerçek dinamik Event/Article server metadata/404/sitemap ve schema/Rich Results, GSC, CrUX/INP, GA4 çift page_view ve kalan performans/niyet kabulü açık. Gerçek yayımlanmış kayıt uydurulmadı; Google indeksleme veya CWV PASS denmedi.
+
+
+## Dinamik içerik ve Search Console teslimi — 13 Ekim 2026
+
+Kod839ae5e; aynı test edilen üretim build’i stage→promote; Vercel READY `dpl_A8ju4Nd24jfR67N1uWsKK2aNCG5D`. `/blog/:slug`, `/event/:id`, `/sitemap.xml` salt SELECT yapan ayrı içerik fonksiyonuna bağlandı. Public/published blog; public PUBLISHED/COMPLETED/CANCELLED etkinlik dışında kayıt okunmaz. DB/DDL/mail/ödeme mutasyonu yapılmadı; 7 gerçek tamamlanmış etkinlik korundu, sahte yayın oluşturulmadı. Özel etkinliğin anonim HTTP yanıtı404/noindex; mevcut authenticated client/API akışı korunur.
+
+Tekil içerik ilk HTML’de başlık/metin/iç link/canonical/robots/Breadcrumb; blog Article metadata ve güvenli allowlist HTML temizliği server/client ortaktır. Blog nofollow/noindex/none seçimi korunur. Olmayan/taslak/özel kayıt404 ve canonical yok; DB hatası503/retry60/noindex, hata ayrıntısı kullanıcıya sızmaz. Tamamlanan/iptal etkinlikte kayıt/ek bilet/misafir ödeme kapatılır. Sitemap 22 statik+7 gerçek public arşiv=29; sadece öz canonical,include_in_sitemap,index blog; gerçek blog lastmod,etkinlikte güvenilir modified timestamp bulunmadığı için lastmod uydurulmaz.
+
+Platform kapısında statik sitemap’in rewrite’ı gölgelemesi yakalandı; dist/sitemap.xml kaldırılıp seed sitemap-static.xml ayrıldı ve guard eklendi. sanitize-html2.18/htmlparser2 ESM-CJS karışımı Vercel require hook’unda startup hatası verdi; güncel güvenlik sürümü korunarak sanitizer+parser esbuild ile tek sunucu modülüne paketlendi, sözleşme testi aynı derlenmiş modülü çalıştırır. Eski sanitizer sürümü güvenlik audit’i nedeniyle kullanılmadı/yayımlanmadı. Stage noindex başlığının platform kaynaklı olduğu [Vercel response-header dokümanıyla](https://vercel.com/docs/headers/response-headers) doğrulandı; gerçek production içerik yanıtında noindex bulunmadı.
+
+| Kabul | Sonuç |
+|---|---|
+| Yerel kapı |full build/type/API235;26 statik HTML sözleşmesi;10 dinamik public/archive/noindex/private/draft/missing vaka;HEAD/405/503,SQL parametre,HTML güvenliği,lifecycle PASS |
+| Hedefli lint |5 TS/TSX dosyası:0 error,4 hook dependency/ref warning; geniş repo lint çalıştırılmadı |
+| Üretim HTTP |29 sitemap;7 gerçek public etkinlik HTML200/tek canonical/H1/Breadcrumb;2 olmayan kayıt404/noindex/canonical0;healthok/admin401 |
+| Üretim browser |7 COMPLETED etkinlik:tek canonical/H1,alan metadata,Breadcrumb ve disabled kayıt;2 eksik kayıttaURL korunur/noindex/canonical0;0 pageerror;390×844 arşiv taşma yok;API mock yok |
+| Google canlı üyelik testi |13.10.2026 12:34:24;fetch başarılı;tarama/index izniEvet;canonical www.../uyelik;1 geçerli Breadcrumb |
+| Search Console işlemleri |uyelik indeksleme isteği kabul/sırada;sitemap başarıyla işlendi,29 keşfedilen sayfa;gerçek indekslenme doğrulanmadı |
+
+Search Console sc-domain:event4network.com mevcut kullanıcı oturumuyla erişildi. İlk görünüm3 indexed/3 nonindexed;CWV mobil/desktop veri yok. Üyelik önce Google’a bilinmeyen URL idi; Google canlı fetch ve sıraya alındı onayı kanıtlandı. Sitemap ilk gönderimde geçici Getirilemedi görünümü vardı; ayrıntı sonrasında başarıyla işlendi ve29 URL keşfi doğrulandı, güncel sonuç başarılıdır. Tekrarlı submission yapılmadı.
+
+7 gerçek arşivde Event schema üretilmedi: doğrulanmış fiziksel mekân veya public sanal konum bilgisi yetersiz; İstanbul/ana sayfa/özel online_link fallback’i uydurulmaz. [Google Event koşulları](https://developers.google.com/search/docs/appearance/structured-data/event) kapsamında gerçek konum/program ve uygunluk tamamlanınca canlı Rich Results kabulü yapılmalı; salt sanal etkinliğin Google Event deneyimi uygunluğu iddia edilmedi. Gerçek published blog yok; Article/HTML/blog robots kabulü izole fixture ile doğrulandı, ilk gerçek yayın kontrolü açıktır.
+
+Kanıt aynı paket `dynamic/`:14 dosya+SHA256manifest;prod/browser/stage/contracts/GSC sonuçları,3 Google görüntüsü,mobil arşiv ve kapı logları. E4N-290 In Progress; E4N-295’in tam duyuru/program/özet/izinli medya/CRO kapsamı teslim değil. Sıradaki gerçek etkinlik konum/program ve ilk rehber yayını/Article-RichResults; Google gerçek indekslenme,CrUX/INP ve kalanGA4/perf açık.

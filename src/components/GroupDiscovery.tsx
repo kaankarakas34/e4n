@@ -135,9 +135,18 @@ export function GroupDiscovery() {
       setInspectModalGroup(null);
       setRetry(n => n + 1);
     } catch (e: any) {
+      let errorMsg = 'Ziyaretçi talebi oluşturulurken bir hata oluştu.';
+      if (typeof e?.message === 'string') {
+        try {
+          const parsed = JSON.parse(e.message);
+          errorMsg = parsed.error || e.message;
+        } catch {
+          errorMsg = e.message;
+        }
+      }
       setVisitorFeedback({
         type: 'error',
-        message: e?.message || 'Ziyaretçi talebi oluşturulurken bir hata oluştu.'
+        message: errorMsg
       });
     } finally {
       setVisitorSubmitting(false);

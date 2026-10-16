@@ -1572,6 +1572,20 @@ app.post('/api/user/request-visitor', authenticateToken, async (req, res) => {
       [u.name, u.email, u.phone || '', u.company || '', u.profession || '', JSON.stringify(formData)]
     );
 
+    // Ensure visitors status constraint allows modern statuses (INVITED, PENDING, etc.)
+    await client.query("ALTER TABLE visitors DROP CONSTRAINT IF EXISTS visitors_status_check");
+    await client.query(`
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE visitors ADD CONSTRAINT visitors_status_check 
+          CHECK (status IN ('INVITED', 'PENDING', 'ATTENDED', 'JOINED', 'CONVERTED', 'NO_SHOW', 'REJECTED'));
+        EXCEPTION
+          WHEN OTHERS THEN NULL;
+        END;
+      END $$;
+    `).catch(() => {});
+
     // Also record in visitors table (which has group_id)
     const visitorInsertRes = await client.query(
       `INSERT INTO visitors (inviter_id, name, email, phone, company, profession, visited_at, group_id, status)

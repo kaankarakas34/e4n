@@ -379,30 +379,30 @@ export function Dashboard() {
                   </div>
 
                   {/* CTA Actions */}
-                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-800">
+                  <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-800/80">
                     <Button
                       onClick={() => navigate('/rehber')}
-                      className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-red-900/40 flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto h-11 bg-red-600 hover:bg-red-500 text-white font-bold px-5 rounded-xl shadow-lg shadow-red-900/40 flex items-center justify-center gap-2 whitespace-nowrap text-sm"
                     >
-                      <BookOpen className="w-4 h-4" />
-                      Çalışma Rehberini İncele (9 Sekmeli Kılavuz)
-                      <ArrowRight className="w-4 h-4" />
+                      <BookOpen className="w-4 h-4 shrink-0" />
+                      <span>Çalışma Rehberini İncele (9 Sekmeli Kılavuz)</span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
                     </Button>
 
                     <Button
                       onClick={() => navigate('/chapter-management')}
-                      variant="outline"
-                      className="w-full sm:w-auto border-slate-600 text-slate-200 hover:bg-slate-800 hover:text-white font-semibold px-5 py-3 rounded-xl"
+                      className="w-full sm:w-auto h-11 bg-white hover:bg-slate-100 text-slate-900 font-bold px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 whitespace-nowrap text-sm border border-white/20"
                     >
-                      Ücretsiz Ziyaretçi Ol
+                      <Users className="w-4 h-4 shrink-0 text-slate-700" />
+                      <span>Ücretsiz Ziyaretçi Ol</span>
                     </Button>
 
                     <Button
                       onClick={() => navigate('/membership')}
-                      variant="ghost"
-                      className="w-full sm:w-auto text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 font-semibold px-4 py-3 rounded-xl"
+                      className="w-full sm:w-auto h-11 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border border-amber-500/40 font-bold px-4 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-colors"
                     >
-                      Abonelik Satın Al
+                      <CreditCard className="w-4 h-4 shrink-0 text-amber-400" />
+                      <span>Abonelik Satın Al</span>
                     </Button>
                   </div>
                 </div>

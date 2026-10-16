@@ -103,6 +103,18 @@ export const runMigrations = async (existingClient = null) => {
     await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS phone VARCHAR(50)");
     await client.query("ALTER TABLE visitors ADD COLUMN IF NOT EXISTS profession VARCHAR(255)");
     await client.query("ALTER TABLE visitors ALTER COLUMN inviter_id DROP NOT NULL");
+    await client.query("ALTER TABLE visitors DROP CONSTRAINT IF EXISTS visitors_status_check");
+    await client.query(`
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE visitors ADD CONSTRAINT visitors_status_check 
+          CHECK (status IN ('INVITED', 'PENDING', 'ATTENDED', 'JOINED', 'CONVERTED', 'NO_SHOW', 'REJECTED'));
+        EXCEPTION
+          WHEN duplicate_object THEN NULL;
+        END;
+      END $$;
+    `).catch(() => {});
 
 
     await client.query(`

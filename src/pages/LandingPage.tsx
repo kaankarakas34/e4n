@@ -344,7 +344,7 @@ export function LandingPage() {
               size="lg"
               variant="outline"
               onClick={() => navigate('/kapali-gruplar')}
-              className="border-white/20 text-white hover:bg-white/10 font-semibold px-8 h-12 w-full sm:w-auto"
+              className="bg-white text-black hover:text-black hover:bg-slate-100 font-semibold px-8 h-12 w-full sm:w-auto"
             >
               Kapalı Grupları İncele
             </Button>

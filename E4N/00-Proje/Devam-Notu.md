@@ -1,3 +1,13 @@
+## SEO — CMS-01 teknik paket / 17 Ekim 2026
+
+- Yönetilen checkout ve `codex/e4n-sprint1-foundation` korunur. E4N-292 In Progress; yeni issue açılmadı. Diğer hardening dosyaları ve mobile değişiklikleri korunur.
+- 18 küme, kurumsal/mevcut yönetici yazarı, özel brief/kaynak kontrolü, yayımlanmış pillar ve en fazla 6 ilgili yazı eklendi. Özel editoryal alanlar anonim API/HTML'de yok. Yayın onayı DB'de kimlik+tarih tutar; editör değişikliği yeniden onay ister. Arşivlenen bağlantılar gizlenir.
+- Doğrudan tarayıcı storage upload yerine JWT+güncel DB ADMIN kontrollü sunucu upload: 4 MB, gerçek PNG/JPEG/WebP, 24 MP, 600×315 alt sınırı, en çok1600px WebP, rastgele yol/üzerine yazma yok. İzin/kaynak ve alt metin zorunlu. Canlı storage kabulü henüz yok.
+- İzole PG15/API38; son üretim build/type244rota; statik26/dinamik10; gerçek browser6akış ve 320/390/768/1440px20ölçüm taşma0/pageerror0 PASS. 768px yönetici menüsü taşması düzeltildi. Son DB API readback PASS. Kullanılmayan menü import temizliği sonrasında type/244rota ve lint0error/1öncekiwarning yeniden PASS; genel web sürüm kabulü değildir.
+- Canlı migration/deploy/veri değişikliği yapılmadı. Önce eklemeli `20261017071555_blog_editorial_workflow.sql`, sonra sunucu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ve uygulama yayını gerekir. Genel28sürüm rehearsal runner'ı değiştirilmedi; bu ayrı CMS yayın migration'ıdır. Gerçek ilk yazının yeni editoryal alanları/izinli kapağı ve gerçek admin storage kabulü sonraki yayın kapısıdır.
+- Sonraki bağlı kapsam: CMS canlı yayın kabulü; BRAND-01 ürün metni uzlaşması; gerçek gelecek etkinlikle CRO katılım kabulü. Eski7etkinlik noindex ve mevcut makale korunur; konum/program/uzman uydurma. İndekslenme/Rich Results/CWV henüz PASS değil.
+- Tek paket kanıtı: [[E4N/09-Dogrulama/E4N-SEO-CMS-Yayin-Kalitesi-2026-10-17]] ve aynı tarihli JSON/görsel/log/SHA256 klasörü.
+
 ## SEO — mobil kabul ve CRO devamı / 13 Ekim 2026
 
 - Yönetilen checkout C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2; branch codex/e4n-sprint1-foundation. Kod 0cccd09; canlı READY dpl_AjbrFCMv62zpY1WyAcSKx9Lw2zJw. Aktif diğer işleri veya mobile m değişikliklerini kesme/kopyalama.

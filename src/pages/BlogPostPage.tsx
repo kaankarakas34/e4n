@@ -173,6 +173,10 @@ export function BlogPostPage() {
               dangerouslySetInnerHTML={{ __html: contentHtml(blog.content) }}
             />
 
+            {blog.links && blog.links.length>0 && <nav aria-label="İlgili içerikler" className="mt-10 border-t border-gray-100 pt-6">
+              <h2 className="text-xl font-bold text-gray-900">Okumaya devam edin</h2>
+              <ul className="mt-3 space-y-2">{blog.links.map(link=><li key={link.slug}><Link className="inline-flex min-h-11 items-center text-red-600 underline" to={'/blog/'+encodeURIComponent(link.slug)}>{link.kind==='pillar'?'Ana rehber: ':''}{link.title}</Link></li>)}</ul>
+            </nav>}
             {/* Tags */}
             {blog.tags && blog.tags.length > 0 && (
               <div className="mt-12 pt-8 border-t border-gray-100">

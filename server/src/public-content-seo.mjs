@@ -2,6 +2,7 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {blogMetadata,eventMetadata,breadcrumb,textContent,isoDate,ORIGIN,excludedEventIds} from '../../src/seo/contentMetadata.mjs';
 import {contentHtml} from '../../src/seo/contentHtml.mjs';
+import {publicBlogColumns,blogLinks} from './blog-links.mjs';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
 const eventColumns="id,title,description,start_at,end_at,location,city,is_online,status,is_public,created_at";
@@ -25,7 +26,7 @@ export function createContentHandler({query,loadTemplate=()=>readFile(resolve('d
    const match=path.match(/^\/(blog|event)\/([^/]+)\/?$/);
    let record=null,kind=match?.[1];
    if(match){const key=decodeURIComponent(match[2]);
-    if(kind==='blog')record=(await query("SELECT b.*, json_build_object('name',u.name) AS author, json_build_object('name',c.name) AS category FROM blogs b LEFT JOIN users u ON u.id=b.author_id LEFT JOIN blog_categories c ON c.id=b.category_id WHERE b.slug=$1 AND b.status='published'",[key])).rows[0];
+    if(kind==='blog'){record=(await query(`SELECT ${publicBlogColumns}, json_build_object('name',u.name) AS author, json_build_object('name',c.name) AS category FROM blogs b LEFT JOIN users u ON u.id=b.author_id LEFT JOIN blog_categories c ON c.id=b.category_id WHERE b.slug=$1 AND b.status='published'`,[key])).rows[0];if(record)record.links=await blogLinks(query,record.id);}
     else if(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(key))record=(await query(`SELECT ${eventColumns} FROM events WHERE id=$1 AND is_public=TRUE AND status IN ('PUBLISHED','COMPLETED','CANCELLED')`,[key])).rows[0];
    }
    const template=await loadTemplate();let head,body;
@@ -38,6 +39,7 @@ export function createContentHandler({query,loadTemplate=()=>readFile(resolve('d
     body=`<main class="max-w-4xl mx-auto px-6 py-16"><nav><a href="/">Event4Network</a> / <a href="${kind==='blog'?'/blog':'/etkinlikler'}">${kind==='blog'?'Blog':'Etkinlikler'}</a></nav><article><h1 class="text-4xl font-bold my-8">${escape(record.title)}</h1>`;
     if(kind==='blog'){if(record.author?.name)body+=`<p>${escape(record.author.name)}</p>`;body+=`<p>${escape(record.excerpt)}</p><div class="prose my-8">${contentHtml(record.content)}</div>`;}
     else {body+=`<p><time datetime="${escape(isoDate(record.start_at))}">${escape(new Date(record.start_at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}))}</time></p><p>${escape(record.location)} ${escape(record.city)}</p><p>${record.status==='CANCELLED'?'Etkinlik iptal edildi.':record.status==='COMPLETED'?'Etkinlik tamamlandı.':'Etkinlik duyurusu'}</p><div class="whitespace-pre-wrap my-8">${escape(textContent(record.description))}</div><a href="/auth/login">Giriş yap</a>`;}
+    if(kind==='blog'&&record.links?.length)body+='<nav aria-label="İlgili içerikler"><h2>Okumaya devam edin</h2><ul>'+record.links.map(link=>`<li><a href="/blog/${encodeURIComponent(link.slug)}">${link.kind==='pillar'?'Ana rehber: ':''}${escape(link.title)}</a></li>`).join('')+'</ul></nav>';
     body+='</article><a href="/uyelik">Üyelik bilgileri</a></main>';
    }
    // Remove generic shell metadata before adding record-owned head tags.

@@ -1,6 +1,6 @@
 import { emailService } from '../services/emailService';
 import {cmsPayload,cmsResult,cmsError} from './blogCms';
-import type {CmsBlog} from './blogCms';
+import type {CmsBlog,CmsOptions} from './blogCms';
 import type {UserDetailSnapshot} from './userDetail';
 export const profileFields = ['name','profession','phone','city','website','bio','linkedin_profile','company','tax_number','tax_office','billing_address'] as const;
 export type ProfilePatch = Partial<Record<typeof profileFields[number],string|null>>;
@@ -350,6 +350,17 @@ export const api = {
 
   async getAdminBlogs(owner:string){return cmsResult(await request('/admin/blogs',undefined,false,owner).catch(e=>{throw cmsError(e);}),owner,true).blogs;},
   async getPublicBlogs(){return await request('/blogs');},
+  async getBlogOptions(owner:string):Promise<CmsOptions>{
+    const value=await request('/admin/blog-options',undefined,false,owner).catch(e=>{throw cmsError(e);});
+    if(value?.version!==1||value.ownerId!==owner||!Array.isArray(value.authors)||!Array.isArray(value.posts)||value.authors.some((a:{id:string;name:string})=>!uuid(a.id)||typeof a.name!=='string')||value.posts.some((p:{id:string;slug:string;title:string})=>!uuid(p.id)||typeof p.slug!=='string'||typeof p.title!=='string'))throw new Error('İçerik seçenekleri doğrulanamadı.');
+    return value;
+  },
+  async uploadBlogImage(file:File,owner:string):Promise<{url:string;width:number;height:number}>{
+    const body=new FormData();body.append('image',file);
+    const value=await request('/admin/blog-images',{method:'POST',body},false,owner).catch(e=>{throw cmsError(e);});
+    if(value?.version!==1||value.ownerId!==owner||typeof value.image?.url!=='string'||!value.image.url.startsWith('https://')||!Number.isInteger(value.image.width)||!Number.isInteger(value.image.height))throw new Error('Kapak yükleme yanıtı doğrulanamadı.');
+    return value.image;
+  },
   async getPublicBlog(slug:string){return await request('/blogs/'+encodeURIComponent(slug));},
   async getAdminBlog(id:string,owner:string){return cmsResult(await request('/admin/blogs/'+id,undefined,false,owner).catch(e=>{throw cmsError(e);}),owner).blog;},
   async saveAdminBlog(id:string|null,data:Partial<CmsBlog>,owner:string,reviewConfirmed=false){return cmsResult(await request('/admin/blogs'+(id?'/'+id:''),{method:id?'PUT':'POST',body:JSON.stringify(cmsPayload(data,reviewConfirmed))},false,owner).catch(e=>{throw cmsError(e);}),owner).blog;},

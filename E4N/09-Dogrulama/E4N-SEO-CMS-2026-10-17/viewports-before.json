@@ -1,0 +1,142 @@
+{
+  "measurements": [
+    {
+      "width": 320,
+      "page": "editor",
+      "tab": "Genel Bilgiler",
+      "viewport": 320,
+      "scroll": 320
+    },
+    {
+      "width": 320,
+      "page": "editor",
+      "tab": "SEO Ayarları",
+      "viewport": 320,
+      "scroll": 320
+    },
+    {
+      "width": 320,
+      "page": "editor",
+      "tab": "İçerik Editörü",
+      "viewport": 320,
+      "scroll": 320
+    },
+    {
+      "width": 320,
+      "page": "editor",
+      "tab": "Sosyal Medya (Open Graph)",
+      "viewport": 320,
+      "scroll": 320
+    },
+    {
+      "width": 320,
+      "page": "article",
+      "viewport": 320,
+      "scroll": 320
+    },
+    {
+      "width": 390,
+      "page": "editor",
+      "tab": "Genel Bilgiler",
+      "viewport": 390,
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "editor",
+      "tab": "SEO Ayarları",
+      "viewport": 390,
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "editor",
+      "tab": "İçerik Editörü",
+      "viewport": 390,
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "editor",
+      "tab": "Sosyal Medya (Open Graph)",
+      "viewport": 390,
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "article",
+      "viewport": 390,
+      "scroll": 390
+    },
+    {
+      "width": 768,
+      "page": "editor",
+      "tab": "Genel Bilgiler",
+      "viewport": 768,
+      "scroll": 865
+    },
+    {
+      "width": 768,
+      "page": "editor",
+      "tab": "SEO Ayarları",
+      "viewport": 768,
+      "scroll": 865
+    },
+    {
+      "width": 768,
+      "page": "editor",
+      "tab": "İçerik Editörü",
+      "viewport": 768,
+      "scroll": 865
+    },
+    {
+      "width": 768,
+      "page": "editor",
+      "tab": "Sosyal Medya (Open Graph)",
+      "viewport": 768,
+      "scroll": 865
+    },
+    {
+      "width": 768,
+      "page": "article",
+      "viewport": 768,
+      "scroll": 768
+    },
+    {
+      "width": 1440,
+      "page": "editor",
+      "tab": "Genel Bilgiler",
+      "viewport": 1440,
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "editor",
+      "tab": "SEO Ayarları",
+      "viewport": 1440,
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "editor",
+      "tab": "İçerik Editörü",
+      "viewport": 1440,
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "editor",
+      "tab": "Sosyal Medya (Open Graph)",
+      "viewport": 1440,
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "article",
+      "viewport": 1440,
+      "scroll": 1440
+    }
+  ],
+  "errors": [],
+  "overflow": 4
+}

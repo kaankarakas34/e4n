@@ -1,0 +1,211 @@
+{
+  "scope": "Isolated local PostgreSQL15 instance, fresh exact CMS migration tables; no production connection",
+  "rows": [
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 409
+    },
+    {
+      "path": "/api/blogs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec",
+      "method": "PUT",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec",
+      "method": "PUT",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec",
+      "method": "PUT",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec",
+      "method": "PUT",
+      "status": 409
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec",
+      "method": "PUT",
+      "status": 409
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-options",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/support-article",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 403
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 400
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs/519be180-830e-4e02-8202-71e6ad4fe2ec/archive",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/blogs/fixture-article",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/blogs/support-article",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/admin/blogs",
+      "method": "POST",
+      "status": 403
+    }
+  ],
+  "tests": {
+    "dbRoleGate": true,
+    "draftHidden": true,
+    "publicationReview": true,
+    "organizationAuthor": true,
+    "revisionConflict": true,
+    "publishedSlugProtected": true,
+    "recoverableArchive": true,
+    "adminDemotion": true,
+    "noRlsChanges": true,
+    "editorialPrivacy": true,
+    "pillarPublishedOnly": true,
+    "serverImageGate": true,
+    "imageBounds": true,
+    "serverStorageSecretBoundary": true
+  }
+}

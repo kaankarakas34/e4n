@@ -7,8 +7,6 @@ import { Button } from './Button';
 import {
   Home,
   Users,
-  TrendingUp,
-  Calendar,
   BookOpen,
   BarChart3,
   User,
@@ -16,14 +14,9 @@ import {
   X,
   LogOut,
   Briefcase,
-  FileText,
   Bell,
   MessageCircle,
   Zap,
-  Ticket,
-  UserPlus,
-  Clock,
-  Mail,
   CreditCard,
   Settings,
   MessageSquare,
@@ -107,7 +100,7 @@ export function Navigation() {
               </Link>
             </div>
 
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden lg:ml-6 lg:flex lg:space-x-8">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -132,7 +125,7 @@ export function Navigation() {
           </div>
 
           {/* User dropdown & Notifications */}
-          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+          <div className="hidden lg:ml-6 lg:flex lg:items-center space-x-4">
             {/* Messages */}
             {user && (
               <Link to="/messages" className="text-gray-400 hover:text-gray-500 relative">
@@ -174,7 +167,7 @@ export function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="sm:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <Button
               variant="ghost"
               size="sm"
@@ -194,7 +187,7 @@ export function Navigation() {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden">
+        <div className="lg:hidden">
           <div className="pt-2 pb-3 space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -273,7 +266,6 @@ function NotificationBell() {
   const { unreadCount, fetchNotifications } = useNotificationStore();
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.id) fetchNotifications(user.id);

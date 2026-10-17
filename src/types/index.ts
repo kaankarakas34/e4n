@@ -483,6 +483,8 @@ export interface BlogCategory {
 }
 
 export interface BlogPost {
+  cluster_key?: string | null;
+  links?: {slug:string;title:string;kind:'pillar'|'related'}[];
   id: string;
   title: string;
   slug: string;

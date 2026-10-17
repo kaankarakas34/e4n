@@ -1,0 +1,39 @@
+{
+  "cases": [
+    {
+      "name": "cluster-author-options",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-upload-feedback",
+      "status": "PASS"
+    },
+    {
+      "name": "server-cover-upload",
+      "status": "PASS"
+    },
+    {
+      "name": "draft-persist-editorial",
+      "status": "PASS"
+    },
+    {
+      "name": "publication-review-and-reconfirmation",
+      "status": "PASS"
+    },
+    {
+      "name": "public-links-and-private-notes",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "id": "fa9527ac-62d8-4a49-8820-b1bfb0034dce",
+  "failed": 0,
+  "cleanup": {
+    "browserSessions": "closed",
+    "fixtureStopHTTP": 200,
+    "preview": "owned process interrupted after checks",
+    "productionWrites": false,
+    "fixtureExitCode": 0,
+    "postgres": "owned isolated instance stopped"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "before": {
+    "blogs": {
+      "count": 1,
+      "fingerprint": "306e2cced9ea552860ca5e64a4c167e9"
+    },
+    "policies": null,
+    "access": [
+      {
+        "table": "blog_categories",
+        "rls": true,
+        "acl": "e4425b6978962d6aa486d041d6e0fa5c"
+      },
+      {
+        "table": "blogs",
+        "rls": true,
+        "acl": "e4425b6978962d6aa486d041d6e0fa5c"
+      }
+    ]
+  },
+  "after": {
+    "blogs": {
+      "count": 1,
+      "fingerprint": "306e2cced9ea552860ca5e64a4c167e9"
+    },
+    "policies": null,
+    "access": [
+      {
+        "table": "blog_categories",
+        "rls": true,
+        "acl": "e4425b6978962d6aa486d041d6e0fa5c"
+      },
+      {
+        "table": "blogs",
+        "rls": true,
+        "acl": "e4425b6978962d6aa486d041d6e0fa5c"
+      }
+    ],
+    "migration": [
+      {
+        "version": "20261017075027",
+        "name": "blog_editorial_workflow"
+      }
+    ],
+    "new_columns": 7
+  },
+  "preserved": true,
+  "actualMigrationVersion": "20261017075027",
+  "preparedMigrationVersion": "20261017071555",
+  "security": {
+    "errors": 0,
+    "warnings": 0,
+    "info": 51,
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+  }
+}

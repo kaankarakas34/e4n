@@ -1,0 +1,59 @@
+{
+  "base": "https://www.event4network.com",
+  "results": [
+    {
+      "path": "/api/health",
+      "method": "GET",
+      "status": 200,
+      "bytes": 11
+    },
+    {
+      "path": "/api/blogs",
+      "method": "GET",
+      "status": 200,
+      "bytes": 10303,
+      "published": 1
+    },
+    {
+      "path": "/api/blogs/networking-etkinligine-hazirlik",
+      "method": "GET",
+      "status": 200,
+      "bytes": 10312,
+      "privateFieldsAbsent": true,
+      "links": 0
+    },
+    {
+      "path": "/blog/networking-etkinligine-hazirlik",
+      "method": "GET",
+      "status": 200,
+      "bytes": 12987,
+      "canonicals": 1
+    },
+    {
+      "path": "/sitemap.xml",
+      "method": "GET",
+      "status": 200,
+      "bytes": 2319,
+      "urls": 23
+    },
+    {
+      "path": "/api/admin/blog-options",
+      "method": "GET",
+      "status": 401,
+      "bytes": 12
+    },
+    {
+      "path": "/api/admin/blog-images",
+      "method": "POST",
+      "status": 401,
+      "bytes": 12
+    },
+    {
+      "path": "/blog/cms-release-missing-check",
+      "method": "GET",
+      "status": 404,
+      "bytes": 1630
+    }
+  ],
+  "status": "PASS"
+}

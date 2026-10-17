@@ -1,0 +1,24 @@
+{
+  "checks": [
+    {
+      "name": "live-article",
+      "width": 390,
+      "scroll": 390
+    },
+    {
+      "name": "live-membership",
+      "width": 390,
+      "scroll": 390
+    },
+    {
+      "name": "live-communities",
+      "width": 390,
+      "scroll": 390
+    }
+  ],
+  "invites": 10,
+  "errors": [],
+  "status": "PASS",
+  "registrationSubmitted": false,
+  "whatsappJoined": false
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "Disposable synthetic storage-only acceptance. No blog record or real cover publication.",
+  "providerUpload": true,
+  "publicGetStatus": 200,
+  "format": "webp",
+  "width": 1200,
+  "height": 630,
+  "bytes": 1448,
+  "sha256": "caa909fdba769131574a85de58bb6f3d0f6bcdaa84869c848b54fa54eae82c71",
+  "anonymousUploadStatus": 400,
+  "objectPath": "/storage/v1/object/public/blog-images/covers/05d1ca94-c83f-46f3-9e8e-ee4ffd23dd53.webp",
+  "status": "PASS"
+}

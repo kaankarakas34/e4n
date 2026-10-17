@@ -2,6 +2,17 @@
 
 Tarih: 17 Ekim 2026 (TSİ). Yönetilen checkout: `C:/Users/murat/.codex/worktrees/e4n-sprint1-foundation/e4n2`, dal `codex/e4n-sprint1-foundation`.
 
+## Canlı geçiş — 17 Ekim 2026
+
+- Üretim kodu `17c59d2a7b0625facfea37419b331a6ff21ebaa5` main'e fast-forward push edildi. Temiz commit arşivinden iki staging üretim build'i READY; sonuncusu `dpl_9hMnN9se22gUkRVKRmoAzfc1yQt5` sekiz HTTP kontrolünden sonra promote edildi. Git entegrasyonu aynı commit'i `dpl_Bf22p7hYnEPkffp5M69W2JdutHR9` ile yeniden kurdu ve gerçek alan adları bu READY dağıtıma bağlandı.
+- Canlı migration `20261017075027 / blog_editorial_workflow` uygulandı. Hazırlanan `20261017071555` dosyası SQL içeriği değişmeden gerçek ledger sürümüne yeniden adlandırıldı; sözleşme aynı 38 HTTP isteğiyle tekrar geçti. Genel 28 sürümlü rehearsal runner'ı değiştirilmedi.
+- Yedi yeni kolon eklendi. Var olan tek yayımlanmış yazının eski alan parmak izi önce/sonra aynı: `306e2cced9ea552860ca5e64a4c167e9`; kayıt sayısı 1. RLS ve ACL parmak izleri korundu; blog/storage politikası eklenmedi. Advisor: ERROR0/WARN0/INFO51; INFO'lar mevcut server-only, kapalı varsayılan modelidir.
+- Sunucu `SUPABASE_URL` ve sensitive `SUPABASE_SERVICE_ROLE_KEY` üretim değişkenleri yapılandırıldı. Değerler dosyaya/sohbete/kanıta yazılmadı; istemci değişkeni eklenmedi. Son dağıtımda raw stdin ile satır sonu olmadan yapılandırıldı.
+- Gerçek Supabase Storage üzerinde sentetik geçici 1200×630 kapak: uygulamanın `prepareBlogImage` ve `storeBlogImage` koduyla yükleme, anonim public GET ve birebir byte/SHA256 okuma PASS; anonim INSERT reddi PASS. Yalnız bu testin rastgele yolları temizlendi ve public GET'in artık erişemediği doğrulandı. Bu, üretim admin route'una giriş yaparak yapılmış bir upload testi değildir.
+- Gerçek alan adı HTTP8 PASS: health/blog liste/tekil/HTML/sitemap200, yönetici seçenekleri ve upload401, eksik içerik404; tek canonical, sitemap23, published1, özel editoryal alanlar yok. Gerçek anonim Chrome390: makale, üyelik açık kayıt bağlantısı ve topluluklar3 akış; taşma0/pageerror0, WhatsApp daveti10 PASS. Gerçek kayıt gönderimi, ödeme, mail veya WhatsApp katılımı yok.
+- Kanıtlar `E4N-SEO-CMS-2026-10-17/release/` içindedir. Mevcut makale metni/kapak/yazarı değiştirilmedi. Canlı public gelecek etkinlik0; gerçek etkinlik/konum/program uydurulmadı.
+- Açık kabul: Chrome'daki Kaan hesabı üye görünümünde; yönetici oturumu ile editör/kapak upload son kabulü bekliyor. Ayrıca izinli gerçek kapak, ilk yazının editoryal alanları ve uzman onayı, BRAND-01 uzlaşması ve gerçek etkinlikle CRO katılım testi açık. **E4N-292 In Progress.**
+
 ## Teslim
 
 - ARC-01 belgesindeki 18 küme editöre bağlandı. Kurumsal Event4Network yazarı veya mevcut yönetici yazarı seçilebilir; üye kimliğine yazarlık atama ve sahte uzman kaydı yok.
@@ -22,12 +33,12 @@ Tarih: 17 Ekim 2026 (TSİ). Yönetilen checkout: `C:/Users/murat/.codex/worktree
 
 ## Canlı geçiş ve kalan kabul
 
-1. Eklemeli migration: `server/supabase/migrations/20261017071555_blog_editorial_workflow.sql`. Önce migration, sonra uygulama yayını gerekir. Bu, mevcut 28 sürümlü genel rehearsal runner'ından ayrı CMS yayın migration'ıdır; tarihsel migration checksum'ları değiştirilmedi. Mevcut veri, RLS, grant ve storage politikası değiştirilmez. Yeni migration bu turda yalnız izole PostgreSQL'e uygulandı.
-2. Sunucuda `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` gerekir. Anahtar istemci/VITE değişkenine konmaz. Mevcut public `blog-images` bucket'ının sunucu üzerinden erişimi canlıda doğrulanmalıdır; anonim upload izni açılmaz.
-3. Uygulama yayını ve izinli gerçek kapakla yönetici kabulü henüz yapılmadı. Sharp native Linux paketinin dağıtım kabulü de bu kapıdadır. Geri dönüşte eski uygulama sürümü yayımlanabilir; ek kolonlar silinmez, yazılar korunur. Yüklenip yazıya bağlanmayan kapaklar otomatik silinmez; kontrollü temizlik ayrı değerlendirilir.
+1. Eklemeli migration: `server/supabase/migrations/20261017075027_blog_editorial_workflow.sql`. Önce migration, sonra uygulama yayını gerekir. Bu, mevcut 28 sürümlü genel rehearsal runner'ından ayrı CMS yayın migration'ıdır; tarihsel migration checksum'ları değiştirilmedi. Mevcut veri, RLS, grant ve storage politikası değiştirilmez. Migration önce izole PostgreSQL'de doğrulandı, ardından yukarıdaki canlı geçişte uygulandı.
+2. Sunucuda `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` gerekir. Anahtar istemci/VITE değişkenine konmaz. Mevcut public `blog-images` bucket'ının sunucu üzerinden provider erişimi canlıda doğrulandı; anonim upload izni açılmaz.
+3. Uygulama yayını ve Linux native Sharp modülünün API startup kabulü geçti. Yönetici oturumundan izinli gerçek kapak kabulü henüz yapılmadı. Geri dönüşte eski uygulama sürümü yayımlanabilir; ek kolonlar silinmez, yazılar korunur. Yüklenip yazıya bağlanmayan kapaklar otomatik silinmez; kontrollü temizlik ayrı değerlendirilir.
 4. Mevcut yayımlanmış makalenin metni/kapak/yazarı bu turda değiştirilmedi. İlk gerçek yazıda yeni editoryal alanların doldurulması ve gerçek uzman onayı yayın kabulünde yapılır.
 5. CRO-01 gerçek gelecek etkinlikle katılım kabulü ve E4N-299/BRAND-01 ürün metni uzlaşması açık. Eski yedi etkinlik noindex kararı korunur; program/mekân uydurulmaz. Gerçek indekslenme/Rich Results/CWV bu turda ölçülmedi.
 
-**E4N-292 In Progress kalır.** Yeni küçük issue açılmaz; bu teslim için ana kapsam tamamlandı veya canlıya çıktı iddiası yoktur. Başka aktif hardening dosyaları ve mobile değişiklikleri korunmuştur.
+**E4N-292 In Progress kalır.** Yeni küçük issue açılmaz; teknik paket üretime çıktı; yönetici kabulü ve yukarıdaki ürün/CRO kapsamı tamamlanmadan bütün teslim Done sayılmaz. Başka aktif hardening dosyaları ve mobile değişiklikleri korunmuştur.
 
 Kaynaklar: [Sharp constructor ve giriş sınırları](https://sharp.pixelplumbing.com/api-constructor/), [Supabase standard uploads](https://supabase.com/docs/guides/storage/uploads/standard-uploads). Sharp 0.35.5 sabitlendi (Apache-2.0, Node >=20.9); yalnız sunucu yükleme yolunda kullanılır.

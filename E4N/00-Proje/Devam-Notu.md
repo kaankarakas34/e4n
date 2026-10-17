@@ -1,3 +1,12 @@
+## SEO — CMS üretim geçişi / 17 Ekim 2026
+
+- Runtime kod17c59d2 main'e push edildi; staging9hMnN9se22gUkRVKRmoAzfc1yQt5 READY/HTTP8 ve promote sonrası aynı commit Git üretimi dpl_Bf22p7hYnEPkffp5M69W2JdutHR9 READY/custom domains. Canlı makale/API/sitemap23/anonimadmin401/eksik404 PASS. Önceki yerel-only durumu artık tarihsel.
+- Canlı migration20261017075027/blog_editorial_workflow:7kolon; eski yazı parmak izi/kayıt1/RLS/ACL/politikalar korunur. ERROR0/WARN0/INFO51. Yerel SQL dosyası gerçek ledger sürümüne adlandırıldı; SQL değişmedi, izole PG/API38 tekrar PASS. Genel28runner değişmedi.
+- Sunucu URL+sensitive service_role credential yapılandırıldı; değerler kanıta/dosyaya yazılmadı. Gerçek storage sentetik geçici upload/okuma/anonim ret/yalnız kendi dosyasını temizleme PASS. Bu, gerçek admin route upload kabulü değildir; Chrome Kaan hesabı üye görünüyor, yönetici oturumu istenmiştir.
+- Canlı390px makale/üyelik açık kayıt/topluluklar3akış: taşma0/pageerror0,10WhatsAppdaveti PASS. Gerçek makale metni/kapak/yazar/özel kayıt/ödeme/mail değişmedi; canlı gelecek publicetkinlik0.
+- E4N-292 In Progress. Kalan: yönetici oturumuyla editör/kapak upload, izinli gerçek kapak ve ilk yazı editoryal alan/uzman kabulü; BRAND-01 ve gerçek etkinlikle CRO. İndekslenme/RichResults/CWV açık. Eski7etkinlik noindex; program/mekân uydurma.
+- Tek kanıt [[E4N/09-Dogrulama/E4N-SEO-CMS-Yayin-Kalitesi-2026-10-17]]; aynı paketin release/ JSON/görsel/logları. Diğer hardening/mobile işleri korunur.
+
 ## SEO — CMS-01 teknik paket / 17 Ekim 2026
 
 - Yönetilen checkout ve `codex/e4n-sprint1-foundation` korunur. E4N-292 In Progress; yeni issue açılmadı. Diğer hardening dosyaları ve mobile değişiklikleri korunur.

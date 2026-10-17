@@ -1,0 +1,15 @@
+{
+  "runtimeCommit": "17c59d2a7b0625facfea37419b331a6ff21ebaa5",
+  "sourceBranch": "main",
+  "stagedDeployment": "dpl_9hMnN9se22gUkRVKRmoAzfc1yQt5",
+  "gitProductionDeployment": "dpl_Bf22p7hYnEPkffp5M69W2JdutHR9",
+  "productionURL": "https://www.event4network.com",
+  "ready": true,
+  "serverEnvNames": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "serverCredentialSensitive": true,
+  "credentialValuesRecorded": false,
+  "adminSessionAcceptance": "PENDING: existing Chrome account displayed member navigation"
+}

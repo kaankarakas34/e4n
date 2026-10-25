@@ -52,6 +52,7 @@ import { installAdminMemberDirectory } from './admin-member-directory.js';
 import { installAdminVisitorQueue } from './admin-visitor-queue.js';
 import { installAdminGroupDetail } from './admin-group-detail.js';
 import { installWebGroups } from './web-groups.js';
+import { ensureDiamondScheduleSynced } from './diamond-schedule-sync.js';
 import { installWebActivities } from './web-activities.js';
 import { installGroupSettings } from './group-settings.js';
 import { installDocuments } from './documents.js';
@@ -109,6 +110,13 @@ const upload = multer({ storage: storage });
 
 // Connection Configuration for Database (Local Docker or Supabase)
 import pool from './config/db.js';
+
+app.use(async (req, _res, next) => {
+  if (req.url && req.url.startsWith('/api/')) {
+    await ensureDiamondScheduleSynced(pool);
+  }
+  next();
+});
 
 // Debug Logging for Connection (Safe)
 try {

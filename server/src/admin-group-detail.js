@@ -1,4 +1,5 @@
 import {readGroupCapacity} from './group-capacity.js';
+import {ensureDiamondScheduleSynced} from './diamond-schedule-sync.js';
 const uuid = v => typeof v === 'string' && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
 export function installAdminGroupDetail(app, { pool, authenticateToken }) {
   app.get('/api/admin/groups/:id/detail', authenticateToken, async (req, res) => {
@@ -7,6 +8,7 @@ export function installAdminGroupDetail(app, { pool, authenticateToken }) {
     if (!uuid(req.user.id)) return res.sendStatus(401);
     let client;
     try {
+      await ensureDiamondScheduleSynced(pool);
       client = await pool.connect();
       await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
       const owner = (await client.query('SELECT role FROM users WHERE id=$1', [req.user.id])).rows[0];

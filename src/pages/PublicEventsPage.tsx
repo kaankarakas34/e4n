@@ -13,7 +13,9 @@ import {
   Sparkles,
   Lock,
   History,
-  Video
+  Video,
+  SlidersHorizontal,
+  RotateCcw
 } from 'lucide-react';
 
 interface EventItem {
@@ -23,10 +25,14 @@ interface EventItem {
   start_at: string;
   end_at?: string;
   location?: string;
+  city?: string;
   is_online?: boolean;
   is_public?: boolean;
   status?: string;
+  type?: string;
   event_type?: string;
+  group_name?: string;
+  price?: number | string;
   ticket_price?: number;
   member_price?: number;
   is_free?: boolean;
@@ -52,11 +58,104 @@ export function PublicEventsPage() {
           data = await api.getEvents();
         }
 
-        if (Array.isArray(data)) {
-          const publicEvents = data.filter(e => e.is_public && e.status === 'PUBLISHED');
-          publicEvents.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
-          setEvents(publicEvents);
-        }
+        const diamondFallbackEvents: EventItem[] = [
+          {
+            id: 'diamond-2026-10-30',
+            title: 'Diamond Grubu Toplantısı',
+            description: 'Diamond iş geliştirme ve networking grubu planlı oturumu.',
+            start_at: '2026-10-30T19:30:00+03:00',
+            end_at: '2026-10-30T21:00:00+03:00',
+            location: 'Online (Zoom) • İstanbul',
+            city: 'İstanbul',
+            is_online: true,
+            is_public: true,
+            status: 'PUBLISHED',
+            type: 'meeting',
+            group_name: 'Diamond',
+            is_free: true,
+            price: 0
+          },
+          {
+            id: 'diamond-2026-11-12',
+            title: 'Diamond Grubu Toplantısı',
+            description: 'Diamond iş geliştirme ve networking grubu planlı oturumu.',
+            start_at: '2026-11-12T19:30:00+03:00',
+            end_at: '2026-11-12T21:00:00+03:00',
+            location: 'Online (Zoom) • İstanbul',
+            city: 'İstanbul',
+            is_online: true,
+            is_public: true,
+            status: 'PUBLISHED',
+            type: 'meeting',
+            group_name: 'Diamond',
+            is_free: true,
+            price: 0
+          },
+          {
+            id: 'diamond-2026-11-26',
+            title: 'Diamond Grubu Toplantısı',
+            description: 'Diamond iş geliştirme ve networking grubu planlı oturumu.',
+            start_at: '2026-11-26T19:30:00+03:00',
+            end_at: '2026-11-26T21:00:00+03:00',
+            location: 'Online (Zoom) • İstanbul',
+            city: 'İstanbul',
+            is_online: true,
+            is_public: true,
+            status: 'PUBLISHED',
+            type: 'meeting',
+            group_name: 'Diamond',
+            is_free: true,
+            price: 0
+          },
+          {
+            id: 'diamond-2026-12-10',
+            title: 'Diamond Grubu Toplantısı',
+            description: 'Diamond iş geliştirme ve networking grubu planlı oturumu.',
+            start_at: '2026-12-10T19:30:00+03:00',
+            end_at: '2026-12-10T21:00:00+03:00',
+            location: 'Online (Zoom) • İstanbul',
+            city: 'İstanbul',
+            is_online: true,
+            is_public: true,
+            status: 'PUBLISHED',
+            type: 'meeting',
+            group_name: 'Diamond',
+            is_free: true,
+            price: 0
+          },
+          {
+            id: 'diamond-2026-12-24',
+            title: 'Diamond Grubu Yıl Sonu Toplantısı',
+            description: 'Diamond iş geliştirme ve networking grubu 2026 yıl sonu değerlendirme ve networking toplantısı.',
+            start_at: '2026-12-24T19:30:00+03:00',
+            end_at: '2026-12-24T21:30:00+03:00',
+            location: 'Online (Zoom) • İstanbul',
+            city: 'İstanbul',
+            is_online: true,
+            is_public: true,
+            status: 'PUBLISHED',
+            type: 'meeting',
+            group_name: 'Diamond',
+            is_free: true,
+            price: 0
+          }
+        ];
+
+        const baseEvents = Array.isArray(data)
+          ? data.filter(e => e.is_public && e.status === 'PUBLISHED')
+          : [];
+        diamondFallbackEvents.forEach((fb) => {
+          const fbDate = fb.start_at.split('T')[0];
+          const exists = baseEvents.some(
+            (e) =>
+              String(e.start_at || '').split('T')[0] === fbDate &&
+              (String(e.title || '').toLowerCase().includes('diamond') ||
+                String(e.group_name || '').toLowerCase().includes('diamond'))
+          );
+          if (!exists) baseEvents.push(fb);
+        });
+        baseEvents.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+        setEvents(baseEvents);
       } catch {
         setEvents([]);
       } finally {
@@ -71,7 +170,7 @@ export function PublicEventsPage() {
     return events.filter((event) => {
       // City filter
       if (selectedCity !== 'Tümü') {
-        const loc = (event.location || '').toLowerCase();
+        const loc = `${event.city || ''} ${event.location || ''}`.toLowerCase();
         if (!loc.includes(selectedCity.toLowerCase())) {
           return false;
         }
@@ -79,14 +178,26 @@ export function PublicEventsPage() {
 
       // Event Type filter
       if (selectedType !== 'Tümü') {
+        const titleLower = (event.title || '').toLowerCase();
         if (selectedType === 'Networking') {
-          const isNetworking = event.event_type === 'NETWORKING' || (event.title || '').toLowerCase().includes('networking');
+          const isNetworking =
+            event.event_type === 'NETWORKING' ||
+            event.type === 'meeting' ||
+            event.type === 'networking' ||
+            titleLower.includes('networking') ||
+            titleLower.includes('toplantı');
           if (!isNetworking) return false;
         } else if (selectedType === 'Eğitim') {
-          const isEducation = event.event_type === 'EDUCATION' || (event.title || '').toLowerCase().includes('eğitim');
+          const isEducation =
+            event.event_type === 'EDUCATION' ||
+            event.type === 'education' ||
+            titleLower.includes('eğitim');
           if (!isEducation) return false;
         } else if (selectedType === 'Özel Oturum') {
-          const isSpecial = event.event_type === 'SPECIAL' || (event.title || '').toLowerCase().includes('özel');
+          const isSpecial =
+            event.event_type === 'SPECIAL' ||
+            titleLower.includes('özel') ||
+            titleLower.includes('yıl sonu');
           if (!isSpecial) return false;
         }
       }
@@ -100,6 +211,13 @@ export function PublicEventsPage() {
       return true;
     });
   }, [events, selectedCity, selectedType, selectedMode]);
+
+  const hasActiveFilters = selectedCity !== 'Tümü' || selectedType !== 'Tümü' || selectedMode !== 'Tümü';
+  const resetFilters = () => {
+    setSelectedCity('Tümü');
+    setSelectedType('Tümü');
+    setSelectedMode('Tümü');
+  };
 
   const cities = ['Tümü', 'İstanbul', 'Ankara', 'İzmir'];
   const eventTypes = ['Tümü', 'Networking', 'Eğitim', 'Özel Oturum'];
@@ -137,9 +255,11 @@ export function PublicEventsPage() {
       {/* Yaklaşan Etkinlikler & Filtreler */}
       <section className="py-16 sm:py-24 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-6 border-b border-slate-200 gap-6">
+          {/* Başlık Satırı */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
             <div>
-              <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-1">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 uppercase tracking-widest mb-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                 GÜNCEL PROGRAM
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -150,63 +270,121 @@ export function PublicEventsPage() {
               </p>
             </div>
 
-            {/* Filtre Kontrolleri */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 self-start sm:self-end">
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Filtreleri Temizle
+                </button>
+              )}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-bold text-slate-700">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                <span>{loading ? '...' : `${filteredEvents.length} Etkinlik`}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Modern Filtre Araç Çubuğu */}
+          <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 sm:p-5 mb-10 shadow-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
               {/* Şehir Filtresi */}
-              <div role="group" aria-label="Şehir filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
-                <span className="text-xs font-semibold text-slate-500 px-2">Şehir:</span>
-                {cities.map((city) => (
-                  <button
-                    key={city}
-                    aria-pressed={selectedCity === city}
-                    onClick={() => setSelectedCity(city)}
-                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      selectedCity === city
-                        ? 'bg-red-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
-                  >
-                    {city}
-                  </button>
-                ))}
+              <div className="lg:col-span-4">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 px-0.5">
+                  <MapPin className="w-3.5 h-3.5 text-red-600" />
+                  <span>Şehir</span>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Şehir filtresi"
+                  className="grid grid-cols-4 gap-1 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs"
+                >
+                  {cities.map((city) => {
+                    const active = selectedCity === city;
+                    return (
+                      <button
+                        key={city}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSelectedCity(city)}
+                        className={`h-9 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center cursor-pointer ${
+                          active
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Tür Filtresi */}
-              <div role="group" aria-label="Etkinlik türü filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
-                <span className="text-xs font-semibold text-slate-500 px-2">Tür:</span>
-                {eventTypes.map((type) => (
-                  <button
-                    key={type}
-                    aria-pressed={selectedType === type}
-                    onClick={() => setSelectedType(type)}
-                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      selectedType === type
-                        ? 'bg-red-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+              <div className="lg:col-span-5">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 px-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-red-600" />
+                  <span>Etkinlik Türü</span>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Etkinlik türü filtresi"
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs"
+                >
+                  {eventTypes.map((type) => {
+                    const active = selectedType === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSelectedType(type)}
+                        className={`h-9 px-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center whitespace-nowrap cursor-pointer ${
+                          active
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Format Filtresi */}
-              <div role="group" aria-label="Etkinlik formatı filtresi" className="flex flex-wrap items-center gap-1.5 max-w-full bg-slate-50 p-1 rounded-xl border border-slate-200">
-                <span className="text-xs font-semibold text-slate-500 px-2">Format:</span>
-                {modes.map((mode) => (
-                  <button
-                    key={mode}
-                    aria-pressed={selectedMode === mode}
-                    onClick={() => setSelectedMode(mode)}
-                    className={`min-h-11 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      selectedMode === mode
-                        ? 'bg-red-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
+              <div className="lg:col-span-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 px-0.5">
+                  <Video className="w-3.5 h-3.5 text-red-600" />
+                  <span>Katılım Formatı</span>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Etkinlik formatı filtresi"
+                  className="grid grid-cols-3 gap-1 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs"
+                >
+                  {modes.map((mode) => {
+                    const active = selectedMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSelectedMode(mode)}
+                        className={`h-9 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center whitespace-nowrap cursor-pointer ${
+                          active
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -258,8 +436,13 @@ export function PublicEventsPage() {
                     <div className="p-8">
                       <div className="flex items-center justify-between mb-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
-                          {event.event_type === 'NETWORKING' ? 'Networking' :
-                           event.event_type === 'EDUCATION' ? 'Eğitim' : 'Özel Buluşma'}
+                          {event.event_type === 'NETWORKING' || event.type === 'networking'
+                            ? 'Networking'
+                            : event.event_type === 'EDUCATION' || event.type === 'education'
+                            ? 'Eğitim'
+                            : event.type === 'meeting' || (event.title || '').toLowerCase().includes('toplantı')
+                            ? 'Grup Toplantısı'
+                            : 'Özel Buluşma'}
                         </span>
                         {event.is_online ? (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">

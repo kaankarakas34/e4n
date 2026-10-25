@@ -90,10 +90,13 @@ export function GroupMeetingDetailPage() {
           ['2026-10-30', '2026-11-12', '2026-11-26', '2026-12-10', '2026-12-24'].forEach(d => allDates.add(d));
         }
 
+        // Target date from param or search param or default
+        const queryDate = (dateParam || searchParams.get('date') || '').split('T')[0];
+        if (queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate)) {
+          allDates.add(queryDate);
+        }
         const sortedDates = Array.from(allDates).sort();
 
-        // Target date from param or search param or default
-        const queryDate = dateParam || searchParams.get('date');
         if (queryDate && sortedDates.includes(queryDate)) {
           setSelectedDate(queryDate);
         } else if (sortedDates.length > 0) {
@@ -113,7 +116,7 @@ export function GroupMeetingDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [groupId, dateParam]);
+  }, [groupId, dateParam, searchParams]);
 
   // Load attendance whenever selectedDate changes
   useEffect(() => {

@@ -25,6 +25,7 @@ const AdminAccounting = React.lazy(() => import('./pages/AdminAccounting').then(
 const AdminGroups = React.lazy(() => import('./pages/AdminGroups').then(m => ({ default: m.AdminGroups })));
 const AdminGroupDetail = React.lazy(() => import('./pages/AdminGroupDetail').then(m => ({ default: m.AdminGroupDetail })));
 const GroupDetail = React.lazy(() => import('./pages/GroupDetail').then(m => ({ default: m.GroupDetail })));
+const GroupMeetingDetailPage = React.lazy(() => import('./pages/GroupMeetingDetailPage').then(m => ({ default: m.GroupMeetingDetailPage })));
 const AdminShuffleHistory = React.lazy(() => import('./pages/AdminShuffleHistory').then(m => ({ default: m.AdminShuffleHistory })));
 const AdminShuffle = React.lazy(() => import('./pages/AdminShuffle').then(m => ({ default: m.AdminShuffle })));
 const AdminWebJobs = React.lazy(() => import('./pages/AdminWebJobs').then(m => ({ default: m.AdminWebJobs })));
@@ -309,8 +310,10 @@ function App() {
               <Route path="/admin/web-jobs" element={<AdminWebJobs />} />
               <Route path="/admin/groups" element={<AdminGroups />} />
               <Route path="/admin/groups/:id" element={<AdminGroupDetail />} />
+              <Route path="/admin/groups/:id/meetings" element={<GroupMeetingDetailPage />} />
 
               <Route path="/groups/:id" element={<GroupDetail />} />
+              <Route path="/groups/:id/meetings" element={<GroupMeetingDetailPage />} />
 
               <Route path="/admin/exams" element={<AdminExams />} />
               <Route path="/admin/lms" element={<AdminLMS />} />

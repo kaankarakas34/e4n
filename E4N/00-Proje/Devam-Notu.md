@@ -1,3 +1,30 @@
+## Diamond Grubu Toplantı Tarihleri, Etkinlikleri ve Toplantı Detayları / 25 Ekim 2026
+
+- Kullanıcı talebi doğrultusunda Diamond Grubu (`97ebe739-9246-4ffb-b270-54577d092fab`) toplantı ve takvim akışı tamamlandı:
+  1. **Planlanmış Toplantı Tarihleri & Etkinlikler:**
+     - 30 Ekim 2026 (19:30): Diamond Grubu Toplantısı (29 Ekim resmi tatil telefi)
+     - 12 Kasım 2026 (19:30): Diamond Grubu Toplantısı
+     - 26 Kasım 2026 (19:30): Diamond Grubu Toplantısı
+     - 10 Aralık 2026 (19:30): Diamond Grubu Toplantısı
+     - 24 Aralık 2026 (19:30): Diamond Grubu Yıl Sonu Toplantısı
+     - `server/supabase/migrations/20261025152000_diamond_group_meetings.sql` ile `meeting_dates` güncellendi ve 5 toplantı `public.events` tablosuna PUBLISHED olarak bağlandı.
+  2. **Görsel Geçmiş Toplantı Filtresi:**
+     - `AdminGroupDetail.tsx` ve `GroupDetail.tsx` bileşenlerinde "Planlanmış Toplantı Tarihleri" rozetleri bugünün öncesindeki geçmiş tarihleri görsel olarak gizleyecek şekilde `upcomingDates` filtresine alındı (`setHours(23, 59, 59, 999) < today`).
+  3. **Toplantı Detayları Sayfası & Analitik:**
+     - `/admin/groups/:id/meetings` ve `/groups/:id/meetings` rotalarına `GroupMeetingDetailPage.tsx` bileşeni eklendi.
+     - Tüm geçmiş ve gelecek toplantı tarihleri arasında geçiş imkanı sağlandı.
+     - 4 Temel KPI Kartı: Katılım Oranı (% ve oran), Yönlendirme Sayısı, Üretilen Ciro (₺), Ziyaretçi Sayısı.
+     - 3 Alt Sekme:
+       - **Yoklama (Attendance):** Üye bazlı durum (Geldi, Gelmedi, İzinli, Yedek), tek tuşla "Tümünü Katıldı İşaretle", kaydetme ve skor entegrasyonu.
+       - **Yönlendirmeler (Referrals):** Toplantı döngüsüne ait ciro, yönlendiren/alan üye dökümü.
+       - **Ziyaretçiler (Visitors):** Davet eden üye, ziyaretçi adı, meslek ve durum takibi.
+  4. **Doğrulama ve Rota Sözleşmesi:**
+     - `routeCatalog.json` ve `vercel.json` 63 açık istemci rotasıyla senkronize edildi (`scripts/seo-routing.mjs --write`).
+     - `npm run check`: PASS (244 sunucu rotası, 0 TS hatası).
+     - `npm run build`: PASS (`dist/assets/GroupMeetingDetailPage-CxV9gb3w.js`, SSR bundle ve SSG prerender).
+     - `npm run seo:check`: PASS (31 statik sayfa sözleşmesi).
+     - `npm run seo:content`: PASS (10 dinamik SEO durumu).
+
 ## SEO — CNT-05: Networking Temelleri 5'li İçerik Paketi Statik Yayına Alındı / 25 Ekim 2026
 
 - Kullanıcının "cms olmadan yap" talimatıyla, E4N-293 / EP-05 kapsamındaki Küme 01 (Networking Temelleri) içerik paketinin tamamı (1 Pillar + 4 Destek Yazısı) doğrudan React SSG / Vite Prerender altyapısına statik sayfalar olarak kodlandı ve yayına hazırlandı:

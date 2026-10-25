@@ -219,7 +219,15 @@
       "destination": "/_app"
     },
     {
+      "source": "/admin/groups/:id/meetings",
+      "destination": "/_app"
+    },
+    {
       "source": "/groups/:id",
+      "destination": "/_app"
+    },
+    {
+      "source": "/groups/:id/meetings",
       "destination": "/_app"
     },
     {
@@ -739,7 +747,25 @@
       ]
     },
     {
+      "source": "/admin/groups/:id/meetings",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
       "source": "/groups/:id",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
+    {
+      "source": "/groups/:id/meetings",
       "headers": [
         {
           "key": "X-Robots-Tag",

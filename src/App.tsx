@@ -82,6 +82,11 @@ const KapaliGruplar = React.lazy(() => import('./pages/KapaliGruplar').then(m =>
 const ShufflePage = React.lazy(() => import('./pages/ShufflePage').then(m => ({ default: m.ShufflePage })));
 const KatilimIlkeleri = React.lazy(() => import('./pages/KatilimIlkeleri').then(m => ({ default: m.KatilimIlkeleri })));
 const BirebirNetworking = React.lazy(() => import('./pages/BirebirNetworking').then(m => ({ default: m.BirebirNetworking })));
+const BusinessNetworkingPage = React.lazy(() => import('./pages/BusinessNetworkingPage').then(m => ({ default: m.BusinessNetworkingPage })));
+const IsCevresiNasilGenisletilirPage = React.lazy(() => import('./pages/IsCevresiNasilGenisletilirPage').then(m => ({ default: m.IsCevresiNasilGenisletilirPage })));
+const ProfesyonelIsAgiNasilKurulurPage = React.lazy(() => import('./pages/ProfesyonelIsAgiNasilKurulurPage').then(m => ({ default: m.ProfesyonelIsAgiNasilKurulurPage })));
+const NetworkingKartvizitFarkiPage = React.lazy(() => import('./pages/NetworkingKartvizitFarkiPage').then(m => ({ default: m.NetworkingKartvizitFarkiPage })));
+const NetworkingSatisFarkiPage = React.lazy(() => import('./pages/NetworkingSatisFarkiPage').then(m => ({ default: m.NetworkingSatisFarkiPage })));
 const CityNetworkingPage = React.lazy(() => import('./pages/CityNetworkingPage').then(m => ({ default: m.CityNetworkingPage })));
 const MemberHandbook = React.lazy(() => import('./pages/MemberHandbook').then(m => ({ default: m.MemberHandbook })));
 const MembershipActivationPage = React.lazy(() => import('./pages/MembershipActivationPage').then(m => ({ default: m.MembershipActivationPage })));
@@ -225,6 +230,11 @@ function App() {
                 <Route path="/shuffle" element={<ShufflePage />} />
                 <Route path="/katilim-ilkeleri" element={<KatilimIlkeleri />} />
                 <Route path="/birebir-networking" element={<BirebirNetworking />} />
+                <Route path="/business-networking" element={<BusinessNetworkingPage />} />
+                <Route path="/is-cevresi-nasil-genisletilir" element={<IsCevresiNasilGenisletilirPage />} />
+                <Route path="/profesyonel-is-agi-nasil-kurulur" element={<ProfesyonelIsAgiNasilKurulurPage />} />
+                <Route path="/networking-neden-kartvizit-toplamak-degildir" element={<NetworkingKartvizitFarkiPage />} />
+                <Route path="/networking-ile-satis-arasindaki-fark" element={<NetworkingSatisFarkiPage />} />
                 <Route path="/uyelik" element={<Uyelik />} />
                 <Route path="/etkinlikler" element={<PublicEventsPage />} />
                 <Route path="/networking/:city" element={<CityNetworkingPage />} />

@@ -1,3 +1,36 @@
+## SEO — CNT-05: Networking Temelleri 5'li İçerik Paketi Statik Yayına Alındı / 25 Ekim 2026
+
+- Kullanıcının "cms olmadan yap" talimatıyla, E4N-293 / EP-05 kapsamındaki Küme 01 (Networking Temelleri) içerik paketinin tamamı (1 Pillar + 4 Destek Yazısı) doğrudan React SSG / Vite Prerender altyapısına statik sayfalar olarak kodlandı ve yayına hazırlandı:
+  1. Ana Pillar: `/business-networking` (`BusinessNetworkingPage.tsx`, "Business Networking Nedir? Güvene Dayalı Profesyonel İş Ağı", B2B 4 adımlı döngü, E4N kapalı grup/shuffle modeli).
+  2. Destek 02: `/is-cevresi-nasil-genisletilir` (`IsCevresiNasilGenisletilirPage.tsx`, "İş Çevresi Nasıl Genişletilir? B2B Odaklı Yol Haritası", power team sinerjisi ve 5 adım).
+  3. Destek 03: `/profesyonel-is-agi-nasil-kurulur` (`ProfesyonelIsAgiNasilKurulurPage.tsx`, "Profesyonel İş Ağı Nasıl Kurulur? B2B İçin 6 Adımlı Rehber", A-B-C çemberi ve 30 günlük plan).
+  4. Destek 04: `/networking-neden-kartvizit-toplamak-degildir` (`NetworkingKartvizitFarkiPage.tsx`, "Networking Neden Kartvizit Toplamak Değildir?", nicelik tuzağı ve izinli köprü).
+  5. Destek 05: `/networking-ile-satis-arasindaki-fark` (`NetworkingSatisFarkiPage.tsx`, "Networking ile Satış Arasındaki Fark Nedir?", avcı vs çiftçi zihniyeti ve referans kültürü).
+- `routeCatalog.json`, `prerender.tsx`, `App.tsx`, `vercel.json` ve `public/sitemap.xml` eşitlendi:
+  - Toplam 31 statik sayfa, 27 sitemap URL'si, 45 adet 301 yönlendirmesi.
+- Sözleşme ve Doğrulama Durumu:
+  - `npm run check`: PASS (244 rota, 34 provider, TypeScript 0 hata).
+  - `npm run seo:check`: PASS (31 statik sayfa, tek H1/canonical/description, `/uyelik` dönüşüm bağlantısı, schema JSON-LD, 0 inspector).
+  - `npm run seo:content`: PASS (10 dinamik durum ve sözleşme korundu).
+- Sırada: Kullanıcı onayıyla commit/push ve sıradaki paket (CNT-06 / E4N-294: İstanbul ve Networking Etkinlikleri).
+
+## SEO — CNT-05: Networking Temelleri 5'li İçerik Paketi Tamamlandı / 22 Ekim 2026
+
+- E4N-293 / EP-05 kapsamındaki Küme 01 (Networking Temelleri) içerik paketinin tamamı (1 Pillar + 4 Destek Yazısı) hazırlandı:
+  1. Ana Pillar: `business-networking-nedir` ("Business Networking Nedir? Güvene Dayalı Profesyonel İş Ağı Rehberi", cluster_key 01, 900+ kelime, B2B 4 adımlı döngü, 5 hata ve E4N kapalı grup/shuffle modeli).
+  2. Destek 02: `is-cevresi-nasil-genisletilir` ("İş Çevresi Nasıl Genişletilir? B2B Odaklı Yol Haritası", pillar_slug `business-networking-nedir`, power team ve 1-on-1 stratejisi).
+  3. Destek 03: `profesyonel-is-agi-nasil-kurulur` ("Profesyonel İş Ağı Nasıl Kurulur? B2B İçin 6 Adımlı Rehber", pillar_slug `business-networking-nedir`, A-B-C çemberi ve 30 günlük plan).
+  4. Destek 04: `networking-neden-kartvizit-toplamak-degildir` ("Networking Neden Kartvizit Toplamak Değildir? İlişki ve Güven Odaklı Yaklaşım", pillar_slug `business-networking-nedir`, nicelik tuzağı ve izinli köprü).
+  5. Destek 05: `networking-ile-satis-arasindaki-fark` ("Networking ile Satış Arasındaki Fark Nedir? Referans ve Yönlendirme Kültürü", pillar_slug `business-networking-nedir`, avcı vs çiftçi zihniyeti ve referansın gücü).
+- Tüm yazıların `Brief.md`, `article-body.html`, `cms-draft.json` ve `preview.html` dosyaları `E4N/07-Sprintler/E4N-SEO-CNT05-Networking-Temelleri-2026-10-22/` altında oluşturuldu ve yönetilen iş ağacına eşitlendi.
+- Sırada: Kullanıcı onayıyla canlı CMS yayını veya sıradaki paket (CNT-06 / E4N-294: İstanbul ve Networking Etkinlikleri).
+
+## Vercel yayın temizliği ve JS analizi / 19 Ekim 2026
+
+- Kullanıcı yetkisiyle E4N/prj_YssF8PUmjbp8Vijyk6d1o9VEHSdH eski290yayın silindi; sonAPI tam7READY/no-next. CanlıDGJDBcvPftQCLAqxdY6qp2frBD6n, üç farklı üretim geri dönüşü, CMS kabul yayını ve iki dal aliası korundu. Canlı alan adları aynı; anasayfa/blogHEAD200.10dk429sonrası kalan44başarılı; depolamaGB düşüşü henüz ölçülmedi, yayın sayısı düşüşü doğrulandı.
+- Devam eden açık kullanıcı silme yetkisiyle62eskiyardımcı kaldırıldı: yönetilen21/Desktop41 (18+3ve24+17kopya),156.925bayt. Depodışı kurtarmaZIP62girdi/CRC/hash doğrulandı; silinen dosyaya kalan kod/paket referansı0/0. Paket komutuna bağlı legacyimporterlar, runtime/test/sürümlü migration ve aktif hardening/mobile korunur. Check244rota/type, SEC-02JWT/DB/statik0secret, tam build PASS; diffcheckPASS. Commit/push/deploy/DB/mail/ödeme yok; ayrıntı aynı paket/file-removal-result.json.
+- Tek kanıt [[E4N/09-Dogrulama/Vercel-Yayin-Temizligi-JS-Analizi-2026-10-19]]; aynı klasörde referans/SHA256 ve önce/sonra manifest. E4N-106 operasyon sonucu ve E4N-59legacybağlantıbulgusu kısa yorum; ana kapsamları kapatma. Sonraki ürün önceliği aşağıdaki CMS/SEO ve açık kararlar olarak kalır.
+
 ## SEO — CMS üretim geçişi / 17 Ekim 2026
 
 - Runtime kod17c59d2 main'e push edildi; staging9hMnN9se22gUkRVKRmoAzfc1yQt5 READY/HTTP8 ve promote sonrası aynı commit Git üretimi dpl_Bf22p7hYnEPkffp5M69W2JdutHR9 READY/custom domains. Canlı makale/API/sitemap23/anonimadmin401/eksik404 PASS. Önceki yerel-only durumu artık tarihsel.
@@ -16,6 +49,12 @@
 - Canlı migration/deploy/veri değişikliği yapılmadı. Önce eklemeli `20261017071555_blog_editorial_workflow.sql`, sonra sunucu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ve uygulama yayını gerekir. Genel28sürüm rehearsal runner'ı değiştirilmedi; bu ayrı CMS yayın migration'ıdır. Gerçek ilk yazının yeni editoryal alanları/izinli kapağı ve gerçek admin storage kabulü sonraki yayın kapısıdır.
 - Sonraki bağlı kapsam: CMS canlı yayın kabulü; BRAND-01 ürün metni uzlaşması; gerçek gelecek etkinlikle CRO katılım kabulü. Eski7etkinlik noindex ve mevcut makale korunur; konum/program/uzman uydurma. İndekslenme/Rich Results/CWV henüz PASS değil.
 - Tek paket kanıtı: [[E4N/09-Dogrulama/E4N-SEO-CMS-Yayin-Kalitesi-2026-10-17]] ve aynı tarihli JSON/görsel/log/SHA256 klasörü.
+
+## Supabase blog güvenlik uyarıları — 13 Ekim 2026
+
+- Canlı salt okunur denetim: 2 blog RLS ERROR, 4 search_path WARN; ayrıca blog-images PUBLIC SELECT + anonim INSERT açığı doğrulandı. 49 INFO mevcut server-only modelde kapalı varsayılan; geniş politika ekleme.
+- Kullanıcının “uygula” onayıyla canlı migration 20261013171612/blog_advisor_hardening uygulandı. Advisor ERROR0/WARN0/INFO51; RLS2, istemci izin reddi28/28, gerçek SELECT reddi4/4, dört search_path ve storage politika kaldırma doğrulandı. Canlı blog liste/tekilAPI/HTML200; satır sayıları korunur. İzole PostgreSQL15 13 kontrol PASS. Admin doğrudan görsel upload artık kapalı; güvenli sunucu upload yolu kalan iş.
+- Tek kanıt E4N/09-Dogrulama/Supabase-Blog-Advisor-2026-10-13.md. E4N-58 tam kapsamı açık; aktif SEO/CMS ve mobile korunur. Yönetilen checkout değişmedi.
 
 ## SEO — mobil kabul ve CRO devamı / 13 Ekim 2026
 

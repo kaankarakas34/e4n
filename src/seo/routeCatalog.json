@@ -56,6 +56,46 @@
     "lastmod": "2026-10-12"
   },
   {
+    "path": "/business-networking",
+    "component": "BusinessNetworkingPage",
+    "title": "Business Networking Nedir? | Güvene Dayalı Profesyonel İş Ağı",
+    "description": "Business networking nedir, kartvizit dağıtmaktan farkı nedir ve güvene dayalı profesyonel iş ağı nasıl kurulur? B2B iş geliştirme adımlarını inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-23"
+  },
+  {
+    "path": "/is-cevresi-nasil-genisletilir",
+    "component": "IsCevresiNasilGenisletilirPage",
+    "title": "İş Çevresi Nasıl Genişletilir? | B2B İş Ağı Rehberi",
+    "description": "İş çevresi nasıl genişletilir, yeni iş ortakları ve karar vericilerle nasıl güven bağı kurulur? B2B profesyonelleri için stratejik adımları inceleyin.",
+    "index": true,
+    "lastmod": "2026-10-25"
+  },
+  {
+    "path": "/profesyonel-is-agi-nasil-kurulur",
+    "component": "ProfesyonelIsAgiNasilKurulurPage",
+    "title": "Profesyonel İş Ağı Nasıl Kurulur? | B2B Rehberi",
+    "description": "Profesyonel iş ağı nasıl kurulur, kimlerle stratejik ortaklık yapılmalı ve iş ilişkileri nasıl kurumsallaştırılır? 6 adımlı B2B uygulama planını keşfedin.",
+    "index": true,
+    "lastmod": "2026-10-25"
+  },
+  {
+    "path": "/networking-neden-kartvizit-toplamak-degildir",
+    "component": "NetworkingKartvizitFarkiPage",
+    "title": "Networking Neden Kartvizit Toplamak Değildir? | E4N",
+    "description": "Bir etkinlikten onlarca kartvizitle dönmek neden gerçek networking değildir? Nicelik yerine nitelik ve güvene dayalı iş ilişkisi kurmanın yollarını öğrenin.",
+    "index": true,
+    "lastmod": "2026-10-25"
+  },
+  {
+    "path": "/networking-ile-satis-arasindaki-fark",
+    "component": "NetworkingSatisFarkiPage",
+    "title": "Networking ile Satış Arasındaki Fark Nedir? | E4N",
+    "description": "Networking bir satış taktiği midir? Doğrudan satış baskısı yerine güven ve referans kültürüyle B2B müşteri kazanmanın yöntemlerini keşfedin.",
+    "index": true,
+    "lastmod": "2026-10-25"
+  },
+  {
     "path": "/uyelik",
     "component": "Uyelik",
     "title": "E4N Üyelik | Abonelik ve Kapalı Grup Başvurusu",

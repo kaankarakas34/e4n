@@ -31,9 +31,14 @@ import { CookiePolicy } from '../pages/CookiePolicy';
 import { DistanceSellingContract } from '../pages/DistanceSellingContract';
 import { CancellationRefundPolicy } from '../pages/CancellationRefundPolicy';
 import { CityNetworkingPage } from '../pages/CityNetworkingPage';
+import { BusinessNetworkingPage } from '../pages/BusinessNetworkingPage';
+import { IsCevresiNasilGenisletilirPage } from '../pages/IsCevresiNasilGenisletilirPage';
+import { ProfesyonelIsAgiNasilKurulurPage } from '../pages/ProfesyonelIsAgiNasilKurulurPage';
+import { NetworkingKartvizitFarkiPage } from '../pages/NetworkingKartvizitFarkiPage';
+import { NetworkingSatisFarkiPage } from '../pages/NetworkingSatisFarkiPage';
 import { NotFound } from '../pages/NotFound';
 
-const components: Record<string, React.ComponentType> = { LandingPage, E4NNedir, NasilCalisir, KapaliGruplar, ShufflePage, KatilimIlkeleri, BirebirNetworking, Uyelik, PublicEventsPage, Topluluklarimiz, BlogListPage, Hakkimizda, SSS, ContactPage, KVKK, PrivacyPolicy, DegerlendirmeBasvurusu, MemberHandbook, PreInformationForm, TermsOfUse, CookiePolicy, DistanceSellingContract, CancellationRefundPolicy, CityNetworkingPage };
+const components: Record<string, React.ComponentType> = { LandingPage, E4NNedir, NasilCalisir, KapaliGruplar, ShufflePage, KatilimIlkeleri, BirebirNetworking, Uyelik, PublicEventsPage, Topluluklarimiz, BlogListPage, Hakkimizda, SSS, ContactPage, KVKK, PrivacyPolicy, DegerlendirmeBasvurusu, MemberHandbook, PreInformationForm, TermsOfUse, CookiePolicy, DistanceSellingContract, CancellationRefundPolicy, CityNetworkingPage, BusinessNetworkingPage, IsCevresiNasilGenisletilirPage, ProfesyonelIsAgiNasilKurulurPage, NetworkingKartvizitFarkiPage, NetworkingSatisFarkiPage };
 const template = await readFile(resolve('dist/index.html'), 'utf8');
 const manifest: object[] = [];
 const clientManifest = JSON.parse(await readFile(resolve('dist/.vite/manifest.json'), 'utf8'));

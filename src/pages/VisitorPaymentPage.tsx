@@ -171,7 +171,7 @@ export function VisitorPaymentPage() {
                 <div>
                   <h4 className="text-sm font-bold text-green-800">Özel Davetiye Doğrulandı</h4>
                   <p className="text-xs text-green-700 mt-1">
-                    <strong>{inviterName}</strong> tarafından gönderilen davetiyeniz doğrulandı. Toplantı katılımınız ücretsizdir.
+                    <strong>{inviterName}</strong> tarafından gönderilen davetiyeniz doğrulandı. Toplantıya davetli olarak katılabilirsiniz.
                   </p>
                 </div>
               </div>
@@ -181,9 +181,9 @@ export function VisitorPaymentPage() {
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
                 <FileText className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-amber-800">Ücretsiz Ziyaretçi Kaydı</h4>
+                  <h4 className="text-sm font-bold text-amber-800">Ziyaretçi Kaydı</h4>
                   <p className="text-xs text-amber-700 mt-1">
-                    Davet bağlantınız geçersiz veya süresi dolmuş olabilir; ancak Event4Network toplantılarına ziyaretçi katılımı ücretsizdir. Formu doldurarak kaydınızı tamamlayabilirsiniz.
+                    Davet bağlantınız geçersiz veya süresi dolmuş olabilir; ziyaretçi katılım talebinizi aşağıdaki form üzerinden iletebilirsiniz. Formu doldurarak kaydınızı tamamlayabilirsiniz.
                   </p>
                 </div>
               </div>
@@ -193,9 +193,9 @@ export function VisitorPaymentPage() {
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start space-x-3">
                 <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-blue-800">Ücretsiz Katılım</h4>
+                  <h4 className="text-sm font-bold text-blue-800">Ziyaretçi Katılımı</h4>
                   <p className="text-xs text-blue-700 mt-1">
-                    Event4Network iş toplantılarına ziyaretçi olarak katılım <strong>ücretsizdir</strong>. Aşağıdaki formu doldurarak toplantı kaydınızı hemen oluşturabilirsiniz.
+                    Event4Network iş toplantılarına <strong>ziyaretçi olarak katılabilirsiniz</strong>. Aşağıdaki formu doldurarak toplantı kaydınızı hemen oluşturabilirsiniz.
                   </p>
                 </div>
               </div>
@@ -340,7 +340,7 @@ export function VisitorPaymentPage() {
                   className="w-full h-12 text-lg shadow-lg shadow-red-200 flex items-center justify-center"
                   isLoading={isSubmitting}
                 >
-                  Kaydı Tamamla (Ücretsiz) <Check className="ml-2 h-5 w-5" />
+                  Kaydı Tamamla <Check className="ml-2 h-5 w-5" />
                 </Button>
               </div>
             </form>

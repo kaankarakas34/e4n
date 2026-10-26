@@ -178,7 +178,7 @@ export function GroupDiscovery() {
           <p className="text-sm text-slate-500 mt-0.5">
             {isSubscribed
               ? 'Kapalı grupları inceleyebilir ve asil üyelik başvurusunda bulunabilirsiniz.'
-              : 'Grupları inceleyebilir ve ücretsiz ziyaretçi olarak toplantılara katılabilirsiniz.'}
+              : 'Grupları inceleyebilir ve ziyaretçi olarak toplantılara katılabilirsiniz.'}
           </p>
         </div>
         <Button variant="outline" size="sm" disabled={busy} onClick={() => setRetry(n => n + 1)}>
@@ -239,11 +239,11 @@ export function GroupDiscovery() {
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">🎁</span>
                     <h3 className="font-bold text-slate-900 text-base sm:text-lg">
-                      E4N'yi Keşfedin: 2 Toplantıya Ücretsiz Ziyaretçi Olun!
+                      E4N'yi Keşfedin: Toplantılara Ziyaretçi Olarak Katılın
                     </h3>
                   </div>
                   <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
-                    Abonelik satın almadan önce E4N'nin iş birliği modelini ve toplantı disiplinini yerinde görmeniz için <strong>2 toplantıya kadar ücretsiz ziyaretçi</strong> olabilirsiniz.
+                    Abonelik satın almadan önce E4N'nin iş birliği modelini ve toplantı disiplinini yerinde görmeniz için <strong>2 toplantıya kadar ziyaretçi</strong> olabilirsiniz.
                   </p>
                 </div>
                 <div className="flex-shrink-0 bg-white px-5 py-2.5 rounded-xl border border-emerald-300 shadow-sm text-center">
@@ -256,7 +256,7 @@ export function GroupDiscovery() {
 
               {freeVisits && freeVisits.remainingVisits === 0 ? (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span>⚠️ Ücretsiz ziyaretçi hakkınız dolmuştur ({freeVisits.visitsUsed}/{freeVisits.maxVisits} toplantı tamamlandı). Kapalı gruplara asil üye olarak başvurmak için lütfen aboneliğinizi başlatın.</span>
+                  <span>⚠️ Ziyaretçi katılım hakkınız dolmuştur ({freeVisits.visitsUsed}/{freeVisits.maxVisits} toplantı tamamlandı). Kapalı gruplara asil üye olarak başvurmak için lütfen aboneliğinizi başlatın.</span>
                   <Link to="/membership" className="font-bold text-amber-800 underline hover:text-amber-900 whitespace-nowrap">
                     Aboneliği Başlat &rarr;
                   </Link>
@@ -681,7 +681,7 @@ export function GroupDiscovery() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in">
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider block">Ücretsiz Ziyaret</span>
+                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider block">Ziyaretçi Katılımı</span>
                 <h3 className="text-xl font-bold text-slate-900">{visitorModalGroup.name}</h3>
               </div>
               <button

@@ -799,7 +799,7 @@ export function MemberHandbook() {
               Kuralları İncelediniz, Şimdi Deneyimleyin
             </h3>
             <p className="text-sm sm:text-base text-slate-300 mb-6 leading-relaxed">
-              E4N gruplarında iki toplantıya kadar ücretsiz ziyaretçi olarak katılabilir, meslektaşlarınız ve iş ortaklarınızla tanışabilirsiniz.
+              E4N gruplarında iki toplantıya kadar ziyaretçi olarak katılabilir, meslektaşlarınız ve iş ortaklarınızla tanışabilirsiniz.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button

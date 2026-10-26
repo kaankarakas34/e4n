@@ -147,7 +147,7 @@ export function Topluluklarimiz() {
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-red-500 selection:text-white pt-20">
       <SEO
         title="E4N Toplulukları ve Loncaları | Açık İş Ağı Kanalları"
-        description="E4N'nin ücretsiz açık loncalarına katılın. Sektörel paylaşımları, etkinlik duyurularını ve iş dünyası topluluklarını keşfedin."
+        description="E4N'nin açık loncalarına katılın. Sektörel paylaşımları, etkinlik duyurularını ve iş dünyası topluluklarını keşfedin."
         canonical="https://www.event4network.com/topluluklarimiz"
       />
 
@@ -160,7 +160,7 @@ export function Topluluklarimiz() {
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 mb-6 backdrop-blur-sm">
-            👥 Ücretsiz Açık Loncalar
+            👥 Sektörel Loncalar
           </div>
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-6">
             İş alanınıza uygun topluluklarla <br />
@@ -191,7 +191,7 @@ export function Topluluklarimiz() {
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                 <p>
-                  <strong>Açık WhatsApp topluluklarına katılmak için E4N hesabı açmanız veya abonelik satın almanız gerekmez.</strong> Topluluk katılımı ücretsizdir; ilgili kanalın iletişim kuralları geçerlidir.
+                  <strong>Açık WhatsApp topluluklarına katılmak için E4N hesabı açmanız veya abonelik satın almanız gerekmez.</strong> Topluluk katılımında ilgili kanalın iletişim kuralları geçerlidir.
                 </p>
               </div>
             </div>
@@ -260,7 +260,7 @@ export function Topluluklarimiz() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Loncaları Keşfedin</h2>
-              <p className="text-sm text-slate-500 mt-0.5">8 temel iş alanında aktif ücretsiz WhatsApp loncaları</p>
+              <p className="text-sm text-slate-500 mt-0.5">8 temel iş alanında aktif WhatsApp loncaları</p>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">

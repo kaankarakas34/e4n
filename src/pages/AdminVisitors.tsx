@@ -361,7 +361,7 @@ export function AdminVisitors() {
                                                                 {item.name || item.full_name}
                                                                 {(item.source === 'visitor_invite' || item.form_data?.payment_status === 'FREE') && (
                                                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
-                                                                        Davetli (Ücretsiz)
+                                                                        Davetli
                                                                     </span>
                                                                 )}
                                                                 {item.source === 'visitor_payment' && item.form_data?.payment_status === 'PAID' && (
@@ -639,7 +639,7 @@ export function AdminVisitors() {
                                                 <label className="block text-sm text-gray-500">Ödeme Durumu</label>
                                                 <p className="font-medium text-gray-900">
                                                     {selectedVisitorDetails.form_data?.payment_status === 'FREE' ? (
-                                                        <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded text-xs">Davetli (Ücretsiz)</span>
+                                                        <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded text-xs">Davetli</span>
                                                     ) : selectedVisitorDetails.form_data?.payment_status === 'PAID' ? (
                                                         <span className="text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded text-xs">₺1.000 (Ödendi)</span>
                                                      ) : (
@@ -780,7 +780,7 @@ export function AdminVisitors() {
                         </div>
                         
                         <p className="text-sm text-gray-500 mb-4">
-                            Bu alandan davet edeceğiniz e-posta adresine 6 saat geçerli, ücretsiz ziyaretçi kayıt bağlantısı gönderilir.
+                            Bu alandan davet edeceğiniz e-posta adresine 6 saat geçerli, ziyaretçi kayıt bağlantısı gönderilir.
                         </p>
 
                         <form onSubmit={async (e) => {

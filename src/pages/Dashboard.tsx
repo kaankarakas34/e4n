@@ -287,10 +287,10 @@ export function Dashboard() {
             </div>
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs uppercase tracking-wider mb-1.5 border border-emerald-500/30">
-                <span>🎁 2 Toplantı Ücretsiz Ziyaretçi Hakkı</span>
+                <span>Kulübü ziyaretçi olarak tanıyın</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Ziyaretçi olun ve gruptaki üyelerle tanışın (Ücretsiz)
+                Ziyaretçi olun ve gruptaki üyelerle tanışın
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
                 E4N kapalı gruplarının haftalık toplantılarına katılarak 35 kişilik seçkin iş çevreleriyle tanışın, iş yönlendirmesi ve networking modelini doğrudan yerinde deneyimleyin.
@@ -394,7 +394,7 @@ export function Dashboard() {
                       className="w-full sm:w-auto h-11 bg-white hover:bg-slate-100 text-slate-900 font-bold px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 whitespace-nowrap text-sm border border-white/20"
                     >
                       <Users className="w-4 h-4 shrink-0 text-slate-700" />
-                      <span>Ücretsiz Ziyaretçi Ol</span>
+                      <span>Ziyaretçi Ol</span>
                     </Button>
 
                     <Button

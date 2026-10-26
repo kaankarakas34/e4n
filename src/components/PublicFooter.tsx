@@ -91,7 +91,7 @@ export function PublicFooter() {
           <div className="text-gray-400 text-center md:text-right">
             <span>Bağımsız oluşum: </span>
             <span className="text-gray-600 font-medium">Pardus Business Chamber</span>
-            <span className="text-gray-400"> (Ücretsiz ve seçici iş topluluğu)</span>
+            <span className="text-gray-400"> (Seçici iş topluluğu)</span>
           </div>
         </div>
       </div>

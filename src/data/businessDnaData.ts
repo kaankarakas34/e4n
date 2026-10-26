@@ -323,7 +323,7 @@ export const BUSINESS_DNA_QUESTIONS: QuestionDefinition[] = [
     section: 'İlgi Alanları ve Beklentiler',
     title: 'Diğer E4N üyelerine hangi konularda katkı sağlayabilirsiniz?',
     helperText: 'Kişisel uzmanlığınız, mentorluk veya sektör tecrübenizle topluluğa nasıl değer katabilirsiniz?',
-    placeholder: 'Örn: İhracat teşvik mevzuatı ve hibe programları hakkında grup üyelerine ücretsiz deneyim aktarabilirim...',
+    placeholder: 'Örn: İhracat teşvik mevzuatı ve hibe programları hakkında grup üyelerine deneyim paylaşabilirim...',
     type: 'textarea',
     required: false,
     maxChars: 600,

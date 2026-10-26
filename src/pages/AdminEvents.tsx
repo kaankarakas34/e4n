@@ -162,7 +162,7 @@ export function AdminEvents() {
     const price = readEventPrice(formData.price);
     const currency = readEventCurrency(formData.currency);
     if (price === null || currency === null) {
-      setEventWriteError('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.');
+      setEventWriteError('Ücret ve para birimini doğrulayın. Katılım bedeli alınmayacak etkinliklerde ücret alanına 0 yazın.');
       return;
     }
     const selectedType = Object.prototype.hasOwnProperty.call(EVENT_TYPES, formData.event_type) ? EVENT_TYPES[formData.event_type] : undefined;
@@ -584,7 +584,7 @@ export function AdminEvents() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Ücret (Ücretsiz için 0)
+                      Ücret (katılım bedeli yoksa 0)
                     </label>
                     <Input
                       type="number"

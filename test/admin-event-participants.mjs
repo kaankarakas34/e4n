@@ -96,7 +96,7 @@ for (const invalid of [undefined, null, '', ' ', -1, NaN, Infinity, 'invalid']) 
   event.price = invalid; event.currency = 'TRY'; await setup(); edit();
   assert.equal(priceInput().props.value, '', 'invalid edit source stays blank');
   const before = mutationCalls; await submitForm().props.onSubmit({ preventDefault() {} });
-  assert.equal(mutationCalls, before); assert.ok(has('Ücret ve para birimini doğrulayın. Ücretsiz etkinlik için ücret alanına 0 yazın.'));
+  assert.equal(mutationCalls, before); assert.ok(has('Ücret ve para birimini doğrulayın. Katılım bedeli alınmayacak etkinliklerde ücret alanına 0 yazın.'));
 }
 for (const invalid of [undefined, null, '', 'try']) {
   event.price = 100; event.currency = invalid; await setup(); edit();

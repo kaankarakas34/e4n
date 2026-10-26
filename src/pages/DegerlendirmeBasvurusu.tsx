@@ -269,7 +269,7 @@ export function DegerlendirmeBasvurusu() {
       </Helmet>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-        {/* Ücretsiz Topluluk Davet Alanı */}
+        {/* Topluluk Davet Alanı */}
         <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-200/50 rounded-3xl p-6 sm:p-8 shadow-md mb-8 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold mt-1">
@@ -277,7 +277,7 @@ export function DegerlendirmeBasvurusu() {
             </div>
             <div>
               <h3 className="font-extrabold text-slate-900 text-base sm:text-lg mb-1">
-                Ücretsiz Topluluklarımıza Katılın!
+                Topluluklarımıza Katılın
               </h3>
               <p className="text-slate-605 text-xs sm:text-sm leading-relaxed">
                 Etkinliklerimizden anında haberdar olup, birçok kişiyle tanışma şansı yakalayın. WhatsApp gruplarımıza ve sosyal ağlarımıza katılmak için hemen topluluk sayfamızı ziyaret edin.

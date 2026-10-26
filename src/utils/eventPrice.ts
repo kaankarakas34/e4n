@@ -8,4 +8,4 @@ export const readEventCurrency = (value: unknown): string | null =>
   typeof value === 'string' && /^[A-Z]{3}$/.test(value) ? value : null;
 
 export const formatEventPrice = (amount: number | null, currency: string | null): string =>
-  amount === 0 ? 'Ücretsiz' : amount !== null && currency ? `${amount.toLocaleString('tr-TR')} ${currency}` : 'Bilinmiyor';
+  amount === 0 ? (currency ? `0 ${currency}` : '0') : amount !== null && currency ? `${amount.toLocaleString('tr-TR')} ${currency}` : 'Bilinmiyor';

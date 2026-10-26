@@ -1,15 +1,13 @@
+import { professionRule, professionExample, meetingCalendar, meetingSupport, memberEffort, paymentGate } from '../data/clubContent';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import {
-  Users,
   ShieldCheck,
   UserCheck,
-  Calendar,
   Repeat,
   ArrowRight,
   Handshake,
-  CheckCircle2,
   Clock
 } from 'lucide-react';
 
@@ -63,21 +61,21 @@ export function KapaliGruplar() {
         </div>
       </section>
 
-      {/* Hizmet çeşitliliği nasıl korunur? */}
+      {/* Her meslekten yalnızca bir kişi */}
       <section className="py-20 lg:py-24 bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
             HİZMET DENGESİ
           </span>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">
-            Hizmet çeşitliliği nasıl korunur?
+            Her meslekten yalnızca bir kişi
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Aynı veya çakışan hizmetleri sunan kişiler aynı kapalı grupta bulunmaz. Başvuruda yalnız meslek unvanınıza değil, şirketinizin fiilen sunduğu hizmetlere de bakılır.
+              {professionRule}
             </p>
             <p>
-              Örneğin farklı unvanlar kullanan iki şirketin aynı hizmeti sunması çakışma oluşturabilir. Aynı geniş sektör içinde farklı ve tamamlayıcı hizmetler sunan şirketler ise ayrı değerlendirilir.
+              {professionExample}
             </p>
             <p className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-slate-800 font-medium text-sm sm:text-base">
               Bu yaklaşım, grubun farklı uzmanlıkları temsil etmesini ve üyelerin birbirini hangi ihtiyaçlar için önerebileceğini daha açık görmesini destekler.
@@ -122,10 +120,10 @@ export function KapaliGruplar() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-8">
             <p>
-              Düzenli toplantılarda hedefler, uzmanlıklar ve ihtiyaçlar paylaşılır. Birebir görüşmelerde iş modelleri ve hedef müşteri profilleri daha ayrıntılı konuşulur. Uygun durumlarda tanıştırmalar, iş yönlendirmeleri ve ortak proje görüşmeleri gelişebilir.
+              {memberEffort} Grup toplantılarında seçtiğiniz iş kolunu, hedeflerinizi ve aradığınız bağlantıları anlatırsınız. Birebir görüşmelerle diğer üyelerin işini tanırsınız.
             </p>
             <p>
-              Katılım, açıklanan aylık puan ve çalışma koşullarına göre takip edilir.
+              {meetingSupport}</p><p>{meetingCalendar}
             </p>
           </div>
 
@@ -162,11 +160,11 @@ export function KapaliGruplar() {
             Grup dağılımı dört ayda bir shuffle ile yenilenir. Bu yapı, bir dönem içinde ilişkileri geliştirmenizi ve sonraki dönemlerde yeni insanlarla tanışmanızı sağlar.
           </p>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed font-semibold bg-white p-4 rounded-2xl border border-slate-200 max-w-xl mx-auto">
-            Aktif E4N aboneliğinizle grup başvurusu yapabilirsiniz. Başvuru veya ödeme, kabul ve kontenjan garantisi anlamına gelmez.
+            {paymentGate}
           </p>
           <div className="mb-8 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl max-w-xl mx-auto text-emerald-950 text-sm">
-            <span className="font-bold block mb-1">🎁 Henüz abone olmadınız mı? Gelin, ilk önce ziyaretçi olun!</span>
-            <span>Ücretsiz hesap oluşturarak seçeceğiniz kapalı grupların toplantılarına <strong>2 defaya kadar ücretsiz ziyaretçi</strong> olarak katılabilir, sistemi yakından tanıyabilirsiniz.</span>
+            <span className="font-bold block mb-1">Henüz abone olmadınız mı? Gelin, ilk önce ziyaretçi olun!</span>
+            <span>Hesap oluşturarak seçeceğiniz kapalı grupların toplantılarına <strong>2 defaya kadar ziyaretçi</strong> olarak katılabilir, sistemi yakından tanıyabilirsiniz.</span>
           </div>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
@@ -175,7 +173,7 @@ export function KapaliGruplar() {
               onClick={() => navigate('/auth/register')}
               className="font-bold px-8 h-12 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-200"
             >
-              Ücretsiz Kaydol & Ziyaretçi Ol <ArrowRight className="w-4 h-4 ml-1.5" />
+              Üye Ol <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
             <Button
               size="lg"

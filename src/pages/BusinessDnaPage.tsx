@@ -1197,7 +1197,7 @@ export function BusinessDnaPage() {
                     rows={3}
                     value={answers.q16 || ''}
                     onChange={(e) => setAnswers({ ...answers, q16: e.target.value })}
-                    placeholder="Örn: Dış ticaret süreçleri ve devlet teşvikleri hakkında grup üyelerine ücretsiz deneyim aktarabilirim..."
+                    placeholder="Örn: Dış ticaret süreçleri ve devlet teşvikleri hakkında grup üyelerine deneyim paylaşabilirim..."
                     className="w-full p-3.5 rounded-2xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                   />
                 </div>

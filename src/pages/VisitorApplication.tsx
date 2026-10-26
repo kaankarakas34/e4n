@@ -78,7 +78,7 @@ export function VisitorApplication() {
             <div className="bg-white rounded-2xl shadow-2xl shadow-red-100/50 p-6 sm:p-8 border border-gray-100">
               <div className="mb-8">
                 <span className="inline-block px-3 py-1 bg-red-50 text-red-600 text-xs font-semibold rounded-full mb-3">
-                  ÜCRETSİZ KATILIM
+                  ZİYARETÇİ KATILIMI
                 </span>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Event4Network Ön Bilgilendirme Formu</h1>
                 <p className="text-gray-600 leading-relaxed">

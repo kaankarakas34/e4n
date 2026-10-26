@@ -1,3 +1,5 @@
+import { ClubBenefitsSection } from '../components/PublicClubSections';
+import { companyRequirement, professionRule } from '../data/clubContent';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
@@ -5,9 +7,7 @@ import {
   Users,
   Repeat,
   HeartHandshake,
-  Target,
   ArrowRight,
-  ShieldCheck,
   Calendar,
   Layers
 } from 'lucide-react';
@@ -105,7 +105,7 @@ export function E4NNedir() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Açık loncalar</h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                  Sektör ve ilgi alanı etrafında geniş bir profesyonel çevre sunar. Bilgi ve deneyim paylaşımı için açık ve ücretsiz katılım alanlarıdır.
+                  Sektör ve ilgi alanı etrafında geniş bir profesyonel çevre sunar. Bilgi ve deneyim paylaşımı için açık katılım alanlarıdır.
                 </p>
               </div>
               <div className="pt-4 border-t border-slate-100 text-xs font-semibold text-emerald-700">
@@ -135,7 +135,7 @@ export function E4NNedir() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Kapalı gruplar</h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                  35 kişilik yapıda daha düzenli ve odaklı ilişki geliştirme imkânı sağlar. Hizmet uyumu ve kontenjanla değerlendirilir.
+                  35 kişilik kapalı grupta her üye tek bir iş kolunu temsil eder. Her meslekten yalnızca bir kişi bulunabilir.
                 </p>
               </div>
               <div className="pt-4 border-t border-slate-100 text-xs font-semibold text-red-700">
@@ -153,6 +153,7 @@ export function E4NNedir() {
         </div>
       </section>
 
+      <ClubBenefitsSection />
       {/* 4. Karşılıklı katkı */}
       <section className="py-20 bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,7 +193,7 @@ export function E4NNedir() {
               Şirket sahipleri, kurucu ortaklar ve üst düzey yöneticiler; işlerini geliştirmek, farklı uzmanlıklarla çalışmak ve yeni profesyonel çevreler tanımak için E4N'yi değerlendirebilir.
             </p>
             <p>
-              Kapalı gruplara katılımda şirket/tüzel kişilik, hizmet uyumu, kontenjan ve başkan görüşmesi dikkate alınır. Açık loncaların katılım koşulları kendi kanallarında açıklanır.
+              {companyRequirement} {professionRule} Ziyaretçi deneyimi ve başkan veya admin onayı, üyelik ödemesinden önce tamamlanır.
             </p>
           </div>
 

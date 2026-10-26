@@ -484,7 +484,7 @@ export function PublicEventsPage() {
                         <span className="text-slate-500 font-medium">Katılım:</span>
                         <span className="font-bold text-slate-900">
                           {event.is_free || !event.ticket_price || event.ticket_price === 0
-                            ? 'Ücretsiz Katılım'
+                            ? '0 TL'
                             : `${event.ticket_price} TL`}
                         </span>
                       </div>

@@ -22,35 +22,35 @@ export function NasilCalisir() {
       num: "01",
       icon: UserPlus,
       title: "1. Hesabınızı oluşturun",
-      desc: "Şirketiniz ve iletişim bilgilerinizle kayıt olun. Hesap açmak için davetiye veya ön onay gerekmez. Kayıt sırasında istenen bilgiler form üzerinde açıklanır.",
+      desc: "Kendi şirketinizin bilgileriyle veya yetkili olduğunuz şirketi temsilen hesap açın. Şirket sahibi veya yetkili temsilci olmadan üyelik kabul edilmez.",
       note: "Hesabınızın oluşturulması ücretli abonelik başlatmaz ve kapalı grupta yer ayırmaz."
     },
     {
       num: "02",
       icon: CreditCard,
-      title: "2. Üyelik koşullarını değerlendirin",
-      desc: "Güncel abonelik tutarını, ödeme koşullarını ve üyelik kapsamını inceleyin. E4N'nin tek üyelik yapısı, kapalı grup kabulüyle ayrı yönetilir.",
-      note: "Kapalı gruba asil üye olarak başvurmak için aktif abonelik gerekir. Abonelik öncesinde sistemi görmek için 2 toplantıya kadar ücretsiz ziyaretçi olarak katılabilirsiniz."
+      title: "2. Kulübü ziyaretçi olarak tanıyın",
+      desc: "Hesabınızdaki grupları inceleyin, uygun toplantıya ziyaret talebi gönderin. İki toplantıya kadar ziyaretçi olarak katılıp çalışma biçimini tanıyın.",
+      note: "Her grubun kendi toplantı takvimi vardır; gün ve saati ilgili gruptan takip edin."
     },
     {
       num: "03",
       icon: Send,
-      title: "3. Uygun gruba başvurun",
-      desc: "Mevcut başvuru alanından grup bilgilerini inceleyerek talebinizi iletin. Şirketinizin sunduğu hizmetler, grup içindeki mevcut hizmetler ve kontenjan değerlendirmede dikkate alınır.",
-      note: "Kapalı grupta aynı veya çakışan hizmetlerin bir arada bulunmaması esastır."
+      title: "3. İş kolunuzu seçin, grup onayı alın",
+      desc: "Her üye grupta tek iş kolunu temsil eder. Her meslekten yalnızca bir kişi bulunabilir. Seçtiğiniz iş kolu ve uygun kontenjan, başkan veya admin tarafından değerlendirilir.",
+      note: "Yer yoksa en fazla ziyaretçi olabilirsiniz. Başkan veya admin onayı olmadan ödeme yapamazsınız."
     },
     {
       num: "04",
       icon: UserCheck,
-      title: "4. Grup başkanıyla görüşün",
-      desc: "Başkan görüşmesi; işinizi, hedef müşteri profilinizi, aradığınız bağlantıları ve düzenli katılıma ayırabileceğiniz zamanı konuşmak için yapılır. Görüşmede grubun çalışma biçimi ve katılım beklentileri de açıklanır.",
-      note: "Başvurunuz görüşme, hizmet uyumu ve kapasite koşulları birlikte değerlendirilerek sonuçlandırılır."
+      title: "4. Kuralları kabul edin, ödemenizi tamamlayın",
+      desc: "Grup onayından sonra kuralları inceleyip kabul ederek bunlara uyacağınızı taahhüt edin. Ardından açılan ödeme ekranında işleminizi tamamlayın. Üyelik tutarı ve kapsamını hesabınızda görebilirsiniz.",
+      note: "Ziyaretçi katılımı, başkan veya admin onayı ve kural kabulü ödeme öncesinde tamamlanır."
     },
     {
       num: "05",
       icon: Handshake,
       title: "5. Grubunuzla ilişki geliştirin",
-      desc: "Kabul sonrası düzenli toplantılara katılır, işinizi anlatır ve diğer üyelerin uzmanlıklarını öğrenirsiniz. Birebir görüşmeler, birbirinize hangi alanlarda yardımcı olabileceğinizi daha ayrıntılı konuşmanızı sağlar.",
+      desc: "Grup toplantılarına katılmanız ve birebir görüşmeler yapmanız gerekir. E4N ilk toplantılarınızı organize eder; sonraki birebirleri siz planlarsınız. Fayda elde etmek düzenli çaba, takip ve katkı gerektirir.",
       note: "Aylık katılım değerlendirmesi, açıklanan puan ve çalışma kurallarına göre yapılır."
     },
     {
@@ -86,7 +86,7 @@ export function NasilCalisir() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
-            E4N'de hesap oluşturma, abonelik ve kapalı gruba katılma birbirini izleyen ayrı adımlardır. Açık topluluklara katılım ise kendi kanalları üzerinden ilerler.
+            Önce kulübü ziyaretçi olarak tanıyın. Grup onayı ve kuralların kabulünün ardından ödeme adımına geçin. Açık WhatsApp toplulukları kendi kanalları üzerinden ilerler.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button

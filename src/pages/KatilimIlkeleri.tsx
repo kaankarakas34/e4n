@@ -1,15 +1,12 @@
+import { absenceRule, scoringActivities, memberEffort, meetingSupport } from '../data/clubContent';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import {
-  FileText,
   ShieldCheck,
-  CheckCircle,
   AlertTriangle,
-  Clock,
   ArrowRight,
   HelpCircle,
-  UserCheck
 } from 'lucide-react';
 
 export function KatilimIlkeleri() {
@@ -73,7 +70,7 @@ export function KatilimIlkeleri() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Toplantılara hazırlıklı gelmek, işinizi ve ihtiyaçlarınızı açık anlatmak, diğer üyeleri dinlemek ve üzerinde anlaşılan görüşmeleri takip etmek grup çalışmasını destekler.
+              {memberEffort} {meetingSupport}
             </p>
             <p>
               Üyeler birbirinin uzmanlığına, iletişim tercihlerine ve paylaşılan bilgilerin gizliliğine saygı gösterir. İş yönlendirmeleri uygunluk ve güven dikkate alınarak yapılır.
@@ -93,7 +90,7 @@ export function KatilimIlkeleri() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Grup katılımı aylık puan tablosuyla değerlendirilir. Hangi faaliyetlerin değerlendirildiği, dönem için gerekli koşullar ve varsa mazeret süreci üyeye açıklanır.
+              {scoringActivities}</p><p>{absenceRule}</p><p>Ayrıntılı kuralları ödeme öncesinde görüp kabul eder, bunlara uyacağınızı taahhüt edersiniz.
             </p>
             <p>
               Katılım koşullarını karşılamayan üyelerin kapalı gruptaki yeri, ilgili kurallara göre sona erer. Amaç, düzenli çalışma beklentisini grubun tamamı için tutarlı biçimde uygulamaktır.

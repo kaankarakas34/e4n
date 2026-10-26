@@ -1,3 +1,4 @@
+import { companyRequirement, paymentGate, professionRule } from '../data/clubContent';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
@@ -20,7 +21,7 @@ export function Uyelik() {
     <div className="bg-white min-h-screen pt-20">
       <SEO
         title="E4N Üyelik | Abonelik ve Kapalı Grup Başvurusu"
-        description="E4N hesabı, yıllık üyelik yaklaşımı ve kapalı grup kabulünü inceleyin. Aktif abonelik, hizmet uyumu ve başkan görüşmesi adımlarını öğrenin."
+        description="E4N hesabı, yıllık üyelik yaklaşımı ve kapalı grup kabulünü inceleyin. Ziyaret, tek iş kolu seçimi, grup onayı ve ödeme öncesi kural kabulünü öğrenin."
         canonical="https://www.event4network.com/uyelik"
       />
 
@@ -40,10 +41,10 @@ export function Uyelik() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-4 leading-relaxed font-normal">
-            Şirket bilgilerinizle hesabınızı açın, üyelik koşullarını inceleyin ve düzenli networking için uygun kapalı gruba başvurun. Kayıt, abonelik ve grup kabulü ayrı aşamalardır.
+            Şirket bilgilerinizle hesap açın, kulübü ziyaretçi olarak tanıyın. Grup onayı ve kuralları kabul etmenizin ardından ödeme adımına geçin.
           </p>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold text-xs sm:text-sm border border-emerald-500/30 mb-10">
-            <span>🎁 Henüz abone olmadan 2 toplantıya ücretsiz ziyaretçi olarak katılabilirsiniz!</span>
+            <span>Abonelik öncesinde 2 toplantıya ziyaretçi olarak katılabilirsiniz!</span>
           </div>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button
@@ -52,7 +53,7 @@ export function Uyelik() {
               onClick={() => navigate('/auth/register')}
               className="text-base h-14 px-8 font-bold bg-red-600 hover:bg-red-500 w-full sm:w-auto shadow-lg shadow-red-900/30"
             >
-              Ücretsiz Üye Ol & Ziyaretçi Ol
+              Üye Ol
             </Button>
             <Button
               size="lg"
@@ -70,10 +71,10 @@ export function Uyelik() {
       <section className="py-20 lg:py-24 bg-slate-50 border-b border-slate-200/70">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="text-xs font-bold text-red-600 uppercase tracking-widest block mb-2">
-            3 AYRI AŞAMA
+            KATILIM AŞAMALARI
           </span>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">
-            Hesap, abonelik ve grup kabulü
+            Hesaptan kulüp üyeliğine
           </h2>
 
           <div className="overflow-hidden bg-white border border-slate-200 rounded-3xl shadow-sm mb-6">
@@ -89,7 +90,7 @@ export function Uyelik() {
                   </div>
                 </div>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
-                  Ücretsiz / Ön Onaysız
+                  Hesap Oluşturma
                 </span>
               </div>
 
@@ -99,12 +100,12 @@ export function Uyelik() {
                     🎁
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">Ücretsiz ziyaretçi deneyimi</h3>
-                    <p className="text-slate-600 text-sm mt-1">Abonelik satın almadan önce kapalı grupların toplantılarına <strong>2 defaya kadar ücretsiz ziyaretçi</strong> olarak katılıp sistemi yerinde test edebilirsiniz.</p>
+                    <h3 className="font-bold text-slate-900 text-lg">Ziyaretçi deneyimi</h3>
+                    <p className="text-slate-600 text-sm mt-1">Abonelik satın almadan önce kapalı grupların toplantılarına <strong>2 defaya kadar ziyaretçi</strong> olarak katılıp sistemi yerinde test edebilirsiniz.</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-full w-fit">
-                  2 Toplantı Ücretsiz
+                  Ziyaretçi Katılımı
                 </span>
               </div>
 
@@ -114,8 +115,8 @@ export function Uyelik() {
                     <CreditCard className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">Aktif abonelik</h3>
-                    <p className="text-slate-600 text-sm mt-1">Üyelik kapsamındaki hakları ve grup başvurusu imkânını sağlar.</p>
+                    <h3 className="font-bold text-slate-900 text-lg">Grup onayı</h3>
+                    <p className="text-slate-600 text-sm mt-1">Seçtiğiniz tek iş kolu ve kontenjan için başkan veya admin onayı gerekir.</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold uppercase tracking-wider text-red-700 bg-red-50 px-3 py-1.5 rounded-full w-fit">
@@ -129,19 +130,19 @@ export function Uyelik() {
                     <Users className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg">Kapalı grup kabulü</h3>
-                    <p className="text-slate-600 text-sm mt-1">Başkan görüşmesi, hizmet uyumu ve kontenjan değerlendirmesi sonrası gerçekleşir.</p>
+                    <h3 className="font-bold text-slate-900 text-lg">Kural kabulü ve ödeme</h3>
+                    <p className="text-slate-600 text-sm mt-1">Kuralları kabul ederek bunlara uyacağınızı taahhüt edersiniz; ardından ödeme ekranı açılır.</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full w-fit">
-                  35 Kişilik Kontenjan
+                  Onay Sonrası Ödeme
                 </span>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-            ℹ️ Hesap açmak için davetiye veya ön onay gerekmez. Abonelik satın almadan önce 2 toplantıya ücretsiz ziyaretçi katılabilirsiniz. Abonelik satın almak gruba otomatik kabul sağlamaz.
+            ℹ️ Hesap açmak için davetiye veya ön onay gerekmez. Abonelik satın almadan önce 2 toplantıya ziyaretçi katılabilirsiniz. Ziyaret ve başkan veya admin onayı olmadan ödeme yapamazsınız.
           </div>
         </div>
       </section>
@@ -160,10 +161,10 @@ export function Uyelik() {
               E4N'nin üyelik modeli yıllık aidiyet ve düzenli ilişki geliştirme yaklaşımı üzerine kuruludur. Güncel üyelik tutarı, ödeme dönemi ve kapsamı hesabınızdaki üyelik alanında gösterilir.
             </p>
             <p>
-              Sistemi yakından görüp karar vermek isteyen profesyoneller için <strong>2 toplantılık ücretsiz ziyaretçi imkânı</strong> sunulur. Böylece toplantı disiplinini ve üye sinerjisini bizzat yaşadıktan sonra aboneliğinizi güvenle başlatabilirsiniz.
+              Sistemi yakından görüp karar vermek isteyen profesyoneller için <strong>2 toplantılık ziyaretçi deneyimi</strong> sunulur. Böylece toplantı disiplinini ve üye sinerjisini bizzat yaşadıktan sonra aboneliğinizi güvenle başlatabilirsiniz.
             </p>
             <p>
-              Ödeme yapmadan önce güncel koşulları inceleyin. Grup katılımının ayrı bir değerlendirmeye bağlı olduğunu dikkate alın.
+              {paymentGate}
             </p>
           </div>
         </div>
@@ -180,10 +181,10 @@ export function Uyelik() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Şirket/tüzel kişilik bilgileri, sunduğunuz hizmetler, grubun hizmet dağılımı, uygun kontenjan ve başkan görüşmesi değerlendirilir. Şirketin bulunduğu ülke tek başına dışlama nedeni değildir.
+              {companyRequirement}
             </p>
             <p>
-              Görüşmede iş hedefleriniz ve grup çalışmasına düzenli katılım beklentileri birlikte ele alınır.
+              {professionRule} Görüşmede iş hedefleriniz ve katılım beklentileri birlikte ele alınır.
             </p>
           </div>
         </div>
@@ -225,13 +226,13 @@ export function Uyelik() {
       <section className="py-20 bg-slate-50 text-center">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block mb-2">
-            ÜCRETSİZ KATILIM
+            TOPLULUKLARA KATILIM
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-4">
             Açık topluluklardan da başlayabilirsiniz
           </h2>
           <p className="text-slate-600 text-base sm:text-lg mb-8 leading-relaxed">
-            Lonca kanallarına ücretsiz katılarak sektörünüzle ilgili paylaşımları ve duyuruları takip edebilirsiniz. Bu katılım abonelik veya kapalı grup kabulü sağlamaz.
+            Lonca kanallarına katılarak sektörünüzle ilgili paylaşımları ve duyuruları takip edebilirsiniz. Bu katılım abonelik veya kapalı grup kabulü sağlamaz.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button

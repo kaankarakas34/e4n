@@ -174,7 +174,7 @@ for (const validPrice of [0, '0.00', 125.5, '125.50']) {
     assert.ok(text(render()).includes('125,5 TRY')); assert.equal(text(render()).includes('Ücretsiz'), false);
     const before = writes; await clickRegister();
     assert.equal(writes, before); assert.equal(nodes(render()).find(node => node.type === 'PaymentModal').props.isOpen, true);
-  } else assert.ok(text(render()).includes('Ücretsiz'));
+  } else assert.ok(text(render()).includes('0 TRY'));
 }
 for (const invalidCapacity of [undefined, null, 0, -1, 1.5, '20']) {
   await mount(); response = async () => ({ ...fixture(), max_attendees: invalidCapacity }); await notify(); commit();

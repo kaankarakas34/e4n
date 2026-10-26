@@ -201,7 +201,7 @@ export function CourseForm({ course, onClose, onSuccess }: CourseFormProps) {
             </div>
           </div>
 
-          {/* Fiyatlandırma kaldırıldı: Eğitimler ücretsizdir */}
+          {/* Fiyatlandırma kaldırıldı: Eğitimler için bedel alınmaz */}
 
           {/* Certificate */}
           <div className="space-y-4">

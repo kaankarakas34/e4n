@@ -4,12 +4,8 @@ import { Button } from '../shared/Button';
 import {
   Repeat,
   ShieldCheck,
-  Calendar,
-  Users,
   ArrowRight,
   FileText,
-  Clock,
-  Sparkles
 } from 'lucide-react';
 
 export function ShufflePage() {
@@ -39,7 +35,7 @@ export function ShufflePage() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
-            Shuffle, E4N'nin kapalı grup dağılımını dört ayda bir yenilemesidir. Bir dönem boyunca birlikte çalıştığınız insanları tanırken, sonraki dönemlerde farklı uzmanlıklarla ilişki geliştirme fırsatı bulursunuz.
+            Dört ay boyunca 35 kişilik grubunuzdaki insanları, işlerini ve uzmanlıklarını tanırsınız. Shuffle ile yeni bir gruba geçerken bu ilişkileri geliştirmeye devam eder; farklı insanları, meslekleri ve konuları da iş çevrenize katarsınız.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button
@@ -73,10 +69,10 @@ export function ShufflePage() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Karşı tarafın işini ve çalışma biçimini öğrenmek düzenli temas gerektirir. Dört aylık dönem, aynı grup içinde birbirinizi tanıyabileceğiniz bir süreklilik oluşturur.
+              Karşı tarafın işini ve çalışma biçimini öğrenmek düzenli temas gerektirir. Dört aylık dönem boyunca grup toplantıları ve birebir görüşmelerle birbirinizi tanır, hangi alanlarda birlikte çalışabileceğinizi öğrenirsiniz.
             </p>
             <p>
-              Yeni dönem, bu sürekliliği daha geniş bir çevreye taşıma fırsatı sunar. Önceki dönemde kurduğunuz ilişkiler, grup değiştiğinde sona ermek zorunda değildir.
+              Grubunuz değiştiğinde önceki dönemde tanıdığınız kişilerle daha derin ilişkiler kurmaya devam edersiniz. Yeni grubunuz ise farklı insanları, meslekleri ve konuları tanımanızı sağlar; böylece hem mevcut ilişkilerinizi geliştirir hem iş çevrenize yeni bağlantılar katarsınız.
             </p>
           </div>
         </div>
@@ -96,7 +92,7 @@ export function ShufflePage() {
           </h2>
           <div className="space-y-4 text-slate-700 text-base sm:text-lg leading-relaxed mb-6">
             <p>
-              Grup kapasitesi ve aynı ya da çakışan hizmetlerin aynı grupta bulunmaması koşulları korunur. Üyelerin grup katılımına uygunluğu da dönem değerlendirmesinde dikkate alınır.
+              Grup kapasitesi, her üyenin tek iş kolunu temsil etmesi ve her meslekten yalnızca bir kişi bulunması koşulları korunur. Üyelerin grup katılımına uygunluğu da dönem değerlendirmesinde dikkate alınır.
             </p>
             <p className="bg-white p-5 rounded-2xl border border-slate-200 text-slate-800 text-sm sm:text-base font-medium">
               ⚠️ Shuffle, her başvuru sahibine veya her üyeye otomatik yerleşim garantisi değildir. Yeni grup dağılımı, geçerli katılım koşulları ve uygun kontenjanlarla birlikte değerlendirilir.

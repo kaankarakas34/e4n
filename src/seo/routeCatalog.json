@@ -5,7 +5,7 @@
     "title": "Event4Network | 35 Kişilik Gruplarla İş Ağınızı Geliştirin",
     "description": "E4N'nin açık loncalarını, 35 kişilik kapalı gruplarını ve dört ayda bir yenilenen networking modelini keşfedin. Üyelik ve grup başvurusunu öğrenin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/e4n-nedir",
@@ -13,7 +13,7 @@
     "title": "E4N Nedir? | İş İnsanları İçin Networking Ekosistemi",
     "description": "Event4Network'ün açık loncalar, etkinlikler ve 35 kişilik kapalı gruplardan oluşan iş ağı modelini ve karşılıklı katkı yaklaşımını tanıyın.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/nasil-calisir",
@@ -21,7 +21,7 @@
     "title": "E4N Nasıl Çalışır? | Üyelik, Grup Kabulü ve Shuffle",
     "description": "Hesap açma, E4N aboneliği, başkan görüşmesi ve kapalı grup kabulünü öğrenin. Dört aylık shuffle ve düzenli katılım modelini inceleyin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/kapali-gruplar",
@@ -29,7 +29,7 @@
     "title": "E4N Kapalı Gruplar | 35 Kişilik Seçici İş Ağı",
     "description": "35 kişilik E4N gruplarında hizmet dengesi, başkan görüşmesi ve düzenli networking yaklaşımını öğrenin. Grup kabul koşullarını inceleyin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/shuffle",
@@ -37,7 +37,7 @@
     "title": "E4N Shuffle | Dört Ayda Bir Yenilenen Networking Grupları",
     "description": "E4N shuffle sistemiyle grup dağılımının dört ayda bir nasıl yenilendiğini ve hizmet uyumu ile kapasitenin neden korunduğunu öğrenin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/katilim-ilkeleri",
@@ -45,7 +45,7 @@
     "title": "E4N Katılım İlkeleri | Aylık Değerlendirme ve Grup Hakları",
     "description": "E4N kapalı gruplarında aktif katılım, aylık puan değerlendirmesi, gruptan çıkarılma ve üyelik haklarının devamına ilişkin modeli inceleyin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/birebir-networking",
@@ -53,7 +53,7 @@
     "title": "E4N Birebir Networking | İşinizi Daha İyi Anlatın",
     "description": "Birebir networking görüşmelerinde iş modelinizi, hedef müşterilerinizi ve olası iş birliklerini konuşun. E4N'nin görüşme yaklaşımını öğrenin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/business-networking",
@@ -99,9 +99,9 @@
     "path": "/uyelik",
     "component": "Uyelik",
     "title": "E4N Üyelik | Abonelik ve Kapalı Grup Başvurusu",
-    "description": "E4N hesabı, yıllık üyelik yaklaşımı ve kapalı grup kabulünü inceleyin. Aktif abonelik, hizmet uyumu ve başkan görüşmesi adımlarını öğrenin.",
+    "description": "E4N hesabı, yıllık üyelik yaklaşımı ve kapalı grup kabulünü inceleyin. Ziyaret, tek iş kolu seçimi, grup onayı ve ödeme öncesi kural kabulünü öğrenin.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/etkinlikler",
@@ -115,7 +115,7 @@
     "path": "/topluluklarimiz",
     "component": "Topluluklarimiz",
     "title": "E4N Toplulukları ve Loncaları | Açık İş Ağı Kanalları",
-    "description": "E4N'nin ücretsiz açık loncalarına katılın. Sektörel paylaşımları, etkinlik duyurularını ve iş dünyası topluluklarını keşfedin.",
+    "description": "E4N'nin açık loncalarına katılın. Sektörel paylaşımları, etkinlik duyurularını ve iş dünyası topluluklarını keşfedin.",
     "index": true,
     "lastmod": "2026-10-12"
   },
@@ -141,7 +141,7 @@
     "title": "E4N Sıkça Sorulan Sorular | Üyelik ve Grup Katılımı",
     "description": "E4N hesabı, abonelik, 35 kişilik gruplar, shuffle, loncalar ve katılım koşulları hakkındaki soruların yanıtlarını bulun.",
     "index": true,
-    "lastmod": "2026-10-12"
+    "lastmod": "2026-10-26"
   },
   {
     "path": "/iletisim",

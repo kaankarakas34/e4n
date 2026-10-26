@@ -1,8 +1,9 @@
+import { absenceRule, companyRequirement, professionRule, professionExample, paymentGate, meetingCalendar, scoringActivities, meetingSupport, noGuarantee } from '../data/clubContent';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { Button } from '../shared/Button';
-import { Search, ChevronDown, HelpCircle, ArrowRight, MessageCircle } from 'lucide-react';
+import { Search, ChevronDown, ArrowRight, MessageCircle } from 'lucide-react';
 
 interface FAQItem {
   q: string;
@@ -23,24 +24,24 @@ const FAQ_ITEMS: FAQItem[] = [
     a: "Hesap oluşturma ve ücretli abonelik farklıdır. Güncel üyelik tutarı ve kapsamı üyelik alanında açıklanır."
   },
   {
-    q: "Abonelik satın aldığımda gruba otomatik girer miyim?",
-    a: "Kapalı grup kabulü aktif abonelik, başkan görüşmesi, hizmet uyumu ve uygun kontenjanla değerlendirilir. Ödeme otomatik kabul sağlamaz."
+    q: "Ödeme yapabilmek için hangi adımları tamamlamalıyım?",
+    a: paymentGate
   },
   {
     q: "Kapalı gruba başvurmak için şirket şartı var mı?",
-    a: "Hedef modelde şirket/tüzel kişilik şartı vardır; ülke farkı tek başına dışlama nedeni değildir. Kabul edilen şirket ve belge bilgileri başvuru sırasında açıklanır."
+    a: companyRequirement
   },
   {
     q: "Gruplar kaç kişilik?",
-    a: "Kapalı gruplar 35 kişilik yapı üzerine kuruludur. Mevcut kamuya açık üyelik metninde bu kapasite grup başkanı hariç 35 üye olarak açıklanır."
+    a: "Kapalı gruplar, grup başkanı hariç en fazla 35 üyeden oluşur."
   },
   {
     q: "Aynı meslekten birden fazla kişi aynı grupta olabilir mi?",
-    a: "Aynı veya çakışan hizmetlerin aynı kapalı grupta bulunmaması esastır. Sadece unvan yerine fiilen sunulan hizmetler değerlendirilir."
+    a: professionRule
   },
   {
     q: "Aynı sektördeki kişiler birlikte olabilir mi?",
-    a: "Geniş bir sektörde farklı hizmetler sunulabilir. Karar hizmetlerin birbirini tamamlayıp tamamlamadığına veya çakışıp çakışmadığına göre verilir."
+    a: professionExample
   },
   {
     q: "Başkan görüşmesinde neler konuşulur?",
@@ -56,11 +57,12 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     q: "Toplantılar ne sıklıkla yapılır?",
-    a: "Kapalı gruplarda düzenli toplantılar yapılır. Güncel dönem takvimi ve katılım biçimi başvuru sürecinde ve ilgili toplantı duyurularında açıklanır."
+    a: meetingCalendar
   },
+  { q: "Toplantıya katılamazsam ne yapmalıyım?", a: absenceRule },
   {
     q: "Aylık puan tablosu neden var?",
-    a: "Grup çalışmasına katılımı açıklanan kurallara göre değerlendirmek için kullanılır. Faaliyetler, eşik ve varsa mazeret koşulları üyeye bildirilir."
+    a: scoringActivities
   },
   {
     q: "Katılım koşullarını karşılamazsam ne olur?",
@@ -76,7 +78,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     q: "Loncalara katılmak ücretli mi?",
-    a: "Açık lonca kanallarına katılım ücretsizdir. Kanal kuralları geçerlidir. Lonca katılımı kapalı grup kabulü veya E4N aboneliği sağlamaz."
+    a: "Sektörel WhatsApp topluluklarımız olan açık loncalara katılabilirsiniz. Kanal kuralları geçerlidir. Lonca katılımı kapalı grup kabulü veya E4N aboneliği sağlamaz."
   },
   {
     q: "Loncalarda aynı meslekten insanlar bulunabilir mi?",
@@ -88,7 +90,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     q: "Birebir görüşmelerin amacı nedir?",
-    a: "Birbirinizin iş modelini, hedef müşterisini ve olası iş birliği alanlarını daha iyi anlamaktır. Görüşme sonrası uygun adımlar karşılıklı belirlenir."
+    a: "Birebir görüşmelerle birbirinizin işini, hedef müşterilerini ve iş birliği alanlarını tanırsınız. Grup toplantılarına katılmanız ve birebir görüşmeler yapmanız gerekir. " + meetingSupport
   },
   {
     q: "Yapay zekâ eşleştirmesi şu anda kullanılabiliyor mu?",
@@ -96,15 +98,15 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     q: "E4N müşteri, satış veya ciro garantisi veriyor mu?",
-    a: "E4N ilişki geliştirmek için ortam ve yöntem sunar. Ticari sonuçlar üyelerin sunduğu hizmet, güvenilirlik ve ilişki takibine bağlıdır."
+    a: noGuarantee
   },
   {
     q: "İstanbul, Ankara ve İzmir'de grup seçebilir miyim?",
-    a: "Şehir bazlı grup ayrımı mevcut kamuya açık akışta henüz etkin değildir. Şehir sayfaları gerçek yerel duyuruları ve güncel organizasyon bilgisini paylaşmak için hazırlanır."
+    a: "Şehir bazlı grup seçimi henüz kullanıma açık değildir. Şehir sayfaları gerçek yerel duyuruları ve güncel organizasyon bilgisini paylaşmak için hazırlanır."
   },
   {
     q: "Pardus Business Chamber E4N üyeliğine dahil mi?",
-    a: "Pardus Business Chamber ayrı, ücretsiz ve seçici bir yapıdır. E4N hesabı veya aboneliği Pardus kabulü anlamına gelmez."
+    a: "Pardus Business Chamber ayrı ve seçici bir yapıdır. E4N hesabı veya aboneliği Pardus kabulü anlamına gelmez."
   },
   {
     q: "Başka sorum varsa ne yapmalıyım?",
@@ -172,7 +174,8 @@ export function SSS() {
           <div className="max-w-xl mx-auto relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
-              type="text"
+              type="search"
+              aria-label="Sıkça sorulan sorularda ara"
               placeholder="Sorularda arayın (örn: shuffle, üyelik, 35 kişi)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -194,6 +197,8 @@ export function SSS() {
                   className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition-all hover:border-slate-300"
                 >
                   <button
+                    type="button"
+                    aria-expanded={isOpen}
                     onClick={() => toggleItem(idx)}
                     className="w-full px-6 py-5 text-left flex justify-between items-center gap-4 hover:bg-slate-50/60 transition-colors"
                   >

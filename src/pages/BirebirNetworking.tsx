@@ -1,19 +1,13 @@
+import { meetingSupport } from '../data/clubContent';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { Button } from '../shared/Button';
 import {
-  MessageSquare,
-  Users,
   Target,
-  FileText,
-  Clock,
-  ArrowRight,
   ShieldCheck,
   Sparkles,
-  CheckCircle2,
   ListOrdered,
-  Send,
   CalendarCheck
 } from 'lucide-react';
 
@@ -78,7 +72,7 @@ export function BirebirNetworking() {
           </h2>
           <div className="space-y-6 text-slate-700 text-base sm:text-lg leading-relaxed">
             <p>
-              Şirketinizin sunduğu hizmetleri, hedef müşteri profilinizi, güçlü yönlerinizi ve birlikte çalışmak istediğiniz iş ortaklarını anlatın. Karşı tarafın aynı konulardaki ihtiyaçlarını da öğrenin.
+              {meetingSupport} Grupta temsil ettiğiniz iş kolunu, hedef müşteri profilinizi ve birlikte çalışmak istediğiniz iş ortaklarını anlatın. Karşı tarafın ihtiyaçlarını da öğrenin.
             </p>
             <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
               <div className="flex items-start gap-3">

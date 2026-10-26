@@ -381,7 +381,7 @@ export function EventDetail() {
                                         ) : isMemberFree && price! > 0 ? (
                                             <div>
                                                 <span className="line-through text-gray-400 text-xs mr-2">{formatEventPrice(price, currency)}</span>
-                                                <span className="font-bold text-green-600">Ücretsiz</span>
+                                                <span className="font-bold text-green-600">{formatEventPrice(0, currency)}</span>
                                                 <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Üyeye Özel</span>
                                             </div>
                                         ) : (
@@ -537,7 +537,7 @@ export function EventDetail() {
                                                         t.payment_status === 'FREE' ? 'bg-blue-100 text-blue-700' :
                                                         'bg-amber-100 text-amber-700'
                                                     }`}>
-                                                        {t.payment_status === 'PAID' ? 'ÖDENDİ' : t.payment_status === 'FREE' ? 'ÜCRETSİZ' : 'BEKLİYOR'}
+                                                        {t.payment_status === 'PAID' ? 'ÖDENDİ' : t.payment_status === 'FREE' ? formatEventPrice(0, currency) : 'BEKLİYOR'}
                                                     </span>
                                                 </div>
                                             ))}

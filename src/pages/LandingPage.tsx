@@ -1,3 +1,5 @@
+import { ClubBenefitsSection } from '../components/PublicClubSections';
+import { companyRequirement, professionRule, professionExample, memberEffort, meetingSupport, scoringActivities, absenceRule, paymentGate, noGuarantee } from '../data/clubContent';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
@@ -64,15 +66,15 @@ export function LandingPage() {
   const faqItems = [
     {
       q: 'Üye olmadan önce toplantıları ziyaret edebilir miyim?',
-      a: 'Evet! E4N hesabı açtıktan sonra henüz bir abonelik satın almadan dilediğiniz bir kapalı grubun toplantısına 2 defaya kadar ücretsiz ziyaretçi olarak katılabilirsiniz. Grupları inceleyip "Ziyaretçi olmak istiyorum" butonuyla davetiye isteyebilirsiniz. 2 toplantı sonrasında devam etmek için üyelik paketi satın almanız gerekir.'
+      a: 'Evet! E4N hesabı açtıktan sonra henüz bir abonelik satın almadan dilediğiniz bir kapalı grubun toplantısına 2 defaya kadar ziyaretçi olarak katılabilirsiniz. Grupları inceleyip "Ziyaretçi olmak istiyorum" butonuyla davetiye isteyebilirsiniz. 2 toplantı sonrasında devam etmek için üyelik paketi satın almanız gerekir.'
     },
     {
       q: 'Üye olmak doğrudan bir gruba katılmak mı?',
-      a: 'Hesap, abonelik ve kapalı grup kabulü ayrı aşamalardır. Grup başvurusu ayrıca değerlendirilir.'
+      a: paymentGate
     },
     {
       q: 'Aynı işi yapan kişiler aynı grupta olabilir mi?',
-      a: 'Aynı veya çakışan hizmetler aynı kapalı grupta bulunmaz. Bu koşul açık loncaların katılım modeliyle karıştırılmaz.'
+      a: professionRule
     },
     {
       q: 'Grup ne kadar süre aynı kalır?',
@@ -80,7 +82,7 @@ export function LandingPage() {
     },
     {
       q: 'E4N bana müşteri veya satış garantisi veriyor mu?',
-      a: 'E4N düzenli ilişki geliştirmek için ortam ve yöntem sunar. Ticari sonuç, üyelerin sunduğu değer ve kurduğu ilişkilere bağlıdır.'
+      a: noGuarantee
     }
   ];
 
@@ -106,10 +108,10 @@ export function LandingPage() {
             <div className="lg:col-span-7 text-left mb-12 lg:mb-0">
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 text-red-400 font-semibold text-xs tracking-wider uppercase border border-red-500/20 backdrop-blur-sm">
-                  <span>İş insanları için düzenli ve seçici networking</span>
+                  <span>İş insanları için networking kulübü</span>
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30">
-                  <span>🎁 2 Toplantı Ücretsiz Ziyaretçi Hakkı</span>
+                  <span>Kulübü ziyaretçi olarak tanıyın</span>
                 </div>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] mb-6">
@@ -144,7 +146,7 @@ export function LandingPage() {
               <div className="pt-6 border-t border-white/10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-300 font-medium">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span className="text-emerald-300 font-semibold">2 toplantı ücretsiz ziyaretçi imkânı</span>
+                  <span className="text-emerald-300 font-semibold">Ziyaretçi katılımı</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
@@ -152,11 +154,11 @@ export function LandingPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                  <span>Hizmet çakışması kontrolü</span>
+                  <span>Her meslekten bir kişi</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                  <span>4 ayda bir shuffle</span>
+                  <span>4 ayda bir grup yenilenmesi</span>
                 </div>
               </div>
             </div>
@@ -202,11 +204,11 @@ export function LandingPage() {
                   <MessageCircle className="w-6 h-6" />
                 </div>
                 <div className="inline-block px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold uppercase mb-3">
-                  Ücretsiz Topluluk
+                  Açık Topluluk
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">Açık loncalar</h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-6">
-                  Sektörünüze veya ilgilendiğiniz iş alanına göre topluluklara katılın. Gelişmeleri takip edin, bilgi paylaşın ve yeni profesyonellerle tanışın. Açık topluluk kanalına katılım ücretsizdir.
+                  Sektörünüze veya ilgilendiğiniz iş alanına göre WhatsApp topluluklarına katılın. Gelişmeleri takip edin, bilgi paylaşın ve yeni profesyonellerle tanışın.
                 </p>
               </div>
               <Button
@@ -286,15 +288,15 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-3xl mx-auto text-center mb-14">
             <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold text-xs uppercase tracking-wider border border-emerald-500/20 mb-4">
-              ÜCRETSİZ DENEYİM İMKÂNI
+              ZİYARETÇİ DENEYİMİ
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
               Gelin, ilk önce <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">ziyaretçi olun!</span>
             </h2>
             <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
-              E4N'nin disiplinli iş birliği ortamını, haftalık toplantı dinamiğini ve 35 kişilik grup enerjisini doğrudan yerinde görün.
-              Abonelik satın almadan önce sisteme ücretsiz kaydolabilir ve seçeceğiniz kapalı grupların toplantılarına{' '}
-              <strong className="text-white font-semibold">2 toplantıya kadar ücretsiz ziyaretçi</strong> olarak katılabilirsiniz.
+              E4N'nin disiplinli iş birliği ortamını, her grubun kendi toplantı düzenini ve 35 kişilik grup enerjisini doğrudan yerinde görün.
+              Hesabınızı oluşturup seçeceğiniz kapalı grupların toplantılarına{' '}
+              <strong className="text-white font-semibold">2 toplantıya kadar ziyaretçi</strong> olarak katılabilirsiniz.
             </p>
           </div>
 
@@ -304,9 +306,9 @@ export function LandingPage() {
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg mb-4">
                 1
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Ücretsiz Kaydolun</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Üye Olun</h3>
               <p className="text-slate-300 text-sm leading-relaxed">
-                Kredi kartı veya ön ödeme gerekmeden hızlıca E4N hesabı açın. Sisteme üye olmak tamamen ücretsizdir.
+                {companyRequirement}
               </p>
             </div>
 
@@ -326,7 +328,7 @@ export function LandingPage() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Sistemi Görüp Karar Verin</h3>
               <p className="text-slate-300 text-sm leading-relaxed">
-                2 toplantıya ücretsiz katılıp üyelerle tanışın, iş sunumlarını izleyin. Modelin size uygunluğundan emin olup aboneliğinizi başlatın.
+                Toplantılara ziyaretçi olarak katılıp üyelerle tanışın, iş sunumlarını izleyin. Grup onayının ardından kuralları kabul ederek üyeliğe geçebilirsiniz.
               </p>
             </div>
           </div>
@@ -338,7 +340,7 @@ export function LandingPage() {
               onClick={() => navigate('/auth/register')}
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 h-12 shadow-lg shadow-emerald-900/40 w-full sm:w-auto"
             >
-              Hemen Ücretsiz Kaydol & Ziyaretçi Ol <ArrowRight className="w-4 h-4 ml-2" />
+              Hemen Üye Ol <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             <Button
               size="lg"
@@ -351,6 +353,8 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <ClubBenefitsSection />
 
       {/* 3. Küçük gruplarda birbirinizin işini daha iyi tanıyın */}
       <section className="py-20 lg:py-28 bg-white border-b border-slate-100">
@@ -368,10 +372,10 @@ export function LandingPage() {
                   İşinizi kime, hangi durumda ve nasıl önerebileceğini bilen bir çevre oluşturmak zaman ister. Kapalı gruplar bu zamanı düzenli görüşmelerle değerlendirmenizi sağlar.
                 </p>
                 <p>
-                  Grup içinde sunduğunuz hizmeti, hedef müşterinizi ve aradığınız iş ortaklarını anlatırsınız. Diğer üyelerin uzmanlıklarını öğrenir; ortak proje, tedarik, tanıştırma ve iş yönlendirme fırsatlarını daha bilinçli değerlendirirsiniz.
+                  {memberEffort} {meetingSupport}
                 </p>
                 <p className="font-medium text-slate-900 bg-red-50/70 p-4 rounded-2xl border border-red-100 text-sm sm:text-base">
-                  Aynı veya çakışan hizmetleri sunan kişilerin aynı grupta bulunmaması, grubun hizmet çeşitliliğini ve ticari dengesini korumaya yardımcı olur.
+                  {professionRule} {professionExample}
                 </p>
               </div>
               <div className="mt-8">
@@ -417,10 +421,10 @@ export function LandingPage() {
             </h2>
             <div className="space-y-4 text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
               <p>
-                Kapalı grupların dağılımı dört ayda bir shuffle ile yenilenir. Bir dönem boyunca birlikte çalıştığınız kişileri tanırken, sonraki dönemlerde yeni iş insanlarıyla ilişki kurma fırsatı elde edersiniz.
+                Dört aylık dönem boyunca 35 kişilik grubunuzdaki üyeleri, yaptıkları işleri ve uzmanlıklarını tanırsınız. Bu tanışıklıklar, sonraki dönemlerde de derinleştirebileceğiniz iş ilişkilerinin temelini oluşturur.
               </p>
               <p>
-                Grup yenilemesi kapasite ve hizmet çakışması koşulları gözetilerek yapılır. Daha önce kurduğunuz ilişkiler ise aynı grupta bulunmaya bağlı kalmadan devam edebilir.
+                Shuffle ile yeni bir gruba geçtiğinizde, tanıdığınız kişilerle ilişkilerinizi geliştirmeye devam edersiniz. Yeni grubunuzda ise farklı insanları, meslekleri ve konuları iş çevrenize katarsınız. Böylece kurduğunuz ilişkiler derinleşirken yeni bağlantılar için de alan açılır.
               </p>
             </div>
             <Button
@@ -446,10 +450,10 @@ export function LandingPage() {
               İyi bir iş ağı, düzenli katkıyla gelişir
             </h2>
             <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-4">
-              Kapalı gruplarda üyelerden toplantılara ve ilişki geliştirme sürecine düzenli zaman ayırmaları beklenir. Aylık puan tablosu, grup katılımının açıklanan kurallara göre değerlendirilmesini sağlar.
+              {scoringActivities}
             </p>
             <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-8">
-              Başvurmadan önce katılım koşullarını inceleyin; size uygun çalışma düzenini bilinçli seçin.
+              {absenceRule} Ayrıntılı kuralları ödeme öncesinde inceleyip kabul edersiniz.
             </p>
             <Link
               to="/katilim-ilkeleri"
@@ -474,7 +478,7 @@ export function LandingPage() {
               E4N'ye nasıl katılırsınız?
             </h2>
             <p className="text-slate-600 text-base">
-              Hesap açma, abonelik değerlendirmesi ve kapalı gruba kabul aşamalarını sırayla tamamlayın.
+              Hesap açın, kulübü ziyaretçi olarak tanıyın; grup onayı ve kuralların kabulünden sonra ödeme adımına geçin.
             </p>
           </div>
 
@@ -484,7 +488,7 @@ export function LandingPage() {
                 <span className="text-3xl font-black text-red-600/30 block mb-4">01</span>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Hesabınızı oluşturun</h3>
                 <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Şirket ve iletişim bilgilerinizle kayıt olun. Hesap açmak için davetiye veya ön onay gerekmez.
+                  {companyRequirement}
                 </p>
               </div>
             </div>
@@ -492,9 +496,9 @@ export function LandingPage() {
             <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-7 flex flex-col justify-between">
               <div>
                 <span className="text-3xl font-black text-red-600/30 block mb-4">02</span>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Üyelik koşullarını inceleyin</h3>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Kulübü ziyaret edin</h3>
                 <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Güncel abonelik ve ödeme bilgilerini değerlendirin. Hesap oluşturmak ödeme yapmak anlamına gelmez.
+                  Hesabınızdaki grup bilgilerini inceleyin ve ziyaret talebi gönderin. Her grubun kendi toplantı takvimi vardır; ilgili grubun gün ve saatini takip edin.
                 </p>
               </div>
             </div>
@@ -502,9 +506,9 @@ export function LandingPage() {
             <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-7 flex flex-col justify-between">
               <div>
                 <span className="text-3xl font-black text-red-600/30 block mb-4">03</span>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Uygun gruba başvurun</h3>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Grup onayı alın</h3>
                 <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Aktif aboneliğinizle grup başvurusu yapın. Başkan görüşmesinde işinizi, beklentilerinizi ve katılım düzenini konuşun.
+                  Seçtiğiniz tek iş kolu ve kontenjan değerlendirilir. Başkan veya admin onayı olmadan ödeme yapamazsınız. Yer yoksa en fazla ziyaretçi olabilirsiniz.
                 </p>
               </div>
             </div>
@@ -512,9 +516,9 @@ export function LandingPage() {
             <div className="bg-slate-50 border border-slate-200/80 rounded-3xl p-7 flex flex-col justify-between">
               <div>
                 <span className="text-3xl font-black text-red-600/30 block mb-4">04</span>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Kabul sonrası grubunuza katılın</h3>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Kuralları kabul edip ödemenizi tamamlayın</h3>
                 <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Hizmet uyumu ve kontenjan değerlendirmesi tamamlandığında, düzenli toplantılar ve birebir görüşmelerle ilişkilerinizi geliştirin.
+                  Kuralları inceleyip kabul ederek bunlara uyacağınızı taahhüt edin. Ardından açılan ödeme ekranında işleminizi tamamlayın.
                 </p>
               </div>
             </div>
@@ -522,7 +526,7 @@ export function LandingPage() {
 
           <div className="mt-10 text-center">
             <p className="text-xs sm:text-sm font-semibold text-slate-700 inline-block bg-slate-100 px-5 py-2.5 rounded-full">
-              ⚠️ Abonelik satın almak kapalı gruba otomatik kabul sağlamaz.
+              Ziyaretçi deneyimi, başkan veya admin onayı ve kuralların kabulü, ödeme öncesinde tamamlanır.
             </p>
           </div>
         </div>

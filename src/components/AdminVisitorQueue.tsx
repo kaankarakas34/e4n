@@ -48,7 +48,7 @@ export function AdminVisitorQueue({onOpenMemberships,memberRequestsOnly=false}:{
       {!memberRequestsOnly&&<Button variant="outline" onClick={onOpenMemberships}>Üyelik ve grup başvuruları</Button>}
       <Button onClick={()=>setRefresh(v=>v+1)} disabled={!!busy}>Başvuruları yenile</Button>
     </div></div>
-    <p className="text-sm text-gray-600">{memberRequestsOnly?'Hesabını oluşturan üyelerin panelden seçtikleri gruplara gönderdiği ücretsiz ziyaret talepleri. Üye, grup ve talep notunu inceleyip iletişim durumunu takip edebilirsiniz.':'Form kayıtları ve ziyaretçi katılım kayıtları ayrı gösterilir. İletişim işaretlemesi üyelik veya grup kabulü anlamına gelmez.'}</p>
+    <p className="text-sm text-gray-600">{memberRequestsOnly?'Hesabını oluşturan üyelerin panelden seçtikleri gruplara gönderdiği ziyaret talepleri. Üye, grup ve talep notunu inceleyip iletişim durumunu takip edebilirsiniz.':'Form kayıtları ve ziyaretçi katılım kayıtları ayrı gösterilir. İletişim işaretlemesi üyelik veya grup kabulü anlamına gelmez.'}</p>
     {error?<div role="alert"><p>{error}</p><Button onClick={()=>setRefresh(v=>v+1)}>Tekrar dene</Button></div>:loadedFor!==context?<p role="status">Yükleniyor...</p>:<>
       {memberRequestsOnly?<div className="flex flex-wrap gap-4">
         <label className="text-sm">İstenen grup<select aria-label="İstenen grup" className="ml-2 border rounded p-2" value={group} onChange={e=>{setGroup(e.target.value);setSelected(null);}}><option value="">Tüm gruplar</option>{[...groups].map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>

@@ -70,7 +70,7 @@ const CITY_DATA: Record<string, CityContent> = {
     lead: 'İşinizi daha açık anlatabileceğiniz, farklı uzmanlıkları tanıyabileceğiniz ve uygun iş birliklerini konuşabileceğiniz bir çevre arıyorsanız E4N\'nin katılım modelini inceleyebilirsiniz.',
     section1Title: 'Açık topluluklardan başlayın',
     section1Texts: [
-      'İlginize uygun lonca kanalına katılarak sektör paylaşımlarını ve E4N duyurularını takip edin. Bu kanallar ücretsiz ve geniş katılımlıdır; kapalı grup üyeliğinden ayrı çalışır.'
+      'İlginize uygun lonca kanalına katılarak sektör paylaşımlarını ve E4N duyurularını takip edin. Bu kanallar geniş katılımlıdır; kapalı grup üyeliğinden ayrı çalışır.'
     ],
     section2Title: 'Kapalı grup modelini öğrenin',
     section2Texts: [
@@ -94,7 +94,7 @@ const CITY_DATA: Record<string, CityContent> = {
     lead: 'Yeni profesyonellerle tanışmak, iş ihtiyaçlarınızı paylaşmak ve farklı uzmanlıklarla bağlantı kurmak için E4N\'nin açık topluluklarını keşfedin.',
     section1Title: 'Sektörünüzü ve tamamlayıcı iş alanlarını tanıyın',
     section1Texts: [
-      'Loncalar, kendi alanınızdaki gelişmeleri izlemenize ve birlikte çalışabileceğiniz diğer iş alanlarını tanımanıza yardımcı olur. Topluluk katılımı ücretsizdir; E4N aboneliği veya kapalı grup kabulü sağlamaz.'
+      'Loncalar, kendi alanınızdaki gelişmeleri izlemenize ve birlikte çalışabileceğiniz diğer iş alanlarını tanımanıza yardımcı olur. Topluluklara katılım, E4N aboneliği veya kapalı grup kabulü sağlamaz.'
     ],
     section2Title: 'Daha düzenli bir çalışma için kapalı gruplar',
     section2Texts: [

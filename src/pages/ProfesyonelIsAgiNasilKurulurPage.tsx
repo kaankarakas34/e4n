@@ -1,21 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../shared/Button';
+import { Link } from 'react-router-dom';
+import { buttonVariants } from '../shared/Button';
+import { cn } from '../lib/utils';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import {
-  Users,
-  Compass,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  TrendingUp,
-  Target,
-  Clock,
-  Sparkles,
-  Repeat
+  ArrowRight
 } from 'lucide-react';
 
 export function ProfesyonelIsAgiNasilKurulurPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500 selection:text-white">
@@ -45,14 +37,9 @@ export function ProfesyonelIsAgiNasilKurulurPage() {
               E4N Üyelik Başvurusu
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/is-cevresi-nasil-genisletilir')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
-            >
+            <Link to="/is-cevresi-nasil-genisletilir" className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto')}>
               İş Çevresi Yol Haritası
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -153,12 +140,12 @@ export function ProfesyonelIsAgiNasilKurulurPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Yapılandırılmış Kulüp Modelini Tercih Edin</h3>
               <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Bireysel çabalar bir noktaya kadar işe yarar; ancak kurumsal bir zemin gereklidir.
+                Bireysel çalışmanızı desteklemek için üyelik koşulları ve katılımcı profili size uygun bir iş topluluğunu değerlendirebilirsiniz.
               </p>
               <ul className="space-y-1.5 text-xs sm:text-sm text-slate-600">
                 <li>• <strong className="text-slate-900">35 Kişilik Kadro:</strong> Birbirini tanıyan, düzenli toplantılarla bağ kuran topluluk.</li>
-                <li>• <strong className="text-slate-900">Meslek Tekilliği:</strong> Sektör çakışması ve rekabet olmayan <Link to="/kapali-gruplar" className="text-red-600 underline">kapalı gruplar</Link>.</li>
-                <li>• <strong className="text-slate-900">4 Aylık Rotasyon:</strong> Ağın durağanlaşmasını önleyen <Link to="/shuffle" className="text-red-600 underline">shuffle sistemi</Link>.</li>
+                <li>• <strong className="text-slate-900">Meslek Tekilliği:</strong> Her üyenin tek iş koluyla temsil edildiği ve aynı meslekten bir kişinin bulunduğu <Link to="/kapali-gruplar" className="text-red-600 underline">kapalı gruplar</Link>.</li>
+                <li>• <strong className="text-slate-900">4 Aylık Rotasyon:</strong> Eski ilişkileri sürdürürken yeni insan ve meslekleri tanımanızı sağlayan <Link to="/shuffle" className="text-red-600 underline">shuffle sistemi</Link>.</li>
               </ul>
             </div>
           </div>
@@ -201,12 +188,14 @@ export function ProfesyonelIsAgiNasilKurulurPage() {
                 21-30. Gün
               </div>
               <p className="text-slate-700 text-sm sm:text-base">
-                Disiplinli ve kurallı bir iş kulübü modeli araştırın ve <Link to="/uyelik" className="text-red-600 font-semibold underline">E4N Üyelik Başvurusu</Link> ile seçilmiş karar vericilerle masaya oturun.
+                Disiplinli ve kurallı bir iş kulübü modeli araştırın ve <Link to="/uyelik" className="text-red-600 font-semibold underline">E4N Üyelik Başvurusu</Link> sayfasından uygunluk, ziyaret ve grup kabulü sürecini inceleyin.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      <NetworkingGuideLinks currentPath="/profesyonel-is-agi-nasil-kurulur" />
 
       {/* CTA Bölümü */}
       <section className="py-20 bg-slate-950 text-center">

@@ -195,7 +195,6 @@ function App() {
               <Route path="/loncalar/girisimcilik" element={<Navigate to="/topluluklarimiz" replace />} />
               <Route path="/gruplar" element={<Navigate to="/kapali-gruplar" replace />} />
 
-              <Route path="/business-networking" element={<Navigate to="/e4n-nedir" replace />} />
               <Route path="/is-insanlari-kulubu" element={<Navigate to="/e4n-nedir" replace />} />
               <Route path="/b2b-is-gelistirme" element={<Navigate to="/kapali-gruplar" replace />} />
               <Route path="/nitelikli-is-yonlendirmesi" element={<Navigate to="/birebir-networking" replace />} />

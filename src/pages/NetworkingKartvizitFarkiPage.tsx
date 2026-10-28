@@ -1,12 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../shared/Button';
+import { Link } from 'react-router-dom';
+import { buttonVariants } from '../shared/Button';
+import { cn } from '../lib/utils';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import {
-  CreditCard,
-  HeartHandshake,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
   XCircle,
   HelpCircle,
   Mail,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 
 export function NetworkingKartvizitFarkiPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500 selection:text-white">
@@ -44,14 +42,9 @@ export function NetworkingKartvizitFarkiPage() {
               E4N Üyelik Modeli
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/birebir-networking')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
-            >
+            <Link to="/birebir-networking" className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto')}>
               Birebir Görüşme İlkeleri
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -107,13 +100,13 @@ export function NetworkingKartvizitFarkiPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white relative overflow-hidden mb-16">
             <h2 className="text-2xl sm:text-3xl font-black mb-4">
-              Nicelik Tuzağı: 50 Kartvizit vs. 3 Stratejik Ortak
+              Nicelik Yerine Nitelik: Örnek Bir Etkinlik Planı
             </h2>
             <blockquote className="text-lg sm:text-xl text-slate-300 italic border-l-4 border-red-500 pl-4 my-6">
-              "Bir etkinlikte 50 kişiyle 1'er dakika ayaküstü konuşup kart dağıtmak yerine; iş modeli ve değerleri sizinle örtüşen 3 kişiyle 15'er dakika derinlemesine sohbet etmek, katbekat daha yüksek ticari geri dönüş sağlar."
+              Örneğin, kısa tanışmalara ek olarak birkaç kişiyle daha uzun sohbet etmek için zaman ayırabilirsiniz. Amaç bir kartvizit sayısına ulaşmak değil, karşılıklı ilgi ve takip edilebilecek bir konu bulmaktır.
             </blockquote>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Bu 3 kişiyle kurulan kaliteli bağ, etkinlik sonrasında <Link to="/birebir-networking" className="text-red-400 underline">birebir görüşmelere</Link> dönüşür; birbirinizin işini tanıma fırsatı sunar ve uzun vadeli bir referans kanalının temelini atar.
+              Bu tanışmalar, iki taraf da uygun bulursa etkinlik sonrasında <Link to="/birebir-networking" className="text-red-400 underline">birebir görüşmelere</Link> dönüşür; birbirinizin işini tanıma fırsatı sunar ve uzun vadeli bir referans kanalının temelini atar.
             </p>
           </div>
 
@@ -159,16 +152,16 @@ export function NetworkingKartvizitFarkiPage() {
               E4N: Kartvizit Kalabalığı Yerine Güven Ekosistemi
             </h2>
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-              Event4Network üyeleri birbirine kartvizit dağıtmaz; her hafta birbirinin uzmanlığını öğrenir ve dışarıdaki gerçek müşterileri birbirine yönlendirir.
+              Event4Network üyeleri, gruplarına özel takvimdeki toplantılar ve birebir görüşmelerle birbirinin uzmanlığını tanır. İletişim bilgisi paylaşımı karşılıklı izinle yapılır; uygun bir ihtiyaç oluştuğunda iş yönlendirmesi değerlendirilebilir.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
               <ShieldCheck className="h-8 w-8 text-red-600 mb-3" />
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Rekabet Sıfırlayan Meslek Tekilliği</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Grupta Meslek Tekilliği</h3>
               <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Her grupta tek bir meslek dalı yer alır. Grupta tek kurumsal avukat veya tek yazılımcı siz olursunuz. Çıkar çatışması olmadan doğrudan tavsiye alırsınız (<Link to="/kapali-gruplar" className="text-red-600 underline">Kapalı Gruplar</Link>).
+                Her üye tek iş koluyla temsil edilir; grupta farklı meslekler bir araya gelir ve aynı meslekten bir kişi bulunur. Bu yapı üyelerin birbirinin işini tanımasını destekler (<Link to="/kapali-gruplar" className="text-red-600 underline">Kapalı Gruplar</Link>).
               </p>
             </div>
 
@@ -176,12 +169,14 @@ export function NetworkingKartvizitFarkiPage() {
               <Repeat className="h-8 w-8 text-red-600 mb-3" />
               <h3 className="text-lg font-bold text-slate-900 mb-2">Periyodik 4 Aylık Rotasyon</h3>
               <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Kartvizit biriktirmek yerine, 4 ayda bir rotasyonla yeni sektörlerden seçilmiş karar vericilerle masaya oturursunuz (<Link to="/nasil-calisir" className="text-red-600 underline">Nasıl Çalışır?</Link>).
+                Dört ayda grup üyelerini tanır; grup değiştiğinde eski ilişkileri derinleştirirken yeni insanları, meslekleri ve konuları ağınıza katarsınız (<Link to="/nasil-calisir" className="text-red-600 underline">Nasıl Çalışır?</Link>).
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      <NetworkingGuideLinks currentPath="/networking-neden-kartvizit-toplamak-degildir" />
 
       {/* CTA Bölümü */}
       <section className="py-20 bg-slate-950 text-center">

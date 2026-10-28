@@ -1048,11 +1048,6 @@
       "statusCode": 301
     },
     {
-      "source": "/business-networking",
-      "destination": "/e4n-nedir",
-      "statusCode": 301
-    },
-    {
       "source": "/is-insanlari-kulubu",
       "destination": "/e4n-nedir",
       "statusCode": 301

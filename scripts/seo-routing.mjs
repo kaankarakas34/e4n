@@ -1,12 +1,17 @@
 import { readFile, writeFile } from 'node:fs/promises';
 export const catalog = JSON.parse(await readFile(new URL('../src/seo/routeCatalog.json', import.meta.url), 'utf8'));
 const appSource = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const routePaths = [...appSource.matchAll(/<Route\s+path="([^"]+)"/g)].map(match => match[1]);
+const duplicatePaths = routePaths.filter((path, index) => routePaths.indexOf(path) !== index);
+if (duplicatePaths.length) throw new Error('Duplicate application routes: ' + [...new Set(duplicatePaths)].join(', '));
 export const redirects = [...appSource.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<Navigate to="([^"]+)" replace \/>\}\s*\/>/g)].map(m => ({ source: m[1], destination: m[2], statusCode: 301 }));
 redirects.push(
   { source: '/is-agi-rehberi/:slug', destination: '/blog/:slug', statusCode: 301 },
   { source: '/degerlendirme-basvurusu', destination: '/ziyaretci-basvurusu', has: [{ type: 'query', key: 'refId' }], statusCode: 301 },
   { source: '/degerlendirme-basvurusu', destination: '/auth/register', statusCode: 301 },
 );
+const redirectedPages = catalog.filter(page => redirects.some(rule => rule.source === page.path));
+if (redirectedPages.length) throw new Error('Published pages must not redirect: ' + redirectedPages.map(page => page.path).join(', '));
 export const clientPaths = [...new Set([...appSource.matchAll(/<Route\s+path="([^"]+)"/g)].map(m => m[1]))]
   .filter(path => path !== '*' && !catalog.some(row => row.path === path) && path !== '/networking/:city' && !redirects.some(row => row.source === path));
 export const rewrites = [

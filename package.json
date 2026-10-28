@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node server/test/route-ownership-static.mjs && tsc -b && vite build && vite build --ssr src/seo/prerender.tsx --target node20 --outDir dist-ssr && node dist-ssr/prerender.js && node scripts/build-content-handler.mjs",
+    "build": "node scripts/seo-routing.mjs && node server/test/route-ownership-static.mjs && tsc -b && vite build && vite build --ssr src/seo/prerender.tsx --target node20 --outDir dist-ssr && node dist-ssr/prerender.js && node scripts/build-content-handler.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "node server/test/route-ownership-static.mjs && tsc -b --noEmit",
+    "check": "node scripts/seo-routing.mjs && node server/test/route-ownership-static.mjs && tsc -b --noEmit",
     "seo:check": "node test/seo-build-contract.mjs",
     "seo:content": "node test/seo-content-contract.mjs",
     "seo:preview": "node scripts/seo-preview.mjs",

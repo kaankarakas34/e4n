@@ -22,7 +22,7 @@ async (page) => {
   ['/degerlendirme-basvurusu?refId=legacy-abc&utm_source=seo','/ziyaretci-basvurusu?refId=legacy-abc&utm_source=seo'],
   ['/degerlendirme-basvurusu?utm_source=seo','/auth/register?utm_source=seo'],
   ['/is-agi-rehberi/eski-baslik?utm_source=seo','/blog/eski-baslik?utm_source=seo'],
-  ['/business-networking','/e4n-nedir'],
+  ['/is-insanlari-kulubu','/e4n-nedir'],
  ]){
   const r=await page.request.get(base+source,{maxRedirects:0});const location=r.headers().location;
   if(r.status()!==301||location!==target)throw Error('Redirect contract: '+source+' '+r.status()+' '+location);

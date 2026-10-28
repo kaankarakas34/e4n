@@ -1,21 +1,18 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../shared/Button';
+import { Link } from 'react-router-dom';
+import { buttonVariants } from '../shared/Button';
+import { cn } from '../lib/utils';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import {
   Users,
-  Target,
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  TrendingUp,
-  Handshake,
-  Compass,
   Repeat
 } from 'lucide-react';
 
 export function BusinessNetworkingPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500 selection:text-white">
@@ -35,7 +32,7 @@ export function BusinessNetworkingPage() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal mb-10">
-            Kartvizit dağıtmak veya rastgele etkinlik gezmek networking değildir. Gerçek business networking, karşılıklı güvene, sürdürülebilir iş birliğine ve kesintisiz iş yönlendirmesine (referans) dayalı stratejik bir profesyonel sermaye inşasıdır.
+            Business networking, profesyonellerin birbirinin işini tanıdığı, bilgi paylaştığı ve karşılıklı güven geliştirdiği ilişki kurma sürecidir. Tanışmalar; düzenli iletişim, birlikte çalışma ve uygun olduğunda izinli iş yönlendirmeleriyle derinleşir.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
@@ -45,14 +42,12 @@ export function BusinessNetworkingPage() {
               E4N Üyelik Modeli
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/birebir-networking')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
+            <Link
+              to="/birebir-networking"
+              className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto')}
             >
               Birebir Görüşme Yaklaşımı
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -171,7 +166,7 @@ export function BusinessNetworkingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Birebir Görüşmelerle İlişkiyi Derinleştirin</h3>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Grup toplantılarında başlayan tanışıklığı baş başa yapılan 45 dakikalık görüşmelere taşıyın. Karşı tarafın iş zorluklarını dinleyin ve kimlerle çalışabileceğini keşfedin.
+                Grup toplantılarında başlayan tanışıklığı, süresini birlikte belirlediğiniz birebir görüşmelere taşıyın. Karşı tarafın iş zorluklarını dinleyin ve kimlerle çalışabileceğini keşfedin.
               </p>
             </div>
 
@@ -181,7 +176,7 @@ export function BusinessNetworkingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Önce Değer Vererek Başlayın</h3>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Yönlendirme almak için önce yönlendirme verin. İş ortaklarınızın ihtiyaç duyduğu bir kaynağı paylaşmak veya onları bir müşteriyle tanıştırmak, kalıcı bir referans mıknatısına dönüşmenizi sağlar.
+                İş ortaklarınızın ihtiyaç duyduğu bir kaynağı paylaşın. Uygun bir tanıştırma fırsatı varsa iki tarafın da iznini alın; katkıyı karşılığında iş beklenen bir alışverişe çevirmeyin.
               </p>
             </div>
           </div>
@@ -219,7 +214,7 @@ export function BusinessNetworkingPage() {
               <ShieldCheck className="h-10 w-10 text-red-500 mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Meslek Tekilliği</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Her grupta her hizmet dalından yalnızca tek bir temsilci bulunur. Rekabet ve çıkar çatışması sıfırlanır, referans doğrudan size gelir.
+                Her üye tek iş koluyla temsil edilir; grupta aynı meslekten bir kişi bulunur. Bu kural grup içi meslek çakışmasını azaltmayı amaçlar; iş yönlendirmesi üye ilişkileri ve uygun ihtiyaçlarla gelişir.
               </p>
               <Link to="/nasil-calisir" className="text-red-400 font-semibold text-sm hover:underline inline-flex items-center">
                 Nasıl Çalışır? <ArrowRight className="ml-1 h-4 w-4" />
@@ -230,7 +225,7 @@ export function BusinessNetworkingPage() {
               <Repeat className="h-10 w-10 text-red-500 mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Dört Aylık Shuffle</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Çevrenizin aynı kişilerle daralmasını önlemek için 4 ayda bir grup rotasyonu yapılır ve yeni sektörlerle güvenli tanışma zeminleri açılır.
+                Dört ay boyunca grup üyelerini ve işlerini tanırsınız. Grup değiştiğinde eski ilişkileri sürdürürken yeni insanları, meslekleri ve konuları ağınıza katarsınız.
               </p>
               <Link to="/shuffle" className="text-red-400 font-semibold text-sm hover:underline inline-flex items-center">
                 Shuffle Modelimiz <ArrowRight className="ml-1 h-4 w-4" />
@@ -240,6 +235,8 @@ export function BusinessNetworkingPage() {
         </div>
       </section>
 
+      <NetworkingGuideLinks currentPath="/business-networking" />
+
       {/* 4. CTA Bölümü */}
       <section className="py-20 bg-white text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -248,7 +245,7 @@ export function BusinessNetworkingPage() {
               İş Ağınızı Güven Temelli Büyütmeye Hazır mısınız?
             </h2>
             <p className="text-base sm:text-lg text-red-100 max-w-2xl mx-auto mb-8 leading-relaxed">
-              Kartvizit kalabalığından uzaklaşın; 34 seçilmiş iş insanının sizin adınıza referans ürettiği kurumsal bir ekosisteme katılın.
+              35 kişilik kapalı grup modelini ve üyelik koşullarını inceleyin. İlişkilerin gelişmesi düzenli katılım, birebir görüşmeler ve üyelerin karşılıklı katkısıyla mümkündür.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Link

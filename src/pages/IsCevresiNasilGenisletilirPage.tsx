@@ -1,21 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../shared/Button';
+import { Link } from 'react-router-dom';
+import { buttonVariants } from '../shared/Button';
+import { cn } from '../lib/utils';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import {
-  Users,
-  Compass,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  TrendingUp,
-  Handshake,
-  Layers,
-  Sparkles,
-  Repeat
+  ArrowRight
 } from 'lucide-react';
 
 export function IsCevresiNasilGenisletilirPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500 selection:text-white">
@@ -35,7 +27,7 @@ export function IsCevresiNasilGenisletilirPage() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal mb-10">
-            İş çevresi edinmek rastgele yüzlerce kartvizit toplamak değildir. Reklam bütçeleri tükenebilir; ancak güvene dayalı 15-20 stratejik müttefik, en krizli dönemlerde dahi işletmeniz için kesintisiz bir referans akışı sağlar.
+            İş çevresini genişletmek, yalnızca kişi sayısını artırmak değildir. İşinizi anlayan ve sizin de katkı sunabildiğiniz profesyonellerle düzenli ilişki kurmak, uygun iş birliği ve yönlendirme fırsatlarını fark etmenizi kolaylaştırır.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
@@ -45,14 +37,9 @@ export function IsCevresiNasilGenisletilirPage() {
               E4N Üyelik Başvurusu
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/business-networking')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
-            >
+            <Link to="/business-networking" className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto')}>
               Business Networking Nedir?
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -171,11 +158,11 @@ export function IsCevresiNasilGenisletilirPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <strong className="block text-slate-900 mb-1">Meslek Tekilliği</strong>
-                    <span className="text-slate-600 text-xs">Her 35 kişilik kapalı grupta her hizmet dalından yalnızca tek temsilci yer alır; çıkar çatışması olmaz (<Link to="/kapali-gruplar" className="text-red-600 underline">Kapalı Gruplar</Link>).</span>
+                    <span className="text-slate-600 text-xs">35 kişilik kapalı gruplarda her üye tek iş koluyla temsil edilir; aynı meslekten bir kişi bulunur (<Link to="/kapali-gruplar" className="text-red-600 underline">Kapalı Gruplar</Link>).</span>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <strong className="block text-slate-900 mb-1">Dört Aylık Shuffle</strong>
-                    <span className="text-slate-600 text-xs">Çevrenizin aynı kişilerle kısıtlı kalmaması için 4 ayda bir rotasyon yapılır (<Link to="/nasil-calisir" className="text-red-600 underline">Nasıl Çalışır?</Link>).</span>
+                    <span className="text-slate-600 text-xs">Dört ayda grup üyelerini tanır, grup değiştiğinde eski bağları sürdürürken yeni insan ve meslekleri ağınıza katarsınız (<Link to="/nasil-calisir" className="text-red-600 underline">Nasıl Çalışır?</Link>).</span>
                   </div>
                 </div>
               </div>
@@ -184,57 +171,7 @@ export function IsCevresiNasilGenisletilirPage() {
         </div>
       </section>
 
-      {/* İlgili Rehberler */}
-      <section className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">
-              Bağlantılı Rehber ve İçerikler
-            </h2>
-            <p className="text-slate-600 text-sm sm:text-base">
-              İş ağınızı kurumsallaştırmak için diğer temel içeriklerimizi inceleyin:
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Link
-              to="/profesyonel-is-agi-nasil-kurulur"
-              className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-red-200 hover:shadow-md transition-all group"
-            >
-              <h3 className="font-bold text-slate-900 mb-2 group-hover:text-red-600 transition-colors">
-                Profesyonel İş Ağı Nasıl Kurulur?
-              </h3>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                A-B-C çemberi ve 6 adımlı B2B uygulama planı ile sosyal sermayenizi yönetin.
-              </p>
-            </Link>
-
-            <Link
-              to="/networking-neden-kartvizit-toplamak-degildir"
-              className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-red-200 hover:shadow-md transition-all group"
-            >
-              <h3 className="font-bold text-slate-900 mb-2 group-hover:text-red-600 transition-colors">
-                Kartvizit Toplama Tuzağı
-              </h3>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Nicelik yerine nitelik: Bir etkinlikten onlarca kartla dönmek neden iş üretmez?
-              </p>
-            </Link>
-
-            <Link
-              to="/networking-ile-satis-arasindaki-fark"
-              className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-red-200 hover:shadow-md transition-all group"
-            >
-              <h3 className="font-bold text-slate-900 mb-2 group-hover:text-red-600 transition-colors">
-                Networking ile Satışın Farkı
-              </h3>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Avcı zihniyetinden çiftçi zihniyetine geçerek referans ve yönlendirmeyle müşteri kazanın.
-              </p>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <NetworkingGuideLinks currentPath="/is-cevresi-nasil-genisletilir" />
 
       {/* CTA Bölümü */}
       <section className="py-20 bg-slate-950 text-center">

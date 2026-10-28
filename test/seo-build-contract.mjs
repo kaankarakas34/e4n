@@ -10,7 +10,7 @@ assert.equal(await readFile('dist/sitemap-static.xml','utf8'), sitemap);
 await assert.rejects(readFile('dist/sitemap.xml','utf8'), {code:'ENOENT'}, 'Static sitemap must not shadow the live content function');
 assert.equal(await readFile('public/sitemap.xml','utf8'), sitemap);
 assert(!sitemap.includes('/egitim<') && !sitemap.includes('/degerlendirme-basvurusu<') && !sitemap.includes('/networking/'), 'Redirect/noindex pages in sitemap');
-const errors=[];
+const guidePaths = ['/business-networking', '/is-cevresi-nasil-genisletilir', '/profesyonel-is-agi-nasil-kurulur', '/networking-neden-kartvizit-toplamak-degildir', '/networking-ile-satis-arasindaki-fark'];
 for (const row of catalog) {
  const file=row.path==='/'?'index.html':row.path.slice(1)+'.html';
  const html=await readFile('dist/'+file,'utf8');
@@ -28,7 +28,18 @@ for (const row of catalog) {
   const schema=JSON.parse(match[1]);assert(schema['@context']==='https://schema.org');
  }
  assert(!html.includes('trae-inspector-'),'Development inspector shipped');
+ if (guidePaths.includes(row.path)) {
+  for (const target of guidePaths.filter(path => path !== row.path)) assert(html.includes('href="'+target+'"'), 'Guide cluster link missing: '+row.path+' -> '+target);
+  const graphs = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)].flatMap(match => JSON.parse(match[1])['@graph'] || []);
+  const article = graphs.find(node => node['@type'] === 'Article');
+  assert.equal(article?.mainEntityOfPage, 'https://www.event4network.com'+row.path, 'Article URL: '+row.path);
+  assert.equal(article?.dateModified, row.lastmod, 'Visible article and sitemap dates: '+row.path);
+  assert(html.includes('<time dateTime="'+row.lastmod+'"') || html.includes('<time datetime="'+row.lastmod+'"'), 'Visible modification date: '+row.path);
+  assert(!/%50\+|%2-3|kesintisiz bir referans|her hafta birbirinin|Her grupta tek bir meslek dalı/.test(html), 'Unverified guide claim: '+row.path);
+ }
 }
+const guideIndex=await readFile('dist/blog.html','utf8');
+for (const target of guidePaths) assert(guideIndex.includes('href="'+target+'"'), 'Guide discovery link missing: '+target);
 const missing=await readFile('dist/404.html','utf8');
 assert(missing.includes('noindex, follow') && missing.includes('Sayfa Bulunamadı'));
 const shell=await readFile('dist/_app.html','utf8');

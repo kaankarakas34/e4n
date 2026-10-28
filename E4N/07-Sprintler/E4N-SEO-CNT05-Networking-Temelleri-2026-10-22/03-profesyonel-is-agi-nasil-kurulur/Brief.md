@@ -1,5 +1,7 @@
 # E4N SEO — CNT-05: Destek Yazısı 3 / Profesyonel İş Ağı Nasıl Kurulur?
 
+> 28 Ekim 2026: Kullanıcının CMS olmadan yayın kararı geçerlidir. Güncel kaynak statik React sayfasıdır; canonical: https://www.event4network.com/profesyonel-is-agi-nasil-kurulur. Aşağıdaki CMS slug/JSON/taslak alanları 22 Ekim tarihli hazırlık kaydıdır. Güncel kabul ve kalanlar: [[E4N/09-Dogrulama/E4N-SEO-CNT05-Yayin-Kabulu-2026-10-28]].
+
 Tarih: 22 Ekim 2026  
 Görev: **E4N-293 / EP-05 (Networking Temelleri · Destek İçeriği 03)**  
 Durum: **Taslak (Draft)**

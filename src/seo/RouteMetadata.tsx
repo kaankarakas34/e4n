@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import catalog from './routeCatalog.json';
+import { networkingGuides, networkingGuidesModified } from '../data/networkingGuides';
 
 import { SITE_URL, jsonLd } from './metadata';
 
@@ -8,6 +9,7 @@ export function RouteMetadata() {
   const { pathname } = useLocation();
   const path = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
   const route = catalog.find(row => row.path === path);
+  const guide = networkingGuides.find(row => row.path === path);
   const dynamic = /^\/(blog|event)\/[^/]+$/.test(path);
   if (dynamic) return <Helmet><meta name="robots" content="noindex, follow" /></Helmet>;
   const title = route?.title || (dynamic ? 'E4N İçerik ve Etkinlik | Event4Network' : 'Event4Network Üye Alanı');
@@ -24,12 +26,17 @@ export function RouteMetadata() {
       { '@type': 'ListItem', position: 2, name: route.title.split(' | ')[0], item: canonical },
     ],
   });
+  if (guide) graph.push({
+    '@type': 'Article', '@id': canonical + '#article', headline: guide.title,
+    mainEntityOfPage: canonical, inLanguage: 'tr-TR', dateModified: networkingGuidesModified,
+    author: { '@id': SITE_URL + '/#organization' }, publisher: { '@id': SITE_URL + '/#organization' },
+  });
   return <Helmet>
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={index ? 'index, follow' : 'noindex, follow'} />
     {canonical && <link rel="canonical" href={canonical} />}
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={guide ? 'article' : 'website'} />
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:site_name" content="Event4Network" />
     <meta property="og:title" content={title} />

@@ -1,21 +1,15 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../shared/Button';
+import { Link } from 'react-router-dom';
+import { buttonVariants } from '../shared/Button';
+import { cn } from '../lib/utils';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import {
-  Handshake,
-  TrendingUp,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
-  XCircle,
-  Percent,
-  Compass,
-  Repeat,
-  Share2
+  XCircle
 } from 'lucide-react';
 
 export function NetworkingSatisFarkiPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500 selection:text-white">
@@ -35,7 +29,7 @@ export function NetworkingSatisFarkiPage() {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal mb-10">
-            Networking bir doğrudan satış taktiği midir? Odadaki kişilere hemen satış yapma baskısı yerine, 34 iş insanının sizin adınıza referans ürettiği sürdürülebilir bir B2B yönlendirme kültürü kurmanın yollarını keşfedin.
+            Networking ile satış farklı amaçlarla başlayabilir. Satış, belirli bir ihtiyaca teklif sunmaya odaklanırken networking; birbirinin işini tanıma, bilgi paylaşma ve zamanla uygun iş birliği fırsatlarını değerlendirme sürecidir.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
@@ -45,14 +39,9 @@ export function NetworkingSatisFarkiPage() {
               E4N Üyelik Modeli
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/business-networking')}
-              className="text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto"
-            >
+            <Link to="/business-networking" className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-base h-14 px-8 font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white w-full sm:w-auto')}>
               Business Networking Nedir?
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -121,7 +110,7 @@ export function NetworkingSatisFarkiPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-500 font-bold">•</span>
-                  <span>Ortaklar onun adına dış pazarlardan sürekli müşteri yönlendirir.</span>
+                  <span>Uygun ihtiyaç oluştuğunda, tarafların izniyle tanıştırma yapılabilir.</span>
                 </li>
               </ul>
             </div>
@@ -144,25 +133,25 @@ export function NetworkingSatisFarkiPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
               <span className="text-3xl font-black text-red-600 mb-2 block">Hızlı Karar</span>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Güven Bariyeri Aşılmıştır</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Tanışma İçin Ortak Zemin</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                Referansla gelen müşteri kim olduğunuzu sorgulamaz; tavsiye eden kişinin itibarı güven bariyerini önceden aşmıştır.
+                Güvenilen bir kişinin tanıştırması ilk görüşme için ortak zemin sunabilir. Karşı taraf yine de uzmanlığınızı, teklifinizi ve işine uygunluğunuzu değerlendirir.
               </p>
             </div>
 
             <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
               <span className="text-3xl font-black text-red-600 mb-2 block">Değer Odaklı</span>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Fiyat Rekabetine Girmez</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Değerin Açıklanması</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                Sizi en ucuz seçenek olduğunuz için değil, işini hakkıyla yapacak onaylanmış uzman olduğunuz için tercih eder.
+                Bir tanıştırma, ihtiyacı ve sunduğunuz değeri konuşmayı kolaylaştırabilir. Fiyat ve alternatifler yine alıcının kararının parçasıdır.
               </p>
             </div>
 
             <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
-              <span className="text-3xl font-black text-red-600 mb-2 block">%50+</span>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Yüksek Kapanış Oranı</h3>
+              <span className="text-3xl font-black text-red-600 mb-2 block">Takip</span>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Sonucu Kendi Verinizle Ölçün</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                Soğuk satış kanallarında dönüşüm %2-3 iken; nitelikli yönlendirmelerde anlaşmaya varma oranı %50'nin üzerindedir.
+                İzinli tanıştırma, yapılan görüşme, teklif ve sonuçlanan işi ayrı ayrı kaydedin. Dönüşüm; sektör, ihtiyaç ve teklifin uygunluğuna göre değişir.
               </p>
             </div>
           </div>
@@ -221,6 +210,8 @@ export function NetworkingSatisFarkiPage() {
         </div>
       </section>
 
+      <NetworkingGuideLinks currentPath="/networking-ile-satis-arasindaki-fark" />
+
       {/* CTA Bölümü */}
       <section className="py-20 bg-slate-950 text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -229,7 +220,7 @@ export function NetworkingSatisFarkiPage() {
               Satıcı Olmayı Bırakın, Güven İnşa Edin
             </h2>
             <p className="text-base sm:text-lg text-red-100 max-w-2xl mx-auto mb-8 leading-relaxed">
-              34 iş insanının sizin adınıza referans ürettiği kurumsal bir ekosisteme katılın.
+              35 kişilik gruplarda karşılıklı katkı ve düzenli iletişim modelini inceleyin. Üyelik ve grup kabulü koşullarını öğrenerek size uygunluğunu değerlendirin.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Link

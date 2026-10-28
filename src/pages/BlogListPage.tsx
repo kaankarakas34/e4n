@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { NetworkingGuideLinks } from '../components/NetworkingGuideLinks';
 import { api } from '../api/api';
 import { BlogPost } from '../types';
 import { Calendar, User, ArrowRight, ChevronRight, Home } from 'lucide-react';
@@ -52,6 +53,8 @@ export function BlogListPage() {
           </p>
         </div>
       </section>
+
+      <NetworkingGuideLinks />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {/* Breadcrumb */}

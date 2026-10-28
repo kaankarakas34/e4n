@@ -1,5 +1,7 @@
 # E4N SEO — CNT-05: Destek Yazısı 4 / Networking Neden Kartvizit Toplamak Değildir?
 
+> 28 Ekim 2026: Kullanıcının CMS olmadan yayın kararı geçerlidir. Güncel kaynak statik React sayfasıdır; canonical: https://www.event4network.com/networking-neden-kartvizit-toplamak-degildir. Aşağıdaki CMS slug/JSON/taslak alanları 22 Ekim tarihli hazırlık kaydıdır. Güncel kabul ve kalanlar: [[E4N/09-Dogrulama/E4N-SEO-CNT05-Yayin-Kabulu-2026-10-28]].
+
 Tarih: 22 Ekim 2026  
 Görev: **E4N-293 / EP-05 (Networking Temelleri · Destek İçeriği 04)**  
 Durum: **Taslak (Draft)**

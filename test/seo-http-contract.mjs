@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import ts from 'typescript';
 import { catalog } from '../scripts/seo-routing.mjs';
-const base = 'http://127.0.0.1:4178';
+const base = process.env.SEO_BASE_URL || 'http://127.0.0.1:4178';
 const rows=[];
 for (const row of catalog) {
- const response=await fetch(base+row.path,{headers:{'Accept-Encoding':'gzip'}});
+ const response=await fetch(base+row.path,{headers:{'Accept-Encoding':'gzip'},redirect:'manual'});
  const html=await response.text();
  assert.equal(response.status,200,row.path);
  assert.equal(response.headers.get('content-encoding'),'gzip',row.path);
  assert(response.headers.get('content-security-policy')?.includes("default-src 'self'"),'CSP not applied');
  assert.equal((html.match(/rel="canonical"/g)||[]).length,1,row.path);
+ assert.equal(html.match(/<link\b[^>]*rel="canonical"[^>]*href="([^"]+)"/)?.[1], 'https://www.event4network.com'+row.path, 'HTTP canonical: '+row.path);
  if(!row.index)assert(response.headers.get('x-robots-tag')?.includes('noindex'),row.path);
  rows.push({path:row.path,status:response.status,encoding:response.headers.get('content-encoding'),robots:response.headers.get('x-robots-tag')});
 }

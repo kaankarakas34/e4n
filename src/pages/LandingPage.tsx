@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Repeat,
   ShieldCheck,
+  Play,
   ChevronDown,
   FileText
 } from 'lucide-react';
@@ -181,7 +182,70 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 2. Tek ekosistem, farklı katılım yolları */}
+      {/* E4N tanıtımı — hero sonrası ikinci bölüm */}
+      <section aria-labelledby="e4n-intro-title" className="bg-white py-16 sm:py-20 lg:py-24 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div className="min-w-0 max-w-xl">
+              <div aria-hidden="true" className="w-12 h-1 bg-red-600 rounded-full mb-6" />
+              <h2 id="e4n-intro-title" className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 mb-5">
+                E4N nedir?
+              </h2>
+              <p className="text-xl sm:text-2xl font-semibold leading-snug tracking-tight text-slate-900 mb-5">
+                Tanışarak başlayan, güvenle büyüyen bir iş çevresi.
+              </p>
+              <p className="text-base sm:text-lg leading-relaxed text-slate-600 mb-6">
+                Event4Network, iş insanlarını birbirlerinin işini tanımak, deneyim paylaşmak ve iş birliği geliştirmek için bir araya getiren bir networking kulübüdür.
+              </p>
+              <p className="text-base leading-relaxed text-slate-600 mb-7">
+                Düzenli grup toplantıları ve birebir görüşmelerle ilişkilerinize zaman ayırır, birbiriniz için doğru bağlantıları keşfedersiniz. Bu videoda E4N’yi yakından tanıyın.
+              </p>
+              <Link
+                to="/e4n-nedir"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-bold text-red-700 hover:text-red-800 underline underline-offset-4 decoration-red-200 hover:decoration-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-4 motion-safe:transition-colors"
+              >
+                E4N’yi keşfedin <ArrowRight aria-hidden="true" className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <figure className="min-w-0 rounded-3xl bg-slate-950 p-2 sm:p-3 shadow-xl shadow-slate-900/10">
+              <div className="flex items-center gap-2.5 px-3 py-3 sm:px-4 sm:py-4 text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-600">
+                  <Play aria-hidden="true" className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-sm font-semibold">E4N’yi yakından tanıyın</span>
+              </div>
+              <div className="aspect-video overflow-hidden rounded-2xl bg-black">
+                <iframe
+                  width="560"
+                  height="315"
+                  src="https://www.youtube.com/embed/YxytUnNFJJE?si=xI7Ry51AajJOkLwo"
+                  title="Event4Network (E4N) tanıtım videosu"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="block h-full w-full border-0"
+                />
+              </div>
+              <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 pt-2 pb-1 sm:px-4 text-xs text-slate-300">
+                <span>Event4Network tanıtım videosu</span>
+                <a
+                  href="https://www.youtube.com/watch?v=YxytUnNFJJE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E4N tanıtım videosunu YouTube’da aç (yeni sekme)"
+                  className="inline-flex min-h-11 items-center rounded-md font-medium text-white underline underline-offset-4 decoration-slate-600 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-safe:transition-colors"
+                >
+                  YouTube’da aç
+                </a>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      {/* Tek ekosistem, farklı katılım yolları */}
       <section className="py-20 lg:py-28 bg-slate-50 border-b border-slate-200/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
